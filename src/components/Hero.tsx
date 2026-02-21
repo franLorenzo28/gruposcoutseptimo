@@ -45,7 +45,7 @@ const Hero = () => {
         <div className="max-w-4xl">
           <div className="space-y-8">
             {/* Main Title */}
-            <Reveal animationClassName="animate-in fade-in slide-in-from-bottom-4 duration-1000">
+            <Reveal>
               <h1 
                 id="hero-title"
                 className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold text-white leading-tight"
@@ -60,7 +60,7 @@ const Hero = () => {
             </Reveal>
 
             {/* Description */}
-            <Reveal animationClassName="animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-150">
+            <Reveal>
               <p className="text-sm xs:text-base sm:text-lg md:text-xl lg:text-2xl text-gray-100 leading-relaxed max-w-2xl">
                 Una comunidad de aventura, valores y formación integral para
                 jóvenes. Construimos un futuro mejor a través del escultismo.
@@ -68,7 +68,7 @@ const Hero = () => {
             </Reveal>
 
             {/* CTA Buttons */}
-            <Reveal animationClassName="animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-300">
+            <Reveal>
               <div className="flex flex-col sm:flex-row gap-4 pt-2">
                 <Link to="/auth" className="group" onClick={handleJoinClick}>
                   <Button
@@ -97,7 +97,7 @@ const Hero = () => {
               </div>
             </Reveal>
 
-            <Reveal animationClassName="animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-450">
+            <Reveal>
               <div className="flex flex-wrap items-center gap-2">
                 <Button
                   size="sm"
@@ -139,7 +139,7 @@ const Hero = () => {
             </Reveal>
 
             {/* Stats */}
-            <Reveal animationClassName="animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-500">
+            <Reveal>
               <div 
                 className="grid grid-cols-2 sm:grid-cols-3 gap-6 sm:gap-8 md:gap-10 mt-10 sm:mt-14 pt-8 sm:pt-10 border-t border-white/20"
                 role="list"

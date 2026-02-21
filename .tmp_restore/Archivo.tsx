@@ -1,4 +1,4 @@
-import { Card, CardContent } from "@/components/ui/card";
+﻿import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Reveal } from "@/components/Reveal";
@@ -17,9 +17,9 @@ const secciones = [
     to: "/archivo/scoutpedia",
   },
   {
-    title: "Compañía",
+    title: "Compañáa",
     description:
-      "Historia, actividades y documentación específica de la Compañía.",
+      "Historia, actividades y documentación especáfica de la Compañáa.",
     to: "/archivo/compania",
   },
   {
@@ -39,26 +39,6 @@ const Archivo = () => {
           <div className="bg-blob w-72 h-72 bg-muted/30 -top-16 -right-12 float-slow" />
           <div className="bg-blob w-64 h-64 bg-muted/30 -bottom-20 -left-10 drift-slow" />
         </div>
-        <div className="absolute inset-0 pointer-events-none dark:hidden" aria-hidden="true">
-          <div
-            className="absolute inset-0 opacity-[0.08]"
-            style={{
-              backgroundImage:
-                "linear-gradient(to right, rgba(0,0,0,0.35) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.35) 1px, transparent 1px)",
-              backgroundSize: "32px 32px",
-            }}
-          />
-        </div>
-        <div className="absolute inset-0 pointer-events-none hidden dark:block" aria-hidden="true">
-          <div
-            className="absolute inset-0 opacity-[0.08]"
-            style={{
-              backgroundImage:
-                "linear-gradient(to right, rgba(255,255,255,0.35) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.35) 1px, transparent 1px)",
-              backgroundSize: "32px 32px",
-            }}
-          />
-        </div>
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <Reveal className="max-w-5xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 bg-muted/30 backdrop-blur-sm rounded-full mb-4 sm:mb-6 shadow-sm">
@@ -67,30 +47,9 @@ const Archivo = () => {
                 Archivo del Grupo
               </span>
             </div>
-            <div className="inline-block relative mb-4 sm:mb-6">
-              <div className="absolute inset-0 rounded-2xl bg-background/70 backdrop-blur-sm" aria-hidden="true" />
-              <div
-                className="absolute inset-0 rounded-2xl opacity-[0.12] dark:hidden"
-                aria-hidden="true"
-                style={{
-                  backgroundImage:
-                    "linear-gradient(to right, rgba(0,0,0,0.35) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.35) 1px, transparent 1px)",
-                  backgroundSize: "24px 24px",
-                }}
-              />
-              <div
-                className="absolute inset-0 rounded-2xl opacity-[0.12] hidden dark:block"
-                aria-hidden="true"
-                style={{
-                  backgroundImage:
-                    "linear-gradient(to right, rgba(255,255,255,0.35) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.35) 1px, transparent 1px)",
-                  backgroundSize: "24px 24px",
-                }}
-              />
-              <h1 className="relative px-4 py-3 text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold">
-                Archivo del Grupo
-              </h1>
-            </div>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold mb-4 sm:mb-6">
+              Archivo del Grupo
+            </h1>
             <p className="text-sm sm:text-base md:text-lg text-muted-foreground/90 max-w-3xl mx-auto leading-relaxed mb-6">
               Este espacio reúne la información del Grupo Scout Séptimo. La
               idea es conservar el contenido, mejorar su organización y hacerlo
@@ -237,3 +196,6 @@ const Archivo = () => {
 };
 
 export default Archivo;
+
+
+

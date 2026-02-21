@@ -243,20 +243,10 @@ const Navigation = () => {
                       className={cn(
                         "relative px-4 py-2 rounded-md text-sm font-medium transition-all group nav-link-underline",
                         "hover:bg-nav-hover hover:text-nav-hover-foreground",
-                        active ? "text-foreground" : "text-foreground/80",
+                        active ? "text-foreground nav-link-underline--active" : "text-foreground/80",
                       )}
                     >
                       <span>{link.name}</span>
-                      <span
-                        className={cn(
-                          "pointer-events-none absolute left-3 right-3 -bottom-1 h-0.5 rounded-full",
-                          "bg-foreground/40 opacity-0 transition-opacity duration-300",
-                          "group-hover:opacity-100",
-                          active && "opacity-100",
-                          "underline-sweep",
-                        )}
-                        aria-hidden="true"
-                      />
                     </Link>
                   );
                 })}

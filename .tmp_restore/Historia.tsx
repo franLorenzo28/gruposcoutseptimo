@@ -1,4 +1,4 @@
-// Navigation y Footer son globales en App.tsx
+﻿// Navigation y Footer son globales en App.tsx
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -386,3 +386,8 @@ const Historia = () => {
 };
 
 export default Historia;
+
+
+
+
+

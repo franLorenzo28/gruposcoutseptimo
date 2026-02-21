@@ -121,12 +121,9 @@ const About = () => {
   return (
     <>
       {/* Quiénes Somos */}
-      <section
-        id="quienes-somos"
-        className="section-padding bg-background/60 backdrop-blur-sm"
-      >
+      <section id="quienes-somos" className="section-padding bg-background">
         <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-[1.1fr_0.9fr] gap-8 lg:gap-16 items-center max-w-7xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-8 lg:gap-12 items-center max-w-7xl mx-auto">
             <Reveal>
               <div className="space-y-4">
                 <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
@@ -174,139 +171,100 @@ const About = () => {
         </div>
       </section>
 
-      <section className="relative py-16 sm:py-20">
-        <div className="absolute inset-0" aria-hidden="true">
-          <img
-            src={communityImage}
-            alt=""
-            className="h-full w-full object-cover"
-            loading="lazy"
-            decoding="async"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-scout-black/85 via-scout-black/55 to-transparent" />
-        </div>
-        <div className="relative container mx-auto px-4">
-          <Reveal className="max-w-3xl">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4">
-              Vivir el escultismo es vivir en comunidad
-            </h2>
-            <p className="text-base sm:text-lg text-white/80 leading-relaxed mb-6">
-              Aventuras al aire libre, fogones que unen generaciones y proyectos
-              que dejan huella. Cada encuentro suma una historia nueva.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button asChild size="lg" className="w-full sm:w-auto">
-                <Link to="/galeria">Ver fotos del grupo</Link>
-              </Button>
-              <Button asChild size="lg" variant="outline" className="w-full sm:w-auto bg-transparent text-white border-white/50 hover:bg-white/10">
-                <Link to="/eventos">Próximos eventos</Link>
-              </Button>
-            </div>
-          </Reveal>
-        </div>
-      </section>
-
       {/* Ramas y Pilares */}
-      <section id="ramas" className="section-padding bg-background/60 backdrop-blur-sm">
+      <section id="ramas" className="section-padding bg-background">
         <div className="container mx-auto px-4">
-          <div className="grid lg:grid-cols-[0.9fr_1.1fr] gap-8 lg:gap-12 items-start">
-            <Reveal className="text-center lg:text-left">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2 sm:mb-3">
-                Nuestras Unidades
-              </h2>
-              <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto lg:mx-0">
-                Cada etapa del escultismo está diseñada para acompañar el
-                crecimiento y desarrollo de nuestros jóvenes.
-              </p>
-            </Reveal>
+          <Reveal className="text-center mb-6 sm:mb-8">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2 sm:mb-3">
+              Nuestras Unidades
+            </h2>
+            <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto">
+              Cada etapa del escultismo está diseñada para acompañar el
+              crecimiento y desarrollo de nuestros jóvenes
+            </p>
+          </Reveal>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 overflow-visible py-2 sm:py-4 mb-8 sm:mb-12">
-              {branches.map((branch, index) => {
-                const featured = index === 0;
-                return (
-                  <Reveal key={index}>
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Card
-                          className={`card-hover border-none shadow-sm cursor-pointer transition-all duration-300 group ${branch.hoverClass} ${
-                            featured ? "lg:col-span-2 lg:row-span-2 min-h-[200px]" : "min-h-[160px]"
-                          }`}
-                        >
-                          <CardContent className="p-4 flex flex-col items-center justify-center h-full text-center gap-2">
-                            <div className="w-14 h-14 bg-muted/30 group-hover:bg-white/20 rounded-xl flex items-center justify-center transition-all duration-300">
-                              <branch.icon
-                                className={`w-7 h-7 text-current transition-colors duration-300 ${branch.hoverIconClass}`}
-                              />
-                            </div>
-                            <h3 className="text-base font-bold transition-colors duration-300">
-                              {branch.title}
-                            </h3>
-                            <p className="text-xs text-muted-foreground group-hover:text-white line-clamp-2 transition-colors duration-300">
-                              {branch.description}
-                            </p>
-                          </CardContent>
-                        </Card>
-                      </DialogTrigger>
-
-                      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                        <div className="grid md:grid-cols-2 gap-6 items-start">
-                          <div>
-                            <DialogTitle className="text-2xl mb-4">
-                              {branch.title}
-                            </DialogTitle>
-                            <DialogDescription className="space-y-4">
-                              <p className="text-base">{branch.description}</p>
-                              <p>{branch.detailText}</p>
-                              <div className="pt-4 border-t">
-                                <h4 className="font-semibold mb-2">
-                                  ¿Cuándo nos reunimos?
-                                </h4>
-                                <p>
-                                  Consulta los horarios y días de reunión
-                                  específicos de esta rama.
-                                </p>
-                              </div>
-                            </DialogDescription>
-                          </div>
-
-                          <div className="w-full space-y-4">
-                            <img
-                              src={communityImage}
-                              alt={`Foto representativa de la rama ${branch.title}`}
-                              className="w-full rounded-lg object-cover aspect-video shadow-lg"
-                              loading="lazy"
-                              decoding="async"
-                            />
-                            <div className="flex gap-3 justify-end">
-                              <DialogClose asChild>
-                                <Button variant="outline" size="sm">
-                                  Cerrar
-                                </Button>
-                              </DialogClose>
-                              <Button asChild size="sm">
-                                <Link to={`/ramas/${branch.route}`}>
-                                  Más información
-                                </Link>
-                              </Button>
-                            </div>
-                          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 overflow-visible py-2 sm:py-4 mb-8 sm:mb-12">
+            {branches.map((branch, index) => (
+              <Reveal key={index}>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Card
+                      className={`card-hover border-none shadow-sm min-w-[140px] aspect-square cursor-pointer transition-all duration-300 group ${branch.hoverClass}`}
+                    >
+                      <CardContent className="p-4 flex flex-col items-center justify-center h-full text-center gap-2">
+                        <div className="w-14 h-14 bg-muted/30 group-hover:bg-white/20 rounded-xl flex items-center justify-center transition-all duration-300">
+                          <branch.icon
+                            className={`w-7 h-7 text-current transition-colors duration-300 ${branch.hoverIconClass}`}
+                          />
                         </div>
-                      </DialogContent>
-                    </Dialog>
-                  </Reveal>
-                );
-              })}
-            </div>
+                        <h3 className="text-base font-bold transition-colors duration-300">
+                          {branch.title}
+                        </h3>
+                        <p className="text-xs text-muted-foreground group-hover:text-white line-clamp-2 transition-colors duration-300">
+                          {branch.description}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </DialogTrigger>
+
+                  <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                    <div className="grid md:grid-cols-2 gap-6 items-start">
+                      <div>
+                        <DialogTitle className="text-2xl mb-4">
+                          {branch.title}
+                        </DialogTitle>
+                        <DialogDescription className="space-y-4">
+                          <p className="text-base">{branch.description}</p>
+                          <p>{branch.detailText}</p>
+                          <div className="pt-4 border-t">
+                            <h4 className="font-semibold mb-2">
+                              ¿Cuándo nos reunimos?
+                            </h4>
+                            <p>
+                              Consulta los horarios y días de reunión
+                              específicos de esta rama.
+                            </p>
+                          </div>
+                        </DialogDescription>
+                      </div>
+
+                      <div className="w-full space-y-4">
+                        <img
+                          src={communityImage}
+                          alt={`Foto representativa de la rama ${branch.title}`}
+                          className="w-full rounded-lg object-cover aspect-video shadow-lg"
+                          loading="lazy"
+                          decoding="async"
+                        />
+                        <div className="flex gap-3 justify-end">
+                          <DialogClose asChild>
+                            <Button variant="outline" size="sm">
+                              Cerrar
+                            </Button>
+                          </DialogClose>
+                          <Button asChild size="sm">
+                            <Link to={`/ramas/${branch.route}`}>
+                              Más información
+                            </Link>
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </Reveal>
+            ))}
           </div>
 
           {/* Values Grid - Pilares */}
           <Reveal>
-            <div className="bg-background text-foreground border border-border/60 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 lg:p-12 dark:bg-neutral-900 dark:text-white dark:border-white/10">
+            <div className="bg-background/70 backdrop-blur-sm border border-border/60 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 lg:p-12">
               <div id="pilares" className="text-center mb-6 sm:mb-10">
                 <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2 sm:mb-3">
                   Los Pilares del Escultismo
                 </h3>
-                <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto dark:text-white/70">
+                <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto">
                   Cuatro fundamentos que nos guían en la formación integral de
                   nuestros jóvenes
                 </p>
@@ -316,15 +274,15 @@ const About = () => {
               {values.map((value, index) => (
                 <Card
                   key={index}
-                  className="card-hover border border-border/60 shadow-md bg-background/70 backdrop-blur-sm group dark:border-white/10 dark:bg-white/5"
+                  className="card-hover border-none shadow-md bg-card/50 backdrop-blur-sm group"
                 >
                   <CardContent className="p-6 space-y-4">
-                    <div className="w-14 h-14 bg-muted/60 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110 dark:bg-white/10">
-                      <value.icon className="w-7 h-7 text-primary dark:text-accent" />
+                    <div className="w-14 h-14 bg-muted/30 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
+                      <value.icon className="w-7 h-7 text-primary" />
                     </div>
                     <div>
                       <h4 className="text-lg font-bold mb-2">{value.title}</h4>
-                      <p className="text-sm text-muted-foreground leading-relaxed dark:text-white/70">
+                      <p className="text-sm text-muted-foreground leading-relaxed">
                         {value.description}
                       </p>
                     </div>

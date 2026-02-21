@@ -50,19 +50,8 @@ function getGoogleCalendarUrl(event: any) {
   let start = "";
   let end = "";
   const months: { [key: string]: string } = {
-    Enero: "01",
-    Febrero: "02",
-    Marzo: "03",
-    Abril: "04",
-    Mayo: "05",
-    Junio: "06",
-    Julio: "07",
-    Agosto: "08",
-    Setiembre: "09",
-    Septiembre: "09",
-    Octubre: "10",
-    Noviembre: "11",
-    Diciembre: "12",
+    Enero: "01", Febrero: "02", Marzo: "03", Abril: "04", Mayo: "05", Junio: "06",
+    Julio: "07", Agosto: "08", Setiembre: "09", Septiembre: "09", Octubre: "10", Noviembre: "11", Diciembre: "12"
   };
   let match = event.date.match(/(\d{1,2})-(\d{1,2})\s+(\w+),\s*(\d{4})/);
   if (match) {
@@ -96,53 +85,43 @@ function getGoogleCalendarUrl(event: any) {
     `details=${encodeURIComponent("Evento scout organizado por Grupo Séptimo. Más detalles en nuestro sitio web.")}`,
     `location=${encodeURIComponent(event.location)}`,
     `sf=true`,
-    `output=xml`,
+    `output=xml`
   ];
   return `${base}&${params.join("&")}`;
 }
+
 
 const EventCard = ({ event }: { event: any }) => {
   const fechaValida = event.date && event.date !== "A confirmar";
 
   return (
     <Reveal>
-      <Card
+      <Card 
         className="card-hover overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 group h-full flex flex-col bg-background/70 backdrop-blur-sm shadow-sm hover:shadow-lg"
-        role="article"
+        role="article" 
         aria-labelledby={`event-title-${event.id}`}
         tabIndex={0}
       >
         <div className="relative">
           <div className="h-2.5 bg-foreground/10 animate-gradient-x"></div>
           <img
-            src={event.image || "/placeholder.svg"}
+            src={event.image || '/placeholder.svg'}
             alt={`Imagen del evento ${event.title}`}
             loading="lazy"
             className="w-full h-48 object-cover"
-            onError={(e) => {
-              e.currentTarget.src = "/placeholder.svg";
-            }}
+            onError={(e) => { e.currentTarget.src = '/placeholder.svg'; }}
           />
         </div>
         <CardHeader className="space-y-3 p-4">
           <div className="flex items-center justify-between gap-2">
-            <span
-              className="text-xs font-bold text-primary bg-muted/30 px-3 py-1 rounded-full"
-              aria-label="Tipo de evento"
-            >
+            <span className="text-xs font-bold text-primary bg-muted/30 px-3 py-1 rounded-full" aria-label="Tipo de evento">
               {event.type}
             </span>
-            <span
-              className="text-xs bg-muted/30 text-foreground px-3 py-1 rounded-full font-semibold border border-border"
-              aria-label="Estado del evento"
-            >
+            <span className="text-xs bg-muted/30 text-foreground px-3 py-1 rounded-full font-semibold border border-border" aria-label="Estado del evento">
               {event.status}
             </span>
           </div>
-          <CardTitle
-            id={`event-title-${event.id}`}
-            className="text-xl leading-tight group-hover:text-primary transition-colors"
-          >
+          <CardTitle id={`event-title-${event.id}`} className="text-xl leading-tight group-hover:text-primary transition-colors">
             {event.title}
           </CardTitle>
         </CardHeader>
@@ -151,46 +130,31 @@ const EventCard = ({ event }: { event: any }) => {
             <div className="space-y-3 text-sm text-muted-foreground">
               <Tooltip>
                 <TooltipTrigger className="flex items-start text-left w-full group-hover:text-primary transition-colors">
-                  <Calendar
-                    className="w-4 h-4 mr-3 mt-0.5 flex-shrink-0 transition-transform duration-300 group-hover:scale-110"
-                    aria-hidden="true"
-                  />
+                  <Calendar className="w-4 h-4 mr-3 mt-0.5 flex-shrink-0 transition-transform duration-300 group-hover:scale-110" aria-hidden="true" />
                   <span>{event.date}</span>
                 </TooltipTrigger>
-                <TooltipContent>
-                  <p>Fecha del evento</p>
-                </TooltipContent>
+                <TooltipContent><p>Fecha del evento</p></TooltipContent>
               </Tooltip>
               <Tooltip>
                 <TooltipTrigger className="flex items-start text-left w-full group-hover:text-primary transition-colors">
-                  <MapPin
-                    className="w-4 h-4 mr-3 mt-0.5 flex-shrink-0 transition-transform duration-300 group-hover:scale-110"
-                    aria-hidden="true"
-                  />
+                  <MapPin className="w-4 h-4 mr-3 mt-0.5 flex-shrink-0 transition-transform duration-300 group-hover:scale-110" aria-hidden="true" />
                   <span>{event.location}</span>
                 </TooltipTrigger>
-                <TooltipContent>
-                  <p>Ubicación</p>
-                </TooltipContent>
+                <TooltipContent><p>Ubicación</p></TooltipContent>
               </Tooltip>
               <Tooltip>
                 <TooltipTrigger className="flex items-start text-left w-full group-hover:text-primary transition-colors">
-                  <Users
-                    className="w-4 h-4 mr-3 mt-0.5 flex-shrink-0 transition-transform duration-300 group-hover:scale-110"
-                    aria-hidden="true"
-                  />
+                  <Users className="w-4 h-4 mr-3 mt-0.5 flex-shrink-0 transition-transform duration-300 group-hover:scale-110" aria-hidden="true" />
                   <span>{event.participants}</span>
                 </TooltipTrigger>
-                <TooltipContent>
-                  <p>Participantes</p>
-                </TooltipContent>
+                <TooltipContent><p>Participantes</p></TooltipContent>
               </Tooltip>
             </div>
           </TooltipProvider>
         </CardContent>
         {fechaValida && (
           <div className="p-4 pt-2 mt-auto">
-            <hr className="mb-4 border-dashed border-border" />
+             <hr className="mb-4 border-dashed border-border" />
             <a
               href={getGoogleCalendarUrl(event)}
               target="_blank"
@@ -199,11 +163,7 @@ const EventCard = ({ event }: { event: any }) => {
               tabIndex={0}
               className="w-full"
             >
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary hover:bg-muted/20 hover:text-primary"
-              >
+              <Button variant="outline" size="sm" className="w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary hover:bg-muted/20 hover:text-primary">
                 <PlusCircle className="w-4 h-4 mr-2" />
                 Añadir a Google Calendar
               </Button>
@@ -214,6 +174,7 @@ const EventCard = ({ event }: { event: any }) => {
     </Reveal>
   );
 };
+
 
 const Events = () => {
   const [events, setEvents] = useState<any[]>([]);
@@ -230,30 +191,22 @@ const Events = () => {
   }, []);
 
   return (
-    <section
-      aria-label="Eventos scouts"
-      role="region"
-      className="container mx-auto py-8 sm:py-12"
-    >
+    <section aria-label="Eventos scouts" role="region" className="container mx-auto py-8 sm:py-12">
       <div className="mb-8 text-center">
         <Reveal>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold">
-            Próximos Eventos
-          </h2>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold">Próximos Eventos</h2>
           <p className="text-muted-foreground mt-2 text-lg">
-            Mantente al día con nuestras actividades y campamentos.
+            Mantente al dáa con nuestras actividades y campamentos.
           </p>
         </Reveal>
       </div>
-
+      
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
           {[...Array(3)].map((_, i) => (
             <Card key={i} className="bg-muted/50 border-dashed animate-pulse">
               <div className="h-48 bg-muted rounded-t-lg"></div>
-              <CardHeader>
-                <div className="h-6 w-3/4 bg-muted rounded"></div>
-              </CardHeader>
+              <CardHeader><div className="h-6 w-3/4 bg-muted rounded"></div></CardHeader>
               <CardContent className="space-y-3">
                 <div className="h-4 w-full bg-muted rounded"></div>
                 <div className="h-4 w-5/6 bg-muted rounded"></div>
@@ -271,9 +224,7 @@ const Events = () => {
         <Reveal>
           <div className="text-center py-16 px-6 bg-muted/30 rounded-lg border-2 border-dashed border-border">
             <Calendar className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-xl font-semibold">
-              No hay eventos próximos
-            </h3>
+            <h3 className="mt-4 text-xl font-semibold">No hay eventos próximos</h3>
             <p className="mt-2 text-muted-foreground">
               Por favor, vuelve a consultar más tarde para ver nuevas actividades.
             </p>
@@ -288,36 +239,18 @@ const Events = () => {
             <div className="flex flex-col md:flex-row items-center justify-between gap-8">
               <div className="flex-1 space-y-5">
                 <div className="flex items-center">
-                  <Flag
-                    className="w-10 h-10 md:w-12 md:h-12 text-primary mr-4 transition-transform duration-500 group-hover:rotate-[-5deg] group-hover:scale-110 flex-shrink-0"
-                    aria-hidden="true"
-                  />
+                  <Flag className="w-10 h-10 md:w-12 md:h-12 text-primary mr-4 transition-transform duration-500 group-hover:rotate-[-5deg] group-hover:scale-110 flex-shrink-0" aria-hidden="true" />
                   <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold">
                     BAUEN — Evento Scout
                   </h3>
                 </div>
                 <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
-                  El evento más importante del escultismo uruguayo, creado por el Grupo Séptimo en 2004. Un desafío que reúne a grupos scouts de todo el país para compartir experiencias, desarrollar habilidades y fortalecer la hermandad scout.
+                  El evento más importante del escultismo uruguayo, creado por el Grupo Séptimo en 2004. Un desafáo que reúne a grupos scouts de todo el paás para compartir experiencias, desarrollar habilidades y fortalecer la hermandad scout.
                 </p>
                 <div className="flex flex-wrap gap-3">
-                  <Badge
-                    variant="outline"
-                    className="px-4 py-2 text-base bg-muted/30 text-primary border-primary/30 transition-transform hover:scale-105"
-                  >
-                    Creado en 2004
-                  </Badge>
-                  <Badge
-                    variant="secondary"
-                    className="px-4 py-2 text-base bg-muted/40 text-accent-foreground border-accent/30 transition-transform hover:scale-105"
-                  >
-                    +300 Participantes
-                  </Badge>
-                  <Badge
-                    variant="outline"
-                    className="px-4 py-2 text-base bg-muted text-muted-foreground border-muted-foreground/20 transition-transform hover:scale-105"
-                  >
-                    Tradición Nacional
-                  </Badge>
+                  <Badge variant="outline" className="px-4 py-2 text-base bg-muted/30 text-primary border-primary/30 transition-transform hover:scale-105">Creado en 2004</Badge>
+                  <Badge variant="secondary" className="px-4 py-2 text-base bg-muted/40 text-accent-foreground border-accent/30 transition-transform hover:scale-105">+300 Participantes</Badge>
+                  <Badge variant="outline" className="px-4 py-2 text-base bg-muted text-muted-foreground border-muted-foreground/20 transition-transform hover:scale-105">Tradición Nacional</Badge>
                 </div>
               </div>
               <Link to="/bauen" className="group/button w-full md:w-auto">
@@ -328,10 +261,7 @@ const Events = () => {
                   aria-label="Conoce más sobre BAUEN"
                 >
                   Conoce más sobre BAUEN
-                  <Flag
-                    className="ml-2.5 w-5 h-5 transition-transform duration-300 group-hover/button:translate-x-1"
-                    aria-hidden="true"
-                  />
+                  <Flag className="ml-2.5 w-5 h-5 transition-transform duration-300 group-hover/button:translate-x-1" aria-hidden="true" />
                 </Button>
               </Link>
             </div>

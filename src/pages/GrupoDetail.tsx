@@ -419,7 +419,7 @@ export default function GrupoDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background/60 backdrop-blur-sm">
         {/* Navigation global en App.tsx */}
         <div className="h-20"></div>
         <div className="flex items-center justify-center py-20">
@@ -434,7 +434,7 @@ export default function GrupoDetail() {
   const canManageMembers = userRole === "owner" || userRole === "admin";
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background/60 backdrop-blur-sm">
       {/* Navigation global en App.tsx */}
       <div className="h-16 sm:h-20"></div>
 

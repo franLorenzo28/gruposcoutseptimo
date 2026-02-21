@@ -2,14 +2,14 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Calendar, Flag } from "lucide-react";
+import { Calendar, Sparkles, Flag } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
 
 const Eventos = () => {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-background/60 backdrop-blur-sm">
       {/* Hero Section */}
-      <section className="relative overflow-hidden pt-16 sm:pt-20 md:pt-24 pb-10 sm:pb-14 bg-background/60 backdrop-blur-sm">
+      <section className="relative overflow-hidden pt-16 sm:pt-20 md:pt-24 pb-8 sm:pb-12 border-b border-muted/30">
         <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
           <div className="bg-blob w-72 h-72 bg-muted/30 -top-16 -right-12 float-slow" />
           <div className="bg-blob w-64 h-64 bg-muted/30 -bottom-20 -left-12 drift-slow" />
@@ -59,14 +59,13 @@ const Eventos = () => {
         </div>
       </section>
 
-
       {/* Cartelera de eventos */}
-      <section id="cartelera" className="container mx-auto px-2 sm:px-4 lg:px-8 py-10 sm:py-14">
+      <section id="cartelera" className="container mx-auto px-2 sm:px-4 lg:px-8 py-8">
         <Events />
       </section>
 
       {/* Sección destacada BAUEN */}
-      <section id="bauen" className="py-12 sm:py-16 bg-background/60 backdrop-blur-sm">
+      <section id="bauen" className="py-10 sm:py-14 bg-background/60 backdrop-blur-sm">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-5xl mx-auto">
             <Card className="card-hover border-2 border-primary/20 shadow-2xl bg-background/70 backdrop-blur-sm overflow-hidden">

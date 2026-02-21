@@ -63,7 +63,7 @@ const VerificarEmail = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background/60 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="max-w-md w-full">
         <div className="bg-card border rounded-lg p-8 shadow-lg">
           {/* Icon */}

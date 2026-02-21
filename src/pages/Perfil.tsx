@@ -627,7 +627,7 @@ const Perfil = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background/60 backdrop-blur-sm">
         {/* Navigation global en App.tsx */}
         <div className="h-20"></div>
         <div className="flex items-center justify-center py-20">
@@ -638,7 +638,7 @@ const Perfil = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background/60 backdrop-blur-sm">
       {/* Navigation global en App.tsx */}
       <div className="h-20"></div>
 

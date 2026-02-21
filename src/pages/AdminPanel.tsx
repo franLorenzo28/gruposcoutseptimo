@@ -28,7 +28,7 @@ export default function AdminPanel() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background/60 backdrop-blur-sm">
       <Dashboard />
     </div>
   );

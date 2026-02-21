@@ -84,13 +84,13 @@ All colors MUST be HSL.
 
   .dark {
     /* Comfortable dark palette */
-    --background: 0 0% 9%;
+    --background: 222 20% 8%;
     --foreground: 0 0% 98%;
 
-    --card: 0 0% 11%;
+    --card: 222 18% 11%;
     --card-foreground: 0 0% 98%;
 
-    --popover: 0 0% 11%;
+    --popover: 222 18% 11%;
     --popover-foreground: 0 0% 98%;
 
     --primary: 0 100% 50%;
@@ -99,8 +99,8 @@ All colors MUST be HSL.
     --secondary: 45 85% 55%;
     --secondary-foreground: 0 0% 10%;
 
-    --muted: 0 0% 14%;
-    --muted-foreground: 0 0% 68%;
+    --muted: 220 16% 16%;
+    --muted-foreground: 0 0% 70%;
 
     --accent: 45 95% 65%;
     --accent-foreground: 0 0% 95%;
@@ -114,17 +114,17 @@ All colors MUST be HSL.
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
 
-  --border: 0 0% 18%;
-  --input: 0 0% 18%;
+  --border: 220 16% 18%;
+  --input: 220 16% 18%;
     --ring: 0 100% 50%;
     
-    --sidebar-background: 0 0% 9%;
+    --sidebar-background: 222 20% 8%;
     --sidebar-foreground: 0 0% 95%;
     --sidebar-primary: 0 100% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 14%;
+    --sidebar-accent: 220 16% 16%;
     --sidebar-accent-foreground: 0 0% 95%;
-    --sidebar-border: 0 0% 18%;
+    --sidebar-border: 220 16% 18%;
     --sidebar-ring: 0 100% 50%;
   }
 }
@@ -142,6 +142,11 @@ All colors MUST be HSL.
       transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease;
     }
   }
+
+  .dark body {
+    background-color: hsl(var(--background));
+    background-attachment: fixed;
+  }
   
   h1, h2, h3, h4, h5, h6 {
     @apply font-bold;
@@ -155,6 +160,28 @@ All colors MUST be HSL.
 }
 
 @layer components {
+  .bg-background\/60,
+  .bg-background\/70,
+  .bg-background\/80,
+  .bg-background\/85,
+  .bg-background\/90 {
+    background-image:
+      linear-gradient(hsla(0 0% 0% / 0.08) 1px, transparent 1px),
+      linear-gradient(90deg, hsla(0 0% 0% / 0.08) 1px, transparent 1px);
+    background-size: 32px 32px, 32px 32px;
+  }
+
+  .dark .bg-background\/60,
+  .dark .bg-background\/70,
+  .dark .bg-background\/80,
+  .dark .bg-background\/85,
+  .dark .bg-background\/90 {
+    background-image:
+      linear-gradient(hsla(0 0% 100% / 0.08) 1px, transparent 1px),
+      linear-gradient(90deg, hsla(0 0% 100% / 0.08) 1px, transparent 1px);
+    background-size: 32px 32px, 32px 32px;
+  }
+
   .btn-hero {
     @apply bg-primary text-primary-foreground hover:opacity-90 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold px-8 py-3 rounded-lg;
   }
@@ -168,6 +195,10 @@ All colors MUST be HSL.
     will-change: transform, box-shadow;
   }
 
+  .card-hover:hover {
+    transform: translateY(-5px);
+  }
+
   .card-hover img {
     transition: transform 700ms ease, filter 700ms ease;
     will-change: transform;
@@ -176,12 +207,6 @@ All colors MUST be HSL.
   .card-hover:hover img {
     transform: scale(1.03);
     filter: saturate(1.02);
-  }
-  
-  @media (min-width: 768px) {
-    .card-hover {
-      @apply hover:-translate-y-2;
-    }
   }
   
   .section-padding {
@@ -203,6 +228,10 @@ All colors MUST be HSL.
 
   .nav-link-underline:hover::after,
   .nav-link-underline:focus-visible::after {
+    transform: scaleX(1);
+  }
+
+  .nav-link-underline--active::after {
     transform: scaleX(1);
   }
 }
@@ -272,6 +301,11 @@ All colors MUST be HSL.
     100% { background-position: 0% 0%; opacity: 0.5; }
   }
 
+  @keyframes revealUp {
+    0% { opacity: 0; transform: translate3d(0, 40px, 0); }
+    100% { opacity: 1; transform: translate3d(0, 0, 0); }
+  }
+
   .bg-blob {
     position: absolute;
     border-radius: 9999px;
@@ -313,6 +347,10 @@ All colors MUST be HSL.
     background-image: linear-gradient(90deg, transparent 0%, hsl(var(--foreground) / 0.6) 50%, transparent 100%);
     background-size: 200% 100%;
     animation: underlineSweep 2.8s ease-in-out infinite;
+  }
+
+  .reveal-up {
+    animation: revealUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
   .page-enter {
@@ -455,6 +493,7 @@ All colors MUST be HSL.
     .page-animate h4,
     .page-animate ul li,
     .page-animate ol li,
+    .reveal-up,
     .page-animate img {
       animation: none !important;
     }

@@ -136,7 +136,7 @@ const AmLagerfeuer = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background/60 backdrop-blur-sm">
       {/* Hero */}
       <section className="pt-24 sm:pt-28 md:pt-32 pb-12 sm:pb-16 bg-background/60 backdrop-blur-sm">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">

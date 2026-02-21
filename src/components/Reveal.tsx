@@ -24,7 +24,7 @@ type RevealProps = {
 export const Reveal: React.FC<RevealProps> = ({
   children,
   className,
-  animationClassName = "animate-in fade-in slide-in-from-bottom-2 duration-700",
+  animationClassName = "reveal-up",
   once = true,
   rootMargin = "0px 0px -10% 0px",
   ...rest
@@ -73,7 +73,7 @@ export const Reveal: React.FC<RevealProps> = ({
       ref={ref}
       className={[
         "will-change-transform",
-        visible ? animationClassName : "opacity-0 translate-y-2",
+        visible ? animationClassName : "opacity-0 translate-y-10",
         className ?? "",
       ].join(" ")}
       {...rest}
