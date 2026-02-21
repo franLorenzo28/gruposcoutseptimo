@@ -16,8 +16,8 @@ import {
 const sampleEvents = [
   {
     id: 1,
-    title: "Campamento de Verano 2024",
-    date: "A confirmar, 2026",
+    title: "Campamento de Verano 2027",
+    date: "A confirmar, 2027",
     location: "Parque Nacional Santa Teresa",
     participants: "Todas las ramas",
     type: "Campamento",

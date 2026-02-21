@@ -31,7 +31,7 @@ export default function RouteTransition({
         // Sutil fade/slide
         reduceMotion
           ? "opacity-100 translate-y-0"
-          : "animate-in fade-in slide-in-from-bottom-1 duration-300 ease-out",
+          : "page-enter page-animate",
         className,
       )}
     >

@@ -241,7 +241,7 @@ const Navigation = () => {
                       key={link.path}
                       to={link.path}
                       className={cn(
-                        "relative px-4 py-2 rounded-md text-sm font-medium transition-all group",
+                        "relative px-4 py-2 rounded-md text-sm font-medium transition-all group nav-link-underline",
                         "hover:bg-nav-hover hover:text-nav-hover-foreground",
                         active ? "text-foreground" : "text-foreground/80",
                       )}

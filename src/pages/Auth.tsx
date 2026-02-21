@@ -54,8 +54,10 @@ const Auth = () => {
   const [processingOAuth, setProcessingOAuth] = useState(false);
   const [googleLoginAllowed, setGoogleLoginAllowed] = useState(false);
   const [checkingEmail, setCheckingEmail] = useState(false);
+  const [authTab, setAuthTab] = useState<"login" | "signup">("login");
   const navigate = useNavigate();
   const { toast } = useToast();
+  const isLogin = authTab === "login";
 
   useEffect(() => {
     // Detectar si venimos de un callback de OAuth (tiene hash fragment)
@@ -395,9 +397,12 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="min-h-[100svh] flex items-start sm:items-center justify-center px-4 pt-8 pb-10 sm:py-8 bg-gradient-to-br from-red-700 via-red-600 to-orange-400 dark:from-red-950 dark:via-red-900 dark:to-orange-800 relative overflow-hidden text-foreground">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.35),transparent_55%)] dark:bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_55%)]" />
+      <div className="absolute -top-20 -right-16 h-64 w-64 rounded-full bg-white/20 dark:bg-white/10 blur-3xl" />
+      <div className="absolute -bottom-24 -left-20 h-72 w-72 rounded-full bg-white/15 dark:bg-white/5 blur-3xl" />
       {processingOAuth ? (
-        <Card className="w-full max-w-md">
+        <Card className="w-full max-w-md border border-white/30 dark:border-white/10 bg-background/85 dark:bg-background/80 backdrop-blur-xl shadow-2xl">
           <CardContent className="pt-6">
             <div className="flex flex-col items-center justify-center py-8 space-y-4">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
@@ -406,14 +411,30 @@ const Auth = () => {
           </CardContent>
         </Card>
       ) : (
-        <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
+        <Card className="w-full max-w-md border border-white/30 dark:border-white/10 bg-background/85 dark:bg-background/80 backdrop-blur-xl shadow-2xl relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none">
+          <div
+            className={
+              isLogin
+                ? "absolute inset-0 bg-gradient-to-br from-red-500/25 via-red-500/10 to-transparent"
+                : "absolute inset-0 bg-gradient-to-br from-yellow-400/20 via-orange-400/10 to-transparent"
+            }
+          />
+          <div
+            className={
+              isLogin
+                ? "absolute top-0 left-0 right-0 h-1.5 bg-red-600/80"
+                : "absolute top-0 left-0 right-0 h-1.5 bg-yellow-400/80"
+            }
+          />
+        </div>
+        <CardHeader className="text-center text-foreground relative z-10">
           <div className="flex justify-center mb-4">
             <div className="relative w-24 h-24">
               <img
                 src={logoImage}
                 alt="Grupo Scout Séptimo"
-                className="w-full h-full object-contain"
+                className="w-full h-full object-contain drop-shadow-sm"
               />
             </div>
           </div>
@@ -422,14 +443,22 @@ const Auth = () => {
           </CardTitle>
           <CardDescription>Únete a nuestra comunidad scout</CardDescription>
         </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="login" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Iniciar Sesión</TabsTrigger>
-              <TabsTrigger value="signup">Registrarse</TabsTrigger>
+        <CardContent className="relative z-10">
+          <Tabs
+            value={authTab}
+            onValueChange={(value) => setAuthTab(value as "login" | "signup")}
+            className="w-full"
+          >
+            <TabsList className="grid w-full grid-cols-2 bg-background/80 dark:bg-background/70 backdrop-blur-md border border-white/40 dark:border-white/10">
+              <TabsTrigger value="login" className="transition-all data-[state=active]:bg-background/95 data-[state=active]:shadow-sm">
+                Iniciar Sesión
+              </TabsTrigger>
+              <TabsTrigger value="signup" className="transition-all data-[state=active]:bg-background/95 data-[state=active]:shadow-sm">
+                Registrarse
+              </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="login">
+            <TabsContent value="login" className="data-[state=active]:animate-in data-[state=active]:fade-in data-[state=active]:slide-in-from-bottom-2 data-[state=active]:duration-500">
               <form onSubmit={handleSignIn} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="login-email">Correo electrónico</Label>
@@ -480,7 +509,7 @@ const Auth = () => {
                     </button>
                   </div>
                 </div>
-                <Button type="submit" className="w-full" disabled={loading}>
+                <Button type="submit" className="w-full shadow-md" disabled={loading}>
                   {loading ? "Iniciando sesión..." : "Iniciar Sesión"}
                 </Button>
 
@@ -491,7 +520,7 @@ const Auth = () => {
                         <span className="w-full border-t" />
                       </div>
                       <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-background px-2 text-muted-foreground">
+                        <span className="bg-background/90 px-2 text-muted-foreground">
                           O continúa con
                         </span>
                       </div>
@@ -499,7 +528,7 @@ const Auth = () => {
                     <Button
                       type="button"
                       variant="outline"
-                      className="w-full"
+                      className="w-full bg-background/90 hover:bg-background"
                       onClick={() => handleGoogleSignIn("login")}
                       disabled={loading}
                     >
@@ -536,7 +565,7 @@ const Auth = () => {
               </form>
             </TabsContent>
 
-            <TabsContent value="signup">
+            <TabsContent value="signup" className="data-[state=active]:animate-in data-[state=active]:fade-in data-[state=active]:slide-in-from-bottom-2 data-[state=active]:duration-500">
               <form onSubmit={handleSignUp} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="signup-nombre">Nombre completo</Label>
@@ -613,7 +642,7 @@ const Auth = () => {
                     </button>
                   </div>
                 </div>
-                <Button type="submit" className="w-full" disabled={loading}>
+                <Button type="submit" className="w-full shadow-md" disabled={loading}>
                   {loading ? "Registrando..." : "Registrarse"}
                 </Button>
 
@@ -624,7 +653,7 @@ const Auth = () => {
                         <span className="w-full border-t" />
                       </div>
                       <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-background px-2 text-muted-foreground">
+                        <span className="bg-background/90 px-2 text-muted-foreground">
                           O continúa con
                         </span>
                       </div>
@@ -632,7 +661,7 @@ const Auth = () => {
                     <Button
                       type="button"
                       variant="outline"
-                      className="w-full"
+                      className="w-full bg-background/90 hover:bg-background"
                       onClick={() => handleGoogleSignIn("signup")}
                       disabled={loading}
                     >
