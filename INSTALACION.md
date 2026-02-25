@@ -6,27 +6,27 @@ Este archivo contiene las instrucciones para instalar y ejecutar el proyecto en 
 
 Antes de comenzar, asegurate de tener instalado:
 
-1. **Node.js** (se requiere específicamente **20.17.0**) 
+1. **Node.js** (se requiere específicamente **20.20.0**) 
    - Recomendado: usar `nvm` para instalar la versión exacta:
      ```bash
      # instalar nvm (si no lo tenés)
      curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.4/install.sh | bash
      source ~/.nvm/nvm.sh
 
-     # instalar y usar Node 20.17.0
-     nvm install 20.17.0
-     nvm use 20.17.0
-     nvm alias default 20.17.0
+     # instalar y usar Node 20.20.0
+     nvm install 20.20.0
+     nvm use 20.20.0
+     nvm alias default 20.20.0
      ```
    - Alternativa con asdf:
      ```bash
      asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git
-     asdf install nodejs 20.17.0
-     asdf global nodejs 20.17.0
+     asdf install nodejs 20.20.0
+     asdf global nodejs 20.20.0
      ```
-   - Verificar instalacion: `node --version` (`v20.17.0`)
+   - Verificar instalacion: `node --version` (`v20.20.0`)
 
-   - Nota: También agregamos un archivo `.nvmrc` que define la versión del proyecto. Si usás nvm podés simplemente correr `nvm use` dentro del proyecto para seleccionar 20.17.0.
+   - Nota: También agregamos un archivo `.nvmrc` que define la versión del proyecto. Si usás nvm podés simplemente correr `nvm use` dentro del proyecto para seleccionar 20.20.0.
 
 2. **Git** (opcional, pero recomendado)
    - Descargar desde: https://git-scm.com/
@@ -63,7 +63,7 @@ C:\Users\TuUsuario\Documents\lovable-scout-canvas
 > powershell -ExecutionPolicy Bypass -File .\scripts\setup.ps1
 > ```
 >
-> El script intentará instalar nvm y Node 20.17.0 (en Linux/Ubuntu) y las dependencias del proyecto, configurará Husky y ejecutará checks básicos.
+> El script intentará instalar nvm y Node 20.20.0 (en Linux/Ubuntu) y las dependencias del proyecto, configurará Husky y ejecutará checks básicos.
 ### 3. Instalar dependencias del frontend
 
 ```powershell

@@ -1,6 +1,14 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-npx --no -- lint-staged
-npx --no -- lint-staged
+if ! command -v node >/dev/null 2>&1; then
+	export PATH="/c/nvm4w/nodejs:/c/Program Files/nodejs:$PATH"
+fi
+
+if ! command -v node >/dev/null 2>&1; then
+	echo "❌ Node no encontrado en PATH para husky (Git Bash)."
+	echo "   Abre una terminal nueva o verifica nvm-windows (nvm use 20.20.0)."
+	exit 127
+fi
+
 npx --no -- lint-staged
