@@ -230,13 +230,5 @@ Este proyecto está bajo la licencia MIT.
 
 ---
 
-## 🔗 Links Útiles
-
-- **Lovable Project**: https://lovable.dev/projects/2419ba1f-39c6-4ef7-a98a-608160a4d0b8
-- **Backend README**: [server/README.md](server/README.md)
-  
-> Documentación Docker legacy removida. Usa Git histórico si necesitas esos archivos.
-
----
 
 **Desarrollado con ❤️ para Grupo Scout**
