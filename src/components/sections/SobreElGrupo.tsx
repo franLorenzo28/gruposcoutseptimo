@@ -53,8 +53,8 @@ const About = () => {
       description:
         "Niños de 7 a 10 años, aprenden jugando y descubriendo el mundo scout",
       route: "manada",
-      hoverClass: "hover:bg-[#FEB21A] hover:text-white",
-      iconHoverBgClass: "group-hover:bg-[#FEB21A]",
+      hoverClass: "hover:bg-[#FEB21A] hover:text-white dark:hover:bg-[#FEB21A] dark:hover:text-white",
+      iconHoverBgClass: "group-hover:bg-[#FEB21A] dark:group-hover:bg-[#FEB21A]",
       hoverIconClass: "group-hover:text-white",
       detailText:
         "En la Manada los niños descubren el mundo a través del juego, canciones, exploraciones y desafíos simples. Inspirados en El Libro de la Selva, cada encuentro despierta su curiosidad y amor por la naturaleza, aprendiendo valores como la amistad, el respeto y la ayuda mutua en un ambiente divertido y seguro.",
@@ -65,8 +65,8 @@ const About = () => {
       description:
         "Jóvenes de 11 a 14 años, desarrollan habilidades y trabajo en equipo",
       route: "tropa",
-      hoverClass: "hover:bg-[#344F1F] hover:text-white",
-      iconHoverBgClass: "group-hover:bg-[#344F1F]",
+      hoverClass: "hover:bg-[#344F1F] hover:text-white dark:hover:bg-[#344F1F] dark:hover:text-white",
+      iconHoverBgClass: "group-hover:bg-[#344F1F] dark:group-hover:bg-[#344F1F]",
       hoverIconClass: "group-hover:text-white",
       detailText:
         "La Tropa es pura aventura: patrullas, construcciones, campamentos y proyectos donde aprenden a trabajar en equipo, tomar decisiones y asumir responsabilidades. Cada actividad es una oportunidad para vivir la Ley y la Promesa Scout, construyendo carácter y compromiso bajo las estrellas.",
@@ -77,8 +77,8 @@ const About = () => {
       description:
         "Adolescentes de 15 a 17 años, lideran proyectos y asumen responsabilidades",
       route: "pioneros",
-      hoverClass: "hover:bg-[#134686] hover:text-white",
-      iconHoverBgClass: "group-hover:bg-[#134686]",
+      hoverClass: "hover:bg-[#134686] hover:text-white dark:hover:bg-[#134686] dark:hover:text-white",
+      iconHoverBgClass: "group-hover:bg-[#134686] dark:group-hover:bg-[#134686]",
       hoverIconClass: "group-hover:text-white",
       detailText:
         "Los Pioneros ponen manos a la obra organizando actividades solidarias, proyectos comunitarios y campamentos de servicio. Con espíritu crítico y creativo, transforman su entorno y dejan huella positiva en su grupo y comunidad, comprometiéndose con un mundo más justo y sostenible.",
@@ -89,8 +89,8 @@ const About = () => {
       description:
         "Jóvenes adultos de 18 a 21 años, servicio a la comunidad y liderazgo",
       route: "rovers",
-      hoverClass: "hover:bg-[#DD0303] hover:text-white",
-      iconHoverBgClass: "group-hover:bg-[#DD0303]",
+      hoverClass: "hover:bg-[#DD0303] hover:text-white dark:hover:bg-[#DD0303] dark:hover:text-white",
+      iconHoverBgClass: "group-hover:bg-[#DD0303] dark:group-hover:bg-[#DD0303]",
       hoverIconClass: "group-hover:text-white",
       detailText:
         "Los Rovers emprenden su propio camino de crecimiento personal a través de proyectos de servicio, viajes y experiencias que consolidan su identidad como ciudadanos activos. Aprenden a vivir con sentido, con los valores scouts como brújula y el corazón dispuesto a servir donde haga falta.",
@@ -101,8 +101,8 @@ const About = () => {
       description:
         "Educadores scouts que guían y acompañan el desarrollo de las ramas",
       route: "staff",
-      hoverClass: "hover:bg-violet-700 hover:text-white",
-      iconHoverBgClass: "group-hover:bg-violet-700",
+      hoverClass: "hover:bg-violet-700 hover:text-white dark:hover:bg-violet-700 dark:hover:text-white",
+      iconHoverBgClass: "group-hover:bg-violet-700 dark:group-hover:bg-violet-700",
       hoverIconClass: "group-hover:text-white",
       detailText:
         "Los Educadores Scouts son voluntarios que dedican su tiempo a planificar actividades, capacitarse y acompañar el crecimiento de cada niño y joven. Desde la vocación y el compromiso, son testimonio vivo de los valores scouts, formando personas libres, responsables y felices.",
@@ -112,8 +112,8 @@ const About = () => {
       title: "Comité de Padres",
       description: "Padres y colaboradores que apoyan la gestión del grupo",
       route: "comite",
-      hoverClass: "hover:bg-zinc-600 hover:text-white",
-      iconHoverBgClass: "group-hover:bg-zinc-600",
+      hoverClass: "hover:bg-zinc-600 hover:text-white dark:hover:bg-zinc-600 dark:hover:text-white",
+      iconHoverBgClass: "group-hover:bg-zinc-600 dark:group-hover:bg-zinc-600",
       hoverIconClass: "group-hover:text-white",
       detailText:
         "El Comité de Padres organiza eventos, gestiona recursos, mantiene el local y colabora en cada campamento y actividad importante. Su participación fortalece la comunidad scout y demuestra que cuando las familias se comprometen, los sueños de los chicos se hacen realidad.",
@@ -334,12 +334,12 @@ const About = () => {
 
           {/* Values Grid - Pilares */}
           <Reveal>
-            <div className="bg-background text-foreground border border-border/60 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 lg:p-12 dark:bg-neutral-900 dark:text-white dark:border-white/10">
+            <div className="bg-background text-foreground border border-border/60 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 lg:p-12">
               <div id="pilares" className="text-center mb-6 sm:mb-10">
                 <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2 sm:mb-3">
                   Los Pilares del Escultismo
                 </h3>
-                <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto dark:text-white/70">
+                <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto">
                   Cuatro fundamentos que nos guían en la formación integral de
                   nuestros jóvenes
                 </p>
@@ -349,15 +349,12 @@ const About = () => {
               {values.map((value, index) => (
                 <Card
                   key={index}
-                  className="card-hover border border-border/60 shadow-md bg-background/70 backdrop-blur-sm group dark:border-white/10 dark:bg-white/5"
+                  className="card-hover border border-border/60 shadow-md bg-background/70 backdrop-blur-sm group"
                 >
-                  <CardContent className="p-6 space-y-4">
-                    <div className="w-14 h-14 bg-muted/60 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110 dark:bg-white/10">
-                      <value.icon className="w-7 h-7 text-primary dark:text-accent" />
-                    </div>
+                  <CardContent className="p-6 space-y-2">
                     <div>
                       <h4 className="text-lg font-bold mb-2">{value.title}</h4>
-                      <p className="text-sm text-muted-foreground leading-relaxed dark:text-white/70">
+                      <p className="text-sm text-muted-foreground leading-relaxed">
                         {value.description}
                       </p>
                     </div>

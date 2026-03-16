@@ -13,7 +13,7 @@ const FooterLink = ({ to, children, external = false }: FooterLinkProps) => {
   const scrollTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
 
   const className =
-    "text-sm hover:text-primary transition-all duration-300 inline-flex items-center group focus:outline-none focus-visible:ring-2 focus-visible:ring-primary";
+    "text-sm text-foreground/80 hover:text-primary transition-all duration-300 inline-flex items-center group focus:outline-none focus-visible:ring-2 focus-visible:ring-primary";
 
   if (external) {
     return (
@@ -52,7 +52,7 @@ const SocialLink = ({ href, icon, label }: SocialLinkProps) => (
     href={href}
     target="_blank"
     rel="noopener noreferrer"
-    className="w-10 h-10 bg-white/10 hover:bg-primary rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 hover:shadow-lg hover:shadow-primary/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+    className="w-10 h-10 text-foreground/80 bg-muted/60 hover:bg-primary hover:text-primary-foreground rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 hover:shadow-lg hover:shadow-primary/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
     aria-label={label}
     tabIndex={0}
   >
@@ -63,7 +63,7 @@ const SocialLink = ({ href, icon, label }: SocialLinkProps) => (
 const FooterNew = () => {
   const currentYear = new Date().getFullYear();
   return (
-    <footer role="contentinfo" aria-label="Pie de página Grupo Scout Séptimo" className="bg-background/80 backdrop-blur-sm text-gray-300 border-t border-white/5">
+    <footer role="contentinfo" aria-label="Pie de página Grupo Scout Séptimo" className="bg-background/80 backdrop-blur-sm text-foreground/80 border-t border-border/60">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
         {/* Main Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-12 mb-8">
@@ -76,14 +76,14 @@ const FooterNew = () => {
                 className="w-12 h-12 object-contain transition-transform duration-300 hover:scale-110"
               />
               <div>
-                <div className="text-xl font-bold text-white">
+                <div className="text-xl font-bold text-foreground">
                   Grupo Scout Séptimo
                 </div>
-                <div className="text-sm text-gray-400">de Montevideo</div>
+                <div className="text-sm text-muted-foreground">de Montevideo</div>
               </div>
             </div>
 
-            <p className="text-base text-gray-400 mb-6 leading-relaxed max-w-md">
+            <p className="text-base text-muted-foreground mb-6 leading-relaxed max-w-md">
               Formando personas comprometidas con nuestra sociedad desde 1964. Una comunidad de
               aventura, valores y crecimiento personal.
             </p>
@@ -110,7 +110,7 @@ const FooterNew = () => {
 
           {/* Quick Links */}
           <div className="lg:col-span-3">
-            <h3 className="text-white font-bold mb-4 text-lg">
+            <h3 className="text-foreground font-bold mb-4 text-lg">
               Enlaces Rápidos
             </h3>
             <ul className="space-y-2.5">
@@ -118,7 +118,7 @@ const FooterNew = () => {
                 <FooterLink to="/">Inicio</FooterLink>
               </li>
               <li>
-                <FooterLink to="/linea-temporal">Lánea Temporal</FooterLink>
+                <FooterLink to="/linea-temporal">Línea Temporal</FooterLink>
               </li>
               <li>
                 <FooterLink to="/historia">Historia</FooterLink>
@@ -130,7 +130,7 @@ const FooterNew = () => {
                 <FooterLink to="/eventos">Eventos</FooterLink>
               </li>
               <li>
-                <FooterLink to="/galeria">Galeráa</FooterLink>
+                <FooterLink to="/galeria">Galería</FooterLink>
               </li>
               <li>
                 <FooterLink to="/contacto">Contacto</FooterLink>
@@ -140,7 +140,7 @@ const FooterNew = () => {
 
           {/* Ramas */}
           <div className="lg:col-span-2">
-            <h3 className="text-white font-bold mb-4 text-lg">Ramas</h3>
+            <h3 className="text-foreground font-bold mb-4 text-lg">Ramas</h3>
             <ul className="space-y-2.5">
               <li>
                 <FooterLink to="/ramas/manada">Manada</FooterLink>
@@ -165,7 +165,7 @@ const FooterNew = () => {
 
           {/* Contact */}
           <div className="lg:col-span-2">
-            <h3 className="text-white font-bold mb-4 text-lg">Contacto</h3>
+            <h3 className="text-foreground font-bold mb-4 text-lg">Contacto</h3>
             <ul className="space-y-3">
               <li className="flex items-start group">
                 <MapPin className="w-5 h-5 mr-2 mt-0.5 text-primary flex-shrink-0 transition-transform duration-300 group-hover:scale-110" />
@@ -186,7 +186,7 @@ const FooterNew = () => {
                 <Mail className="w-5 h-5 mr-2 text-primary flex-shrink-0 transition-transform duration-300 group-hover:-translate-y-1" />
                 <a
                   href="mailto:scoutsseptimo7@gmail.com"
-                  className="text-sm hover:text-primary transition-colors break-all"
+                  className="text-xs sm:text-sm whitespace-nowrap hover:text-primary transition-colors"
                 >
                   scoutsseptimo7@gmail.com
                 </a>
@@ -196,19 +196,19 @@ const FooterNew = () => {
         </div>
 
         {/* Divider */}
-        <div className="border-t border-gray-700 mb-8"></div>
+        <div className="border-t border-border/70 mb-8"></div>
 
         {/* Bottom Bar */}
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-sm text-gray-400 text-center md:text-left flex items-center gap-1.5">
+          <p className="text-sm text-muted-foreground text-center md:text-left flex items-center gap-1.5">
             © {currentYear} Grupo Scout Séptimo de Montevideo.
             <span className="hidden sm:inline">Hecho con</span>
             <Heart className="w-4 h-4 text-primary inline-block fill-current animate-pulse" />
           </p>
 
           <div className="flex flex-wrap justify-center gap-6 text-sm">
-            <button className="hover:text-primary transition-colors duration-300 hover:underline underline-offset-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary" tabIndex={0} aria-label="Polática de Privacidad">
-              Polática de Privacidad
+            <button className="hover:text-primary transition-colors duration-300 hover:underline underline-offset-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary" tabIndex={0} aria-label="Política de Privacidad">
+              Política de Privacidad
             </button>
             <button className="hover:text-primary transition-colors duration-300 hover:underline underline-offset-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary" tabIndex={0} aria-label="Términos y Condiciones">
               Términos y Condiciones
