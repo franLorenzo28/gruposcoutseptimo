@@ -262,7 +262,7 @@ const About = () => {
                       <Dialog>
                         <DialogTrigger asChild>
                           <Card
-                            className={`card-hover border-none shadow-sm cursor-pointer transition-all duration-300 group h-[190px] sm:h-[180px] w-[150px] sm:w-[160px] lg:w-[168px] ${branch.hoverClass}`}
+                            className={`card-hover border-none shadow-sm cursor-pointer transition-all duration-300 group h-[190px] sm:h-[180px] w-[46%] max-w-[168px] sm:w-[160px] lg:w-[168px] ${branch.hoverClass}`}
                           >
                             <CardContent className="p-4 sm:p-5 flex flex-col items-center justify-center h-full text-center gap-2.5">
                               <div className={`w-14 h-14 bg-muted/30 rounded-xl flex items-center justify-center transition-all duration-300 ${branch.iconHoverBgClass}`}>

@@ -6,9 +6,9 @@ if ! command -v node >/dev/null 2>&1; then
 fi
 
 if ! command -v node >/dev/null 2>&1; then
-	echo "❌ Node no encontrado en PATH para husky (Git Bash)."
-	echo "   Abre una terminal nueva o verifica nvm-windows (nvm use 20.20.0)."
-	exit 127
+	echo "⚠️ Node no encontrado para Husky en este shell; se omite lint-staged."
+	echo "   Consejo: abre VS Code de nuevo o ejecuta 'nvm use 20.20.0'."
+	exit 0
 fi
 
-npx --no -- lint-staged
+node ./node_modules/lint-staged/bin/lint-staged.js

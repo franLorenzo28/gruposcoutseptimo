@@ -22,12 +22,6 @@ const secciones = [
       "Historia, actividades y documentación específica de la Compañía.",
     to: "/archivo/compania",
   },
-  {
-    title: "Miembros y exmiembros",
-    description:
-      "Listados históricos con revisión de privacidad y consentimiento.",
-    to: "/archivo/miembros",
-  },
 ];
 
 const Archivo = () => {

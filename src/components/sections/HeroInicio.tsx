@@ -48,7 +48,7 @@ const Hero = () => {
             <Reveal>
               <h1 
                 id="hero-title"
-                className="text-4xl xs:text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-bold text-white leading-[0.95] tracking-tight"
+                className="text-3xl xs:text-4xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-bold text-white leading-[0.95] tracking-tight"
               >
                 <span className="text-primary block mb-3 md:mb-4">
                   Grupo Scout Séptimo
@@ -74,7 +74,7 @@ const Hero = () => {
                   <Button
                     size="lg"
                     variant="hero"
-                    className="text-lg w-full sm:w-auto transition-all duration-300 hover:shadow-2xl hover:scale-105"
+                    className="text-base sm:text-lg w-full sm:w-auto whitespace-normal text-center leading-tight transition-all duration-300 hover:shadow-2xl hover:scale-105"
                     aria-label="Únete al Grupo Scout Séptimo"
                   >
                     Únete al Grupo
@@ -88,7 +88,7 @@ const Hero = () => {
                   }}
                   size="lg"
                   variant="heroSecondary"
-                  className="group text-lg w-full sm:w-auto transition-all duration-300 hover:shadow-xl hover:scale-105"
+                  className="group text-base sm:text-lg w-full sm:w-auto whitespace-normal text-center leading-tight transition-all duration-300 hover:shadow-xl hover:scale-105"
                   aria-label="Conoce nuestra historia de 61 años"
                 >
                   <Users className="mr-2 transition-transform duration-300 group-hover:scale-110" aria-hidden="true" />
@@ -141,7 +141,7 @@ const Hero = () => {
             {/* Stats */}
             <Reveal>
               <div 
-                className="grid grid-cols-2 sm:grid-cols-3 gap-6 sm:gap-8 md:gap-10 mt-12 sm:mt-16 pt-8 sm:pt-10 border-t border-white/20"
+                className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 gap-6 sm:gap-8 md:gap-10 mt-12 sm:mt-16 pt-8 sm:pt-10 border-t border-white/20"
                 role="list"
                 aria-label="Estadísticas del grupo"
               >

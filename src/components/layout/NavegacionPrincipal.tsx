@@ -392,7 +392,7 @@ const Navigation = () => {
                     )}
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+                <SheetContent side="right" className="w-[85vw] max-w-[400px] sm:w-[400px]">
                   <SheetHeader>
                     <SheetTitle className="text-left">Menú</SheetTitle>
                   </SheetHeader>
