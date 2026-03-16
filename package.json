@@ -28,11 +28,12 @@
     "ci": "npm run type-check && npm run lint && npm run build",
     "test:ci": "vitest run",
     "test:watch": "vitest",
+    "node:use": "powershell -ExecutionPolicy Bypass -File scripts/use-node.ps1",
     "prepare": "husky install",
     "security:check": "npm audit --audit-level=moderate || true",
     "audit:report": "npm audit --json > artifacts/audit-report.json || true",
     "clean": "rimraf dist",
-    "generate:sitemap": "node scripts/generate:sitemap.js",
+    "generate:sitemap": "node scripts/generate-sitemap.js",
     "prebuild": "npm run generate:sitemap"
   },
   "dependencies": {

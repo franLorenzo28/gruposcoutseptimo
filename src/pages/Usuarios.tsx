@@ -488,7 +488,7 @@ const Usuarios = () => {
           </div>
         </div>
 
-        {/* Botones de acceso a Galeráa y Mensajes */}
+        {/* Botones de acceso a Galería y Mensajes */}
         <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-3 sm:mb-4">
           <Link to="/galeria">
             <Card className="card-hover cursor-pointer h-full">
@@ -497,7 +497,7 @@ const Usuarios = () => {
                   <ImageIconGallery className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-sm sm:text-base">Galeráa</h3>
+                  <h3 className="font-semibold text-sm sm:text-base">Galería</h3>
                   <p className="text-xs text-muted-foreground hidden sm:block">
                     Explorá las fotos del grupo
                   </p>
@@ -721,7 +721,7 @@ const Usuarios = () => {
                           />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
-                              <h3 className="font-semibold truncate">
+                              <h3 className="text-base sm:text-[1.05rem] font-semibold leading-snug truncate">
                                 {profile.nombre_completo || "Scout"}
                               </h3>
                               {isCurrentUser && (
@@ -884,7 +884,7 @@ const Usuarios = () => {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between mb-1">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-semibold hover:underline cursor-pointer">
+                              <span className="text-sm sm:text-[0.95rem] font-semibold hover:underline cursor-pointer">
                                 {t.author_name || "Scout"}
                               </span>
                               {t.author_username && (
@@ -1177,7 +1177,7 @@ const Usuarios = () => {
                     )}
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between mb-2">
-                        <h3 className="font-semibold text-lg">{group.name}</h3>
+                        <h3 className="text-base sm:text-[1.05rem] font-semibold leading-snug">{group.name}</h3>
                         {isOwner && (
                           <Crown className="h-5 w-5 text-yellow-500 flex-shrink-0" />
                         )}

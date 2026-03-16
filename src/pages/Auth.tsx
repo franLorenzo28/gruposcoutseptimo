@@ -89,7 +89,7 @@ const Auth = () => {
           if (!isLocalBackend()) {
             const oauthIntent = localStorage.getItem("oauth_intent");
             if (oauthIntent === "login" && session.user.email) {
-              const { data: isRegistered, error: regErr } = await supabase.rpc("is_email_registered", {
+              const { data: isRegistered, error: regErr } = await (supabase as any).rpc("is_email_registered", {
                 p_email: session.user.email,
               });
               if (regErr || !isRegistered) {
@@ -189,7 +189,7 @@ const Auth = () => {
 
     const timer = setTimeout(async () => {
       try {
-        const { data: isRegistered, error } = await supabase.rpc("is_email_registered", {
+        const { data: isRegistered, error } = await (supabase as any).rpc("is_email_registered", {
           p_email: trimmed,
         });
         if (isCancelled) return;

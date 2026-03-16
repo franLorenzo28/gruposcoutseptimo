@@ -6,8 +6,8 @@
   Suspense,
   lazy,
 } from "react";
-import NavigationNew from "@/components/NavigationNew";
-import FooterNew from "@/components/FooterNew";
+import NavegacionPrincipal from "@/components/layout/NavegacionPrincipal";
+import PieDePagina from "@/components/layout/PieDePagina";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -15,21 +15,21 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 // ...existing code...
 import { ThemeProvider } from "next-themes";
-import ScrollToTop from "@/components/ScrollToTop";
-import RouteTransition from "@/components/RouteTransition";
-import Index from "./pages/Index";
-const LineaTemporal = lazy(() => import("./pages/LineaTemporal"));
-const Historia = lazy(() => import("./pages/Historia.tsx"));
-const Bauen = lazy(() => import("./pages/Bauen"));
-const AmLagerfeuer = lazy(() => import("./pages/AmLagerfeuer"));
+import ScrollAlInicio from "@/components/layout/ScrollAlInicio";
+import TransicionRuta from "@/components/layout/TransicionRuta";
+import Inicio from "./pages/inicio/Inicio";
+const LineaTemporal = lazy(() => import("./pages/historia/LineaTemporal"));
+const Historia = lazy(() => import("./pages/historia/Historia.tsx"));
+const Bauen = lazy(() => import("./pages/eventos/Bauen"));
+const AmLagerfeuer = lazy(() => import("./pages/eventos/AmLagerfeuer"));
 const MovimientoScout = lazy(() => import("./pages/MovimientoScout"));
 const Archivo = lazy(() => import("./pages/Archivo.tsx"));
 const ArchivoScoutpedia = lazy(() => import("./pages/archivo/Scoutpedia"));
 const ArchivoCompania = lazy(() => import("./pages/archivo/Compania"));
 const ArchivoMiembros = lazy(() => import("./pages/archivo/Miembros"));
-const Galeria = lazy(() => import("./pages/Galeria"));
+const Galeria = lazy(() => import("./pages/galeria/Galeria"));
 const Contacto = lazy(() => import("./pages/Contacto"));
-const Eventos = lazy(() => import("./pages/Eventos"));
+const Eventos = lazy(() => import("./pages/eventos/Eventos"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Perfil = lazy(() => import("./pages/Perfil"));
 const PerfilView = lazy(() => import("./pages/PerfilView"));
@@ -48,14 +48,13 @@ const Pioneros = lazy(() => import("./pages/ramas/pioneros"));
 const Rovers = lazy(() => import("./pages/ramas/rovers"));
 const Staff = lazy(() => import("./pages/ramas/staff"));
 const Comite = lazy(() => import("./pages/ramas/comite"));
-const AdminDashboard = lazy(() => import("./pages/admin/Dashboard"));
 import { supabase } from "@/integrations/supabase/client";
-import BackgroundFX from "@/components/BackgroundFX";
+import FondoAnimado from "@/components/layout/FondoAnimado";
 import { NotificationsProvider } from "@/context/Notifications";
 import { LoadingMessage } from "@/components/ui/loading";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { AdminGuard } from "@/components/AdminGuard";
-import SkipToContent from "@/components/SkipToContent";
+import SaltarAlContenido from "@/components/layout/SaltarAlContenido";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -187,14 +186,14 @@ const App = () => (
           <BrowserRouter>
             <SupabaseUserProvider>
               <NotificationsProvider>
-              <BackgroundFX />
-              <NavigationNew />
-              <ScrollToTop />
-              <SkipToContent />
+              <FondoAnimado />
+              <NavegacionPrincipal />
+              <ScrollAlInicio />
+              <SaltarAlContenido />
               <Suspense fallback={<LoadingMessage message="Cargando página..." />}>
-                <RouteTransition>
+                <TransicionRuta>
                   <Routes>
-                    <Route path="/" element={<Index />} />
+                    <Route path="/" element={<Inicio />} />
                     <Route path="/linea-temporal" element={<LineaTemporal />} />
                     <Route path="/historia" element={<Historia />} />
                     <Route path="/bauen" element={<Bauen />} />
@@ -238,9 +237,9 @@ const App = () => (
                     {/* Ruta por defecto */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>
-                </RouteTransition>
+                </TransicionRuta>
               </Suspense>
-              <FooterNew />
+              <PieDePagina />
               </NotificationsProvider>
             </SupabaseUserProvider>
           </BrowserRouter>

@@ -10,18 +10,20 @@ lerna-debug.log*
 # Dependencies
 node_modules
 
-# Build outputs
-dist
-dist-ssr
-*.local
-
-# Ignorar artefactos de builds y pruebas
+# Build outputs and caches
+dist/
+dist-ssr/
 artifacts/
-bun.lockb
 .vite/
+.tmp_restore/
+*.tmp
+*.temp
+*.bak
 
+# TypeScript
+*.tsbuildinfo
 
-# Environment files (IMPORTANTE: nunca commitear con valores reales)
+# Environment files (never commit real secrets)
 .env
 .env.local
 .env.*.local
@@ -29,16 +31,10 @@ bun.lockb
 .env.staging
 .env.production
 .env.vercel
-# Solo se permite subir la plantilla:
 !.env.example
 !.env.local.example
 
-# Recomendación: nunca subas tus claves reales a GitHub
-
-# TypeScript
-*.tsbuildinfo
-
-# Editor directories and files
+# Editor files
 .vscode/*
 !.vscode/extensions.json
 .idea
@@ -49,39 +45,9 @@ bun.lockb
 *.sln
 *.sw?
 
-# Server data
-server/data/*.db
-server/data/*.db-shm
-server/data/*.db-wal
-server/uploads/*
-!server/uploads/.gitkeep
-
-# Docker volumes
-postgres_data/
-pgadmin_data/
-prometheus_data/
-grafana_data/
-
-# Backups
-*.sql
-*.dump
-backup-*.tar.gz
-
-# Environment variables
-.env
-
-# .env.production  
-!.env.example
-!.env.local.example
-
 # Supabase
 supabase/.temp/
 supabase/.branches/
-
-# Package manager locks (solo npm)
-bun.lockb
-yarn.lock
-pnpm-lock.yaml
 
 # Server data and uploads
 server/data/*.db
@@ -95,15 +61,14 @@ pgadmin_data/
 prometheus_data/
 grafana_data/
 
-# Environment files
-.env
-.env.local
-# .env.production  # Comentado: necesario para Lovable
-.env.*.local
-
-# Backups
+# Backups and dumps
 *.sql
 *.dump
 backup-*
+
+# Package manager locks not used in this repo
+bun.lockb
+yarn.lock
+pnpm-lock.yaml
 
 .vercel
