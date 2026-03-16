@@ -72,5 +72,6 @@ yarn.lock
 pnpm-lock.yaml
 
 
-# fghneorgnhgrsng
+# fghneorgnhgrsnggit config --global user.name
+git config --global user.email
 .vercel
