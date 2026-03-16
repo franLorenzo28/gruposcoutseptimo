@@ -71,6 +71,7 @@ const navSections: NavSection[] = [
       { name: "Archivo", path: "/archivo", icon: Archive },
       { name: "Eventos", path: "/eventos", icon: Calendar },
       { name: "Movimiento Scout", path: "/movimiento-scout", icon: BookOpen },
+      { name: "Área de miembros", path: "/area-miembros", icon: Shield },
       { name: "Contacto", path: "/contacto", icon: Mail },
     ],
   },

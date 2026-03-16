@@ -30,9 +30,8 @@ export async function getFollowRelation(withUserId: string) {
   return supabase
     .from("follows")
     .select("follower_id, followed_id, status, created_at, accepted_at")
-    .or(
-      `and(follower_id.eq.${me},followed_id.eq.${withUserId}),and(follower_id.eq.${withUserId},followed_id.eq.${me})`,
-    )
+    .eq("follower_id", me)
+    .eq("followed_id", withUserId)
     .maybeSingle();
 }
 

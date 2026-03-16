@@ -1,7 +1,7 @@
 ﻿import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import communityImage from "@/assets/community-scouts.jpg";
+import tropaImage from "@/assets/tropa-nueva.jpeg";
 
 const Tropa = () => {
   return (
@@ -37,8 +37,8 @@ const Tropa = () => {
 
             <div>
               <img
-                src={communityImage}
-                alt="Grupo Scout Séptimo - Comunidad"
+                src={tropaImage}
+                alt="Grupo Scout Séptimo - Rama Tropa"
                 loading="lazy"
                 width="600"
                 height="400"

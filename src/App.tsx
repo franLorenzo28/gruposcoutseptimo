@@ -42,12 +42,19 @@ const GrupoDetail = lazy(() => import("@/pages/GrupoDetail"));
 const DashboardCoordinador = lazy(() => import("./pages/DashboardCoordinador"));
 const AdminPanel = lazy(() => import("./pages/AdminPanel"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const AreaMiembros = lazy(() => import("./pages/miembros/AreaMiembros"));
+const LoginMiembros = lazy(() => import("./pages/miembros/LoginMiembros"));
+const DashboardMiembros = lazy(() => import("./pages/miembros/DashboardMiembros"));
+const PanelRama = lazy(() => import("./pages/miembros/PanelRama"));
 const Manada = lazy(() => import("./pages/ramas/manada"));
 const Tropa = lazy(() => import("./pages/ramas/tropa"));
 const Pioneros = lazy(() => import("./pages/ramas/pioneros"));
 const Rovers = lazy(() => import("./pages/ramas/rovers"));
 const Staff = lazy(() => import("./pages/ramas/staff"));
 const Comite = lazy(() => import("./pages/ramas/comite"));
+import { MemberAuthProvider } from "@/context/MemberAuthContext";
+import RequireMemberAuth from "@/components/auth/RequireMemberAuth";
+import RequireRamaAccess from "@/components/auth/RequireRamaAccess";
 import { supabase } from "@/integrations/supabase/client";
 import FondoAnimado from "@/components/layout/FondoAnimado";
 import { NotificationsProvider } from "@/context/Notifications";
@@ -185,6 +192,7 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <SupabaseUserProvider>
+              <MemberAuthProvider>
               <NotificationsProvider>
               <FondoAnimado />
               <NavegacionPrincipal />
@@ -206,6 +214,48 @@ const App = () => (
                     <Route path="/galeria" element={<Galeria />} />
                     <Route path="/contacto" element={<Contacto />} />
                     <Route path="/eventos" element={<Eventos />} />
+                    <Route path="/area-miembros" element={<AreaMiembros />} />
+                    <Route path="/login" element={<LoginMiembros />} />
+                    <Route
+                      path="/dashboard"
+                      element={
+                        <RequireMemberAuth>
+                          <DashboardMiembros />
+                        </RequireMemberAuth>
+                      }
+                    />
+                    <Route
+                      path="/area-miembros/ramas/rover"
+                      element={
+                        <RequireRamaAccess allowedRama="rover">
+                          <PanelRama rama="rover" />
+                        </RequireRamaAccess>
+                      }
+                    />
+                    <Route
+                      path="/area-miembros/ramas/pioneros"
+                      element={
+                        <RequireRamaAccess allowedRama="pioneros">
+                          <PanelRama rama="pioneros" />
+                        </RequireRamaAccess>
+                      }
+                    />
+                    <Route
+                      path="/area-miembros/ramas/caminantes"
+                      element={
+                        <RequireRamaAccess allowedRama="caminantes">
+                          <PanelRama rama="caminantes" />
+                        </RequireRamaAccess>
+                      }
+                    />
+                    <Route
+                      path="/area-miembros/ramas/lobatos"
+                      element={
+                        <RequireRamaAccess allowedRama="lobatos">
+                          <PanelRama rama="lobatos" />
+                        </RequireRamaAccess>
+                      }
+                    />
                     <Route path="/auth" element={<Auth />} />
                     <Route path="/verificar-email" element={<VerificarEmail />} />
                     <Route path="/perfil" element={<PerfilView />} />
@@ -241,6 +291,7 @@ const App = () => (
               </Suspense>
               <PieDePagina />
               </NotificationsProvider>
+              </MemberAuthProvider>
             </SupabaseUserProvider>
           </BrowserRouter>
         </TooltipProvider>

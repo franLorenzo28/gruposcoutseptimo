@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Reveal } from "@/components/Reveal";
 import communityImage from "@/assets/community-scouts.jpg";
+import tropaPopupImage from "@/assets/sistema de patrullas.jpg";
 
 const WolfHowlingIcon = ({ className = "" }: { className?: string }) => (
   <svg
@@ -65,6 +66,7 @@ const About = () => {
       description:
         "Jóvenes de 11 a 14 años, desarrollan habilidades y trabajo en equipo",
       route: "tropa",
+      image: tropaPopupImage,
       hoverClass: "hover:bg-[#344F1F] hover:text-white dark:hover:bg-[#344F1F] dark:hover:text-white",
       iconHoverBgClass: "group-hover:bg-[#344F1F] dark:group-hover:bg-[#344F1F]",
       hoverIconClass: "group-hover:text-white",
@@ -289,23 +291,18 @@ const About = () => {
                               <DialogDescription className="space-y-4">
                                 <p className="text-base">{branch.description}</p>
                                 <p>{branch.detailText}</p>
-                                <div className="pt-4 border-t">
-                                  <h4 className="font-semibold mb-2">
-                                    ¿Cuándo nos reunimos?
-                                  </h4>
-                                  <p>
-                                    Consulta los horarios y días de reunión
-                                    específicos de esta rama.
-                                  </p>
-                                </div>
                               </DialogDescription>
                             </div>
 
                             <div className="w-full space-y-4">
                               <img
-                                src={communityImage}
+                                src={branch.image ?? communityImage}
                                 alt={`Foto representativa de la rama ${branch.title}`}
-                                className="w-full rounded-lg object-cover aspect-video shadow-lg"
+                                className={`w-full rounded-lg shadow-lg ${
+                                  branch.route === "tropa"
+                                    ? "max-h-[420px] object-contain"
+                                    : "aspect-video object-cover"
+                                }`}
                                 loading="lazy"
                                 decoding="async"
                               />

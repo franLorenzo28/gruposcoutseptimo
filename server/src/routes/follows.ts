@@ -5,7 +5,7 @@ import { authMiddleware } from "../auth";
 
 export const followsRouter = Router();
 
-// Helper to fetch a relation between me and other
+// Helper to fetch my outgoing relation with other (me -> other)
 followsRouter.get(
   "/relation/:otherId",
   authMiddleware,
@@ -18,10 +18,10 @@ followsRouter.get(
         `
     SELECT follower_id, following_id as followed_id, status, created_at
     FROM follows
-    WHERE (follower_id = ? AND following_id = ?) OR (follower_id = ? AND following_id = ?)
+    WHERE follower_id = ? AND following_id = ?
   `,
       )
-      .get(me, other, other, me);
+      .get(me, other);
 
     if (!row) return res.json(null);
     return res.json(row);
