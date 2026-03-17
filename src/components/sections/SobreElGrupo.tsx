@@ -173,9 +173,9 @@ const About = () => {
       bg: "bg-emerald-500/20",
     },
     {
-      value: "1",
-      label: "más allá de un grupo scout",
-      detail: "Ya es como una familia",
+      value: "+20",
+      label: "padres, madres y adultos",
+      detail: "En el comité dando apoyo y servicio al grupo",
       bg: "bg-sky-500/20",
     },
   ];

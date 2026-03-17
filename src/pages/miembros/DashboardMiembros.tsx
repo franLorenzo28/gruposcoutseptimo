@@ -34,7 +34,7 @@ export default function DashboardMiembros() {
             </div>
 
             <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
-              <p className="text-sm text-muted-foreground">Accesos rapidos</p>
+              <p className="text-sm text-muted-foreground">Accesos rápidos</p>
               <div className="mt-3 flex flex-wrap gap-3">
                 <Button asChild>
                   <Link to={`/area-miembros/ramas/${session.rama}`}>
@@ -46,7 +46,7 @@ export default function DashboardMiembros() {
                   <Link to="/perfil/editar">Editar perfil</Link>
                 </Button>
                 <Button variant="destructive" onClick={logout}>
-                  Cerrar sesion
+                  Cerrar sesión
                 </Button>
               </div>
             </div>
@@ -58,8 +58,8 @@ export default function DashboardMiembros() {
             <Card className="border-border/60 bg-card/80 shadow-md h-full">
               <CardContent className="p-5">
                 <CalendarDays className="h-6 w-6 text-primary" />
-                <h2 className="mt-3 text-lg font-bold">Proxima actividad</h2>
-                <p className="mt-2 text-sm text-muted-foreground">Reunion semanal de rama y salida de fin de mes.</p>
+                <h2 className="mt-3 text-lg font-bold">Próxima actividad</h2>
+                <p className="mt-2 text-sm text-muted-foreground">Reunión semanal de rama y salida de fin de mes.</p>
               </CardContent>
             </Card>
           </Reveal>

@@ -79,13 +79,13 @@ export default function PanelRama({ rama }: { rama: MiembroRama }) {
                 <p className="text-sm text-muted-foreground">Acciones</p>
                 <div className="mt-3 flex flex-wrap gap-3">
                   <Button asChild variant="outline">
-                    <Link to="/area-miembros">Area de miembros</Link>
+                    <Link to="/area-miembros">Área de miembros</Link>
                   </Button>
                   <Button asChild variant="outline">
                     <Link to="/dashboard">Ir al dashboard</Link>
                   </Button>
                   <Button variant="destructive" onClick={logout}>
-                    Cerrar sesion
+                    Cerrar sesión
                   </Button>
                 </div>
               </div>

@@ -217,7 +217,7 @@ const Bauen = () => {
                     onClick={() => window.open('tel:098138668', '_blank')}
                   >
                     <Phone className="w-4 h-4" />
-                    Contactanos
+                    Contáctanos
                   </Button>
                 </div>
               </CardContent>

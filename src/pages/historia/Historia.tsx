@@ -10,10 +10,10 @@ const Historia = () => {
   const timeline = [
     {
       year: "1964",
-      title: "Fundacion del grupo",
+      title: "Fundación del grupo",
       description:
-        "Comienza la historia del Grupo Scout Septimo en el Colegio Aleman, con una comunidad que aposto por educar en valores y aventura.",
-      place: "Colegio Aleman",
+        "Comienza la historia del Grupo Scout Séptimo en el Colegio Alemán, con una comunidad que apostó por educar en valores y aventura.",
+      place: "Colegio Alemán",
     },
     {
       year: "1965",
@@ -24,9 +24,9 @@ const Historia = () => {
     },
     {
       year: "1990",
-      title: "Expansion de ramas",
+      title: "Expansión de ramas",
       description:
-        "Se consolida la propuesta de ramas del grupo, desde Manada hasta Rovers, para ofrecer una formacion integral.",
+        "Se consolida la propuesta de ramas del grupo, desde Manada hasta Rovers, para ofrecer una formación integral.",
       place: "Comunidad y locales del grupo",
     },
     {
@@ -45,30 +45,30 @@ const Historia = () => {
     },
     {
       year: "2020",
-      title: "Adaptacion y continuidad",
+      title: "Adaptación y continuidad",
       description:
-        "En un contexto desafiante, se sostienen actividades y vinculos en formatos nuevos para no perder el espiritu de grupo.",
+        "En un contexto desafiante, se sostienen actividades y vínculos en formatos nuevos para no perder el espíritu de grupo.",
       place: "Casas y plataformas digitales",
     },
     {
       year: "2025",
       title: "20 años del BAUEN",
       description:
-        "La comunidad celebra dos decadas de una competencia emblematica para el escultismo uruguayo.",
+        "La comunidad celebra dos décadas de una competencia emblemática para el escultismo uruguayo.",
       place: "Comunidad scout",
     },
     {
       year: "2026",
       title: "Nueva etapa digital",
       description:
-        "La web del Grupo Septimo evoluciona para integrar historia, comunidad y participacion con una experiencia moderna.",
+        "La web del Grupo Séptimo evoluciona para integrar historia, comunidad y participación con una experiencia moderna.",
       place: "Sitio web oficial",
     },
   ] as const;
 
   const locales = [
-    "Colegio Aleman",
-    "Elias Regules",
+    "Colegio Alemán",
+    "Elías Regules",
     "Parroquia San Pedro",
     "Volteadores",
   ];
@@ -85,14 +85,14 @@ const Historia = () => {
           <Reveal className="max-w-5xl">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold text-white/90 backdrop-blur-sm sm:text-sm">
               <BookOpen className="h-4 w-4" />
-              Memoria viva del Grupo Scout Septimo
+              Memoria viva del Grupo Scout Séptimo
             </div>
             <h1 className="text-4xl font-extrabold leading-[0.95] text-white sm:text-6xl md:text-7xl">
               Nuestra historia,
               <span className="block text-primary">contada como camino</span>
             </h1>
             <p className="mt-6 max-w-3xl text-base leading-relaxed text-white/85 sm:text-lg md:text-xl">
-              Mas de seis decadas formando personas con proposito. Cada etapa dejo huellas en nuestros locales, en nuestras tradiciones y en la forma de vivir el servicio.
+              Más de seis décadas formando personas con propósito. Cada etapa dejó huellas en nuestros locales, en nuestras tradiciones y en la forma de vivir el servicio.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button
@@ -120,7 +120,7 @@ const Historia = () => {
                 <CardContent className="p-6">
                   <p className="text-4xl font-black text-primary">1964</p>
                   <p className="mt-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                    Ano de fundacion
+                    Año de fundación
                   </p>
                 </CardContent>
               </Card>
@@ -130,7 +130,7 @@ const Historia = () => {
                 <CardContent className="p-6">
                   <p className="text-4xl font-black text-primary">60+</p>
                   <p className="mt-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                    Anos de historia activa
+                    Años de historia activa
                   </p>
                 </CardContent>
               </Card>
@@ -160,7 +160,7 @@ const Historia = () => {
                 </div>
                 <h2 className="text-3xl font-bold">Momentos de nuestra historia</h2>
                 <p className="text-sm text-muted-foreground sm:text-base">
-                  Un recorrido vertical por los momentos que moldearon la identidad del Grupo Scout Septimo.
+                  Un recorrido vertical por los momentos que moldearon la identidad del Grupo Scout Séptimo.
                 </p>
               </aside>
             </Reveal>

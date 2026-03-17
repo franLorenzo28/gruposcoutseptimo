@@ -141,7 +141,7 @@ export default function RamaLanding({
                 <div className="rounded-2xl border border-border/70 bg-gradient-to-br from-primary/15 to-primary/5 p-5">
                   <p className="flex items-center gap-2 text-sm font-semibold text-primary">
                     <Flame className="h-4 w-4" />
-                    Actividades durante todo el ano
+                    Actividades durante todo el año
                   </p>
                 </div>
               </div>

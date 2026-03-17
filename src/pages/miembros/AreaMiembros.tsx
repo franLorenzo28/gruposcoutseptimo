@@ -19,16 +19,16 @@ export default function AreaMiembros() {
                 <Lock className="h-4 w-4" />
                 Acceso interno
               </p>
-              <h1 className="mt-3 text-3xl font-black sm:text-4xl">Area de miembros</h1>
+              <h1 className="mt-3 text-3xl font-black sm:text-4xl">Área de miembros</h1>
               <p className="mt-3 text-sm leading-relaxed text-muted-foreground sm:text-base">
-                Un espacio privado para organizar actividades por rama, centralizar documentos y compartir informacion interna del grupo.
+                Un espacio privado para organizar actividades por rama, centralizar documentos y compartir información interna del grupo.
               </p>
             </div>
 
             <div className="rounded-2xl border border-border/70 bg-background/80 p-4 sm:p-5">
               {isAuthenticated && session ? (
                 <div className="space-y-4">
-                  <p className="text-sm text-muted-foreground">Sesion activa</p>
+                  <p className="text-sm text-muted-foreground">Sesión activa</p>
                   <p className="text-sm">
                     <strong>{session.nombre}</strong> · Rama <strong>{session.rama}</strong>
                   </p>
@@ -37,13 +37,13 @@ export default function AreaMiembros() {
                       <Link to="/dashboard">Ir a mi dashboard</Link>
                     </Button>
                     <Button variant="outline" onClick={logout}>
-                      Cerrar sesion
+                      Cerrar sesión
                     </Button>
                   </div>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <p className="text-sm text-muted-foreground">Aun no confirmaste acceso interno.</p>
+                  <p className="text-sm text-muted-foreground">Aún no confirmaste acceso interno.</p>
                   <div className="flex flex-wrap gap-3">
                     <Button asChild>
                       <Link to="/login">Confirmar ingreso</Link>
@@ -81,7 +81,7 @@ export default function AreaMiembros() {
             <Card className="h-full border-border/70 bg-card/80 shadow-md">
               <CardContent className="p-5">
                 <Image className="h-6 w-6 text-primary" />
-                <h2 className="mt-3 text-lg font-bold">Galeria privada</h2>
+                <h2 className="mt-3 text-lg font-bold">Galería privada</h2>
                 <p className="mt-2 text-sm text-muted-foreground">Memoria visual de salidas, campamentos y actividades internas.</p>
               </CardContent>
             </Card>

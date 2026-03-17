@@ -166,7 +166,7 @@ export default function LoginMiembros() {
               {isAuthenticated && session && (
                 <div className="mt-6 rounded-lg border border-border/60 p-3 text-sm text-muted-foreground">
                   <UserCheck className="inline mr-1 h-4 w-4" />
-                  Ya hay sesion activa como <strong>{session.nombre}</strong>. Puedes ir directo a tu
+                  Ya hay sesión activa como <strong>{session.nombre}</strong>. Puedes ir directo a tu
                   panel desde <Link to={redirectTo} className="text-primary underline ml-1">aquí</Link>.
                 </div>
               )}

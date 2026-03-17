@@ -7,18 +7,18 @@ const Pioneros = () => {
       title="Pioneros"
       lema="Servir"
       ageRange="15 a 17"
-      intro="Etapa de accion concreta: proyectos comunitarios, autonomia y liderazgo con impacto real."
+      intro="Etapa de acción concreta: proyectos comunitarios, autonomía y liderazgo con impacto real."
       image={communityImage}
-      imageAlt="Rama Pioneros del Grupo Scout Septimo"
+      imageAlt="Rama Pioneros del Grupo Scout Séptimo"
       accentClass="bg-[#134686]"
       paragraphs={[
-        "Pioneros es una etapa de consolidacion personal. Los y las jovenes disenan proyectos, toman decisiones y sostienen objetivos colectivos.",
-        "El servicio comunitario se vuelve central: no solo participan, tambien lideran iniciativas para mejorar su entorno.",
+        "Pioneros es una etapa de consolidación personal. Los y las jóvenes diseñan proyectos, toman decisiones y sostienen objetivos colectivos.",
+        "El servicio comunitario se vuelve central: no solo participan, también lideran iniciativas para mejorar su entorno.",
       ]}
       bullets={[
-        "Proyectos de servicio con planificacion y evaluacion.",
+        "Proyectos de servicio con planificación y evaluación.",
         "Experiencias de liderazgo en contextos reales.",
-        "Construccion de autonomia con acompanamiento adulto.",
+        "Construcción de autonomía con acompañamiento adulto.",
       ]}
     />
   );

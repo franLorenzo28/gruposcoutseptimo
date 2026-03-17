@@ -7,18 +7,18 @@ const Staff = () => {
       title="Educadores"
       lema="Formar para servir"
       ageRange="Adultos voluntarios"
-      intro="El equipo adulto sostiene el proyecto educativo y acompana cada proceso de crecimiento juvenil."
+      intro="El equipo adulto sostiene el proyecto educativo y acompaña cada proceso de crecimiento juvenil."
       image={communityImage}
-      imageAlt="Equipo de educadores del Grupo Scout Septimo"
+      imageAlt="Equipo de educadores del Grupo Scout Séptimo"
       accentClass="bg-violet-700"
       paragraphs={[
         "Los educadores planifican, coordinan y evalúan la propuesta educativa de cada rama con mirada integral.",
-        "Su tarea combina formacion continua, vocacion de servicio y presencia cercana para que cada joven crezca con seguridad y confianza.",
+        "Su tarea combina formación continua, vocación de servicio y presencia cercana para que cada joven crezca con seguridad y confianza.",
       ]}
       bullets={[
-        "Diseno anual de actividades y objetivos formativos.",
-        "Acompanamiento personalizado y trabajo con familias.",
-        "Formacion permanente en metodo scout y proteccion.",
+        "Diseño anual de actividades y objetivos formativos.",
+        "Acompañamiento personalizado y trabajo con familias.",
+        "Formación permanente en método scout y protección.",
       ]}
     />
   );
