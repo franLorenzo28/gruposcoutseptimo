@@ -1,229 +1,270 @@
+import { useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Reveal } from "@/components/Reveal";
 import {
   Archive,
+  ArrowRight,
+  BookOpen,
   FileText,
   Layers,
+  Search,
+  Sparkles,
+  Users,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import communityImage from "@/assets/community-scouts.jpg";
 
-const secciones = [
+type ArchiveSection = {
+  title: string;
+  description: string;
+  to: string;
+  tag: string;
+  entries: string;
+  Icon: typeof BookOpen;
+};
+
+const secciones: ArchiveSection[] = [
   {
     title: "Scoutpedia",
     description:
       "Definiciones, términos y contenidos enciclopédicos del historial scout.",
     to: "/archivo/scoutpedia",
+    tag: "Historia y método",
+    entries: "20+ entradas",
+    Icon: BookOpen,
   },
   {
     title: "Compañía",
     description:
       "Historia, actividades y documentación específica de la Compañía.",
     to: "/archivo/compania",
+    tag: "Unidad",
+    entries: "En crecimiento",
+    Icon: Layers,
+  },
+  {
+    title: "Miembros",
+    description:
+      "Listado histórico de miembros, generaciones y presencia del grupo.",
+    to: "/archivo/miembros",
+    tag: "Comunidad",
+    entries: "Miles de registros",
+    Icon: Users,
   },
 ];
 
+const actividadReciente = [
+  "Actualización de material histórico en Scoutpedia",
+  "Carga de nuevos registros en Miembros",
+  "Revisión y curaduría de documentos de Compañía",
+];
+
 const Archivo = () => {
+  const [query, setQuery] = useState("");
+
+  const seccionesFiltradas = useMemo(() => {
+    const term = query.trim().toLowerCase();
+    if (!term) return secciones;
+    return secciones.filter((section) => {
+      const text = `${section.title} ${section.description} ${section.tag}`.toLowerCase();
+      return text.includes(term);
+    });
+  }, [query]);
+
   return (
     <div className="min-h-screen">
-      {/* Hero */}
-      <section className="relative overflow-hidden pt-20 sm:pt-24 md:pt-28 pb-10 sm:pb-14 bg-background/60 backdrop-blur-sm">
+      <section className="relative overflow-hidden pt-20 sm:pt-24 md:pt-28 pb-12 sm:pb-16 bg-background/60 backdrop-blur-sm">
         <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
           <div className="bg-blob w-72 h-72 bg-muted/30 -top-16 -right-12 float-slow" />
           <div className="bg-blob w-64 h-64 bg-muted/30 -bottom-20 -left-10 drift-slow" />
         </div>
-        <div className="absolute inset-0 pointer-events-none dark:hidden" aria-hidden="true">
-          <div
-            className="absolute inset-0 opacity-[0.08]"
-            style={{
-              backgroundImage:
-                "linear-gradient(to right, rgba(0,0,0,0.35) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.35) 1px, transparent 1px)",
-              backgroundSize: "32px 32px",
-            }}
-          />
-        </div>
-        <div className="absolute inset-0 pointer-events-none hidden dark:block" aria-hidden="true">
-          <div
-            className="absolute inset-0 opacity-[0.08]"
-            style={{
-              backgroundImage:
-                "linear-gradient(to right, rgba(255,255,255,0.35) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.35) 1px, transparent 1px)",
-              backgroundSize: "32px 32px",
-            }}
-          />
-        </div>
+
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <Reveal className="max-w-5xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 bg-muted/30 backdrop-blur-sm rounded-full mb-4 sm:mb-6 shadow-sm">
-              <Archive className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-              <span className="text-primary font-semibold text-xs sm:text-sm md:text-base">
-                Archivo del Grupo
-              </span>
-            </div>
-            <div className="inline-block relative mb-4 sm:mb-6">
-              <div className="absolute inset-0 rounded-2xl bg-background/70 backdrop-blur-sm" aria-hidden="true" />
-              <div
-                className="absolute inset-0 rounded-2xl opacity-[0.12] dark:hidden"
-                aria-hidden="true"
-                style={{
-                  backgroundImage:
-                    "linear-gradient(to right, rgba(0,0,0,0.35) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.35) 1px, transparent 1px)",
-                  backgroundSize: "24px 24px",
-                }}
-              />
-              <div
-                className="absolute inset-0 rounded-2xl opacity-[0.12] hidden dark:block"
-                aria-hidden="true"
-                style={{
-                  backgroundImage:
-                    "linear-gradient(to right, rgba(255,255,255,0.35) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.35) 1px, transparent 1px)",
-                  backgroundSize: "24px 24px",
-                }}
-              />
-              <h1 className="relative px-4 py-3 text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold">
-                Archivo del Grupo
+          <Reveal className="max-w-6xl mx-auto grid gap-6 lg:grid-cols-[1.1fr_0.9fr] items-center">
+            <div>
+              <div className="inline-flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 bg-muted/30 backdrop-blur-sm rounded-full mb-4 sm:mb-6 shadow-sm">
+                <Archive className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+                <span className="text-primary font-semibold text-xs sm:text-sm md:text-base">
+                  Archivo del Grupo
+                </span>
+              </div>
+
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4">
+                Memoria viva del Grupo Séptimo
               </h1>
+
+              <p className="text-sm sm:text-base md:text-lg text-muted-foreground/90 leading-relaxed mb-6 max-w-2xl">
+                Un archivo activo, navegable y en crecimiento: historia, documentos,
+                términos scout y registros de generaciones que formaron parte del grupo.
+              </p>
+
+              <div className="grid grid-cols-3 gap-3 max-w-lg">
+                <Card className="bg-card/80 border-border/60">
+                  <CardContent className="p-3 sm:p-4 text-center">
+                    <p className="text-2xl sm:text-3xl font-black text-primary">3</p>
+                    <p className="text-xs text-muted-foreground">Secciones</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-card/80 border-border/60">
+                  <CardContent className="p-3 sm:p-4 text-center">
+                    <p className="text-2xl sm:text-3xl font-black text-primary">20+</p>
+                    <p className="text-xs text-muted-foreground">Entradas</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-card/80 border-border/60">
+                  <CardContent className="p-3 sm:p-4 text-center">
+                    <p className="text-2xl sm:text-3xl font-black text-primary">Vivo</p>
+                    <p className="text-xs text-muted-foreground">Estado</p>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
-            <p className="text-sm sm:text-base md:text-lg text-muted-foreground/90 max-w-3xl mx-auto leading-relaxed mb-6">
-              Este espacio reúne la información del Grupo Scout Séptimo. La
-              idea es conservar el contenido, mejorar su organización y hacerlo
-              fácil de encontrar.
-            </p>
 
-            <Button
-              size="lg"
-              className="gap-2 shadow-lg hover:shadow-xl"
-              onClick={() =>
-                document
-                  .getElementById("secciones")
-                  ?.scrollIntoView({ behavior: "smooth" })
-              }
-            >
-              <Archive className="w-4 h-4" />
-              Ver secciones
-            </Button>
-
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                className="rounded-full"
-                onClick={() =>
-                  document
-                    .getElementById("secciones")
-                    ?.scrollIntoView({ behavior: "smooth" })
-                }
-              >
-                Secciones
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="rounded-full"
-                onClick={() =>
-                  document
-                    .getElementById("cta-material")
-                    ?.scrollIntoView({ behavior: "smooth" })
-                }
-              >
-                Enviar material
-              </Button>
+            <div className="overflow-hidden rounded-3xl border border-border/60 shadow-xl">
+              <img
+                src={communityImage}
+                alt="Archivo histórico del Grupo Scout Séptimo"
+                className="h-[260px] sm:h-[320px] w-full object-cover"
+                loading="lazy"
+                decoding="async"
+              />
             </div>
           </Reveal>
         </div>
       </section>
 
-      {/* Secciones */}
-      <section
-        id="secciones"
-        className="py-16 sm:py-20 bg-background/60 backdrop-blur-sm"
-      >
+      <section id="secciones" className="py-14 sm:py-20 bg-background/60 backdrop-blur-sm">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-6xl mx-auto">
-            <Reveal className="text-center mb-8 sm:mb-12">
-              <div className="inline-flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 bg-muted/30 backdrop-blur-sm rounded-full mb-4 shadow-sm">
-                <Archive className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-                <span className="text-primary font-semibold text-xs sm:text-sm md:text-base">
-                  Secciones destacadas
-                </span>
+            <Reveal className="mb-8 sm:mb-10">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <h2 className="text-3xl sm:text-4xl font-bold">Explorar secciones</h2>
+                  <p className="mt-2 text-sm sm:text-base text-muted-foreground">
+                    Buscá por tema para encontrar contenido más rápido.
+                  </p>
+                </div>
+
+                <div className="w-full sm:w-80 relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Buscar en archivo..."
+                    className="pl-9 bg-card/70"
+                  />
+                </div>
               </div>
-              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
-                Contenido organizado por temática
-              </h2>
-              <p className="text-sm sm:text-base md:text-lg text-muted-foreground/90 max-w-3xl mx-auto leading-relaxed">
-                Entradas clave organizadas para una navegación más simple.
-              </p>
             </Reveal>
 
-            <div className="flex flex-wrap items-center justify-center gap-2 mb-8">
-              {secciones.map((section) => (
-                <Link key={section.to} to={section.to}>
-                  <Button size="sm" variant="outline" className="rounded-full">
-                    {section.title}
-                  </Button>
-                </Link>
-              ))}
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {seccionesFiltradas.map((section) => (
+                <Reveal key={section.to}>
+                  <Card className="group card-hover border border-border/70 shadow-lg bg-card/80 backdrop-blur-sm h-full">
+                    <CardContent className="p-6 min-h-[245px] flex flex-col">
+                      <div className="flex items-start justify-between gap-3 mb-4">
+                        <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center">
+                          <section.Icon className="w-5 h-5 text-primary" />
+                        </div>
+                        <Badge variant="outline" className="border-primary/30 text-primary bg-primary/5">
+                          {section.tag}
+                        </Badge>
+                      </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {secciones.map((section, index) => (
-                <Reveal key={index}>
-                  <Card className="card-hover border-2 border-primary/20 shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 bg-background/70 backdrop-blur-sm">
-                    <CardContent className="p-6 min-h-[220px] flex flex-col">
-                      <h4 className="text-base sm:text-lg md:text-xl font-semibold mb-2">
-                        {section.title}
-                      </h4>
+                      <h3 className="text-xl font-bold mb-2">{section.title}</h3>
                       <p className="text-sm text-muted-foreground/90 mb-4 flex-1">
                         {section.description}
                       </p>
-                      <Link to={section.to}>
-                        <Button size="sm" variant="outline">
-                          Abrir sección
-                        </Button>
-                      </Link>
+
+                      <div className="flex items-center justify-between pt-2 border-t border-border/60">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          {section.entries}
+                        </p>
+                        <Link to={section.to}>
+                          <Button size="sm" className="gap-1.5">
+                            Abrir
+                            <ArrowRight className="w-4 h-4" />
+                          </Button>
+                        </Link>
+                      </div>
                     </CardContent>
                   </Card>
                 </Reveal>
               ))}
             </div>
+
+            {seccionesFiltradas.length === 0 && (
+              <Reveal>
+                <Card className="mt-6 border-dashed border-border/70 bg-card/70">
+                  <CardContent className="p-8 text-center">
+                    <p className="text-muted-foreground">
+                      No encontramos resultados para <strong>{query}</strong>. Probá con otro término.
+                    </p>
+                  </CardContent>
+                </Card>
+              </Reveal>
+            )}
           </div>
         </div>
       </section>
 
-
-      {/* CTA */}
-      <section id="cta-material" className="py-12 sm:py-16 bg-background/60 backdrop-blur-sm">
+      <section className="py-12 sm:py-16 bg-muted/35">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <Reveal className="max-w-4xl mx-auto">
-            <Card className="card-hover border-2 border-primary/20 shadow-xl bg-background/70 backdrop-blur-sm">
-              <CardContent className="p-6 sm:p-8 md:p-10">
-                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="max-w-6xl mx-auto grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
+            <Reveal>
+              <Card className="h-full border-border/70 bg-card/80 shadow-lg">
+                <CardContent className="p-6 sm:p-7">
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-wide mb-4">
+                    <Sparkles className="w-4 h-4" />
+                    Actividad reciente
+                  </div>
+                  <ul className="space-y-4">
+                    {actividadReciente.map((item) => (
+                      <li key={item} className="flex items-start gap-3">
+                        <span className="mt-1.5 block h-2 w-2 rounded-full bg-primary" />
+                        <p className="text-sm text-muted-foreground">{item}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            </Reveal>
+
+            <Reveal>
+              <Card id="cta-material" className="h-full border-2 border-primary/20 shadow-xl bg-card/80 backdrop-blur-sm">
+                <CardContent className="p-6 sm:p-8 md:p-10 h-full flex flex-col justify-between">
                   <div>
                     <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-muted/60 text-muted-foreground rounded-full mb-3">
                       <Layers className="w-4 h-4" />
-                      <span className="font-medium text-[11px] sm:text-xs">
-                        Material
-                      </span>
+                      <span className="font-medium text-[11px] sm:text-xs">Material</span>
                     </div>
-                    <h3 className="text-2xl sm:text-3xl font-bold mb-2">
-                      ¿Tenés material?
-                    </h3>
-                    <p className="text-sm sm:text-base text-muted-foreground/90">
-                      Si querés sumar contenido del grupo, escribinos y lo
-                      incorporamos al archivo.
+                    <h3 className="text-2xl sm:text-3xl font-bold mb-2">¿Tenés material para sumar?</h3>
+                    <p className="text-sm sm:text-base text-muted-foreground/90 mb-5">
+                      Si querés aportar documentos, fotos o registros, escribinos y lo incorporamos al archivo del grupo.
                     </p>
                   </div>
-                  <Link to="/contacto">
-                    <Button size="lg" className="gap-2">
-                      <FileText className="w-4 h-4" />
-                      Enviar material
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-          </Reveal>
+
+                  <div className="flex flex-wrap gap-3">
+                    <Link to="/contacto">
+                      <Button size="lg" className="gap-2">
+                        <FileText className="w-4 h-4" />
+                        Enviar material
+                      </Button>
+                    </Link>
+                    <Link to="/archivo/scoutpedia">
+                      <Button size="lg" variant="outline" className="gap-2">
+                        <BookOpen className="w-4 h-4" />
+                        Ver Scoutpedia
+                      </Button>
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+            </Reveal>
+          </div>
         </div>
       </section>
     </div>

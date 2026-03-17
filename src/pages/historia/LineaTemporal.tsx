@@ -49,8 +49,11 @@ const Historia = () => {
 
   return (
     <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="pt-24 sm:pt-28 md:pt-32 pb-12 sm:pb-16 bg-background/60 backdrop-blur-sm">
+      <section className="relative overflow-hidden pt-24 sm:pt-28 md:pt-32 pb-12 sm:pb-16 bg-background/60 backdrop-blur-sm">
+        <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+          <div className="bg-blob w-80 h-80 bg-primary/10 -top-20 -right-16 float-slow" />
+          <div className="bg-blob w-72 h-72 bg-muted/20 -bottom-24 -left-10 drift-slow" />
+        </div>
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 bg-muted/30 backdrop-blur-sm rounded-full mb-4 sm:mb-6 shadow-sm">
@@ -71,8 +74,7 @@ const Historia = () => {
         </div>
       </section>
 
-      {/* Timeline Section */}
-      <section className="section-padding">
+      <section className="section-padding bg-muted/35">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-12 mb-12 sm:mb-16">
             <div className="text-center lg:text-left">
@@ -101,9 +103,7 @@ const Historia = () => {
             </div>
           </div>
 
-          {/* Timeline */}
           <div className="relative">
-            {/* Vertical Line */}
             <div className="hidden md:block absolute left-1/2 transform -translate-x-1/2 h-full w-1 bg-foreground/20"></div>
 
             <div className="space-y-12 sm:space-y-16">

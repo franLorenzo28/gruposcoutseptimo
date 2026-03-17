@@ -1,54 +1,26 @@
-﻿import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+﻿import RamaLanding from "@/components/sections/RamaLanding";
 import communityImage from "@/assets/community-scouts.jpg";
 
 const Staff = () => {
   return (
-    <div className="min-h-screen">
-      <section className="section-padding">
-        <div className="container mx-auto px-4">
-          <h1 className="text-4xl font-bold mb-6">Educadores</h1>
-          <div className="grid md:grid-cols-2 gap-8">
-            <Card>
-              <CardContent className="p-8">
-                <p className="text-lg text-muted-foreground mb-4">
-                  Los Educadores Scouts son voluntarios que acompañan, guáan y sostienen el crecimiento de cada niño, niña y joven del grupo.
-                </p>
-                <p className="text-lg text-muted-foreground mb-4">
-                  Desde la vocación y el compromiso, dedican su tiempo a planificar actividades, capacitarse, formar equipos y vivir el escultismo con alegráa y coherencia.
-                </p>
-                <p className="text-lg text-muted-foreground">
-                  Su misión es formar personas libres, responsables y felices, siendo testimonio vivo de los valores que inspiran el Movimiento Scout.
-                </p>
-                <ul className="list-disc pl-5 mt-6 text-muted-foreground space-y-2">
-                  <li>Formación continua de educadores</li>
-                  <li>Planificación y coordinación de actividades</li>
-                  <li>Acompañamiento personalizado de cada joven</li>
-                </ul>
-                <div className="mt-6">
-                  <Button asChild>
-                    <Link to="/contacto">Contactar</Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            <div>
-              <img
-                src={communityImage}
-                alt="Grupo Scout Séptimo - Comunidad"
-                loading="lazy"
-                width="600"
-                height="400"
-                className="rounded-lg shadow-md"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-      {/* Footer global en App.tsx */}
-    </div>
+    <RamaLanding
+      title="Educadores"
+      lema="Formar para servir"
+      ageRange="Adultos voluntarios"
+      intro="El equipo adulto sostiene el proyecto educativo y acompana cada proceso de crecimiento juvenil."
+      image={communityImage}
+      imageAlt="Equipo de educadores del Grupo Scout Septimo"
+      accentClass="bg-violet-700"
+      paragraphs={[
+        "Los educadores planifican, coordinan y evalúan la propuesta educativa de cada rama con mirada integral.",
+        "Su tarea combina formacion continua, vocacion de servicio y presencia cercana para que cada joven crezca con seguridad y confianza.",
+      ]}
+      bullets={[
+        "Diseno anual de actividades y objetivos formativos.",
+        "Acompanamiento personalizado y trabajo con familias.",
+        "Formacion permanente en metodo scout y proteccion.",
+      ]}
+    />
   );
 };
 

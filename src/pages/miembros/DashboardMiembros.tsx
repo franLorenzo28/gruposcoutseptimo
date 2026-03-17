@@ -1,7 +1,9 @@
 import { Link, Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { useMemberAuth } from "@/context/MemberAuthContext";
+import { CalendarDays, Files, Bell, Camera, ArrowRight } from "lucide-react";
+import { Reveal } from "@/components/Reveal";
 
 const ramaLabel: Record<string, string> = {
   rover: "Rover",
@@ -20,79 +22,85 @@ export default function DashboardMiembros() {
   return (
     <div className="min-h-screen bg-background/60 backdrop-blur-sm">
       <div className="h-16 sm:h-20" />
-      <section className="container mx-auto px-4 py-8 sm:py-12">
-        <div className="max-w-6xl mx-auto space-y-6">
-          <Card className="border-border/60 shadow-lg">
-            <CardHeader>
-              <CardTitle className="text-2xl sm:text-3xl">Dashboard de miembros</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-muted-foreground">
-                Bienvenido, <strong>{session.nombre}</strong>. Estás ingresando al panel interno de la rama {" "}
-                <strong>{ramaLabel[session.rama] || session.rama}</strong>.
+      <section className="container mx-auto px-4 py-8 sm:py-12 space-y-6">
+        <Reveal>
+          <div className="mx-auto grid max-w-6xl gap-6 rounded-3xl border border-border/70 bg-card/80 p-6 shadow-xl sm:p-8 lg:grid-cols-[1.15fr_0.85fr]">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-primary">Panel privado</p>
+              <h1 className="mt-2 text-3xl font-black sm:text-4xl">Dashboard de miembros</h1>
+              <p className="mt-3 text-sm text-muted-foreground sm:text-base">
+                Bienvenido, <strong>{session.nombre}</strong>. Este panel resume la actividad de la rama <strong>{ramaLabel[session.rama] || session.rama}</strong>.
               </p>
-              <div className="flex flex-wrap gap-3">
+            </div>
+
+            <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
+              <p className="text-sm text-muted-foreground">Accesos rapidos</p>
+              <div className="mt-3 flex flex-wrap gap-3">
                 <Button asChild>
-                  <Link to={`/area-miembros/ramas/${session.rama}`}>Ir a mi panel de rama</Link>
+                  <Link to={`/area-miembros/ramas/${session.rama}`}>
+                    Mi panel de rama
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
                 </Button>
                 <Button asChild variant="outline">
-                  <Link to="/area-miembros">Área de miembros</Link>
-                </Button>
-                <Button asChild variant="outline">
-                  <Link to="/perfil/editar">Editar mi perfil</Link>
+                  <Link to="/perfil/editar">Editar perfil</Link>
                 </Button>
                 <Button variant="destructive" onClick={logout}>
-                  Cerrar sesión interna
+                  Cerrar sesion
                 </Button>
               </div>
+            </div>
+          </div>
+        </Reveal>
+
+        <div className="mx-auto grid max-w-6xl gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Reveal>
+            <Card className="border-border/60 bg-card/80 shadow-md h-full">
+              <CardContent className="p-5">
+                <CalendarDays className="h-6 w-6 text-primary" />
+                <h2 className="mt-3 text-lg font-bold">Proxima actividad</h2>
+                <p className="mt-2 text-sm text-muted-foreground">Reunion semanal de rama y salida de fin de mes.</p>
+              </CardContent>
+            </Card>
+          </Reveal>
+          <Reveal>
+            <Card className="border-border/60 bg-card/80 shadow-md h-full">
+              <CardContent className="p-5">
+                <Files className="h-6 w-6 text-primary" />
+                <h2 className="mt-3 text-lg font-bold">Documentos</h2>
+                <p className="mt-2 text-sm text-muted-foreground">Actas, autorizaciones y materiales internos de trabajo.</p>
+              </CardContent>
+            </Card>
+          </Reveal>
+          <Reveal>
+            <Card className="border-border/60 bg-card/80 shadow-md h-full">
+              <CardContent className="p-5">
+                <Bell className="h-6 w-6 text-primary" />
+                <h2 className="mt-3 text-lg font-bold">Comunicados</h2>
+                <p className="mt-2 text-sm text-muted-foreground">Avisos de coordinacion y recordatorios de actividades.</p>
+              </CardContent>
+            </Card>
+          </Reveal>
+          <Reveal>
+            <Card className="border-border/60 bg-card/80 shadow-md h-full">
+              <CardContent className="p-5">
+                <Camera className="h-6 w-6 text-primary" />
+                <h2 className="mt-3 text-lg font-bold">Galeria interna</h2>
+                <p className="mt-2 text-sm text-muted-foreground">Registro privado de campamentos y actividades por rama.</p>
+              </CardContent>
+            </Card>
+          </Reveal>
+        </div>
+
+        <div className="mx-auto max-w-6xl">
+          <Card className="border-border/70 bg-gradient-to-r from-primary/15 to-primary/5 shadow-md">
+            <CardContent className="p-5 sm:p-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm sm:text-base font-semibold">Necesitas otra seccion interna para tu rama? Podemos ampliarla por permisos.</p>
+              <Button asChild variant="outline">
+                <Link to="/area-miembros">Ver area de miembros</Link>
+              </Button>
             </CardContent>
           </Card>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="border-border/60">
-              <CardHeader>
-                <CardTitle className="text-lg">Próxima actividad</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Reunión semanal de rama. Ver detalles en el panel específico.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-border/60">
-              <CardHeader>
-                <CardTitle className="text-lg">Documentos</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Actas, autorizaciones y materiales internos de trabajo.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-border/60">
-              <CardHeader>
-                <CardTitle className="text-lg">Comunicados</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Avisos recientes de coordinación y recordatorios de actividades.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-border/60">
-              <CardHeader>
-                <CardTitle className="text-lg">Galería interna</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Próximamente: fotos privadas por rama para miembros autorizados.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
         </div>
       </section>
     </div>

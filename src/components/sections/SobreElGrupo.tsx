@@ -5,6 +5,9 @@
   Tent,
   Users,
   Flame,
+  Sparkles,
+  Stars,
+  Mountain,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,6 +23,7 @@ import {
 import { Reveal } from "@/components/Reveal";
 import communityImage from "@/assets/community-scouts.jpg";
 import tropaPopupImage from "@/assets/sistema de patrullas.jpg";
+import heroImage from "@/assets/hero-scouts.jpg";
 
 const WolfHowlingIcon = ({ className = "" }: { className?: string }) => (
   <svg
@@ -149,33 +153,68 @@ const About = () => {
     },
   ];
 
+  const highlights = [
+    {
+      value: "+61",
+      label: "años de historia viva",
+      detail: "Tradición scout en Montevideo desde 1964",
+      bg: "bg-primary/20",
+    },
+    {
+      value: "+100",
+      label: "scouts activos",
+      detail: "Niños, adolescentes y jóvenes en formación",
+      bg: "bg-[#feb21a]/25",
+    },
+    {
+      value: "6",
+      label: "equipos de servicio",
+      detail: "Ramas y adultos acompañando cada etapa",
+      bg: "bg-emerald-500/20",
+    },
+    {
+      value: "1",
+      label: "misión compartida",
+      detail: "Educar para dejar el mundo mejor",
+      bg: "bg-sky-500/20",
+    },
+  ];
+
   return (
     <>
       {/* Quiénes Somos */}
       <section
         id="quienes-somos"
-        className="section-padding bg-background/60 backdrop-blur-sm"
+        className="relative overflow-hidden section-padding bg-background/60 backdrop-blur-sm"
       >
+        <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+          <div className="absolute -left-24 top-14 h-72 w-72 rounded-full bg-primary/10 blur-3xl" />
+          <div className="absolute -right-24 bottom-0 h-72 w-72 rounded-full bg-[#feb21a]/10 blur-3xl" />
+        </div>
         <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-[1.1fr_0.9fr] gap-8 lg:gap-16 items-center max-w-7xl mx-auto">
+          <div className="grid max-w-7xl items-stretch gap-8 md:grid-cols-[1.15fr_0.85fr] lg:gap-12 mx-auto">
             <Reveal>
-              <div className="space-y-4">
-                <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              <div id="historia" className="relative rounded-3xl border border-border/60 bg-card/70 p-6 shadow-xl backdrop-blur-md sm:p-8 lg:p-10">
+                <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-4 py-2 text-xs font-semibold text-primary sm:text-sm">
+                  <Sparkles className="h-4 w-4" />
+                  Comunidad educativa al aire libre
+                </div>
+                <h2 className="mb-5 bg-gradient-to-r from-primary via-primary/85 to-primary/55 bg-clip-text text-3xl font-bold text-transparent sm:text-4xl md:text-5xl">
                   Quiénes Somos
                 </h2>
-                <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
+                <p className="text-base leading-relaxed text-muted-foreground sm:text-lg">
                   Somos un Grupo Scout, una comunidad que acompaña el crecimiento de niños, niñas, jóvenes y adolescentes a través del juego, la aventura, el servicio y la vida al aire libre.
                 </p>
-                <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
+                <p className="mt-4 text-base leading-relaxed text-muted-foreground sm:text-lg">
                   Formamos parte del Movimiento Scout del Uruguay y del Movimiento Scout Mundial, un espacio presente en más de 170 países, que busca contribuir a la construcción de un mundo mejor.
                 </p>
-                <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
+                <p className="mt-4 text-base leading-relaxed text-muted-foreground sm:text-lg">
                   En nuestro grupo, las distintas unidades comparten un mismo camino: aprender haciendo, desarrollar habilidades, fortalecer valores y descubrir el poder del trabajo en equipo.
                 </p>
-                <p className="text-base sm:text-lg text-primary font-semibold leading-relaxed">
+                <p className="mt-4 text-base font-semibold leading-relaxed text-primary sm:text-lg">
                   Ser scout es vivir con una sonrisa, con la mochila llena de experiencias y con el corazón dispuesto a servir.
                 </p>
-                <div className="pt-4 sm:pt-6 flex flex-col sm:flex-row gap-3 sm:gap-4">
+                <div className="pt-6 flex flex-col gap-3 sm:flex-row sm:gap-4">
                   <Button asChild size="lg" className="w-full sm:w-auto">
                     <Link to="/historia">Conoce nuestra historia</Link>
                   </Button>
@@ -187,25 +226,33 @@ const About = () => {
             </Reveal>
 
             <Reveal>
-              <div className="relative hidden md:block">
-                <div className="relative z-10">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                <div className="col-span-2 overflow-hidden rounded-3xl border border-border/70 shadow-2xl">
                   <img
-                    src={communityImage}
-                    alt="Grupo de scouts compartiendo actividades en comunidad"
-                    className="rounded-2xl shadow-2xl w-full object-cover aspect-[4/3] float-slow"
+                    src={heroImage}
+                    alt="Grupo Scout Séptimo en actividad"
+                    className="h-[240px] w-full object-cover transition-transform duration-700 hover:scale-105 sm:h-[320px]"
                     loading="lazy"
                     decoding="async"
                   />
                 </div>
-                <div className="absolute -bottom-6 -left-6 w-40 h-40 bg-primary rounded-full opacity-20 blur-3xl -z-0 glow-pulse"></div>
-                <div className="absolute -top-6 -right-6 w-40 h-40 bg-accent rounded-full opacity-20 blur-3xl -z-0 drift-slow"></div>
+                <div className="rounded-2xl border border-border/70 bg-card/70 p-5 shadow-lg backdrop-blur-sm">
+                  <Stars className="h-6 w-6 text-primary" />
+                  <p className="mt-3 text-sm font-semibold text-foreground">Promesa y ley en acción</p>
+                  <p className="mt-2 text-sm text-muted-foreground">Aprender con desafíos reales y decisiones compartidas.</p>
+                </div>
+                <div className="rounded-2xl border border-border/70 bg-card/70 p-5 shadow-lg backdrop-blur-sm">
+                  <Mountain className="h-6 w-6 text-primary" />
+                  <p className="mt-3 text-sm font-semibold text-foreground">Aventura con sentido</p>
+                  <p className="mt-2 text-sm text-muted-foreground">Campamentos, servicio y vida en naturaleza durante todo el año.</p>
+                </div>
               </div>
             </Reveal>
           </div>
         </div>
       </section>
 
-      <section className="relative py-16 sm:py-20">
+      <section className="relative py-14 sm:py-20">
         <div className="absolute inset-0" aria-hidden="true">
           <img
             src={communityImage}
@@ -217,21 +264,43 @@ const About = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-scout-black/85 via-scout-black/55 to-transparent" />
         </div>
         <div className="relative container mx-auto px-4">
-          <Reveal className="max-w-3xl">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4">
+          <Reveal className="grid items-end gap-6 lg:grid-cols-[1fr_auto]">
+            <div className="max-w-3xl">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4">
               Vivir el escultismo es vivir en comunidad
-            </h2>
-            <p className="text-base sm:text-lg text-white/80 leading-relaxed mb-6">
+              </h2>
+              <p className="text-base sm:text-lg text-white/80 leading-relaxed mb-6">
               Aventuras al aire libre, fogones que unen generaciones y proyectos
               que dejan huella. Cada encuentro suma una historia nueva.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3">
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 lg:justify-end">
               <Button asChild size="lg" className="w-full sm:w-auto">
                 <Link to="/galeria">Ver fotos del grupo</Link>
               </Button>
               <Button asChild size="lg" variant="outline" className="w-full sm:w-auto bg-transparent text-white border-white/50 hover:bg-white/10">
                 <Link to="/eventos">Próximos eventos</Link>
               </Button>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      <section className="section-padding bg-gradient-to-b from-background/60 to-muted/35">
+        <div className="container mx-auto px-4">
+          <Reveal>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {highlights.map((item) => (
+                <Card key={item.label} className="group overflow-hidden rounded-2xl border-0 bg-transparent shadow-none transition-all duration-300 hover:-translate-y-1">
+                  <CardContent className="p-0">
+                    <div className={`h-full rounded-2xl ${item.bg} p-6`}>
+                      <p className="text-4xl font-black tracking-tight text-foreground sm:text-5xl">{item.value}</p>
+                      <p className="mt-2 text-sm font-semibold uppercase tracking-wide text-foreground/80">{item.label}</p>
+                      <p className="mt-3 text-sm text-muted-foreground">{item.detail}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           </Reveal>
         </div>
@@ -251,20 +320,15 @@ const About = () => {
               </p>
             </Reveal>
 
-            <div className="flex flex-wrap items-stretch justify-center gap-3 sm:gap-4 py-2 sm:py-4 mb-8 sm:mb-12">
-              {branches.map((branch, index) => {
+            <div className="grid grid-cols-2 gap-3 py-2 sm:gap-4 sm:py-4 mb-8 sm:mb-12 md:grid-cols-3 xl:grid-cols-6">
+              {branches.map((branch) => {
                 return (
                   <div key={branch.title} className="contents">
-                    {index === 4 && (
-                      <div className="hidden lg:flex items-center px-1" aria-hidden="true">
-                        <div className="h-24 w-px bg-border/70" />
-                      </div>
-                    )}
                     <Reveal>
                       <Dialog>
                         <DialogTrigger asChild>
                           <Card
-                            className={`card-hover border-none shadow-sm cursor-pointer transition-all duration-300 group h-[190px] sm:h-[180px] w-[46%] max-w-[168px] sm:w-[160px] lg:w-[168px] ${branch.hoverClass}`}
+                            className={`card-hover border border-border/60 shadow-sm cursor-pointer transition-all duration-300 group h-[190px] sm:h-[190px] w-full ${branch.hoverClass}`}
                           >
                             <CardContent className="p-4 sm:p-5 flex flex-col items-center justify-center h-full text-center gap-2.5">
                               <div className={`w-14 h-14 bg-muted/30 rounded-xl flex items-center justify-center transition-all duration-300 ${branch.iconHoverBgClass}`}>
@@ -282,30 +346,32 @@ const About = () => {
                           </Card>
                         </DialogTrigger>
 
-                        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                          <div className="grid md:grid-cols-2 gap-6 items-start">
+                        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto border-border/70 bg-card/95 backdrop-blur-lg">
+                          <div className="grid gap-6 items-start md:grid-cols-2">
                             <div>
                               <DialogTitle className="text-2xl mb-4">
                                 {branch.title}
                               </DialogTitle>
                               <DialogDescription className="space-y-4">
-                                <p className="text-base">{branch.description}</p>
-                                <p>{branch.detailText}</p>
+                                <p className="text-base text-foreground/90">{branch.description}</p>
+                                <p className="text-muted-foreground">{branch.detailText}</p>
                               </DialogDescription>
                             </div>
 
                             <div className="w-full space-y-4">
-                              <img
-                                src={branch.image ?? communityImage}
-                                alt={`Foto representativa de la rama ${branch.title}`}
-                                className={`w-full rounded-lg shadow-lg ${
-                                  branch.route === "tropa"
-                                    ? "max-h-[420px] object-contain"
-                                    : "aspect-video object-cover"
-                                }`}
-                                loading="lazy"
-                                decoding="async"
-                              />
+                              <div className="overflow-hidden rounded-xl border border-border/60">
+                                <img
+                                  src={branch.image ?? communityImage}
+                                  alt={`Foto representativa de la rama ${branch.title}`}
+                                  className={`w-full bg-transparent ${
+                                    branch.route === "tropa"
+                                      ? "max-h-[420px] object-cover"
+                                      : "aspect-video object-cover"
+                                  }`}
+                                  loading="lazy"
+                                  decoding="async"
+                                />
+                              </div>
                               <div className="flex gap-3 justify-end">
                                 <DialogClose asChild>
                                   <Button variant="outline" size="sm">
@@ -331,7 +397,7 @@ const About = () => {
 
           {/* Values Grid - Pilares */}
           <Reveal>
-            <div className="bg-background text-foreground border border-border/60 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 lg:p-12">
+            <div className="bg-card/80 text-foreground border border-border/60 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 lg:p-12 shadow-xl">
               <div id="pilares" className="text-center mb-6 sm:mb-10">
                 <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2 sm:mb-3">
                   Los Pilares del Escultismo
@@ -342,7 +408,7 @@ const About = () => {
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
               {values.map((value, index) => (
                 <Card
                   key={index}
@@ -363,6 +429,7 @@ const About = () => {
           </Reveal>
         </div>
       </section>
+
     </>
   );
 };

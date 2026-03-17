@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { useMemberAuth } from "@/context/MemberAuthContext";
 import { deriveRamaFromEdad, type MiembroRama } from "@/lib/member-auth";
 import { getAuthUser } from "@/lib/backend";
 import { getProfile } from "@/lib/api";
+import { ShieldCheck, UserCheck, AlertCircle } from "lucide-react";
+import { Reveal } from "@/components/Reveal";
 
 function calculateAge(fechaNacimiento: string | null | undefined): number | null {
   if (!fechaNacimiento) return null;
@@ -103,39 +105,44 @@ export default function LoginMiembros() {
     <div className="min-h-screen bg-background/60 backdrop-blur-sm">
       <div className="h-16 sm:h-20" />
       <section className="container mx-auto px-4 py-10 sm:py-14">
-        <div className="max-w-lg mx-auto">
-          <Card className="border-border/60 shadow-lg">
-            <CardHeader>
-              <CardTitle className="text-2xl">Confirmación de acceso interno</CardTitle>
-            </CardHeader>
+        <div className="max-w-3xl mx-auto">
+          <Card className="border-border/60 shadow-xl bg-card/80">
             <CardContent>
-              <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">
+              <div className="space-y-5 p-2 sm:p-4">
+                <div>
+                  <p className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary">
+                    <ShieldCheck className="h-4 w-4" />
+                    Reconfirmacion de identidad
+                  </p>
+                  <h1 className="mt-3 text-3xl font-black">Confirmacion de acceso interno</h1>
+                  <p className="mt-2 text-sm text-muted-foreground">
                   Este ingreso no usa campos manuales. Tomamos tu cuenta autenticada y validamos
                   tu nombre y rama asignada por edad.
-                </p>
+                  </p>
+                </div>
 
                 {loading ? (
                   <p className="text-sm text-muted-foreground">Validando perfil...</p>
                 ) : (
-                  <div className="rounded-lg border border-border/60 p-4 space-y-2 text-sm">
-                    <p>
-                      <span className="text-muted-foreground">Nombre detectado:</span>{" "}
-                      <strong>{nombre || "Sin nombre"}</strong>
-                    </p>
-                    <p>
-                      <span className="text-muted-foreground">Edad detectada:</span>{" "}
-                      <strong>{edad ?? "Sin edad"}</strong>
-                    </p>
-                    <p>
-                      <span className="text-muted-foreground">Rama asignada:</span>{" "}
-                      <strong>{rama ? ramaLabel[rama] : "Sin rama"}</strong>
-                    </p>
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <div className="rounded-xl border border-border/60 bg-background/80 p-4 text-sm">
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">Nombre detectado</p>
+                      <p className="mt-1 font-semibold">{nombre || "Sin nombre"}</p>
+                    </div>
+                    <div className="rounded-xl border border-border/60 bg-background/80 p-4 text-sm">
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">Edad detectada</p>
+                      <p className="mt-1 font-semibold">{edad ?? "Sin edad"}</p>
+                    </div>
+                    <div className="rounded-xl border border-border/60 bg-background/80 p-4 text-sm">
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">Rama asignada</p>
+                      <p className="mt-1 font-semibold">{rama ? ramaLabel[rama] : "Sin rama"}</p>
+                    </div>
                   </div>
                 )}
 
                 {error && (
-                  <p className="text-sm text-destructive" role="alert">
+                  <p className="flex items-center gap-2 text-sm text-destructive" role="alert">
+                    <AlertCircle className="h-4 w-4" />
                     {error}
                   </p>
                 )}
@@ -158,7 +165,8 @@ export default function LoginMiembros() {
 
               {isAuthenticated && session && (
                 <div className="mt-6 rounded-lg border border-border/60 p-3 text-sm text-muted-foreground">
-                  Ya hay sesión activa como <strong>{session.nombre}</strong>. Puedes ir directo a tu
+                  <UserCheck className="inline mr-1 h-4 w-4" />
+                  Ya hay sesion activa como <strong>{session.nombre}</strong>. Puedes ir directo a tu
                   panel desde <Link to={redirectTo} className="text-primary underline ml-1">aquí</Link>.
                 </div>
               )}

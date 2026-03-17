@@ -10,6 +10,13 @@ const Hero = () => {
   const { toast } = useToast();
   const { user } = useSupabaseUser();
 
+  const scrollToWithOffset = (id: string, offset = 120) => {
+    const target = document.getElementById(id);
+    if (!target) return;
+    const top = target.getBoundingClientRect().top + window.scrollY - offset;
+    window.scrollTo({ top, behavior: "smooth" });
+  };
+
   const handleJoinClick: React.MouseEventHandler<HTMLAnchorElement> = (e) => {
     if (user) {
       // Evita navegar a /auth si ya está logueado
@@ -127,11 +134,7 @@ const Hero = () => {
                   size="sm"
                   variant="outline"
                   className="border-white/40 text-white bg-transparent hover:bg-transparent hover:text-white"
-                  onClick={() =>
-                    document
-                      .getElementById("pilares")
-                      ?.scrollIntoView({ behavior: "smooth" })
-                  }
+                  onClick={() => scrollToWithOffset("pilares", 130)}
                 >
                   Pilares
                 </Button>

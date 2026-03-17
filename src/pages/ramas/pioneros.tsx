@@ -1,52 +1,26 @@
-﻿import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+﻿import RamaLanding from "@/components/sections/RamaLanding";
 import communityImage from "@/assets/community-scouts.jpg";
 
 const Pioneros = () => {
   return (
-    <div className="min-h-screen">
-      <section className="section-padding">
-        <div className="container mx-auto px-4">
-          <h1 className="text-4xl font-bold mb-2">Pioneros</h1>
-          <p className="text-xl text-primary font-semibold mb-6">Lema: "Servir"</p>
-          <div className="grid md:grid-cols-2 gap-8">
-            <Card>
-              <CardContent className="p-8">
-                <p className="text-lg text-muted-foreground mb-4">
-                  Los Pioneros, jóvenes de 15 a 17 años, viven una etapa de acción, servicio y liderazgo. Es el momento de poner manos a la obra para transformar su entorno: organizan actividades solidarias, proyectos comunitarios y campamentos donde ponen en práctica todo lo aprendido.
-                </p>
-                <p className="text-lg text-muted-foreground">
-                  Con espáritu crático y creativo, buscan dejar huella positiva en su grupo, en su barrio y en sá mismos. Son jóvenes comprometidos con un mundo más justo, solidario y sostenible.
-                </p>
-                <ul className="list-disc pl-5 mt-6 text-muted-foreground space-y-2">
-                  <li>Edades: 15–17 años</li>
-                  <li>Proyectos de servicio comunitario</li>
-                  <li>Liderazgo y compromiso social</li>
-                </ul>
-                <div className="mt-6">
-                  <Button asChild>
-                    <Link to="/contacto">Contactar</Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            <div>
-              <img
-                src={communityImage}
-                alt="Grupo Scout Séptimo - Comunidad"
-                loading="lazy"
-                width="600"
-                height="400"
-                className="rounded-lg shadow-md"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-      {/* Footer global en App.tsx */}
-    </div>
+    <RamaLanding
+      title="Pioneros"
+      lema="Servir"
+      ageRange="15 a 17"
+      intro="Etapa de accion concreta: proyectos comunitarios, autonomia y liderazgo con impacto real."
+      image={communityImage}
+      imageAlt="Rama Pioneros del Grupo Scout Septimo"
+      accentClass="bg-[#134686]"
+      paragraphs={[
+        "Pioneros es una etapa de consolidacion personal. Los y las jovenes disenan proyectos, toman decisiones y sostienen objetivos colectivos.",
+        "El servicio comunitario se vuelve central: no solo participan, tambien lideran iniciativas para mejorar su entorno.",
+      ]}
+      bullets={[
+        "Proyectos de servicio con planificacion y evaluacion.",
+        "Experiencias de liderazgo en contextos reales.",
+        "Construccion de autonomia con acompanamiento adulto.",
+      ]}
+    />
   );
 };
 

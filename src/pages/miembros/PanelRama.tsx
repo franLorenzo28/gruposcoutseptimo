@@ -1,8 +1,10 @@
 import { Link, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { useMemberAuth } from "@/context/MemberAuthContext";
 import type { MiembroRama } from "@/lib/member-auth";
+import { Calendar, FileText, Image, Info, AlertTriangle } from "lucide-react";
+import { Reveal } from "@/components/Reveal";
 
 const ramaConfig: Record<
   MiembroRama,
@@ -55,40 +57,48 @@ export default function PanelRama({ rama }: { rama: MiembroRama }) {
       <div className="h-16 sm:h-20" />
       <section className="container mx-auto px-4 py-8 sm:py-12 space-y-6">
         <div className="max-w-6xl mx-auto space-y-6">
-          <Card className="border-border/60 shadow-lg">
-            <CardHeader>
-              <CardTitle className="text-2xl sm:text-3xl">{config.titulo}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <p className="text-muted-foreground">
-                Bienvenido, <strong>{session?.nombre}</strong>. Este es tu espacio interno de rama.
-              </p>
-              <p className="text-sm text-primary font-medium">Lema de rama: {config.lema}</p>
-              {denied && (
-                <p className="text-sm text-amber-600">
-                  Intentaste acceder a una rama que no corresponde a tu perfil. Te redirigimos a tu panel.
+          <Reveal>
+            <div className="grid gap-6 rounded-3xl border border-border/70 bg-card/80 p-6 shadow-xl sm:p-8 lg:grid-cols-[1.2fr_0.8fr]">
+              <div>
+                <h1 className="text-3xl font-black sm:text-4xl">{config.titulo}</h1>
+                <p className="mt-3 text-sm text-muted-foreground sm:text-base">
+                  Bienvenido, <strong>{session?.nombre}</strong>. Este es tu espacio interno para la organizacion de rama.
                 </p>
-              )}
-              <div className="flex flex-wrap gap-3 pt-1">
-                <Button asChild variant="outline">
-                  <Link to="/area-miembros">Área de miembros</Link>
-                </Button>
-                <Button asChild variant="outline">
-                  <Link to="/dashboard">Ir al dashboard</Link>
-                </Button>
-                <Button variant="destructive" onClick={logout}>
-                  Cerrar sesión
-                </Button>
+                <p className="mt-3 inline-flex rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary">
+                  Lema: {config.lema}
+                </p>
+                {denied && (
+                  <p className="mt-4 flex items-center gap-2 text-sm text-amber-600">
+                    <AlertTriangle className="h-4 w-4" />
+                    Intentaste acceder a una rama no permitida para tu perfil.
+                  </p>
+                )}
               </div>
-            </CardContent>
-          </Card>
+
+              <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
+                <p className="text-sm text-muted-foreground">Acciones</p>
+                <div className="mt-3 flex flex-wrap gap-3">
+                  <Button asChild variant="outline">
+                    <Link to="/area-miembros">Area de miembros</Link>
+                  </Button>
+                  <Button asChild variant="outline">
+                    <Link to="/dashboard">Ir al dashboard</Link>
+                  </Button>
+                  <Button variant="destructive" onClick={logout}>
+                    Cerrar sesion
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </Reveal>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="border-border/60">
-              <CardHeader>
-                <CardTitle className="text-lg">Calendario</CardTitle>
-              </CardHeader>
+            <Card className="border-border/60 bg-card/80">
               <CardContent>
+                <div className="mb-3 flex items-center gap-2 pt-4">
+                  <Calendar className="h-5 w-5 text-primary" />
+                  <h2 className="text-lg font-bold">Calendario</h2>
+                </div>
                 <ul className="text-sm text-muted-foreground space-y-2">
                   {config.reuniones.map((item) => (
                     <li key={item}>• {item}</li>
@@ -97,11 +107,12 @@ export default function PanelRama({ rama }: { rama: MiembroRama }) {
               </CardContent>
             </Card>
 
-            <Card className="border-border/60">
-              <CardHeader>
-                <CardTitle className="text-lg">Documentos</CardTitle>
-              </CardHeader>
+            <Card className="border-border/60 bg-card/80">
               <CardContent>
+                <div className="mb-3 flex items-center gap-2 pt-4">
+                  <FileText className="h-5 w-5 text-primary" />
+                  <h2 className="text-lg font-bold">Documentos</h2>
+                </div>
                 <ul className="text-sm text-muted-foreground space-y-2">
                   {config.documentos.map((item) => (
                     <li key={item}>• {item}</li>
@@ -110,22 +121,24 @@ export default function PanelRama({ rama }: { rama: MiembroRama }) {
               </CardContent>
             </Card>
 
-            <Card className="border-border/60">
-              <CardHeader>
-                <CardTitle className="text-lg">Fotos</CardTitle>
-              </CardHeader>
+            <Card className="border-border/60 bg-card/80">
               <CardContent>
+                <div className="mb-3 flex items-center gap-2 pt-4">
+                  <Image className="h-5 w-5 text-primary" />
+                  <h2 className="text-lg font-bold">Fotos</h2>
+                </div>
                 <p className="text-sm text-muted-foreground">
                   Próximamente: galería privada por rama con salidas, campamentos y actividades internas.
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="border-border/60">
-              <CardHeader>
-                <CardTitle className="text-lg">Información interna</CardTitle>
-              </CardHeader>
+            <Card className="border-border/60 bg-card/80">
               <CardContent>
+                <div className="mb-3 flex items-center gap-2 pt-4">
+                  <Info className="h-5 w-5 text-primary" />
+                  <h2 className="text-lg font-bold">Informacion interna</h2>
+                </div>
                 <ul className="text-sm text-muted-foreground space-y-2">
                   {config.info.map((item) => (
                     <li key={item}>• {item}</li>
