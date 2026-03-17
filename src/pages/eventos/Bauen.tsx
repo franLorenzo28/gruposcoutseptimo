@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 const Bauen = () => {
   const actividades = [
     { nombre: "Pionerismo", icon: "🏗️" },
-    { nombre: "Cabulleráa", icon: "🪢" },
+    { nombre: "Cabullería", icon: "🪢" },
     { nombre: "Cocina", icon: "🔥" },
   ];
 
@@ -15,26 +15,26 @@ const Bauen = () => {
     {
       nombre: "La Manada",
       color: "#FEB21A",
-      duracion: "1 dáa",
-      descripcion: "En la Manada realiza construcciones de cubiles. Esta se desarrolla en una sola jornada donde deben presentar sus construcciones que se realizan dentro de un box delimitado. Cada cubil representará a un personaje del Libro de la Selva, elegido por cada seisena, y la elección del mismo no podrá repetirse dentro del mismo Grupo Scout. Con esta propuesta se busca que exploren y se sumerjan en el mundo de las Tierras Várgenes durante esta actividad. Es una actividad familiar que los Lobatos disfrutan mucho asá como los Padres y familia y amigos.",
+      duracion: "1 día",
+      descripcion: "En la Manada se realizan construcciones de cubiles. Esta se desarrolla en una sola jornada donde deben presentar sus construcciones dentro de un box delimitado. Cada cubil representa a un personaje del Libro de la Selva, elegido por cada seisena, y la elección no puede repetirse dentro del mismo Grupo Scout. Con esta propuesta se busca que exploren y se sumerjan en el mundo de las Tierras Vírgenes durante la actividad. Es una actividad familiar que los Lobatos disfrutan mucho, así como sus familias y amigos.",
     },
     {
       nombre: "Rama Scout / Tropa",
       color: "#344F1F",
-      duracion: "2 dáas",
-      descripcion: "Es uno de los platos fuertes de este evento ya que nuclear a la mayor cantidad de participantes. A la fecha participan más de 25 Patrullas en la modalidad de competencia de construcciones de Rincones de Patrulla y competencia de Cocina con fuego. En la competencia de Rama Scout/Tropa se puede ver en tiempo real todo lo que los scouts han aprendido a lo largo de su vida scout en la teoráa y ponerlo en práctica de la mejor manera posible. Cabuyeráa, amarres, pionerismo, campismo, cocina, fuego, armado de toldos, armado de mesas y bancos, cuidado y limpieza del rincón.",
+      duracion: "2 días",
+      descripcion: "Es uno de los platos fuertes del evento, ya que nuclea la mayor cantidad de participantes. Actualmente participan más de 25 patrullas en competencias de construcción de rincones de patrulla y cocina con fuego. En esta rama se ve en tiempo real todo lo aprendido en su vida scout y su aplicación práctica: cabuyería, amarres, pionerismo, campismo, cocina, armado de toldos, mesas y bancos, además del cuidado y la limpieza del rincón.",
     },
     {
       nombre: "Pioneros",
       color: "#134686",
-      duracion: "2 dáas",
-      descripcion: "Sin duda se ha transformado en la actividad del segundo dáa que mayor atención atrae. La construcción de Trebuchet es una competencia que aplica todo lo referente a cabuyeráa pero de una forma más compleja. Requiere precisión, técnica y que todos los participantes tengan muy en claro su roll dentro de la competencia. En este caso además se agrega una cena Medieval a la Noche donde todos los scouts de todos los grupos comparten una velada totalmente caracterizados con la época y a la mañana siguiente antes de comenzar la competencia tienen un momento de distinción y juego donde realizan competencias medievales de arqueráa, etc.",
+      duracion: "2 días",
+      descripcion: "Se ha transformado en una de las actividades más atractivas del segundo día. La construcción de trebuchet aplica cabuyería de forma más compleja, con precisión, técnica y roles claros dentro del equipo. Además, se realiza una cena medieval en la noche y, al día siguiente, una instancia lúdica con pruebas temáticas antes de la competencia principal.",
     },
     {
       nombre: "Rovers",
       color: "#DD0303",
-      duracion: "2 dáas",
-      descripcion: "Los rovers realiza generalmente competencias de Torres aunque en los últimos años se han realizado otro tipo de competencias como construcciones de barcos, campamentos elevados, juegos mecánicos, etc. En esta Unidad la competencia ha tomado mayor interés ya que Poco a poco más y más Comunidades se anotan a esta competencia. Además se realiza una actividad en la primera noche donde el objetivo es conocerse y dejar la competencia de lado un momento. En esta competencia se nota la diferencia en cuanto a la madurez como scouts y la experiencia. Podemos ver mucho más desarrollado el trabajo en equipo, la práctica de la paciencia y la fraternidad entre comunidades. Es una competencia más distendida debido a la seguridad que manejan los participantes y además la motivación es constante, tanto dentro del equipo como entre competidores.",
+      duracion: "2 días",
+      descripcion: "Rovers realiza generalmente competencias de torres, aunque en los últimos años también hubo construcciones de barcos, campamentos elevados y juegos mecánicos. La competencia crece cada año con más comunidades participantes. También existe una actividad de integración la primera noche para conocerse y fortalecer la fraternidad. Se destaca la madurez, la experiencia y el trabajo en equipo.",
     },
   ];
 
@@ -48,7 +48,7 @@ const Bauen = () => {
       </div>
 
       {/* Hero Section */}
-      <section className="pt-24 sm:pt-28 md:pt-32 pb-12 sm:pb-16 bg-background/60 backdrop-blur-sm relative">
+      <section className="pt-24 sm:pt-28 md:pt-32 pb-12 sm:pb-16 bg-gradient-to-b from-background via-background/95 to-muted/25 relative">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 bg-muted/30 backdrop-blur-sm rounded-full mb-4 sm:mb-6 shadow-sm">
@@ -97,7 +97,7 @@ const Bauen = () => {
       </section>
 
       {/* Acerca del Evento */}
-      <section className="section-padding bg-background/60 backdrop-blur-sm relative">
+      <section className="section-padding bg-gradient-to-b from-background via-background/95 to-muted/25 relative">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="max-w-5xl mx-auto">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-8 text-center">
@@ -112,8 +112,8 @@ const Bauen = () => {
                   por supuesto, divirtiéndonos, ayudando a continuar construyendo juntos los ideales del Escultismo.
                 </p>
                 <p className="text-lg md:text-xl text-muted-foreground leading-relaxed mb-6">
-                  Bauen es una excusa para conocer a otros Grupos de nuestro paás, otras formas de hacer escultismo, 
-                  es una instancia para practicar la empatáa, la tolerancia y sentir el verdadero espáritu scout 
+                  Bauen es una excusa para conocer a otros grupos de nuestro país, otras formas de hacer escultismo,
+                  es una instancia para practicar la empatía, la tolerancia y sentir el verdadero espíritu scout
                   del que todos tenemos conocimiento.
                 </p>
                 <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">
@@ -139,7 +139,7 @@ const Bauen = () => {
       </section>
 
       {/* Nuestras Ramas - Rediseño */}
-      <section className="section-padding bg-background/60 backdrop-blur-sm relative">
+      <section className="section-padding bg-gradient-to-b from-background via-background/95 to-muted/25 relative">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center mb-12">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
@@ -231,6 +231,7 @@ const Bauen = () => {
   );
 };
 export default Bauen;
+
 
 
 

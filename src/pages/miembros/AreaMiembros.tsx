@@ -9,7 +9,7 @@ export default function AreaMiembros() {
   const { isAuthenticated, session, logout } = useMemberAuth();
 
   return (
-    <div className="min-h-screen bg-background/60 backdrop-blur-sm">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25">
       <div className="h-16 sm:h-20" />
       <section className="container mx-auto px-4 py-10 sm:py-14 space-y-8">
         <Reveal>
@@ -91,3 +91,4 @@ export default function AreaMiembros() {
     </div>
   );
 }
+

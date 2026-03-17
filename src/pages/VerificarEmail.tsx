@@ -26,18 +26,18 @@ const VerificarEmail = () => {
 
   const verifyEmail = async (token: string) => {
     try {
-      console.log('🔍 Verificando email con token:', token);
+      console.log('�x� Verificando email con token:', token);
       
       const result = await verifyEmailToken(token);
       
-      console.log('✅ Resultado:', result);
+      console.log('�S& Resultado:', result);
       
       if (result.success) {
         setStatus("success");
         setMessage(result.message || "Email verificado correctamente");
         
         toast({
-          title: "✅ Email verificado",
+          title: "�S& Email verificado",
           description: "Tu cuenta ha sido verificada exitosamente. Ahora podés acceder a todas las funcionalidades!",
         });
 
@@ -50,7 +50,7 @@ const VerificarEmail = () => {
         setMessage(result.message || "No se pudo verificar el email");
       }
     } catch (error: any) {
-      console.error('❌ Error verificando:', error);
+      console.error('�R Error verificando:', error);
       setStatus("error");
       setMessage(error.message || "No se pudo verificar el email");
       
@@ -63,7 +63,7 @@ const VerificarEmail = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25 flex items-center justify-center p-4">
       <div className="max-w-md w-full">
         <div className="bg-card border rounded-lg p-8 shadow-lg">
           {/* Icon */}
@@ -136,3 +136,4 @@ const VerificarEmail = () => {
 };
 
 export default VerificarEmail;
+

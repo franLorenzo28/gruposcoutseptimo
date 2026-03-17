@@ -8,7 +8,11 @@ import { Link } from "react-router-dom";
 const Scoutpedia = () => {
   return (
     <div className="min-h-screen">
-      <section className="pt-24 sm:pt-28 md:pt-32 pb-10 sm:pb-14 bg-background/60 backdrop-blur-sm">
+      <section className="relative overflow-hidden pt-24 sm:pt-28 md:pt-32 pb-10 sm:pb-14 bg-gradient-to-b from-background via-background/95 to-muted/25">
+        <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+          <div className="bg-blob w-72 h-72 bg-primary/10 -top-20 -right-16 float-slow" />
+          <div className="bg-blob w-64 h-64 bg-muted/20 -bottom-16 -left-12 drift-slow" />
+        </div>
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <Reveal className="max-w-4xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-muted/30 rounded-full mb-4">
@@ -28,11 +32,11 @@ const Scoutpedia = () => {
         </div>
       </section>
 
-      <section className="py-10 sm:py-14">
+      <section className="py-10 sm:py-14 bg-muted/25">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto space-y-6">
             <Reveal>
-              <Card className="border-2 border-primary/20 shadow-lg bg-background/70 backdrop-blur-sm">
+              <Card className="border border-border/70 shadow-lg bg-card/85 backdrop-blur-sm">
                 <CardContent className="p-6 sm:p-8">
                   <h2 className="text-2xl sm:text-3xl font-semibold mb-3">
                     Sir Baden-Powell of Gilwell
@@ -63,7 +67,7 @@ const Scoutpedia = () => {
             </Reveal>
 
             <Reveal>
-              <Card className="border-2 border-primary/20 shadow-lg bg-background/70 backdrop-blur-sm">
+              <Card className="border border-border/70 shadow-lg bg-card/85 backdrop-blur-sm">
                 <CardContent className="p-6 sm:p-8">
                   <h2 className="text-2xl sm:text-3xl font-semibold mb-3">
                     Roland Erasmus Philipps
@@ -87,7 +91,7 @@ const Scoutpedia = () => {
             </Reveal>
 
             <Reveal>
-              <Card className="border-2 border-primary/20 shadow-lg bg-background/70 backdrop-blur-sm">
+              <Card className="border border-border/70 shadow-lg bg-card/85 backdrop-blur-sm">
                 <CardContent className="p-6 sm:p-8">
                   <h2 className="text-2xl sm:text-3xl font-semibold mb-3">
                     Rudyard Kipling
@@ -118,7 +122,7 @@ const Scoutpedia = () => {
             </Reveal>
 
             <Reveal>
-              <Card className="border-2 border-primary/20 shadow-lg bg-background/70 backdrop-blur-sm">
+              <Card className="border border-border/70 shadow-lg bg-card/85 backdrop-blur-sm">
                 <CardContent className="p-6 sm:p-8">
                   <h2 className="text-2xl sm:text-3xl font-semibold mb-3">
                     El Método Scout
@@ -153,7 +157,7 @@ const Scoutpedia = () => {
             </Reveal>
 
             <Reveal>
-              <Card className="border-2 border-primary/20 shadow-lg bg-background/70 backdrop-blur-sm">
+              <Card className="border border-border/70 shadow-lg bg-card/85 backdrop-blur-sm">
                 <CardContent className="p-6 sm:p-8">
                   <h2 className="text-2xl sm:text-3xl font-semibold mb-3">
                     El Sistema de Patrullas
@@ -190,7 +194,7 @@ const Scoutpedia = () => {
             </Reveal>
 
             <Reveal>
-              <Card className="border-2 border-primary/20 shadow-lg bg-background/70 backdrop-blur-sm">
+              <Card className="border border-border/70 shadow-lg bg-card/85 backdrop-blur-sm">
                 <CardContent className="p-6 sm:p-8">
                   <h2 className="text-2xl sm:text-3xl font-semibold mb-3">
                     Escultismo para Muchachos
@@ -219,7 +223,7 @@ const Scoutpedia = () => {
             </Reveal>
 
             <Reveal>
-              <Card className="border-2 border-primary/20 shadow-lg bg-background/70 backdrop-blur-sm">
+              <Card className="border border-border/70 shadow-lg bg-card/85 backdrop-blur-sm">
                 <CardContent className="p-6 sm:p-8">
                   <h2 className="text-2xl sm:text-3xl font-semibold mb-3">
                     Los Primeros Cuatro Meses de una Tropa Scout
@@ -239,7 +243,7 @@ const Scoutpedia = () => {
             </Reveal>
 
             <Reveal>
-              <Card className="border-2 border-primary/20 shadow-lg bg-background/70 backdrop-blur-sm">
+              <Card className="border border-border/70 shadow-lg bg-card/85 backdrop-blur-sm">
                 <CardContent className="p-6 sm:p-8">
                   <h2 className="text-2xl sm:text-3xl font-semibold mb-3">
                     Manual para el Jefe de Tropa y sus Ayudantes
@@ -260,7 +264,7 @@ const Scoutpedia = () => {
             </Reveal>
 
             <Reveal>
-              <Card className="border-2 border-primary/20 shadow-lg bg-background/70 backdrop-blur-sm">
+              <Card className="border border-border/70 shadow-lg bg-card/85 backdrop-blur-sm">
                 <CardContent className="p-6 sm:p-8">
                   <h2 className="text-2xl sm:text-3xl font-semibold mb-3">
                     Manual para Scouts · Ciudadanos del Mañana
@@ -364,5 +368,6 @@ const Scoutpedia = () => {
 };
 
 export default Scoutpedia;
+
 
 

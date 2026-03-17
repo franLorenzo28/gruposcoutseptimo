@@ -118,19 +118,19 @@ const FooterNew = () => {
                 <FooterLink to="/">Inicio</FooterLink>
               </li>
               <li>
-                <FooterLink to="/linea-temporal">Línea Temporal</FooterLink>
+                <FooterLink to="/usuarios">Comuni 7</FooterLink>
               </li>
               <li>
                 <FooterLink to="/historia">Historia</FooterLink>
               </li>
               <li>
-                <FooterLink to="/bauen">BAUEN</FooterLink>
+                <FooterLink to="/archivo">Archivo</FooterLink>
               </li>
               <li>
                 <FooterLink to="/eventos">Eventos</FooterLink>
               </li>
               <li>
-                <FooterLink to="/galeria">Galería</FooterLink>
+                <FooterLink to="/bauen">BAUEN</FooterLink>
               </li>
               <li>
                 <FooterLink to="/contacto">Contacto</FooterLink>

@@ -17,7 +17,7 @@ import {
   Crown,
   Shield,
   MessageCircle,
-  Image as ImageIconGallery,
+  Archive as ArchiveIcon,
 } from "lucide-react";
 import {
   Select,
@@ -94,6 +94,10 @@ const Usuarios = () => {
     null,
   );
   const [creatingGroup, setCreatingGroup] = useState(false);
+  const [groupAction, setGroupAction] = useState<{
+    groupId: string;
+    type: "join" | "leave";
+  } | null>(null);
 
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -394,6 +398,7 @@ const Usuarios = () => {
   };
 
   const handleJoinGroup = async (groupId: string) => {
+    setGroupAction({ groupId, type: "join" });
     try {
       await joinGroup(groupId);
       toast({
@@ -402,17 +407,32 @@ const Usuarios = () => {
       });
       await refetchGroups(); // Refrescar con React Query
     } catch (e: any) {
+      const raw = String(e?.message || "").toLowerCase();
+      const alreadyMember =
+        raw.includes("duplicate") ||
+        raw.includes("23505") ||
+        raw.includes("already") ||
+        raw.includes("already exists");
+
       toast({
-        title: "Error",
-        description: e.message,
+        title: alreadyMember ? "Ya eres miembro" : "Error",
+        description: alreadyMember
+          ? "Ya formas parte de este grupo."
+          : e.message || "No se pudo unir al grupo",
         variant: "destructive",
       });
+      if (alreadyMember) {
+        await refetchGroups();
+      }
+    } finally {
+      setGroupAction(null);
     }
   };
 
   const handleLeaveGroup = async (groupId: string) => {
     if (!confirm("¿Estás seguro de que quieres salir de este grupo?")) return;
 
+    setGroupAction({ groupId, type: "leave" });
     try {
       await leaveGroup(groupId);
       toast({
@@ -423,9 +443,11 @@ const Usuarios = () => {
     } catch (e: any) {
       toast({
         title: "Error",
-        description: e.message,
+        description: e.message || "No se pudo salir del grupo",
         variant: "destructive",
       });
+    } finally {
+      setGroupAction(null);
     }
   };
 
@@ -465,7 +487,7 @@ const Usuarios = () => {
   return (
     <EmailVerificationGuard featureName="Comuni 7">
     {loading ? (
-      <div className="min-h-screen bg-background/60 backdrop-blur-sm">
+      <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25">
         {/* Navigation global en App.tsx */}
         <div className="h-20"></div>
         <div className="flex items-center justify-center py-20">
@@ -473,49 +495,77 @@ const Usuarios = () => {
         </div>
       </div>
     ) : (
-    <div className="min-h-screen bg-background/60 backdrop-blur-sm">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25">
       {/* Navigation global en App.tsx */}
       <div className="h-14 sm:h-16"></div>
 
-      <div className="max-w-6xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
-        <div className="flex items-center gap-2 mb-3">
-          <UsersIcon className="w-6 h-6 sm:w-7 sm:h-7 text-primary" />
-          <div className="flex-1">
-            <h1 className="text-xl sm:text-2xl font-bold">Comuni 7</h1>
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              Personas y hilos de la comunidad
-            </p>
-          </div>
-        </div>
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
+        <Card className="mb-4 sm:mb-6 overflow-hidden border-border/70 bg-card/85 shadow-xl backdrop-blur-sm">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex flex-col gap-4 sm:gap-5">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <UsersIcon className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Comuni 7</h1>
+                    <p className="mt-1 text-sm sm:text-base text-muted-foreground">
+                      Personas, hilos y grupos de la comunidad scout.
+                    </p>
+                  </div>
+                </div>
 
-        {/* Botones de acceso a Galería y Mensajes */}
-        <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-3 sm:mb-4">
-          <Link to="/galeria">
-            <Card className="card-hover cursor-pointer h-full">
-              <CardContent className="p-2 sm:p-3 flex items-center gap-2 sm:gap-3">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-muted/30 rounded-lg flex items-center justify-center">
-                  <ImageIconGallery className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+                <Badge variant="outline" className="border-primary/30 bg-primary/5 text-primary">
+                  Comunidad activa
+                </Badge>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                <div className="rounded-lg border border-border/70 bg-background/70 px-3 py-2">
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Personas</p>
+                  <p className="text-lg font-bold">{profiles.length}</p>
+                </div>
+                <div className="rounded-lg border border-border/70 bg-background/70 px-3 py-2">
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Hilos</p>
+                  <p className="text-lg font-bold">{threads.length}</p>
+                </div>
+                <div className="rounded-lg border border-border/70 bg-background/70 px-3 py-2">
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Grupos</p>
+                  <p className="text-lg font-bold">{groups.length}</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 mb-4 sm:mb-6">
+          <Link to="/mensajes">
+            <Card className="card-hover cursor-pointer h-full border-border/70 bg-card/80 backdrop-blur-sm">
+              <CardContent className="p-3 sm:p-4 flex items-center gap-3">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                  <MessageCircle className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-sm sm:text-base">Galería</h3>
-                  <p className="text-xs text-muted-foreground hidden sm:block">
-                    Explorá las fotos del grupo
+                  <h3 className="font-semibold text-sm sm:text-base">Mensajes</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Conversá con otros scouts
                   </p>
                 </div>
               </CardContent>
             </Card>
           </Link>
-          
-          <Link to="/mensajes">
-            <Card className="card-hover cursor-pointer h-full">
-              <CardContent className="p-2 sm:p-3 flex items-center gap-2 sm:gap-3">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-muted/30 rounded-lg flex items-center justify-center">
-                  <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+
+          <Link to="/archivo">
+            <Card className="card-hover cursor-pointer h-full border-border/70 bg-card/80 backdrop-blur-sm">
+              <CardContent className="p-3 sm:p-4 flex items-center gap-3">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                  <ArchiveIcon className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-sm sm:text-base">Mensajes</h3>
-                  <p className="text-xs text-muted-foreground hidden sm:block">
-                    Conversá con otros scouts
+                  <h3 className="font-semibold text-sm sm:text-base">Archivo y Galería</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Explorá fotos e historia del grupo
                   </p>
                 </div>
               </CardContent>
@@ -524,29 +574,31 @@ const Usuarios = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="mb-3 sm:mb-4 h-8 sm:h-10">
-            <TabsTrigger value="personas" className="text-xs sm:text-sm">Personas</TabsTrigger>
-            <TabsTrigger value="hilos" className="text-xs sm:text-sm">Hilos</TabsTrigger>
-            <TabsTrigger value="grupos" className="text-xs sm:text-sm">Grupos</TabsTrigger>
+          <TabsList className="mb-4 sm:mb-5 h-auto w-full justify-start gap-1 rounded-xl border border-border/70 bg-card/75 p-1">
+            <TabsTrigger value="personas" className="text-xs sm:text-sm rounded-lg px-3 py-2 data-[state=active]:shadow-sm">Personas</TabsTrigger>
+            <TabsTrigger value="hilos" className="text-xs sm:text-sm rounded-lg px-3 py-2 data-[state=active]:shadow-sm">Hilos</TabsTrigger>
+            <TabsTrigger value="grupos" className="text-xs sm:text-sm rounded-lg px-3 py-2 data-[state=active]:shadow-sm">Grupos</TabsTrigger>
           </TabsList>
 
           <TabsContent value="personas">
             {/* Búsqueda */}
-            <div className="relative mb-3">
-              <Search className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Buscar por nombre..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-8 sm:pl-10 h-9 sm:h-10 text-sm"
-              />
-            </div>
+            <Card className="mb-4 border-border/70 bg-card/80 backdrop-blur-sm shadow-sm">
+              <CardContent className="p-3 sm:p-4">
+                <div className="relative mb-3">
+                  <Search className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Buscar por nombre..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-8 sm:pl-10 h-9 sm:h-10 text-sm"
+                  />
+                </div>
 
-            {/* Filtros y ordenamiento */}
-            <div className="grid gap-2 sm:gap-3 grid-cols-3 mb-3 sm:mb-4">
+                {/* Filtros y ordenamiento */}
+                <div className="grid gap-2 sm:gap-3 grid-cols-1 md:grid-cols-3 mb-1">
               {/* Filtro por rama */}
-              <div>
+                  <div>
                 <label className="text-sm font-medium mb-2 block text-muted-foreground">
                   Rama
                 </label>
@@ -571,10 +623,10 @@ const Usuarios = () => {
                     </SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
+                  </div>
 
               {/* Filtro por visibilidad */}
-              <div>
+                  <div>
                 <label className="text-sm font-medium mb-2 block text-muted-foreground">
                   Privacidad
                 </label>
@@ -591,10 +643,10 @@ const Usuarios = () => {
                     <SelectItem value="private">🔒 Solo privados</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
+                  </div>
 
               {/* Ordenamiento */}
-              <div>
+                  <div>
                 <label className="text-sm font-medium mb-2 block text-muted-foreground">
                   Ordenar por
                 </label>
@@ -613,8 +665,10 @@ const Usuarios = () => {
                     <SelectItem value="rama">Rama (Manada → Adulto)</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-            </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Filtros activos (badges) */}
             {(ramaFilter !== "all" ||
@@ -709,7 +763,7 @@ const Usuarios = () => {
                   return (
                     <Card
                       key={profile.user_id}
-                      className="hover:shadow-lg transition-shadow"
+                      className="border-border/70 bg-card/85 backdrop-blur-sm shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
                     >
                       <CardContent className="p-4">
                         <div className="flex items-start gap-4">
@@ -778,7 +832,7 @@ const Usuarios = () => {
           </TabsContent>
 
           <TabsContent value="hilos">
-            <Card className="mb-6">
+            <Card className="mb-6 border-border/70 bg-card/85 backdrop-blur-sm shadow-sm">
               <CardContent className="p-4">
                 <div className="flex gap-3">
                   <UserAvatar
@@ -870,7 +924,7 @@ const Usuarios = () => {
                 return (
                   <Card
                     key={t.id}
-                    className="hover:bg-muted/30 transition-colors"
+                    className="border-border/70 bg-card/85 backdrop-blur-sm hover:bg-muted/30 transition-colors"
                   >
                     <CardContent className="p-4">
                       <div className="flex gap-3">
@@ -1159,11 +1213,15 @@ const Usuarios = () => {
                 const isMember = !!group.user_role;
                 const isOwner = group.user_role === "owner";
                 const isAdmin = group.user_role === "admin";
+                const isGroupJoining =
+                  groupAction?.groupId === group.id && groupAction.type === "join";
+                const isGroupLeaving =
+                  groupAction?.groupId === group.id && groupAction.type === "leave";
 
                 return (
                   <Card
                     key={group.id}
-                    className="overflow-hidden hover:shadow-lg transition-shadow"
+                    className="overflow-hidden border-border/70 bg-card/85 backdrop-blur-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
                   >
                     {group.cover_image && (
                       <div className="h-32 overflow-hidden">
@@ -1215,6 +1273,7 @@ const Usuarios = () => {
                               size="sm"
                               className="flex-1"
                               onClick={() => navigate(`/grupos/${group.id}`)}
+                              disabled={isGroupLeaving}
                             >
                               Abrir
                             </Button>
@@ -1223,8 +1282,9 @@ const Usuarios = () => {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handleLeaveGroup(group.id)}
+                                disabled={isGroupLeaving}
                               >
-                                Salir
+                                {isGroupLeaving ? "Saliendo..." : "Salir"}
                               </Button>
                             )}
                           </>
@@ -1233,9 +1293,10 @@ const Usuarios = () => {
                             size="sm"
                             className="flex-1 gap-2"
                             onClick={() => handleJoinGroup(group.id)}
+                            disabled={isGroupJoining}
                           >
                             <UserPlus className="h-4 w-4" />
-                            Unirse
+                            {isGroupJoining ? "Uniéndote..." : "Unirse"}
                           </Button>
                         )}
                       </div>
@@ -1269,5 +1330,6 @@ const Usuarios = () => {
 };
 
 export default Usuarios;
+
 
 

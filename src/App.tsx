@@ -12,13 +12,12 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 // ...existing code...
 import { ThemeProvider } from "next-themes";
 import ScrollAlInicio from "@/components/layout/ScrollAlInicio";
 import TransicionRuta from "@/components/layout/TransicionRuta";
 import Inicio from "./pages/inicio/Inicio";
-const LineaTemporal = lazy(() => import("./pages/historia/LineaTemporal"));
 const Historia = lazy(() => import("./pages/historia/Historia.tsx"));
 const Bauen = lazy(() => import("./pages/eventos/Bauen"));
 const AmLagerfeuer = lazy(() => import("./pages/eventos/AmLagerfeuer"));
@@ -202,7 +201,7 @@ const App = () => (
                 <TransicionRuta>
                   <Routes>
                     <Route path="/" element={<Inicio />} />
-                    <Route path="/linea-temporal" element={<LineaTemporal />} />
+                    <Route path="/linea-temporal" element={<Navigate to="/historia" replace />} />
                     <Route path="/historia" element={<Historia />} />
                     <Route path="/bauen" element={<Bauen />} />
                     <Route path="/am-lagerfeuer" element={<AmLagerfeuer />} />

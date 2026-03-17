@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import Dashboard from "./admin/Dashboard";
 
@@ -28,8 +28,9 @@ export default function AdminPanel() {
   }
 
   return (
-    <div className="min-h-screen bg-background/60 backdrop-blur-sm">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25">
       <Dashboard />
     </div>
   );
 }
+

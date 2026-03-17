@@ -1,11 +1,20 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSupabaseUser } from "@/App";
 import { useToast } from "@/hooks/use-toast";
+import { listAlbums, listImages } from "@/lib/gallery";
 
 export type AppNotification = {
   id: string;
-  type: "message" | "follow_request" | "thread_comment" | "mention";
+  type:
+    | "message"
+    | "follow_request"
+    | "follow_accepted"
+    | "thread_comment"
+    | "thread_new"
+    | "mention"
+    | "group_invite"
+    | "gallery_upload";
   created_at: string;
   read: boolean;
   data: Record<string, any>;
@@ -37,17 +46,77 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
   const [oldestPersistedTimestamp, setOldestPersistedTimestamp] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const knownGalleryPathsRef = useRef<Set<string>>(new Set());
+  const persistedKeysRef = useRef<Set<string>>(new Set());
   const { toast } = useToast();
 
+  const normalizePersistentNotification = useCallback((r: any): AppNotification => {
+    const kind = r?.data?.kind;
+    const mappedType =
+      r.type === "message" &&
+      (kind === "follow_accepted" || kind === "thread_new" || kind === "group_invite" || kind === "gallery_upload")
+        ? kind
+        : r.type;
+    return {
+      id: r.id,
+      type: mappedType,
+      created_at: r.created_at,
+      read: !!r.read_at,
+      data: { ...(r.data || {}), _persistent: true },
+    } as AppNotification;
+  }, []);
+
+  const persistNotification = useCallback(
+    async (args: {
+      persistKey: string;
+      recipientId: string;
+      actorId: string;
+      type: AppNotification["type"];
+      entityType?: string;
+      entityId?: string;
+      data?: Record<string, any>;
+      createdAt?: string;
+    }) => {
+      if (!user) return;
+      if (persistedKeysRef.current.has(args.persistKey)) return;
+      persistedKeysRef.current.add(args.persistKey);
+
+      const allowedTypes = new Set(["thread_comment", "mention", "message", "follow_request"]);
+      const effectiveType = allowedTypes.has(args.type) ? args.type : "message";
+      const payloadData =
+        effectiveType === "message" && args.type !== "message"
+          ? { ...(args.data || {}), kind: args.type }
+          : args.data || {};
+
+      try {
+        await supabase.from("notifications").insert({
+          recipient_id: args.recipientId,
+          actor_id: args.actorId,
+          type: effectiveType as any,
+          entity_type: args.entityType || null,
+          entity_id: args.entityId || null,
+          data: payloadData as any,
+          created_at: args.createdAt || new Date().toISOString(),
+        } as any);
+      } catch {
+        // Silencioso: no cortar UX si RLS/políticas bloquean insert.
+      }
+    },
+    [user],
+  );
+
   const addNotification = useCallback((n: AppNotification) => {
-    setNotifications(prev => [n, ...prev]);
+    setNotifications(prev => {
+      if (prev.some((x) => x.id === n.id)) return prev;
+      return [n, ...prev].sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
+    });
   }, []);
 
   const markAllRead = useCallback(async () => {
     if (!user) return;
     const unread = notifications.filter(n => !n.read);
     if (unread.length === 0) return;
-    const persistentIds = unread.filter(n => n.type === 'thread_comment' || n.type === 'mention').map(n => n.id);
+    const persistentIds = unread.filter((n: any) => n?.data?._persistent).map(n => n.id);
     if (persistentIds.length > 0) {
       await supabase
         .from("notifications")
@@ -60,7 +129,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
   const markRead = useCallback(async (id: string) => {
     const target = notifications.find(n => n.id === id);
     if (!target) return;
-    if (!target.read && (target.type === 'thread_comment' || target.type === 'mention')) {
+    if (!target.read && (target as any)?.data?._persistent) {
       await supabase.from('notifications').update({ read_at: new Date().toISOString() }).eq('id', id);
     }
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
@@ -73,15 +142,81 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
   // Suscripción a solicitudes de seguimiento nuevas
   useEffect(() => {
     if (!user) return;
-    const channelFollows = supabase
+    const channelFollowsToMe = supabase
       .channel(`follows:pending:${user.id}`)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "follows", filter: `followed_id=eq.${user.id}` },
         async payload => {
           const row: any = payload.new;
-          if (row.status !== "pending") return;
-          // Obtener perfil del seguidor
+          if (row.status === "pending") {
+            // Obtener perfil del seguidor
+            const { data: prof } = await supabase
+              .from("profiles")
+              .select("nombre_completo, username, avatar_url")
+              .eq("user_id", row.follower_id)
+              .maybeSingle();
+            const display = prof?.nombre_completo || prof?.username || row.follower_id.slice(0, 8);
+            const notif: AppNotification = {
+              id: `follow-${row.follower_id}-${row.created_at}`,
+              type: "follow_request",
+              created_at: row.created_at || new Date().toISOString(),
+              read: false,
+              data: { follower_id: row.follower_id, display, avatar_url: prof?.avatar_url || null }
+            };
+            addNotification(notif);
+            toast({ title: "Nueva solicitud de seguimiento", description: `${display} quiere seguirte` });
+            await persistNotification({
+              persistKey: `follow-pending-${row.follower_id}-${row.created_at}`,
+              recipientId: user.id,
+              actorId: row.follower_id,
+              type: "follow_request",
+              entityType: "follow",
+              entityId: `${row.follower_id}:${user.id}`,
+              data: notif.data,
+              createdAt: notif.created_at,
+            });
+            return;
+          }
+
+          if (row.status === "accepted") {
+            const { data: prof } = await supabase
+              .from("profiles")
+              .select("nombre_completo, username, avatar_url")
+              .eq("user_id", row.follower_id)
+              .maybeSingle();
+            const display = prof?.nombre_completo || prof?.username || row.follower_id.slice(0, 8);
+            const notif: AppNotification = {
+              id: `follow-accepted-${row.follower_id}-${row.created_at}`,
+              type: "follow_accepted",
+              created_at: row.created_at || new Date().toISOString(),
+              read: false,
+              data: { follower_id: row.follower_id, display, avatar_url: prof?.avatar_url || null }
+            };
+            addNotification(notif);
+            toast({ title: "Nuevo seguidor", description: `${display} ahora te sigue` });
+            await persistNotification({
+              persistKey: `follow-accepted-${row.follower_id}-${row.created_at}`,
+              recipientId: user.id,
+              actorId: row.follower_id,
+              type: "follow_accepted",
+              entityType: "follow",
+              entityId: `${row.follower_id}:${user.id}`,
+              data: notif.data,
+              createdAt: notif.created_at,
+            });
+          }
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "follows", filter: `followed_id=eq.${user.id}` },
+        async payload => {
+          const row: any = payload.new;
+          const oldRow: any = payload.old;
+          if (!oldRow || oldRow.status === row.status) return;
+          if (row.status !== "accepted") return;
+
           const { data: prof } = await supabase
             .from("profiles")
             .select("nombre_completo, username, avatar_url")
@@ -89,19 +224,191 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
             .maybeSingle();
           const display = prof?.nombre_completo || prof?.username || row.follower_id.slice(0, 8);
           const notif: AppNotification = {
-            id: `follow-${row.follower_id}-${row.created_at}`,
-            type: "follow_request",
+            id: `follow-accepted-update-${row.follower_id}-${row.created_at}`,
+            type: "follow_accepted",
             created_at: new Date().toISOString(),
             read: false,
             data: { follower_id: row.follower_id, display, avatar_url: prof?.avatar_url || null }
           };
           addNotification(notif);
-          toast({ title: "Nueva solicitud de seguimiento", description: `${display} quiere seguirte` });
+          toast({ title: "Nuevo seguidor", description: `${display} ahora te sigue` });
+          await persistNotification({
+            persistKey: `follow-accepted-update-${row.follower_id}-${row.created_at}`,
+            recipientId: user.id,
+            actorId: row.follower_id,
+            type: "follow_accepted",
+            entityType: "follow",
+            entityId: `${row.follower_id}:${user.id}`,
+            data: notif.data,
+            createdAt: notif.created_at,
+          });
         }
       )
       .subscribe();
-    return () => { supabase.removeChannel(channelFollows); };
-  }, [user, addNotification, toast]);
+
+    const channelThreads = supabase
+      .channel(`threads:new:${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "threads" },
+        async (payload) => {
+          const row: any = payload.new;
+          if (!row || row.author_id === user.id) return;
+
+          const { data: prof } = await supabase
+            .from("profiles")
+            .select("nombre_completo, username, avatar_url")
+            .eq("user_id", row.author_id)
+            .maybeSingle();
+          const display = prof?.nombre_completo || prof?.username || "Scout";
+
+          const notif: AppNotification = {
+            id: `thread-new-${row.id}`,
+            type: "thread_new",
+            created_at: row.created_at || new Date().toISOString(),
+            read: false,
+            data: {
+              thread_id: row.id,
+              author_id: row.author_id,
+              display,
+              avatar_url: prof?.avatar_url || null,
+              content: row.content || "",
+            },
+          };
+          addNotification(notif);
+          toast({ title: "Nuevo hilo", description: `${display} publicó un hilo` });
+          await persistNotification({
+            persistKey: `thread-new-${row.id}-${user.id}`,
+            recipientId: user.id,
+            actorId: row.author_id,
+            type: "thread_new",
+            entityType: "thread",
+            entityId: row.id,
+            data: notif.data,
+            createdAt: notif.created_at,
+          });
+        }
+      )
+      .subscribe();
+
+    const channelGroupInvites = supabase
+      .channel(`groups:member:${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "group_members", filter: `user_id=eq.${user.id}` },
+        async (payload) => {
+          const row: any = payload.new;
+          if (!row?.group_id) return;
+
+          const { data: group } = await supabase
+            .from("groups")
+            .select("id, name")
+            .eq("id", row.group_id)
+            .maybeSingle();
+
+          const notif: AppNotification = {
+            id: `group-member-${row.group_id}-${row.joined_at || row.user_id}`,
+            type: "group_invite",
+            created_at: row.joined_at || new Date().toISOString(),
+            read: false,
+            data: {
+              group_id: row.group_id,
+              group_name: group?.name || "Grupo",
+              role: row.role,
+            },
+          };
+          addNotification(notif);
+          toast({ title: "Nuevo grupo", description: `Ahora formas parte de ${group?.name || "un grupo"}` });
+          await persistNotification({
+            persistKey: `group-invite-${row.group_id}-${row.user_id}-${row.joined_at || ""}`,
+            recipientId: user.id,
+            actorId: row.user_id,
+            type: "group_invite",
+            entityType: "group",
+            entityId: row.group_id,
+            data: notif.data,
+            createdAt: notif.created_at,
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channelFollowsToMe);
+      supabase.removeChannel(channelThreads);
+      supabase.removeChannel(channelGroupInvites);
+    };
+  }, [user, addNotification, toast, persistNotification]);
+
+  // Notificación de nuevas fotos en galería (sondeo liviano)
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+
+    const scanGallery = async (notify = false) => {
+      try {
+        const albums = await listAlbums();
+        if (!albums.length) return;
+
+        const current = new Set<string>();
+        for (const album of albums.slice(0, 12)) {
+          const imgs = await listImages(album.name).catch(() => []);
+          imgs.forEach((img) => current.add(img.path));
+        }
+
+        if (!notify) {
+          if (!cancelled) knownGalleryPathsRef.current = current;
+          return;
+        }
+
+        const newPaths = Array.from(current).filter((p) => !knownGalleryPathsRef.current.has(p));
+        if (newPaths.length > 0) {
+          const first = newPaths[0];
+          const albumName = first.split("/")[0] || "Galería";
+          const notif: AppNotification = {
+            id: `gallery-new-${albumName}-${Date.now()}`,
+            type: "gallery_upload",
+            created_at: new Date().toISOString(),
+            read: false,
+            data: {
+              album: albumName,
+              count: newPaths.length,
+            },
+          };
+          addNotification(notif);
+          toast({
+            title: "Nuevas fotos en galería",
+            description:
+              newPaths.length === 1
+                ? `Se subió una foto nueva en ${albumName}`
+                : `Se subieron ${newPaths.length} fotos nuevas en ${albumName}`,
+          });
+          await persistNotification({
+            persistKey: `gallery-upload-${albumName}-${newPaths.length}-${Math.floor(Date.now() / 120000)}`,
+            recipientId: user.id,
+            actorId: user.id,
+            type: "gallery_upload",
+            entityType: "gallery",
+            entityId: albumName,
+            data: notif.data,
+            createdAt: notif.created_at,
+          });
+        }
+
+        if (!cancelled) knownGalleryPathsRef.current = current;
+      } catch {
+        // Silencioso: no interrumpir UX si falla el sondeo
+      }
+    };
+
+    scanGallery(false);
+    const timer = setInterval(() => scanGallery(true), 120000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [user, addNotification, toast, persistNotification]);
 
   // Suscripción a mensajes nuevos en cualquier conversación del usuario
   useEffect(() => {
@@ -174,10 +481,10 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
             const row: any = payload.new;
             const notif: AppNotification = {
               id: row.id,
-              type: row.type,
+              type: normalizePersistentNotification(row).type,
               created_at: row.created_at,
               read: false,
-              data: row.data || {}
+              data: { ...(row.data || {}), _persistent: true }
             };
             addNotification(notif);
             if (row.type === "thread_comment") {
@@ -191,7 +498,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
         .subscribe();
     })();
     return () => { if (channel) supabase.removeChannel(channel); };
-  }, [user, addNotification, toast]);
+  }, [user, addNotification, toast, normalizePersistentNotification]);
 
   const loadMore = useCallback(async () => {
     if (!user || !hasMore || loadingMore || !oldestPersistedTimestamp) return;
@@ -208,13 +515,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
         setNotifications(prev => {
           const map = new Map(prev.map(n => [n.id, n] as const));
           for (const r of data as any[]) {
-            map.set(r.id, {
-              id: r.id,
-              type: r.type,
-              created_at: r.created_at,
-              read: !!r.read_at,
-              data: r.data || {}
-            });
+            map.set(r.id, normalizePersistentNotification(r));
           }
           return Array.from(map.values()).sort((a,b) => (a.created_at < b.created_at ? 1 : -1));
         });
@@ -231,7 +532,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
     } finally {
       setLoadingMore(false);
     }
-  }, [user, hasMore, loadingMore, oldestPersistedTimestamp]);
+  }, [user, hasMore, loadingMore, oldestPersistedTimestamp, normalizePersistentNotification]);
 
   const unreadCount = notifications.filter(n => !n.read).length;
 

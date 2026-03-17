@@ -357,7 +357,7 @@ export default function Mensajes() {
 
   return (
     <EmailVerificationGuard featureName="Mensajes">
-    <div className="min-h-screen bg-background/60 backdrop-blur-sm pb-20">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25 pb-20">
       {/* Navigation global en App.tsx */}
       <div className="h-16 sm:h-20"></div>
 
@@ -597,5 +597,6 @@ export default function Mensajes() {
     </EmailVerificationGuard>
   );
 }
+
 
 

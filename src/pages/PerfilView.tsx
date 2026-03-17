@@ -313,7 +313,7 @@ const PerfilView = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background/60 backdrop-blur-sm">
+      <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25">
         {/* Navigation global en App.tsx */}
         <div className="h-20"></div>
         <div className="flex items-center justify-center py-20">
@@ -332,7 +332,7 @@ const PerfilView = () => {
   // Vista restringida temprana: solo nombre/usuario y botón de seguir
   if (!loading && isRestrictedView) {
     return (
-      <div className="min-h-screen bg-background/60 backdrop-blur-sm">
+      <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25">
         <div className="h-16 sm:h-20"></div>
         <div className="max-w-4xl mx-auto px-4 py-6 sm:py-8">
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 sm:gap-8 mb-6 sm:mb-8 pb-6 sm:pb-8 border-b">
@@ -388,7 +388,7 @@ const PerfilView = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background/60 backdrop-blur-sm">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25">
       {/* Navigation global en App.tsx */}
       <div className="h-16 sm:h-20"></div>
 
@@ -1073,4 +1073,5 @@ const PerfilView = () => {
 };
 
 export default PerfilView;
+
 

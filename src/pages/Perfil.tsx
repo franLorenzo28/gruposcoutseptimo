@@ -146,7 +146,7 @@ const Perfil = () => {
   useEffect(() => {
     if (formData.fecha_nacimiento) {
       const hoy = new Date();
-      // Parsear fecha sin conversión UTC para evitar desfase de dáas
+      // Parsear fecha sin conversión UTC para evitar desfase de días
       const [year, month, day] = formData.fecha_nacimiento
         .split("-")
         .map(Number);
@@ -627,7 +627,7 @@ const Perfil = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background/60 backdrop-blur-sm">
+      <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25">
         {/* Navigation global en App.tsx */}
         <div className="h-20"></div>
         <div className="flex items-center justify-center py-20">
@@ -638,7 +638,7 @@ const Perfil = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background/60 backdrop-blur-sm">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25">
       {/* Navigation global en App.tsx */}
       <div className="h-20"></div>
 
@@ -831,7 +831,7 @@ const Perfil = () => {
                       if (daysRemaining > 0) {
                         return (
                           <span className="ml-2 text-xs text-muted-foreground font-normal">
-                            (podrás cambiar en {daysRemaining} dáa
+                            (podrás cambiar en {daysRemaining} día
                             {daysRemaining !== 1 ? "s" : ""})
                           </span>
                         );
@@ -872,7 +872,7 @@ const Perfil = () => {
                         Mánimo 3 caracteres
                       </span>
                     )}
-                  {!formData.username && " Solo se puede cambiar cada 7 dáas."}
+                  {!formData.username && " Solo se puede cambiar cada 7 días."}
                 </p>
               </div>
 
@@ -1073,7 +1073,7 @@ const Perfil = () => {
                     </p>
                   </div>
 
-                  {/* Campos especáficos según la rama */}
+                  {/* Campos específicos según la rama */}
                   {ramaEducador === "manada" && (
                     <div className="space-y-2">
                       <Label htmlFor="seisena_educador">Seisena de Manada (opcional)</Label>
@@ -1240,5 +1240,6 @@ const Perfil = () => {
 };
 
 export default Perfil;
+
 
 

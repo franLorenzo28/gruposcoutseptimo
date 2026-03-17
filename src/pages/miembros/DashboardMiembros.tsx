@@ -1,4 +1,4 @@
-import { Link, Navigate } from "react-router-dom";
+﻿import { Link, Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useMemberAuth } from "@/context/MemberAuthContext";
@@ -20,7 +20,7 @@ export default function DashboardMiembros() {
   }
 
   return (
-    <div className="min-h-screen bg-background/60 backdrop-blur-sm">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25">
       <div className="h-16 sm:h-20" />
       <section className="container mx-auto px-4 py-8 sm:py-12 space-y-6">
         <Reveal>
@@ -106,3 +106,4 @@ export default function DashboardMiembros() {
     </div>
   );
 }
+

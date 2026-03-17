@@ -1,4 +1,4 @@
-// Sanitización básica para mostrar datos
+�// Sanitización básica para mostrar datos
 function sanitizeText(text: string | null | undefined): string {
   if (!text) return "";
   return String(text).replace(/[<>"']/g, "");
@@ -58,7 +58,7 @@ const PerfilCompartir = () => {
       await setProfilePublic(profile.user_id, checked);
       setIsPublic(checked);
       toast({
-        title: checked ? "🌍 Perfil público" : "🔒 Perfil privado",
+        title: checked ? "�xR� Perfil público" : "�x Perfil privado",
         description: checked
           ? "Tu perfil ahora es visible para todos"
           : "Tu perfil ahora es privado",
@@ -81,7 +81,7 @@ const PerfilCompartir = () => {
     try {
       await navigator.clipboard.writeText(link);
       toast({
-        title: "✅ Enlace copiado",
+        title: "�S& Enlace copiado",
         description: "El enlace de tu perfil se copió al portapapeles",
       });
     } catch {
@@ -103,7 +103,7 @@ const PerfilCompartir = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background/60 backdrop-blur-sm">
+      <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25">
         {/* Navigation global en App.tsx */}
         <div className="h-20"></div>
         <div className="flex items-center justify-center py-20">
@@ -114,7 +114,7 @@ const PerfilCompartir = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background/60 backdrop-blur-sm pb-20">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25 pb-20">
       {/* Navigation global en App.tsx */}
       <div className="h-16 sm:h-20"></div>
 
@@ -266,3 +266,4 @@ const PerfilCompartir = () => {
 };
 
 export default PerfilCompartir;
+

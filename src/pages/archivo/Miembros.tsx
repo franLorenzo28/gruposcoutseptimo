@@ -1075,7 +1075,7 @@ const vinculadosMembers = [
 const Miembros = () => {
   return (
     <div className="min-h-screen">
-      <section className="pt-24 sm:pt-28 md:pt-32 pb-10 sm:pb-14 bg-background/60 backdrop-blur-sm">
+      <section className="pt-24 sm:pt-28 md:pt-32 pb-10 sm:pb-14 bg-gradient-to-b from-background via-background/95 to-muted/25">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <Reveal className="max-w-4xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-muted/30 rounded-full mb-4">
@@ -1153,7 +1153,7 @@ const Miembros = () => {
         </div>
       </section>
 
-      <section className="py-10 sm:py-14 bg-background/60 backdrop-blur-sm">
+      <section className="py-10 sm:py-14 bg-gradient-to-b from-background via-background/95 to-muted/25">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-5xl mx-auto space-y-6">
             <Reveal>
@@ -1227,7 +1227,7 @@ const Miembros = () => {
         </div>
       </section>
 
-      <section className="py-12 sm:py-16 bg-background/60 backdrop-blur-sm">
+      <section className="py-12 sm:py-16 bg-gradient-to-b from-background via-background/95 to-muted/25">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-5xl mx-auto space-y-6">
             <Reveal>
@@ -1263,4 +1263,5 @@ const Miembros = () => {
 };
 
 export default Miembros;
+
 

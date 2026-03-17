@@ -390,7 +390,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background/60 backdrop-blur-sm p-2 sm:p-4 md:p-8">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25 p-2 sm:p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-4 sm:mb-6 md:mb-8">
@@ -617,7 +617,7 @@ export default function Dashboard() {
                     <table className="w-full text-xs sm:text-sm min-w-max">
                       <thead>
                         <tr className="border-b bg-muted/50 sticky top-0">
-                          <th className="text-left p-2 sm:p-3 text-xs">Tátulo</th>
+                          <th className="text-left p-2 sm:p-3 text-xs">Título</th>
                           <th className="text-left p-2 sm:p-3 text-xs">Inicio</th>
                           <th className="text-left p-2 sm:p-3 text-xs hidden sm:table-cell">Fin</th>
                           <th className="text-right p-2 sm:p-3 text-xs">Acciones</th>
@@ -883,7 +883,7 @@ export default function Dashboard() {
                       <thead>
                         <tr className="border-b bg-muted/50 sticky top-0">
                           <th className="text-left p-2 sm:p-3 text-xs">Slug</th>
-                          <th className="text-left p-2 sm:p-3 text-xs hidden sm:table-cell">Tátulo</th>
+                          <th className="text-left p-2 sm:p-3 text-xs hidden sm:table-cell">Título</th>
                           <th className="text-left p-2 sm:p-3 text-xs">Actualizado</th>
                           <th className="text-right p-2 sm:p-3 text-xs">Acciones</th>
                         </tr>
@@ -1056,7 +1056,7 @@ export default function Dashboard() {
           {editEvent && (
             <div className="space-y-3 sm:space-y-4">
               <div>
-                <Label htmlFor="event-title">Tátulo</Label>
+                <Label htmlFor="event-title">Título</Label>
                 <Input
                   id="event-title"
                   value={editEvent.titulo || ""}
@@ -1129,7 +1129,7 @@ export default function Dashboard() {
                 />
               </div>
               <div>
-                <Label htmlFor="page-title">Tátulo</Label>
+                <Label htmlFor="page-title">Título</Label>
                 <Input
                   id="page-title"
                   value={editPage.title || ""}
@@ -1164,5 +1164,6 @@ export default function Dashboard() {
     </div>
   );
 }
+
 
 

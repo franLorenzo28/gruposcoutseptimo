@@ -6,6 +6,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { isLocalBackend, apiFetch } from "@/lib/backend";
+import { listGroups } from "@/lib/groups";
 import { useToast } from "@/hooks/use-toast";
 
 // ============================================================================
@@ -141,14 +142,7 @@ export function useThreadComments(threadId: string | null) {
 export function useGroups() {
   return useQuery({
     queryKey: ["groups"],
-    queryFn: async () => {
-      if (isLocalBackend()) {
-        return apiFetch("/groups");
-      }
-      const { data, error } = await supabase.from("groups").select("*");
-      if (error) throw error;
-      return data || [];
-    },
+    queryFn: async () => listGroups(),
     staleTime: 3 * 60 * 1000,
   });
 }

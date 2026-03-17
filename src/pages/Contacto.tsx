@@ -94,10 +94,11 @@ const Contacto = () => {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="relative overflow-hidden pt-24 sm:pt-28 md:pt-32 pb-12 sm:pb-16 bg-background/60 backdrop-blur-sm">
+      <section className="relative overflow-hidden pt-24 sm:pt-28 md:pt-32 pb-12 sm:pb-16 bg-gradient-to-b from-background via-background/95 to-muted/25">
         <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
           <div className="bg-blob w-72 h-72 bg-muted/30 -top-16 -right-12 float-slow" />
           <div className="bg-blob w-64 h-64 bg-muted/30 -bottom-20 -left-12 drift-slow" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.08),transparent_45%)]" />
         </div>
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <Reveal className="max-w-3xl mx-auto text-center">
@@ -114,44 +115,6 @@ const Contacto = () => {
               Estamos aquí para responder tus preguntas y ayudarte a formar
               parte de nuestra comunidad scout.
             </p>
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                className="rounded-full"
-                onClick={() =>
-                  document
-                    .getElementById("formulario")
-                    ?.scrollIntoView({ behavior: "smooth" })
-                }
-              >
-                Formulario
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="rounded-full"
-                onClick={() =>
-                  document
-                    .getElementById("info")
-                    ?.scrollIntoView({ behavior: "smooth" })
-                }
-              >
-                Contacto
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="rounded-full"
-                onClick={() =>
-                  document
-                    .getElementById("mapa")
-                    ?.scrollIntoView({ behavior: "smooth" })
-                }
-              >
-                Mapa
-              </Button>
-            </div>
           </Reveal>
         </div>
       </section>
@@ -162,7 +125,8 @@ const Contacto = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 lg:gap-16">
             {/* Contact Form */}
             <Reveal>
-              <div id="formulario">
+              <Card id="formulario" className="border-border/70 bg-card/85 shadow-lg backdrop-blur-sm">
+                <CardContent className="p-6 sm:p-8">
                 <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6">
                   Envíanos un mensaje
                 </h2>
@@ -247,7 +211,8 @@ const Contacto = () => {
                     Enviar Mensaje
                   </Button>
                 </form>
-              </div>
+                </CardContent>
+              </Card>
             </Reveal>
 
             {/* Contact Info */}
@@ -307,6 +272,7 @@ const Contacto = () => {
 };
 
 export default Contacto;
+
 
 
 

@@ -26,7 +26,7 @@ const Historia = () => {
       year: "1990",
       title: "Expansión de Ramas",
       description:
-        "Incorporamos todas las ramas del escultismo, desde castores hasta rovers, ofreciendo formación integral.",
+        "Incorporamos todas las ramas del escultismo, desde manada hasta rovers, ofreciendo formación integral.",
     },
     {
       year: "2014",
@@ -38,7 +38,7 @@ const Historia = () => {
       year: "2020",
       title: "Adaptación Digital",
       description:
-        "Durante la pandemia, innovamos con actividades virtuales manteniendo vivo el espáritu scout.",
+        "Durante la pandemia, innovamos con actividades virtuales manteniendo vivo el espíritu scout.",
     },
     {
       year: "2025",
@@ -49,7 +49,7 @@ const Historia = () => {
 
   return (
     <div className="min-h-screen">
-      <section className="relative overflow-hidden pt-24 sm:pt-28 md:pt-32 pb-12 sm:pb-16 bg-background/60 backdrop-blur-sm">
+      <section className="relative overflow-hidden pt-24 sm:pt-28 md:pt-32 pb-12 sm:pb-16 bg-gradient-to-b from-background via-background/95 to-muted/25">
         <div className="pointer-events-none absolute inset-0" aria-hidden="true">
           <div className="bg-blob w-80 h-80 bg-primary/10 -top-20 -right-16 float-slow" />
           <div className="bg-blob w-72 h-72 bg-muted/20 -bottom-24 -left-10 drift-slow" />
@@ -151,5 +151,6 @@ const Historia = () => {
 };
 
 export default Historia;
+
 
 

@@ -189,6 +189,60 @@ const Navigation = () => {
   const isSectionActive = (links: NavLink[]) =>
     links.some((link) => location.pathname === link.path);
 
+  const formatNotification = (n: any) => {
+    const d = n?.data || {};
+    switch (n.type) {
+      case "follow_request":
+        return {
+          title: "Solicitud de seguimiento",
+          description: `${d.display || "Alguien"} quiere seguirte`,
+        };
+      case "follow_accepted":
+        return {
+          title: "Nuevo seguidor",
+          description: `${d.display || "Alguien"} ahora te sigue`,
+        };
+      case "message":
+        return {
+          title: "Nuevo mensaje",
+          description: (d.content || "Tienes un mensaje nuevo").slice(0, 80),
+        };
+      case "group_invite":
+        return {
+          title: "Invitación a grupo",
+          description: `Ahora perteneces a ${d.group_name || "un grupo"}`,
+        };
+      case "gallery_upload":
+        return {
+          title: "Nuevas fotos",
+          description:
+            d.count && d.count > 1
+              ? `${d.count} fotos nuevas en ${d.album || "Galería"}`
+              : `Nueva foto en ${d.album || "Galería"}`,
+        };
+      case "thread_new":
+        return {
+          title: "Nuevo hilo",
+          description: `${d.display || "Alguien"} publicó: ${(d.content || "").slice(0, 60)}`,
+        };
+      case "thread_comment":
+        return {
+          title: "Nuevo comentario",
+          description: (d.content || "Comentaron tu hilo").slice(0, 80),
+        };
+      case "mention":
+        return {
+          title: "Te mencionaron",
+          description: (d.content || "Alguien te mencionó").slice(0, 80),
+        };
+      default:
+        return {
+          title: "Notificación",
+          description: "Tienes una notificación nueva",
+        };
+    }
+  };
+
   return (
     <>
       {/* Desktop & Mobile Navigation */}
@@ -271,7 +325,7 @@ const Navigation = () => {
                               <span className="font-semibold">Notificaciones</span>
                               {unreadCount > 0 && (
                                 <Button size="sm" variant="ghost" onClick={markAllRead}>
-                                  Marcar todo como leádo
+                                  Marcar todo como leído
                                 </Button>
                               )}
                             </div>
@@ -283,8 +337,8 @@ const Navigation = () => {
                                   <li key={n.id} className={cn("p-2 rounded-md", !n.read && "bg-accent")}> 
                                     <div className="flex items-center justify-between gap-2">
                                       <div>
-                                        <div className="text-sm font-medium">Notificación #{n.id}</div>
-                                        <div className="text-xs text-muted-foreground truncate">Sin detalles</div>
+                                        <div className="text-sm font-medium">{formatNotification(n).title}</div>
+                                        <div className="text-xs text-muted-foreground truncate">{formatNotification(n).description}</div>
                                       </div>
                                       {!n.read && (
                                         <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={() => markRead(n.id)}>Leer</Button>

@@ -205,7 +205,7 @@ const Galeria = () => {
       setImages(imgs);
       toast({
         title: "✅ Imagen eliminada",
-        description: "La imagen se eliminó correctamente de la galeráa.",
+        description: "La imagen se eliminó correctamente de la galería.",
       });
     } catch (error) {
       toast({
@@ -277,8 +277,8 @@ const Galeria = () => {
   }, [lightboxOpen, images.length]);
 
   return (
-    <EmailVerificationGuard featureName="Galeráa">
-    <div className="min-h-screen bg-background/60 backdrop-blur-sm">
+    <EmailVerificationGuard featureName="Galería">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25">
       {/* Hero */}
       <section className="pt-24 sm:pt-28 md:pt-32 pb-4 sm:pb-6">
         <div className="container mx-auto px-4">
@@ -286,7 +286,7 @@ const Galeria = () => {
             <div className="inline-flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/30 rounded-full mb-3 sm:mb-4">
               <Camera className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
               <span className="text-primary font-semibold text-xs sm:text-sm">
-                Galeráa
+                Galería
               </span>
             </div>
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-2">
@@ -356,7 +356,7 @@ const Galeria = () => {
             <div className="text-center text-muted-foreground py-4">
               <p className="text-xs sm:text-sm">
                 {isAdmin
-                  ? "No hay álbumes todaváa. Crea tu primer álbum arriba."
+                  ? "No hay álbumes todavía. Crea tu primer álbum arriba."
                   : "No hay álbumes disponibles."}
               </p>
             </div>
@@ -430,7 +430,7 @@ const Galeria = () => {
             <div className="text-center text-muted-foreground py-16 sm:py-20">
               <Images className="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-3" />
               <p className="text-xs sm:text-sm">
-                No hay imágenes en este álbum todaváa.
+                No hay imágenes en este álbum todavía.
               </p>
             </div>
           )}
@@ -484,7 +484,7 @@ const Galeria = () => {
             <AlertDialogTitle>¿Eliminar imagen?</AlertDialogTitle>
             <AlertDialogDescription>
               Esta acción no se puede deshacer. La imagen se eliminará
-              permanentemente de la galeráa.
+              permanentemente de la galería.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -565,5 +565,6 @@ const Galeria = () => {
 };
 
 export default Galeria;
+
 
 

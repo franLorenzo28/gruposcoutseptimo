@@ -1,9 +1,8 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Calendar, BookOpen, ArrowRight } from "lucide-react";
+import { MapPin, Calendar, BookOpen } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
-import { Link } from "react-router-dom";
 import communityImage from "@/assets/community-scouts.jpg";
 import heroImage from "@/assets/hero-scouts.jpg";
 
@@ -15,7 +14,20 @@ const Historia = () => {
       description:
         "Comienza la historia del Grupo Scout Septimo en el Colegio Aleman, con una comunidad que aposto por educar en valores y aventura.",
       place: "Colegio Aleman",
-      side: "left",
+    },
+    {
+      year: "1965",
+      title: "Primer local propio",
+      description:
+        "El grupo inaugura su primer local y consolida su presencia en la comunidad.",
+      place: "Primer local institucional",
+    },
+    {
+      year: "1990",
+      title: "Expansion de ramas",
+      description:
+        "Se consolida la propuesta de ramas del grupo, desde Manada hasta Rovers, para ofrecer una formacion integral.",
+      place: "Comunidad y locales del grupo",
     },
     {
       year: "2004",
@@ -23,7 +35,6 @@ const Historia = () => {
       description:
         "El grupo impulsa BAUEN, una referencia nacional para el escultismo uruguayo y un hito de liderazgo juvenil que año tras año sigue creciendo.",
       place: "Parque Baroffio",
-      side: "right",
     },
     {
       year: "2014",
@@ -31,7 +42,6 @@ const Historia = () => {
       description:
         "La comunidad celebra medio siglo de historia y proyecta un legado para futuras generaciones scout.",
       place: "Aniversario institucional",
-      side: "left",
     },
     {
       year: "2020",
@@ -39,7 +49,13 @@ const Historia = () => {
       description:
         "En un contexto desafiante, se sostienen actividades y vinculos en formatos nuevos para no perder el espiritu de grupo.",
       place: "Casas y plataformas digitales",
-      side: "right",
+    },
+    {
+      year: "2025",
+      title: "20 años del BAUEN",
+      description:
+        "La comunidad celebra dos decadas de una competencia emblematica para el escultismo uruguayo.",
+      place: "Comunidad scout",
     },
     {
       year: "2026",
@@ -47,7 +63,6 @@ const Historia = () => {
       description:
         "La web del Grupo Septimo evoluciona para integrar historia, comunidad y participacion con una experiencia moderna.",
       place: "Sitio web oficial",
-      side: "left",
     },
   ] as const;
 
@@ -90,13 +105,7 @@ const Historia = () => {
                     ?.scrollIntoView({ behavior: "smooth" })
                 }
               >
-                Ver timeline
-              </Button>
-              <Button asChild size="sm" className="rounded-full">
-                <Link to="/linea-temporal">
-                  Linea temporal completa
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
+                Ver linea temporal completa
               </Button>
             </div>
           </Reveal>
@@ -129,7 +138,7 @@ const Historia = () => {
             <Reveal>
               <Card className="h-full border-border/70 bg-card/80 shadow-lg">
                 <CardContent className="p-6">
-                  <p className="text-4xl font-black text-primary">11</p>
+                  <p className="text-4xl font-black text-primary">8</p>
                   <p className="mt-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                     Locales y etapas clave
                   </p>
@@ -163,7 +172,7 @@ const Historia = () => {
                   <Reveal key={item.year + item.title}>
                     <article
                       className={`relative grid gap-4 sm:grid-cols-2 sm:gap-8 ${
-                        item.side === "right" ? "sm:[&>*:first-child]:order-2" : ""
+                        index % 2 !== 0 ? "sm:[&>*:first-child]:order-2" : ""
                       }`}
                     >
                       <div className="pl-12 sm:pl-0">
@@ -176,10 +185,12 @@ const Historia = () => {
                             <p className="mt-3 text-sm leading-relaxed text-muted-foreground sm:text-base">
                               {item.description}
                             </p>
-                            <p className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-primary">
-                              <MapPin className="h-4 w-4" />
-                              {item.place}
-                            </p>
+                            {item.place ? (
+                              <p className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-primary">
+                                <MapPin className="h-4 w-4" />
+                                {item.place}
+                              </p>
+                            ) : null}
                           </CardContent>
                         </Card>
                       </div>

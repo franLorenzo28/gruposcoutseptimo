@@ -53,7 +53,7 @@ export default function PanelRama({ rama }: { rama: MiembroRama }) {
   const config = ramaConfig[rama];
 
   return (
-    <div className="min-h-screen bg-background/60 backdrop-blur-sm">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25">
       <div className="h-16 sm:h-20" />
       <section className="container mx-auto px-4 py-8 sm:py-12 space-y-6">
         <div className="max-w-6xl mx-auto space-y-6">
@@ -101,7 +101,7 @@ export default function PanelRama({ rama }: { rama: MiembroRama }) {
                 </div>
                 <ul className="text-sm text-muted-foreground space-y-2">
                   {config.reuniones.map((item) => (
-                    <li key={item}>• {item}</li>
+                    <li key={item}>⬢ {item}</li>
                   ))}
                 </ul>
               </CardContent>
@@ -115,7 +115,7 @@ export default function PanelRama({ rama }: { rama: MiembroRama }) {
                 </div>
                 <ul className="text-sm text-muted-foreground space-y-2">
                   {config.documentos.map((item) => (
-                    <li key={item}>• {item}</li>
+                    <li key={item}>⬢ {item}</li>
                   ))}
                 </ul>
               </CardContent>
@@ -141,7 +141,7 @@ export default function PanelRama({ rama }: { rama: MiembroRama }) {
                 </div>
                 <ul className="text-sm text-muted-foreground space-y-2">
                   {config.info.map((item) => (
-                    <li key={item}>• {item}</li>
+                    <li key={item}>⬢ {item}</li>
                   ))}
                 </ul>
               </CardContent>
@@ -152,3 +152,4 @@ export default function PanelRama({ rama }: { rama: MiembroRama }) {
     </div>
   );
 }
+

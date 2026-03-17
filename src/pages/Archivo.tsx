@@ -9,10 +9,10 @@ import {
   ArrowRight,
   BookOpen,
   FileText,
+  Image,
   Layers,
   Search,
   Sparkles,
-  Users,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import communityImage from "@/assets/community-scouts.jpg";
@@ -46,20 +46,20 @@ const secciones: ArchiveSection[] = [
     Icon: Layers,
   },
   {
-    title: "Miembros",
+    title: "Galería",
     description:
-      "Listado histórico de miembros, generaciones y presencia del grupo.",
-    to: "/archivo/miembros",
-    tag: "Comunidad",
-    entries: "Miles de registros",
-    Icon: Users,
+      "Fotos del grupo, campamentos y actividades para revivir cada etapa.",
+    to: "/galeria",
+    tag: "Multimedia",
+    entries: "Colección visual",
+    Icon: Image,
   },
 ];
 
 const actividadReciente = [
   "Actualización de material histórico en Scoutpedia",
-  "Carga de nuevos registros en Miembros",
   "Revisión y curaduría de documentos de Compañía",
+  "Nuevas fotos incorporadas en Galería",
 ];
 
 const Archivo = () => {
@@ -76,10 +76,11 @@ const Archivo = () => {
 
   return (
     <div className="min-h-screen">
-      <section className="relative overflow-hidden pt-20 sm:pt-24 md:pt-28 pb-12 sm:pb-16 bg-background/60 backdrop-blur-sm">
+      <section className="relative overflow-hidden pt-20 sm:pt-24 md:pt-28 pb-12 sm:pb-16 bg-gradient-to-b from-background via-background/95 to-muted/25">
         <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
           <div className="bg-blob w-72 h-72 bg-muted/30 -top-16 -right-12 float-slow" />
           <div className="bg-blob w-64 h-64 bg-muted/30 -bottom-20 -left-10 drift-slow" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.08),transparent_45%)]" />
         </div>
 
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -92,29 +93,29 @@ const Archivo = () => {
                 </span>
               </div>
 
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight mb-4">
                 Memoria viva del Grupo Séptimo
               </h1>
 
               <p className="text-sm sm:text-base md:text-lg text-muted-foreground/90 leading-relaxed mb-6 max-w-2xl">
                 Un archivo activo, navegable y en crecimiento: historia, documentos,
-                términos scout y registros de generaciones que formaron parte del grupo.
+                términos scout y registros históricos del grupo.
               </p>
 
               <div className="grid grid-cols-3 gap-3 max-w-lg">
-                <Card className="bg-card/80 border-border/60">
+                <Card className="bg-card/80 border-border/60 shadow-sm">
                   <CardContent className="p-3 sm:p-4 text-center">
                     <p className="text-2xl sm:text-3xl font-black text-primary">3</p>
                     <p className="text-xs text-muted-foreground">Secciones</p>
                   </CardContent>
                 </Card>
-                <Card className="bg-card/80 border-border/60">
+                <Card className="bg-card/80 border-border/60 shadow-sm">
                   <CardContent className="p-3 sm:p-4 text-center">
                     <p className="text-2xl sm:text-3xl font-black text-primary">20+</p>
                     <p className="text-xs text-muted-foreground">Entradas</p>
                   </CardContent>
                 </Card>
-                <Card className="bg-card/80 border-border/60">
+                <Card className="bg-card/80 border-border/60 shadow-sm">
                   <CardContent className="p-3 sm:p-4 text-center">
                     <p className="text-2xl sm:text-3xl font-black text-primary">Vivo</p>
                     <p className="text-xs text-muted-foreground">Estado</p>
@@ -136,7 +137,7 @@ const Archivo = () => {
         </div>
       </section>
 
-      <section id="secciones" className="py-14 sm:py-20 bg-background/60 backdrop-blur-sm">
+      <section id="secciones" className="py-14 sm:py-20 bg-gradient-to-b from-background via-background/95 to-muted/25">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-6xl mx-auto">
             <Reveal className="mb-8 sm:mb-10">
@@ -163,7 +164,7 @@ const Archivo = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {seccionesFiltradas.map((section) => (
                 <Reveal key={section.to}>
-                  <Card className="group card-hover border border-border/70 shadow-lg bg-card/80 backdrop-blur-sm h-full">
+                  <Card className="group card-hover border border-border/70 shadow-lg bg-card/85 backdrop-blur-sm h-full transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
                     <CardContent className="p-6 min-h-[245px] flex flex-col">
                       <div className="flex items-start justify-between gap-3 mb-4">
                         <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -215,7 +216,7 @@ const Archivo = () => {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-6xl mx-auto grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
             <Reveal>
-              <Card className="h-full border-border/70 bg-card/80 shadow-lg">
+              <Card className="h-full border-border/70 bg-card/85 shadow-lg">
                 <CardContent className="p-6 sm:p-7">
                   <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-wide mb-4">
                     <Sparkles className="w-4 h-4" />
@@ -234,7 +235,7 @@ const Archivo = () => {
             </Reveal>
 
             <Reveal>
-              <Card id="cta-material" className="h-full border-2 border-primary/20 shadow-xl bg-card/80 backdrop-blur-sm">
+              <Card id="cta-material" className="h-full border-2 border-primary/20 shadow-xl bg-card/85 backdrop-blur-sm">
                 <CardContent className="p-6 sm:p-8 md:p-10 h-full flex flex-col justify-between">
                   <div>
                     <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-muted/60 text-muted-foreground rounded-full mb-3">
@@ -272,3 +273,4 @@ const Archivo = () => {
 };
 
 export default Archivo;
+

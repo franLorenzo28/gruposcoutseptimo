@@ -161,7 +161,7 @@ const PerfilPublic = () => {
 
   if (loading)
     return (
-      <div className="min-h-screen bg-background/60 backdrop-blur-sm flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25 flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
@@ -174,7 +174,7 @@ const PerfilPublic = () => {
   const displayUsername = sanitizeText((profile as any)?.username || minimalProfile?.username || null);
 
   return (
-    <div className="min-h-screen bg-background/60 backdrop-blur-sm py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25 py-12 px-4">
       <Card className="max-w-2xl mx-auto">
         <CardHeader>
           <div className="flex items-center gap-4">
@@ -314,4 +314,5 @@ const PerfilPublic = () => {
 };
 
 export default PerfilPublic;
+
 

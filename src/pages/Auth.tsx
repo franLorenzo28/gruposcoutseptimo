@@ -141,7 +141,7 @@ const Auth = () => {
       } = supabase.auth.onAuthStateChange(async (event, session) => {
         console.log("Auth state change evento:", event, "email:", session?.user?.email);
         
-        // Solo redirigir en eventos especáficos de login exitoso
+        // Solo redirigir en eventos específicos de login exitoso
         if (event === "SIGNED_IN" && session?.user) {
           console.log("SIGNED_IN detectado, redirigiendo a /");
           setTimeout(() => {

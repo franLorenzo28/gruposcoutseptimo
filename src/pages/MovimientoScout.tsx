@@ -6,7 +6,7 @@ const MovimientoScout = () => {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="pt-24 sm:pt-28 md:pt-32 pb-12 sm:pb-16 bg-background/60 backdrop-blur-sm">
+      <section className="pt-24 sm:pt-28 md:pt-32 pb-12 sm:pb-16 bg-gradient-to-b from-background via-background/95 to-muted/25">
         <div className="container mx-auto px-4">
           <Reveal className="max-w-4xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/30 rounded-full mb-3 sm:mb-4">
@@ -46,14 +46,14 @@ const MovimientoScout = () => {
                       El <strong>escultismo</strong> (del inglés <em>scouting</em>, que significa explorar) es un movimiento infantil y juvenil que busca educar a niños y jóvenes, con base en valores y juegos al aire libre como método de enseñanza no formal.
                     </p>
                     <p className="text-base sm:text-lg leading-relaxed">
-                      Actualmente está presente en <strong>165 paáses y territorios</strong>, con aproximadamente <strong>55.000.000 de miembros</strong> en todo el mundo, agrupados en distintas organizaciones.
+                      Actualmente está presente en <strong>165 países y territorios</strong>, con aproximadamente <strong>55.000.000 de miembros</strong> en todo el mundo, agrupados en distintas organizaciones.
                     </p>
                   </div>
                 </CardContent>
               </Card>
             </Reveal>
 
-            {/* Orágenes */}
+            {/* Orígenes */}
             <Reveal>
               <Card className="card-hover">
                 <CardContent className="p-6 sm:p-8">
@@ -62,15 +62,15 @@ const MovimientoScout = () => {
                       <Trophy className="w-5 h-5 text-primary" />
                     </div>
                     <h2 className="text-2xl sm:text-3xl font-bold">
-                      Orágenes del Movimiento
+                      Orígenes del Movimiento
                     </h2>
                   </div>
                   <div className="space-y-4 text-muted-foreground">
                     <p className="text-base sm:text-lg leading-relaxed">
-                      El Movimiento Scout nació como una manera de combatir la delincuencia en la Inglaterra de principios del siglo 20, buscando el desarrollo fásico, espiritual y mental de los jóvenes para que llegaran a ser <strong>"buenos ciudadanos"</strong> a través de un método especáfico inspirado en la vida militar y al aire libre.
+                      El Movimiento Scout nació como una manera de combatir la delincuencia en la Inglaterra de principios del siglo 20, buscando el desarrollo físico, espiritual y mental de los jóvenes para que llegaran a ser <strong>"buenos ciudadanos"</strong> a través de un método específico inspirado en la vida militar y al aire libre.
                     </p>
                     <p className="text-base sm:text-lg leading-relaxed">
-                      Sus directrices fueron establecidas en el manual <strong>"Escultismo para muchachos"</strong> (1908), del General británico <strong>Robert Stephenson Smith Baden-Powell of Gilwell</strong>, que en 1909 fue nombrado caballero y recibió el tátulo de Sir, pasando a ser en 1929 <strong>Lord Baden-Powell, I barón de Gilwell</strong>.
+                      Sus directrices fueron establecidas en el manual <strong>"Escultismo para muchachos"</strong> (1908), del General británico <strong>Robert Stephenson Smith Baden-Powell of Gilwell</strong>, que en 1909 fue nombrado caballero y recibió el título de Sir, pasando a ser en 1929 <strong>Lord Baden-Powell, I barón de Gilwell</strong>.
                     </p>
                   </div>
                 </CardContent>
@@ -86,7 +86,7 @@ const MovimientoScout = () => {
                   </h3>
                   <div className="space-y-4 text-muted-foreground">
                     <p className="text-base sm:text-lg leading-relaxed">
-                      En 1907 se realizó el <strong>primer campamento experimental</strong> en la isla de Brownsea, Baháa de Poole, Dorset, en la costa sur de Inglaterra.
+                      En 1907 se realizó el <strong>primer campamento experimental</strong> en la isla de Brownsea, Bahía de Poole, Dorset, en la costa sur de Inglaterra.
                     </p>
                     <p className="text-base sm:text-lg leading-relaxed">
                       Participaron <strong>20 muchachos</strong> separados en cuatro patrullas: <strong>"Lobos, Toros, Chorlitos y Cuervos"</strong>; hijos de conocidos militares que hicieron campaña, en África o Asia, con Baden-Powell y de obreros de Londres.
@@ -124,7 +124,7 @@ const MovimientoScout = () => {
                       <li><strong>Servicio comunitario</strong></li>
                     </ul>
                     <p className="text-base sm:text-lg leading-relaxed">
-                      Estas actividades tienen el objeto de <strong>formar el carácter y enseñar de forma práctica valores humanos</strong>, al contrario de la formación académica teórica. Por eso el énfasis recae en el ejemplo del <em>scouter</em> o monitor (según el paás y el método aplicado).
+                      Estas actividades tienen el objeto de <strong>formar el carácter y enseñar de forma práctica valores humanos</strong>, al contrario de la formación académica teórica. Por eso el énfasis recae en el ejemplo del <em>scouter</em> o monitor (según el país y el método aplicado).
                     </p>
                   </div>
                 </CardContent>
@@ -166,7 +166,7 @@ const MovimientoScout = () => {
                       </div>
                     </div>
                     <p className="text-base sm:text-lg leading-relaxed mt-4">
-                      Dependiendo del grupo scout y la asociación correspondiente a cada paás, existen unidades mayores de jóvenes <strong>Caminantes o Rovers</strong>, asá como niños más pequeños como <strong>Castores</strong>, en edades comprendidas entre 6 y 8 años.
+                      Dependiendo del grupo scout y la asociación correspondiente a cada país, existen unidades mayores de jóvenes <strong>Caminantes o Rovers</strong>, así como etapas menores previas a Manada según cada asociación.
                     </p>
                   </div>
                 </CardContent>
@@ -182,6 +182,7 @@ const MovimientoScout = () => {
 };
 
 export default MovimientoScout;
+
 
 
 
