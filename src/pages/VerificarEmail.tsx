@@ -26,18 +26,18 @@ const VerificarEmail = () => {
 
   const verifyEmail = async (token: string) => {
     try {
-      console.log('�x� Verificando email con token:', token);
-      
+      console.log("Verificando email con token:", token);
+
       const result = await verifyEmailToken(token);
-      
-      console.log('�S& Resultado:', result);
-      
+
+      console.log("Resultado:", result);
+
       if (result.success) {
         setStatus("success");
         setMessage(result.message || "Email verificado correctamente");
         
         toast({
-          title: "�S& Email verificado",
+          title: "Email verificado",
           description: "Tu cuenta ha sido verificada exitosamente. Ahora podés acceder a todas las funcionalidades!",
         });
 
@@ -50,7 +50,7 @@ const VerificarEmail = () => {
         setMessage(result.message || "No se pudo verificar el email");
       }
     } catch (error: any) {
-      console.error('�R Error verificando:', error);
+      console.error("Error verificando:", error);
       setStatus("error");
       setMessage(error.message || "No se pudo verificar el email");
       

@@ -1,4 +1,4 @@
-�// Sanitización básica para mostrar datos
+// Sanitización básica para mostrar datos
 function sanitizeText(text: string | null | undefined): string {
   if (!text) return "";
   return String(text).replace(/[<>"']/g, "");
@@ -58,7 +58,7 @@ const PerfilCompartir = () => {
       await setProfilePublic(profile.user_id, checked);
       setIsPublic(checked);
       toast({
-        title: checked ? "�xR� Perfil público" : "�x Perfil privado",
+        title: checked ? "Perfil público" : "Perfil privado",
         description: checked
           ? "Tu perfil ahora es visible para todos"
           : "Tu perfil ahora es privado",
@@ -81,7 +81,7 @@ const PerfilCompartir = () => {
     try {
       await navigator.clipboard.writeText(link);
       toast({
-        title: "�S& Enlace copiado",
+        title: "Enlace copiado",
         description: "El enlace de tu perfil se copió al portapapeles",
       });
     } catch {

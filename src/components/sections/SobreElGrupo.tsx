@@ -167,15 +167,15 @@ const About = () => {
       bg: "bg-[#feb21a]/25",
     },
     {
-      value: "6",
-      label: "equipos de servicio",
-      detail: "Ramas y adultos acompañando cada etapa",
+      value: "+25",
+      label: "educadores activos en el staff",
+      detail: "Voluntarios que sostienen y acompañan cada proceso",
       bg: "bg-emerald-500/20",
     },
     {
       value: "1",
-      label: "misión compartida",
-      detail: "Educar para dejar el mundo mejor",
+      label: "más allá de un grupo scout",
+      detail: "Ya es como una familia",
       bg: "bg-sky-500/20",
     },
   ];
