@@ -24,6 +24,10 @@ function validateProfile(data: ProfileFormData) {
   if (data.telefono && !/^\+?\d{7,15}$/.test(data.telefono)) errors.push("El teléfono debe ser válido (solo números, puede incluir +).");
   // Fecha de nacimiento: formato YYYY-MM-DD
   if (data.fecha_nacimiento && !/^\d{4}-\d{2}-\d{2}$/.test(data.fecha_nacimiento)) errors.push("La fecha de nacimiento no es válida.");
+  // Adultos: rol obligatorio para definir permisos internos
+  if (data.edad >= 21 && !data.rol_adulto.trim()) {
+    errors.push("Si tienes 21 años o más, debes especificar tu rol en el grupo.");
+  }
   // Username: obligatorio, sin espacios ni caracteres raros
   if (!data.username.trim()) errors.push("El nombre de usuario es obligatorio.");
   if (!/^[a-zA-Z0-9._-]{3,20}$/.test(data.username)) errors.push("El nombre de usuario solo puede tener letras, números, puntos, guiones y guion bajo (3-20 caracteres).");
@@ -530,7 +534,7 @@ const Perfil = () => {
         profileData.comunidad_rovers = sanitized.comunidad_rovers || null;
       }
 
-      if (sanitized.edad >= 21 && sanitized.rol_adulto) {
+      if (sanitized.edad >= 21) {
         profileData.rol_adulto = sanitized.rol_adulto;
       }
 
@@ -1017,12 +1021,13 @@ const Perfil = () => {
 
               {formData.edad >= 21 && (
                 <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="rol_adulto">Rol en el grupo</Label>
+                  <Label htmlFor="rol_adulto">Rol en el grupo *</Label>
                   <select
                     id="rol_adulto"
                     name="rol_adulto"
                     value={formData.rol_adulto}
                     onChange={handleChange}
+                    required={formData.edad >= 21}
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <option value="">Selecciona una opción</option>

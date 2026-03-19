@@ -23,6 +23,9 @@ export default function AreaMiembros() {
               <p className="mt-3 text-sm leading-relaxed text-muted-foreground sm:text-base">
                 Un espacio privado para organizar actividades por rama, centralizar documentos y compartir información interna del grupo.
               </p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Acceso exclusivo para beneficiarios y educadores con perfil completo.
+              </p>
             </div>
 
             <div className="rounded-2xl border border-border/70 bg-background/80 p-4 sm:p-5">

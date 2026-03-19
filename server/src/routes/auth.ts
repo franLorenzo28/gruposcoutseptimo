@@ -36,8 +36,8 @@ authRouter.post("/register", async (req: any, res: any) => {
     "INSERT INTO users (id, email, password_hash, username) VALUES (?, ?, ?, ?)",
   ).run(id, email, password_hash, username);
   db.prepare(
-    `INSERT INTO profiles (user_id, nombre_completo, is_public, seisena, patrulla, equipo_pioneros, comunidad_rovers, fecha_nacimiento, rol_adulto, telefono, avatar_url) 
-    VALUES (?, ?, ?, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)`,
+    `INSERT INTO profiles (user_id, nombre_completo, is_public, seisena, patrulla, equipo_pioneros, comunidad_rovers, fecha_nacimiento, rol_adulto, rama_que_educa, telefono, avatar_url) 
+    VALUES (?, ?, ?, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)`,
   ).run(id, username, 0);
 
   // Generar token de verificación

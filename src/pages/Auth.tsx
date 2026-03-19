@@ -211,11 +211,7 @@ const Auth = () => {
               if (regErr) {
                 console.warn("No se pudo validar registro por RPC, se permite continuar OAuth login:", regErr);
               } else if (!isRegistered) {
-                toast({
-                  title: "Cuenta creada con Google",
-                  description:
-                    "No encontramos un registro previo para ese correo, así que creamos tu acceso automáticamente.",
-                });
+                // No mostramos toast aquí: el RPC puede no reflejar de inmediato el estado real y generar falsos positivos.
               }
             }
 

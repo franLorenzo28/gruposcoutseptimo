@@ -5,7 +5,6 @@ import {
   X,
   LogOut,
   User,
-  Share2,
   Settings,
   ChevronDown,
   ChevronUp,
@@ -85,10 +84,27 @@ const Navigation = () => {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [needsProfileSetup, setNeedsProfileSetup] = useState(false);
 
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const isProfileComplete = (profile: any, email: string | null | undefined) => {
+    const nombre = String(profile?.nombre_completo || "").trim();
+    const username = String(profile?.username || "").trim();
+    const fechaNacimiento = String(profile?.fecha_nacimiento || "").trim();
+    const normalizedEmail = (email || "").trim().toLowerCase();
+
+    const nameLooksLikeEmail =
+      !!normalizedEmail && nombre.toLowerCase() === normalizedEmail;
+
+    return !!nombre && !nameLooksLikeEmail && !!username && !!fechaNacimiento;
+  };
+
+  const profileMainPath = needsProfileSetup ? "/perfil/editar" : "/perfil";
+  const profileMainLabel = needsProfileSetup ? "Crear perfil" : "Perfil";
+  const mobileProfileMainLabel = needsProfileSetup ? "Crear perfil" : "Ver mi perfil";
 
   // Detect scroll
   useEffect(() => {
@@ -110,6 +126,9 @@ const Navigation = () => {
             setAvatarUrl(me.avatar_url || null);
             setIsLoggedIn(true);
             setIsAdmin((me as any)?.role === "admin");
+            setNeedsProfileSetup(!isProfileComplete(me, me?.email || null));
+          } else {
+            setNeedsProfileSetup(false);
           }
           return;
         }
@@ -119,12 +138,13 @@ const Navigation = () => {
         if (!user) {
           setIsLoggedIn(false);
           setIsAdmin(false);
+          setNeedsProfileSetup(false);
           return;
         }
         setIsLoggedIn(true);
         const { data: profile } = await supabase
           .from("profiles")
-          .select("nombre_completo, avatar_url, role")
+          .select("nombre_completo, avatar_url, role, username, fecha_nacimiento")
           .eq("user_id", user.id)
           .maybeSingle();
         if (profile) {
@@ -132,10 +152,14 @@ const Navigation = () => {
           setUserName(((profile as any).nombre_completo || emailFallback) ?? null);
           setAvatarUrl((profile as any).avatar_url || null);
           setIsAdmin((profile as any)?.role === "admin");
+          setNeedsProfileSetup(!isProfileComplete(profile, user.email));
+        } else {
+          setNeedsProfileSetup(true);
         }
       } catch (err) {
         setIsLoggedIn(false);
         setIsAdmin(false);
+        setNeedsProfileSetup(false);
       }
     })();
   }, [location.pathname]);
@@ -389,19 +413,13 @@ const Navigation = () => {
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
-                      <Link to="/perfil" className="cursor-pointer">
+                      <Link to={profileMainPath} className="cursor-pointer">
                         <User className="h-4 w-4 mr-2" />
-                        Perfil
+                        {profileMainLabel}
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to="/perfil/compartir" className="cursor-pointer">
-                        <Share2 className="h-4 w-4 mr-2" />
-                        Compartir Perfil
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/perfil/editar" className="cursor-pointer">
+                      <Link to="/configuracion" className="cursor-pointer">
                         <Settings className="h-4 w-4 mr-2" />
                         Configuración
                       </Link>
@@ -457,6 +475,7 @@ const Navigation = () => {
                     userName={userName}
                     avatarUrl={avatarUrl}
                     isAdmin={isAdmin}
+                    needsProfileSetup={needsProfileSetup}
                     isActive={isActive}
                     handleSignOut={handleSignOut}
                     onLinkClick={() => setIsMobileMenuOpen(false)}
@@ -481,6 +500,7 @@ interface MobileMenuProps {
   userName: string | null;
   avatarUrl: string | null;
   isAdmin: boolean;
+  needsProfileSetup: boolean;
   isActive: (path: string) => boolean;
   handleSignOut: () => void;
   onLinkClick: () => void;
@@ -492,11 +512,14 @@ function MobileMenu({
   userName,
   avatarUrl,
   isAdmin,
+  needsProfileSetup,
   isActive,
   handleSignOut,
   onLinkClick,
 }: MobileMenuProps) {
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const profileMainPath = needsProfileSetup ? "/perfil/editar" : "/perfil";
+  const profileMainLabel = needsProfileSetup ? "Crear perfil" : "Ver mi perfil";
 
   return (
     <div className="flex flex-col gap-6 mt-6">
@@ -526,7 +549,7 @@ function MobileMenu({
           {accountMenuOpen && (
             <div className="space-y-1 px-2 animate-in slide-in-from-top-2 duration-200">
               <Link
-                to="/perfil"
+                to={profileMainPath}
                 onClick={() => {
                   setAccountMenuOpen(false);
                   onLinkClick();
@@ -534,10 +557,10 @@ function MobileMenu({
                 className="flex items-center gap-3 px-4 py-2.5 rounded-md hover:bg-muted/30 transition-colors text-sm"
               >
                 <User className="h-4 w-4" />
-                <span>Ver mi perfil</span>
+                <span>{profileMainLabel}</span>
               </Link>
               <Link
-                to="/perfil/editar"
+                to="/configuracion"
                 onClick={() => {
                   setAccountMenuOpen(false);
                   onLinkClick();
@@ -545,18 +568,7 @@ function MobileMenu({
                 className="flex items-center gap-3 px-4 py-2.5 rounded-md hover:bg-muted/30 transition-colors text-sm"
               >
                 <Settings className="h-4 w-4" />
-                <span>Editar perfil</span>
-              </Link>
-              <Link
-                to="/perfil/compartir"
-                onClick={() => {
-                  setAccountMenuOpen(false);
-                  onLinkClick();
-                }}
-                className="flex items-center gap-3 px-4 py-2.5 rounded-md hover:bg-muted/30 transition-colors text-sm"
-              >
-                <Share2 className="h-4 w-4" />
-                <span>Compartir perfil</span>
+                <span>Configuración</span>
               </Link>
               {isAdmin && (
                 <Link

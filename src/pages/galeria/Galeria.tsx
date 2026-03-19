@@ -1,4 +1,5 @@
 ﻿import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -77,12 +78,19 @@ const Galeria = () => {
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     (async () => {
       try {
-        // Verificar admin por email (soporta backend local y Supabase)
+        // Requiere sesión iniciada para acceder a la galería
         const auth = await getAuthUser();
+        if (!auth) {
+          navigate("/auth", { replace: true });
+          return;
+        }
+
+        // Verificar admin por email (soporta backend local y Supabase)
         const email = auth?.email || "";
         setIsAdmin(ADMIN_EMAILS.includes(email.toLowerCase()));
 
@@ -107,7 +115,7 @@ const Galeria = () => {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
     (async () => {

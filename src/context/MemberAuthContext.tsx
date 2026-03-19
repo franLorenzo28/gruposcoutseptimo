@@ -3,6 +3,7 @@ import {
   clearMemberSession,
   getStoredMemberSession,
   saveMemberSession,
+  type MemberAccessType,
   type MemberSession,
   type MiembroRama,
 } from "@/lib/member-auth";
@@ -10,6 +11,8 @@ import {
 interface LoginPayload {
   nombre: string;
   rama: MiembroRama;
+  isRamaAdmin: boolean;
+  accessType: MemberAccessType;
 }
 
 interface MemberAuthContextValue {
@@ -28,11 +31,13 @@ export function MemberAuthProvider({ children }: { children: React.ReactNode }) 
     getStoredMemberSession(),
   );
 
-  const login = ({ nombre, rama }: LoginPayload) => {
+  const login = ({ nombre, rama, isRamaAdmin, accessType }: LoginPayload) => {
     const cleanName = nombre.trim();
     const nextSession: MemberSession = {
       nombre: cleanName,
       rama,
+      isRamaAdmin,
+      accessType,
       loggedAt: new Date().toISOString(),
     };
     saveMemberSession(nextSession);

@@ -31,6 +31,9 @@ export default function DashboardMiembros() {
               <p className="mt-3 text-sm text-muted-foreground sm:text-base">
                 Bienvenido, <strong>{session.nombre}</strong>. Este panel resume la actividad de la rama <strong>{ramaLabel[session.rama] || session.rama}</strong>.
               </p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Acceso: {session.isRamaAdmin ? "Educador/a (admin de rama)" : "Beneficiario"}
+              </p>
             </div>
 
             <div className="rounded-2xl border border-border/70 bg-background/80 p-4">

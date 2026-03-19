@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useMemberAuth } from "@/context/MemberAuthContext";
 import type { MiembroRama } from "@/lib/member-auth";
-import { Calendar, FileText, Image, Info, AlertTriangle } from "lucide-react";
+import { Calendar, FileText, Image, Info, AlertTriangle, ShieldCheck } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
 
 const ramaConfig: Record<
@@ -51,6 +51,7 @@ export default function PanelRama({ rama }: { rama: MiembroRama }) {
   const [searchParams] = useSearchParams();
   const denied = searchParams.get("acceso") === "denegado";
   const config = ramaConfig[rama];
+  const isRamaAdmin = !!session?.isRamaAdmin && session?.rama === rama;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25">
@@ -67,6 +68,12 @@ export default function PanelRama({ rama }: { rama: MiembroRama }) {
                 <p className="mt-3 inline-flex rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary">
                   Lema: {config.lema}
                 </p>
+                {isRamaAdmin && (
+                  <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                    <ShieldCheck className="h-4 w-4" />
+                    Admin de rama habilitado
+                  </p>
+                )}
                 {denied && (
                   <p className="mt-4 flex items-center gap-2 text-sm text-amber-600">
                     <AlertTriangle className="h-4 w-4" />
@@ -147,6 +154,28 @@ export default function PanelRama({ rama }: { rama: MiembroRama }) {
               </CardContent>
             </Card>
           </div>
+
+          {isRamaAdmin && (
+            <Card className="border-emerald-200 bg-emerald-50/70 shadow-sm">
+              <CardContent className="p-5">
+                <h2 className="text-lg font-bold text-emerald-800">Herramientas de administración</h2>
+                <p className="mt-2 text-sm text-emerald-700">
+                  Tienes permisos de educador/a para gestionar contenido de esta rama.
+                </p>
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <Button variant="outline" className="border-emerald-300 text-emerald-800">
+                    Subir calendario
+                  </Button>
+                  <Button variant="outline" className="border-emerald-300 text-emerald-800">
+                    Subir archivos
+                  </Button>
+                  <Button variant="outline" className="border-emerald-300 text-emerald-800">
+                    Publicar aviso interno
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </section>
     </div>

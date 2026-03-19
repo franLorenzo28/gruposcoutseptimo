@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import UserAvatar from "@/components/UserAvatar";
 import { getProfile, deleteMyAccount } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import { Settings, Share2, Check, X } from "lucide-react";
+import { Settings, Check, X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -460,16 +460,6 @@ const PerfilView = () => {
                       <Settings className="w-3 h-3 sm:w-4 sm:h-4" />
                       <span className="hidden xs:inline">Editar perfil</span>
                       <span className="xs:hidden">Editar</span>
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => navigate("/perfil/compartir")}
-                      className="gap-1 flex-1 sm:flex-none text-xs sm:text-sm"
-                    >
-                      <Share2 className="w-3 h-3 sm:w-4 sm:h-4" />
-                      <span className="hidden xs:inline">Compartir</span>
-                      <span className="xs:hidden">Compartir</span>
                     </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>

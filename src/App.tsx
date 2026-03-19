@@ -32,8 +32,8 @@ const Eventos = lazy(() => import("./pages/eventos/Eventos"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Perfil = lazy(() => import("./pages/Perfil"));
 const PerfilView = lazy(() => import("./pages/PerfilView"));
-const PerfilCompartir = lazy(() => import("./pages/PerfilCompartir"));
 const PerfilPublic = lazy(() => import("./pages/PerfilPublic"));
+const Configuracion = lazy(() => import("./pages/Configuracion"));
 const VerificarEmail = lazy(() => import("./pages/VerificarEmail"));
 const Usuarios = lazy(() => import("./pages/Usuarios"));
 const Mensajes = lazy(() => import("./pages/Mensajes"));
@@ -259,10 +259,7 @@ const App = () => (
                     <Route path="/verificar-email" element={<VerificarEmail />} />
                     <Route path="/perfil" element={<PerfilView />} />
                     <Route path="/perfil/editar" element={<Perfil />} />
-                    <Route
-                      path="/perfil/compartir"
-                      element={<PerfilCompartir />}
-                    />
+                    <Route path="/configuracion" element={<Configuracion />} />
                     <Route
                       path="/perfil-public/:id"
                       element={<PerfilPublic />}

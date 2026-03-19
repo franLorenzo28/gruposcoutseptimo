@@ -74,6 +74,8 @@ export async function updateProfile(
       body.fecha_nacimiento = (profile as any).fecha_nacimiento;
     if ((profile as any).rol_adulto !== undefined)
       body.rol_adulto = (profile as any).rol_adulto;
+    if ((profile as any).rama_que_educa !== undefined)
+      body.rama_que_educa = (profile as any).rama_que_educa;
     if ((profile as any).seisena !== undefined)
       body.seisena = (profile as any).seisena;
     if ((profile as any).patrulla !== undefined)

@@ -3,11 +3,14 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useMemberAuth } from "@/context/MemberAuthContext";
-import { deriveRamaFromEdad, type MiembroRama } from "@/lib/member-auth";
+import {
+  resolveMemberAccessFromProfile,
+  type MemberAccessType,
+  type MiembroRama,
+} from "@/lib/member-auth";
 import { getAuthUser } from "@/lib/backend";
 import { getProfile } from "@/lib/api";
 import { ShieldCheck, UserCheck, AlertCircle } from "lucide-react";
-import { Reveal } from "@/components/Reveal";
 
 function calculateAge(fechaNacimiento: string | null | undefined): number | null {
   if (!fechaNacimiento) return null;
@@ -33,6 +36,9 @@ export default function LoginMiembros() {
   const [nombre, setNombre] = useState<string>("");
   const [edad, setEdad] = useState<number | null>(null);
   const [rama, setRama] = useState<MiembroRama | null>(null);
+  const [rolAdulto, setRolAdulto] = useState<string>("");
+  const [isRamaAdmin, setIsRamaAdmin] = useState(false);
+  const [accessType, setAccessType] = useState<MemberAccessType | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { login, isAuthenticated, session } = useMemberAuth();
   const navigate = useNavigate();
@@ -72,19 +78,30 @@ export default function LoginMiembros() {
             ? profile.edad
             : calculateAge(profile.fecha_nacimiento || null);
 
-        const ramaCalculada = deriveRamaFromEdad(edadCalculada);
-        if (!ramaCalculada) {
+        const access = resolveMemberAccessFromProfile({
+          edad: edadCalculada,
+          rol_adulto: profile.rol_adulto,
+          rama_que_educa: profile.rama_que_educa,
+          seisena: profile.seisena,
+          patrulla: profile.patrulla,
+          equipo_pioneros: profile.equipo_pioneros,
+          comunidad_rovers: profile.comunidad_rovers,
+        });
+
+        if (!access.allowed || !access.rama || !access.accessType) {
           setNombre(displayName);
           setEdad(edadCalculada ?? null);
-          setError(
-            "No se pudo asignar una rama por edad. Verifica tu fecha de nacimiento en tu perfil.",
-          );
+          setRolAdulto(String(profile.rol_adulto || ""));
+          setError(access.reason || "No se pudo validar tu acceso interno.");
           return;
         }
 
         setNombre(displayName);
         setEdad(edadCalculada ?? null);
-        setRama(ramaCalculada);
+        setRolAdulto(String(profile.rol_adulto || ""));
+        setRama(access.rama);
+        setIsRamaAdmin(access.isRamaAdmin);
+        setAccessType(access.accessType);
       } finally {
         setLoading(false);
       }
@@ -92,12 +109,12 @@ export default function LoginMiembros() {
   }, []);
 
   const handleConfirm = () => {
-    if (!rama || !nombre) {
+    if (!rama || !nombre || !accessType) {
       setError("No fue posible confirmar tu acceso. Revisa tu perfil.");
       return;
     }
     setError(null);
-    login({ nombre, rama });
+    login({ nombre, rama, isRamaAdmin, accessType });
     navigate(`/area-miembros/ramas/${rama}`);
   };
 
@@ -116,15 +133,15 @@ export default function LoginMiembros() {
                   </p>
                   <h1 className="mt-3 text-3xl font-black">Confirmacion de acceso interno</h1>
                   <p className="mt-2 text-sm text-muted-foreground">
-                  Este ingreso no usa campos manuales. Tomamos tu cuenta autenticada y validamos
-                  tu nombre y rama asignada por edad.
+                  Este ingreso no usa campos manuales. Validamos tu cuenta y aplicamos reglas por
+                  edad, rol y rama para habilitar el acceso correcto.
                   </p>
                 </div>
 
                 {loading ? (
                   <p className="text-sm text-muted-foreground">Validando perfil...</p>
                 ) : (
-                  <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="grid gap-3 sm:grid-cols-4">
                     <div className="rounded-xl border border-border/60 bg-background/80 p-4 text-sm">
                       <p className="text-xs uppercase tracking-wide text-muted-foreground">Nombre detectado</p>
                       <p className="mt-1 font-semibold">{nombre || "Sin nombre"}</p>
@@ -137,6 +154,16 @@ export default function LoginMiembros() {
                       <p className="text-xs uppercase tracking-wide text-muted-foreground">Rama asignada</p>
                       <p className="mt-1 font-semibold">{rama ? ramaLabel[rama] : "Sin rama"}</p>
                     </div>
+                    <div className="rounded-xl border border-border/60 bg-background/80 p-4 text-sm">
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">Permiso interno</p>
+                      <p className="mt-1 font-semibold">
+                        {isRamaAdmin
+                          ? "Educador/a - Admin de rama"
+                          : accessType === "beneficiario"
+                            ? "Beneficiario"
+                            : rolAdulto || "Sin definir"}
+                      </p>
+                    </div>
                   </div>
                 )}
 
@@ -148,7 +175,7 @@ export default function LoginMiembros() {
                 )}
 
                 <div className="flex flex-wrap gap-3 pt-2">
-                  <Button onClick={handleConfirm} disabled={loading || !!error || !rama || !nombre}>
+                  <Button onClick={handleConfirm} disabled={loading || !!error || !rama || !nombre || !accessType}>
                     Confirmar acceso
                   </Button>
                   <Button asChild variant="outline">
@@ -161,6 +188,12 @@ export default function LoginMiembros() {
                     <Link to="/auth">Ir a login principal</Link>
                   </Button>
                 </div>
+
+                {!loading && !error && isRamaAdmin && (
+                  <p className="text-sm text-emerald-700">
+                    Como educador/a de rama, tendrás permisos de administración del dashboard de tu rama.
+                  </p>
+                )}
               </div>
 
               {isAuthenticated && session && (

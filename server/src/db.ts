@@ -36,6 +36,7 @@ db.exec(`
     telefono TEXT,
     fecha_nacimiento TEXT,
     rol_adulto TEXT,
+    rama_que_educa TEXT,
     is_public INTEGER DEFAULT 0,
     avatar_url TEXT,
     username_updated_at TEXT,
@@ -158,6 +159,8 @@ function ensureProfileColumns() {
       });
     if (!names.has("rol_adulto"))
       missing.push({ sql: `ALTER TABLE profiles ADD COLUMN rol_adulto TEXT` });
+    if (!names.has("rama_que_educa"))
+      missing.push({ sql: `ALTER TABLE profiles ADD COLUMN rama_que_educa TEXT` });
     if (!names.has("seisena"))
       missing.push({ sql: `ALTER TABLE profiles ADD COLUMN seisena TEXT` });
     if (!names.has("patrulla"))

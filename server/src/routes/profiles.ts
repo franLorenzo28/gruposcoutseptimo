@@ -66,6 +66,7 @@ const updateSchema = z.object({
   avatar_url: avatarUrlSchema.nullable().optional(),
   fecha_nacimiento: z.string().nullable().optional(),
   rol_adulto: z.string().nullable().optional(),
+  rama_que_educa: z.string().nullable().optional(),
   seisena: z.string().nullable().optional(),
   patrulla: z.string().nullable().optional(),
   equipo_pioneros: z.string().nullable().optional(),
@@ -97,6 +98,7 @@ profilesRouter.put("/me", authMiddleware, (req: any, res: any) => {
     avatar_url,
     fecha_nacimiento,
     rol_adulto,
+    rama_que_educa,
     seisena,
     patrulla,
     equipo_pioneros,
@@ -108,8 +110,8 @@ profilesRouter.put("/me", authMiddleware, (req: any, res: any) => {
     .get(userId);
   if (!existing) {
     db.prepare(
-      `INSERT INTO profiles (user_id, nombre_completo, telefono, is_public, avatar_url, fecha_nacimiento, rol_adulto, seisena, patrulla, equipo_pioneros, comunidad_rovers) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO profiles (user_id, nombre_completo, telefono, is_public, avatar_url, fecha_nacimiento, rol_adulto, rama_que_educa, seisena, patrulla, equipo_pioneros, comunidad_rovers) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(
       userId,
       nombre_completo ?? null,
@@ -118,6 +120,7 @@ profilesRouter.put("/me", authMiddleware, (req: any, res: any) => {
       avatar_url ?? null,
       fecha_nacimiento ?? null,
       rol_adulto ?? null,
+      rama_que_educa ?? null,
       seisena ?? null,
       patrulla ?? null,
       equipo_pioneros ?? null,
@@ -183,6 +186,10 @@ profilesRouter.put("/me", authMiddleware, (req: any, res: any) => {
     if (rol_adulto !== undefined) {
       sets.push("rol_adulto = ?");
       values.push(rol_adulto ?? null);
+    }
+    if (rama_que_educa !== undefined) {
+      sets.push("rama_que_educa = ?");
+      values.push(rama_que_educa ?? null);
     }
     if (seisena !== undefined) {
       sets.push("seisena = ?");
