@@ -43,6 +43,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import logoImage from "@/assets/grupo-scout-logo.png";
 
+function getAuthBaseUrl(): string {
+  const configured = (import.meta.env.VITE_APP_URL as string | undefined)?.trim();
+  const fallback = window.location.origin;
+  return (configured || fallback).replace(/\/+$/, "");
+}
+
+function buildAuthRedirect(path: string): string {
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return `${getAuthBaseUrl()}${normalizedPath}`;
+}
+
 const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -225,7 +236,7 @@ const Auth = () => {
     setLoading(true);
     try {
       // Usar cliente Supabase (mock o real según configuración)
-      const redirectUrl = `${window.location.origin}/`;
+      const redirectUrl = buildAuthRedirect("/");
       const { error } = await supabase.auth.signUp({
         email: sanitized.email,
         password: sanitized.password,
@@ -356,8 +367,8 @@ const Auth = () => {
   const handleGoogleSignIn = async (intent: "login" | "signup") => {
     setLoading(true);
     try {
-      // Usar la URL actual completa para el redirect
-      const redirectUrl = window.location.origin + "/auth";
+      // Evita redirects a deployments efímeros usando dominio canónico cuando esté configurado.
+      const redirectUrl = buildAuthRedirect("/auth");
       console.log("Iniciando OAuth con redirect a:", redirectUrl);
 
       localStorage.setItem("oauth_intent", intent);
