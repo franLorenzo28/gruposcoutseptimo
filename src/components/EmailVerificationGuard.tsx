@@ -26,12 +26,40 @@ const EmailVerificationGuard = ({
   const [developmentMode, setDevelopmentMode] = useState(false);
   const { toast } = useToast();
 
+  const recheckVerification = async (notifyIfPending = false) => {
+    try {
+      const ok = await checkEmailVerified();
+      setVerified(ok);
+      if (ok) {
+        toast({
+          title: "Email verificado",
+          description: `Ya podés acceder a ${featureName}.`,
+        });
+      } else if (notifyIfPending) {
+        toast({
+          title: "Aún sin verificar",
+          description: "Si ya abriste el enlace, esperá unos segundos y vuelve a intentar.",
+        });
+      }
+      return ok;
+    } catch (e) {
+      console.warn("Error refrescando verificación", e);
+      if (notifyIfPending) {
+        toast({
+          title: "No se pudo comprobar",
+          description: "Intentá de nuevo en unos segundos.",
+          variant: "destructive",
+        });
+      }
+      return false;
+    }
+  };
+
   // Chequear estado inicial de verificación
   useEffect(() => {
     (async () => {
       try {
-        const ok = await checkEmailVerified();
-        setVerified(ok);
+        await recheckVerification(false);
       } catch (e) {
         console.warn("Error comprobando verificación", e);
       } finally {
@@ -39,6 +67,15 @@ const EmailVerificationGuard = ({
       }
     })();
   }, []);
+
+  // Polling suave para desbloquear el contenido sin recargar la página.
+  useEffect(() => {
+    if (loading || verified) return;
+    const id = window.setInterval(() => {
+      recheckVerification(false);
+    }, 15000);
+    return () => window.clearInterval(id);
+  }, [loading, verified]);
 
   const handleResend = async () => {
     setSending(true);
@@ -52,7 +89,7 @@ const EmailVerificationGuard = ({
         title: "Token generado",
         description: result?.developmentMode
           ? "Link copiado / visible en consola (modo desarrollo)."
-          : "Si el enváo está habilitado, revisa tu correo.",
+          : "Si el envío está habilitado, revisa tu correo.",
       });
     } catch (e: any) {
       toast({
@@ -145,6 +182,13 @@ const EmailVerificationGuard = ({
                 <MailCheck className="h-4 w-4 mr-2" /> Copiar link
               </Button>
             )}
+            <Button
+              variant="outline"
+              onClick={() => recheckVerification(true)}
+              disabled={sending}
+            >
+              Ya verifiqué mi email
+            </Button>
           </div>
           <p className="text-xs text-muted-foreground">
             Si el correo tarda, revisa spam. En desarrollo puede no enviarse y sólo mostrarse el link.

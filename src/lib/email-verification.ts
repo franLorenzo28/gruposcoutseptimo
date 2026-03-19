@@ -3,6 +3,11 @@ import { supabase } from "@/integrations/supabase/client";
 // Permitir activar el envío real por Edge Function solo cuando esté desplegada
 const USE_EDGE_EMAIL = (import.meta.env.VITE_ENABLE_EDGE_EMAIL || "").toString().toLowerCase() === "true";
 
+function getAppOrigin(): string {
+  const configured = (import.meta.env.VITE_APP_URL as string | undefined)?.trim();
+  return (configured || window.location.origin).replace(/\/+$/, "");
+}
+
 /**
  * Envía un email de verificación al usuario actual
  * NOTA: Esta es una implementación temporal que funciona sin Edge Functions
@@ -18,6 +23,23 @@ export async function sendVerificationEmail() {
     }
 
     console.log('📧 Generando token de verificación para:', user.email);
+
+    if (USE_EDGE_EMAIL) {
+      const { data, error } = await supabase.functions.invoke('send-verification-email', {
+        method: 'POST',
+      });
+
+      if (!error) {
+        return {
+          success: true,
+          message: data?.message || 'Email de verificación enviado correctamente',
+          verificationUrl: data?.verificationUrl || null,
+          developmentMode: !!data?.verificationUrl,
+        };
+      }
+
+      console.warn('⚠️ Edge function no disponible, usando fallback local:', error.message);
+    }
 
     // Generar token usando la función RPC (creada por la migración)
     // @ts-ignore - La función se agrega vía SQL y no está en los tipos generados
@@ -37,7 +59,7 @@ export async function sendVerificationEmail() {
       throw new Error('No se pudo generar el token');
     }
     
-    const verificationUrl = `${window.location.origin}/verificar-email?token=${token}`;
+    const verificationUrl = `${getAppOrigin()}/verificar-email?token=${token}`;
 
     // En desarrollo, mostrar el link en consola
     console.log('🔗 Link de verificación (desarrollo):');
@@ -106,11 +128,17 @@ export async function checkEmailVerified(): Promise<boolean> {
       return false;
     }
 
+    // Fuente principal de verdad en Supabase Auth.
+    const confirmedAt = (user as any)?.email_confirmed_at || (user as any)?.confirmed_at;
+    if (confirmedAt) {
+      return true;
+    }
+
     const { data: profile } = await supabase
       .from('profiles')
       .select('email_verified')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
     // @ts-ignore - La columna se agrega con la migración SQL
     return profile?.email_verified || false;
