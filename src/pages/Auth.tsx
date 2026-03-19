@@ -24,7 +24,7 @@ function validateAuth({ email, password, nombreCompleto, telefono }: { email: st
     },
   };
 }
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { isLocalBackend } from "@/lib/backend";
@@ -47,6 +47,18 @@ function isVercelAppHost(hostname: string): boolean {
   return hostname.endsWith(".vercel.app");
 }
 
+function inferVercelProductionBaseUrl(hostname: string): string | null {
+  if (!isVercelAppHost(hostname)) return null;
+  const marker = "-git-";
+  const markerIndex = hostname.indexOf(marker);
+  if (markerIndex === -1) return null;
+
+  const projectSlug = hostname.slice(0, markerIndex);
+  if (!projectSlug) return null;
+
+  return `https://${projectSlug}.vercel.app`;
+}
+
 function getOAuthSafety() {
   const configuredBaseUrl =
     (import.meta.env.VITE_APP_URL as string | undefined)?.trim() || "";
@@ -55,27 +67,42 @@ function getOAuthSafety() {
     try {
       const parsed = new URL(configuredBaseUrl);
       const baseUrl = parsed.origin.replace(/\/+$/, "");
-      return { safe: true, baseUrl, reason: "" };
+      return { safe: true, baseUrl, reason: "", warning: "" };
     } catch {
       return {
         safe: false,
         baseUrl: window.location.origin,
         reason:
           "VITE_APP_URL no tiene un formato válido. Configura una URL completa (https://tu-dominio.com).",
+        warning: "",
       };
     }
   }
 
-  if (import.meta.env.PROD && isVercelAppHost(window.location.hostname)) {
+  if (import.meta.env.PROD) {
+    const inferredBaseUrl = inferVercelProductionBaseUrl(window.location.hostname);
+    if (inferredBaseUrl) {
+      return {
+        safe: true,
+        baseUrl: inferredBaseUrl,
+        reason: "",
+        warning:
+          "Se detectó preview de Vercel. OAuth usará automáticamente el dominio de producción inferido. Configura VITE_APP_URL para evitar ambigüedades.",
+      };
+    }
+  }
+
+  if (import.meta.env.PROD && isVercelAppHost(window.location.hostname) && !configuredBaseUrl) {
     return {
-      safe: false,
+      safe: true,
       baseUrl: window.location.origin,
-      reason:
-        "Google login deshabilitado en dominios vercel.app sin VITE_APP_URL. Configura un dominio canónico para evitar redirecciones a deployments temporales.",
+      reason: "",
+      warning:
+        "Estás usando un dominio vercel.app sin VITE_APP_URL. Configura un dominio canónico para estabilizar callbacks OAuth.",
     };
   }
 
-  return { safe: true, baseUrl: window.location.origin, reason: "" };
+  return { safe: true, baseUrl: window.location.origin, reason: "", warning: "" };
 }
 
 function getAuthBaseUrl(): string {
@@ -102,15 +129,35 @@ const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const isLogin = authTab === "login";
-  const oauthSafety = getOAuthSafety();
+  const oauthSafety = useMemo(() => getOAuthSafety(), []);
 
   useEffect(() => {
     if (!isLocalBackend() && !oauthSafety.safe && oauthSafety.reason) {
       console.warn("OAuth safety check:", oauthSafety.reason);
     }
-  }, [oauthSafety.safe, oauthSafety.reason]);
+    if (!isLocalBackend() && oauthSafety.warning) {
+      console.warn("OAuth warning:", oauthSafety.warning);
+    }
+  }, [oauthSafety.safe, oauthSafety.reason, oauthSafety.warning]);
 
   useEffect(() => {
+    const queryParams = new URLSearchParams(window.location.search);
+    const oauthError = queryParams.get("error");
+    const oauthErrorDescription = queryParams.get("error_description");
+
+    if (oauthError) {
+      localStorage.removeItem("oauth_intent");
+      toast({
+        title: "Error de Google OAuth",
+        description:
+          oauthErrorDescription ||
+          "No se pudo completar la autenticación con Google. Intenta nuevamente.",
+        variant: "destructive",
+      });
+      window.history.replaceState({}, "", window.location.pathname);
+      return;
+    }
+
     // Detectar si venimos de un callback de OAuth (tiene hash fragment)
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
     const accessToken = hashParams.get('access_token');
@@ -120,7 +167,7 @@ const Auth = () => {
       setProcessingOAuth(true);
       setLoading(true);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     // Verificar sesión actual y manejar callback de OAuth
@@ -143,7 +190,10 @@ const Auth = () => {
               const { data: isRegistered, error: regErr } = await (supabase as any).rpc("is_email_registered", {
                 p_email: session.user.email,
               });
-              if (regErr || !isRegistered) {
+
+              if (regErr) {
+                console.warn("No se pudo validar registro por RPC, se permite continuar OAuth login:", regErr);
+              } else if (!isRegistered) {
                 await supabase.auth.signOut();
                 localStorage.removeItem("oauth_intent");
                 toast({
@@ -623,6 +673,9 @@ const Auth = () => {
                     {!oauthSafety.safe && (
                       <p className="text-xs text-destructive mt-2">{oauthSafety.reason}</p>
                     )}
+                    {oauthSafety.warning && (
+                      <p className="text-xs text-muted-foreground mt-2">{oauthSafety.warning}</p>
+                    )}
                   </>
                 )}
               </form>
@@ -750,6 +803,9 @@ const Auth = () => {
                     </Button>
                     {!oauthSafety.safe && (
                       <p className="text-xs text-destructive mt-2">{oauthSafety.reason}</p>
+                    )}
+                    {oauthSafety.warning && (
+                      <p className="text-xs text-muted-foreground mt-2">{oauthSafety.warning}</p>
                     )}
                   </>
                 )}
