@@ -24,7 +24,7 @@ function validateAuth({ email, password, nombreCompleto, telefono }: { email: st
     },
   };
 }
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { isLocalBackend } from "@/lib/backend";
@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { ToastAction } from "@/components/ui/toast";
 import logoImage from "@/assets/grupo-scout-logo.png";
 
 function isVercelAppHost(hostname: string): boolean {
@@ -130,6 +131,7 @@ const Auth = () => {
   const { toast } = useToast();
   const isLogin = authTab === "login";
   const oauthSafety = useMemo(() => getOAuthSafety(), []);
+  const oauthProfileToastShownRef = useRef(false);
 
   useEffect(() => {
     if (!isLocalBackend() && !oauthSafety.safe && oauthSafety.reason) {
@@ -186,6 +188,21 @@ const Auth = () => {
           // Validar intent de OAuth (login vs signup)
           if (!isLocalBackend()) {
             const oauthIntent = localStorage.getItem("oauth_intent");
+
+            if (oauthIntent && !oauthProfileToastShownRef.current) {
+              toast({
+                title: "¡Ya estás dentro!",
+                description:
+                  "Tip: completa o actualiza tu perfil para que la comunidad te conozca mejor.",
+                action: (
+                  <ToastAction altText="Ir a editar perfil" onClick={() => navigate("/perfil")}>
+                    Editar perfil
+                  </ToastAction>
+                ),
+              });
+              oauthProfileToastShownRef.current = true;
+            }
+
             if (oauthIntent === "login" && session.user.email) {
               const { data: isRegistered, error: regErr } = await (supabase as any).rpc("is_email_registered", {
                 p_email: session.user.email,
@@ -194,11 +211,28 @@ const Auth = () => {
               if (regErr) {
                 console.warn("No se pudo validar registro por RPC, se permite continuar OAuth login:", regErr);
               } else if (!isRegistered) {
+                toast({
+                  title: "Cuenta creada con Google",
+                  description:
+                    "No encontramos un registro previo para ese correo, así que creamos tu acceso automáticamente.",
+                });
+              }
+            }
+
+            if (oauthIntent === "signup" && session.user.email) {
+              const { data: isRegistered, error: regErr } = await (supabase as any).rpc("is_email_registered", {
+                p_email: session.user.email,
+              });
+
+              if (regErr) {
+                console.warn("No se pudo validar registro por RPC en signup OAuth:", regErr);
+              } else if (isRegistered) {
                 await supabase.auth.signOut();
                 localStorage.removeItem("oauth_intent");
                 toast({
-                  title: "Primero debes registrarte",
-                  description: "Ese correo no está registrado. Regástrate y luego podrás iniciar sesión con Google.",
+                  title: "Ese correo ya está registrado",
+                  description:
+                    "Ya existe una cuenta con ese correo. Iniciá sesión con Google en la pestaña de ingreso.",
                   variant: "destructive",
                 });
                 setProcessingOAuth(false);
@@ -244,6 +278,11 @@ const Auth = () => {
         
         // Solo redirigir en eventos específicos de login exitoso
         if (event === "SIGNED_IN" && session?.user) {
+          const pendingOauthIntent = localStorage.getItem("oauth_intent");
+          if (pendingOauthIntent) {
+            // Durante callback OAuth dejamos que checkSession aplique reglas de login/signup.
+            return;
+          }
           console.log("SIGNED_IN detectado, redirigiendo a /");
           setTimeout(() => {
             navigate("/", { replace: true });
@@ -667,7 +706,7 @@ const Auth = () => {
                     )}
                     {!googleLoginAllowed && email.trim() !== "" && !checkingEmail && (
                       <p className="text-xs text-muted-foreground mt-2">
-                        Si ese correo no está registrado, el login con Google se rechazará y se te pedirá registrarte.
+                        Si ese correo no está registrado, al iniciar sesión con Google se creará tu cuenta automáticamente.
                       </p>
                     )}
                     {!oauthSafety.safe && (
