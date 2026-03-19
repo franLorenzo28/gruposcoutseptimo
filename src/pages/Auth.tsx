@@ -43,10 +43,43 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import logoImage from "@/assets/grupo-scout-logo.png";
 
+function isLikelyVercelPreviewHost(hostname: string): boolean {
+  return hostname.endsWith(".vercel.app") && hostname.includes("-git-");
+}
+
+function getOAuthSafety() {
+  const configuredBaseUrl =
+    (import.meta.env.VITE_APP_URL as string | undefined)?.trim() || "";
+
+  if (configuredBaseUrl) {
+    try {
+      const parsed = new URL(configuredBaseUrl);
+      const baseUrl = parsed.origin.replace(/\/+$/, "");
+      return { safe: true, baseUrl, reason: "" };
+    } catch {
+      return {
+        safe: false,
+        baseUrl: window.location.origin,
+        reason:
+          "VITE_APP_URL no tiene un formato válido. Configura una URL completa (https://tu-dominio.com).",
+      };
+    }
+  }
+
+  if (import.meta.env.PROD && isLikelyVercelPreviewHost(window.location.hostname)) {
+    return {
+      safe: false,
+      baseUrl: window.location.origin,
+      reason:
+        "Google login deshabilitado en previews de Vercel sin VITE_APP_URL. Esto evita redirecciones a deployments temporales.",
+    };
+  }
+
+  return { safe: true, baseUrl: window.location.origin, reason: "" };
+}
+
 function getAuthBaseUrl(): string {
-  const configured = (import.meta.env.VITE_APP_URL as string | undefined)?.trim();
-  const fallback = window.location.origin;
-  return (configured || fallback).replace(/\/+$/, "");
+  return getOAuthSafety().baseUrl.replace(/\/+$/, "");
 }
 
 function buildAuthRedirect(path: string): string {
@@ -69,6 +102,13 @@ const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const isLogin = authTab === "login";
+  const oauthSafety = getOAuthSafety();
+
+  useEffect(() => {
+    if (!isLocalBackend() && !oauthSafety.safe && oauthSafety.reason) {
+      console.warn("OAuth safety check:", oauthSafety.reason);
+    }
+  }, [oauthSafety.safe, oauthSafety.reason]);
 
   useEffect(() => {
     // Detectar si venimos de un callback de OAuth (tiene hash fragment)
@@ -365,6 +405,15 @@ const Auth = () => {
   };
 
   const handleGoogleSignIn = async (intent: "login" | "signup") => {
+    if (!oauthSafety.safe) {
+      toast({
+        title: "Configuración OAuth incompleta",
+        description: oauthSafety.reason,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       // Evita redirects a deployments efímeros usando dominio canónico cuando esté configurado.
@@ -541,7 +590,7 @@ const Auth = () => {
                       variant="outline"
                       className="w-full bg-background/90 hover:bg-background"
                       onClick={() => handleGoogleSignIn("login")}
-                      disabled={loading}
+                      disabled={loading || !oauthSafety.safe}
                     >
                       <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                         <path
@@ -570,6 +619,9 @@ const Auth = () => {
                       <p className="text-xs text-muted-foreground mt-2">
                         Si ese correo no está registrado, el login con Google se rechazará y se te pedirá registrarte.
                       </p>
+                    )}
+                    {!oauthSafety.safe && (
+                      <p className="text-xs text-destructive mt-2">{oauthSafety.reason}</p>
                     )}
                   </>
                 )}
@@ -674,7 +726,7 @@ const Auth = () => {
                       variant="outline"
                       className="w-full bg-background/90 hover:bg-background"
                       onClick={() => handleGoogleSignIn("signup")}
-                      disabled={loading}
+                      disabled={loading || !oauthSafety.safe}
                     >
                       <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                         <path
@@ -696,6 +748,9 @@ const Auth = () => {
                       </svg>
                       Registrarse con Google
                     </Button>
+                    {!oauthSafety.safe && (
+                      <p className="text-xs text-destructive mt-2">{oauthSafety.reason}</p>
+                    )}
                   </>
                 )}
               </form>
