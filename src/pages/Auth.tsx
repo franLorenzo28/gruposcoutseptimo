@@ -43,8 +43,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import logoImage from "@/assets/grupo-scout-logo.png";
 
-function isLikelyVercelPreviewHost(hostname: string): boolean {
-  return hostname.endsWith(".vercel.app") && hostname.includes("-git-");
+function isVercelAppHost(hostname: string): boolean {
+  return hostname.endsWith(".vercel.app");
 }
 
 function getOAuthSafety() {
@@ -66,12 +66,12 @@ function getOAuthSafety() {
     }
   }
 
-  if (import.meta.env.PROD && isLikelyVercelPreviewHost(window.location.hostname)) {
+  if (import.meta.env.PROD && isVercelAppHost(window.location.hostname)) {
     return {
       safe: false,
       baseUrl: window.location.origin,
       reason:
-        "Google login deshabilitado en previews de Vercel sin VITE_APP_URL. Esto evita redirecciones a deployments temporales.",
+        "Google login deshabilitado en dominios vercel.app sin VITE_APP_URL. Configura un dominio canónico para evitar redirecciones a deployments temporales.",
     };
   }
 
