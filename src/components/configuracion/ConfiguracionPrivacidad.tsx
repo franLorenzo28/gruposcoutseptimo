@@ -20,13 +20,21 @@ const DEFAULT_SETTINGS = {
 export default function ConfiguracionPrivacidad() {
   const { user } = useUser();
   const { toast } = useToast();
+  const storageKey = user?.id ? `${STORAGE_KEY}:${user.id}` : STORAGE_KEY;
   const [isLoading, setIsLoading] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
 
   // Cargar preferencias desde localStorage
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const scoped = localStorage.getItem(storageKey);
+    const legacy = user?.id ? localStorage.getItem(STORAGE_KEY) : null;
+    const saved = scoped ?? legacy;
+
+    if (!scoped && legacy && user?.id) {
+      localStorage.setItem(storageKey, legacy);
+    }
+
     if (saved) {
       try {
         setSettings(JSON.parse(saved));
@@ -34,7 +42,7 @@ export default function ConfiguracionPrivacidad() {
         setSettings(DEFAULT_SETTINGS);
       }
     }
-  }, [user?.id]);
+  }, [storageKey, user?.id]);
 
   const handleToggle = (key: keyof typeof settings) => {
     const newSettings = {
@@ -42,7 +50,7 @@ export default function ConfiguracionPrivacidad() {
       [key]: !settings[key],
     };
     setSettings(newSettings);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newSettings));
+    localStorage.setItem(storageKey, JSON.stringify(newSettings));
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 2000);
   };
@@ -53,7 +61,7 @@ export default function ConfiguracionPrivacidad() {
       // Aquí iría la llamada a la API para guardar preferencias de privacidad
       // await apiFetch("/profiles/privacy", { method: "PUT", body: settings });
 
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+      localStorage.setItem(storageKey, JSON.stringify(settings));
 
       toast({
         title: "✓ Privacidad actualizada",

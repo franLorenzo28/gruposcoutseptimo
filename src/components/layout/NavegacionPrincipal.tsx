@@ -197,8 +197,7 @@ const Navigation = () => {
       });
       
       console.log("🔓 Redirigiendo a /auth...");
-      // Forzar navegación completa sin SPA
-      window.location.href = "/auth";
+      navigate("/auth", { replace: true });
     } catch (error) {
       console.error("❌ Error al cerrar sesión:", error);
       toast({
@@ -209,9 +208,10 @@ const Navigation = () => {
     }
   };
 
-  const isActive = (path: string) => location.pathname === path;
-  const isSectionActive = (links: NavLink[]) =>
-    links.some((link) => location.pathname === link.path);
+  const isActive = (path: string) => {
+    if (path === "/") return location.pathname === "/";
+    return location.pathname === path || location.pathname.startsWith(`${path}/`);
+  };
 
   const formatNotification = (n: any) => {
     const d = n?.data || {};

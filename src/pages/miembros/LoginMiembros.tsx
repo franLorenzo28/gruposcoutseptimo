@@ -102,6 +102,9 @@ export default function LoginMiembros() {
         setRama(access.rama);
         setIsRamaAdmin(access.isRamaAdmin);
         setAccessType(access.accessType);
+      } catch (err) {
+        console.error("Error validando acceso de miembros:", err);
+        setError("No pudimos validar tu perfil en este momento. Intenta de nuevo en unos minutos.");
       } finally {
         setLoading(false);
       }
