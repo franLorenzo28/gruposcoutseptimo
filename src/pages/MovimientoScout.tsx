@@ -1,8 +1,123 @@
-﻿import { Card, CardContent } from "@/components/ui/card";
-import { Compass, Users, Heart, Trophy } from "lucide-react";
+﻿import { useMemo, useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Compass, Users, Heart, Trophy, Sparkles } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
 
+type TopicCategory = "fundamentos" | "historia" | "metodo" | "sistema";
+
+type Topic = {
+  id: string;
+  title: string;
+  category: TopicCategory;
+  icon: React.ElementType;
+  eyebrow: string;
+  summary: string;
+  paragraphs: string[];
+  bullets?: string[];
+  note?: string;
+  featured?: boolean;
+};
+
+const TOPICS: Topic[] = [
+  {
+    id: "brownsea",
+    title: "El Primer Campamento - Isla de Brownsea (1907)",
+    category: "historia",
+    icon: Sparkles,
+    eyebrow: "Hito fundacional",
+    summary: "Experimento práctico que confirmó que el método scout funcionaba en terreno.",
+    featured: true,
+    paragraphs: [
+      "En 1907 se realizó el primer campamento experimental en la isla de Brownsea, Bahía de Poole, Dorset, en la costa sur de Inglaterra.",
+      "Participaron 20 muchachos en cuatro patrullas: Lobos, Toros, Chorlitos y Cuervos; provenientes tanto de familias vinculadas al ejército como de obreros de Londres.",
+      "El éxito del sistema impulsó a Baden-Powell a sistematizar aprendizajes y anécdotas en Escultismo para muchachos.",
+    ],
+    note: "Posteriormente, el escultismo fue perfeccionado por Vera Barclay y Roland Phillips, entre otros.",
+  },
+  {
+    id: "metodo",
+    title: "El Método Scout",
+    category: "metodo",
+    icon: Heart,
+    eyebrow: "Aprender haciendo",
+    summary: "Una pedagogía vivencial con juego, naturaleza y servicio como ejes.",
+    paragraphs: [
+      "El Movimiento Scout enfatiza actividades lúdicas con objetivos educativos, actividades al aire libre y servicio comunitario.",
+      "La formación busca desarrollar carácter y valores humanos de forma práctica, complementando la educación académica.",
+      "Por eso el ejemplo del scouter o monitor es central para sostener el método en la vida cotidiana.",
+    ],
+    bullets: [
+      "Actividades lúdicas con propósito educativo",
+      "Vida al aire libre como aula real",
+      "Servicio comunitario como práctica de valores",
+    ],
+  },
+  {
+    id: "escultismo",
+    title: "¿Qué es el Escultismo?",
+    category: "fundamentos",
+    icon: Compass,
+    eyebrow: "Visión global",
+    summary: "Movimiento educativo no formal presente en 165 países y territorios.",
+    paragraphs: [
+      "El escultismo (del inglés scouting, explorar) es un movimiento infantil y juvenil que educa a niños y jóvenes con valores y actividades al aire libre.",
+      "Actualmente está presente en 165 países y territorios, con aproximadamente 55 millones de miembros en todo el mundo.",
+    ],
+  },
+  {
+    id: "sistema",
+    title: "Sistema Educativo",
+    category: "sistema",
+    icon: Users,
+    eyebrow: "Progresión por etapas",
+    summary: "Ramas y pequeños grupos para acompañar cada edad y momento del crecimiento.",
+    paragraphs: [
+      "El escultismo estructura su sistema educativo por edades, contextos y objetivos de desarrollo.",
+      "Según cada asociación y país, existen unidades mayores como Caminantes o Rovers, y etapas menores previas a Manada.",
+    ],
+    bullets: [
+      "Lobatismo (8-11 años): ambiente de familia feliz",
+      "Sistema de Patrullas: pequeños grupos de amigos",
+    ],
+  },
+  {
+    id: "origenes",
+    title: "Orígenes del Movimiento",
+    category: "historia",
+    icon: Trophy,
+    eyebrow: "Contexto histórico",
+    summary: "Respuesta educativa a desafíos sociales de inicios del siglo XX.",
+    paragraphs: [
+      "El Movimiento Scout surgió en Inglaterra para promover el desarrollo físico, espiritual y mental de los jóvenes y formar buenos ciudadanos.",
+      "Sus directrices fueron establecidas en Escultismo para muchachos (1908), escrito por Robert Baden-Powell.",
+      "En 1909 fue nombrado caballero y en 1929 recibió el título de Lord Baden-Powell, I barón de Gilwell.",
+    ],
+  },
+];
+
+const FILTERS: Array<{ key: "all" | TopicCategory; label: string }> = [
+  { key: "all", label: "Explorar todo" },
+  { key: "historia", label: "Historia" },
+  { key: "metodo", label: "Método" },
+  { key: "sistema", label: "Sistema" },
+  { key: "fundamentos", label: "Fundamentos" },
+];
+
 const MovimientoScout = () => {
+  const [activeFilter, setActiveFilter] = useState<"all" | TopicCategory>("all");
+  const [activeTopicId, setActiveTopicId] = useState<string>(TOPICS[0].id);
+
+  const filteredTopics = useMemo(
+    () =>
+      activeFilter === "all"
+        ? TOPICS
+        : TOPICS.filter((topic) => topic.category === activeFilter),
+    [activeFilter],
+  );
+
+  const activeTopic =
+    TOPICS.find((topic) => topic.id === activeTopicId) ?? filteredTopics[0] ?? TOPICS[0];
+
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -28,146 +143,98 @@ const MovimientoScout = () => {
       {/* Content Section */}
       <section className="py-12 sm:py-16">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto space-y-8">
-            {/* ¿Qué es el Escultismo? */}
+          <div className="max-w-6xl mx-auto space-y-8">
             <Reveal>
-              <Card className="card-hover">
-                <CardContent className="p-6 sm:p-8">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 bg-muted/30 rounded-full flex items-center justify-center">
-                      <Compass className="w-5 h-5 text-primary" />
-                    </div>
-                    <h2 className="text-2xl sm:text-3xl font-bold">
-                      ¿Qué es el Escultismo?
-                    </h2>
-                  </div>
-                  <div className="space-y-4 text-muted-foreground">
-                    <p className="text-base sm:text-lg leading-relaxed">
-                      El <strong>escultismo</strong> (del inglés <em>scouting</em>, que significa explorar) es un movimiento infantil y juvenil que busca educar a niños y jóvenes, con base en valores y juegos al aire libre como método de enseñanza no formal.
-                    </p>
-                    <p className="text-base sm:text-lg leading-relaxed">
-                      Actualmente está presente en <strong>165 países y territorios</strong>, con aproximadamente <strong>55.000.000 de miembros</strong> en todo el mundo, agrupados en distintas organizaciones.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="rounded-2xl border border-border/70 bg-card/70 p-4 sm:p-5">
+                <div className="flex flex-wrap items-center gap-2">
+                  {FILTERS.map((filter) => (
+                    <button
+                      key={filter.key}
+                      onClick={() => setActiveFilter(filter.key)}
+                      className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+                        activeFilter === filter.key
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted/40 text-muted-foreground hover:bg-muted/70 hover:text-foreground"
+                      }`}
+                    >
+                      {filter.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </Reveal>
 
-            {/* Orígenes */}
-            <Reveal>
-              <Card className="card-hover">
-                <CardContent className="p-6 sm:p-8">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 bg-muted/30 rounded-full flex items-center justify-center">
-                      <Trophy className="w-5 h-5 text-primary" />
-                    </div>
-                    <h2 className="text-2xl sm:text-3xl font-bold">
-                      Orígenes del Movimiento
-                    </h2>
-                  </div>
-                  <div className="space-y-4 text-muted-foreground">
-                    <p className="text-base sm:text-lg leading-relaxed">
-                      El Movimiento Scout nació como una manera de combatir la delincuencia en la Inglaterra de principios del siglo 20, buscando el desarrollo físico, espiritual y mental de los jóvenes para que llegaran a ser <strong>"buenos ciudadanos"</strong> a través de un método específico inspirado en la vida militar y al aire libre.
-                    </p>
-                    <p className="text-base sm:text-lg leading-relaxed">
-                      Sus directrices fueron establecidas en el manual <strong>"Escultismo para muchachos"</strong> (1908), del General británico <strong>Robert Stephenson Smith Baden-Powell of Gilwell</strong>, que en 1909 fue nombrado caballero y recibió el título de Sir, pasando a ser en 1929 <strong>Lord Baden-Powell, I barón de Gilwell</strong>.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </Reveal>
+            <div className="grid gap-5 md:grid-cols-2">
+              {filteredTopics.map((topic) => {
+                const Icon = topic.icon;
+                const isActive = topic.id === activeTopic.id;
 
-            {/* Primer Campamento */}
-            <Reveal>
-              <Card className="card-hover border-primary/20">
-                <CardContent className="p-6 sm:p-8 bg-background/70 backdrop-blur-sm">
-                  <h3 className="text-xl sm:text-2xl font-bold mb-4">
-                    El Primer Campamento - Isla de Brownsea (1907)
-                  </h3>
-                  <div className="space-y-4 text-muted-foreground">
-                    <p className="text-base sm:text-lg leading-relaxed">
-                      En 1907 se realizó el <strong>primer campamento experimental</strong> en la isla de Brownsea, Bahía de Poole, Dorset, en la costa sur de Inglaterra.
-                    </p>
-                    <p className="text-base sm:text-lg leading-relaxed">
-                      Participaron <strong>20 muchachos</strong> separados en cuatro patrullas: <strong>"Lobos, Toros, Chorlitos y Cuervos"</strong>; hijos de conocidos militares que hicieron campaña, en África o Asia, con Baden-Powell y de obreros de Londres.
-                    </p>
-                    <p className="text-base sm:text-lg leading-relaxed">
-                      Como consecuencia del éxito del nuevo sistema, Baden-Powell escribió un libro donde recopilaba experiencias y anécdotas relacionadas con esta práctica, lo que terminó siendo el ya mencionado <em>Escultismo para muchachos</em>.
-                    </p>
-                    <p className="text-sm text-muted-foreground/80 italic">
-                      Posteriormente, el escultismo fue perfeccionado por Vera Barclay y Roland Phillips, entre otros.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </Reveal>
-
-            {/* Método Scout */}
-            <Reveal>
-              <Card className="card-hover">
-                <CardContent className="p-6 sm:p-8">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 bg-muted/30 rounded-full flex items-center justify-center">
-                      <Heart className="w-5 h-5 text-primary" />
-                    </div>
-                    <h2 className="text-2xl sm:text-3xl font-bold">
-                      El Método Scout
-                    </h2>
-                  </div>
-                  <div className="space-y-4 text-muted-foreground">
-                    <p className="text-base sm:text-lg leading-relaxed">
-                      El Movimiento Scout pone énfasis en:
-                    </p>
-                    <ul className="list-disc list-inside space-y-2 ml-4 text-base sm:text-lg">
-                      <li><strong>Actividades lúdicas</strong> con objetivos educativos</li>
-                      <li><strong>Actividades al aire libre</strong></li>
-                      <li><strong>Servicio comunitario</strong></li>
-                    </ul>
-                    <p className="text-base sm:text-lg leading-relaxed">
-                      Estas actividades tienen el objeto de <strong>formar el carácter y enseñar de forma práctica valores humanos</strong>, al contrario de la formación académica teórica. Por eso el énfasis recae en el ejemplo del <em>scouter</em> o monitor (según el país y el método aplicado).
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </Reveal>
-
-            {/* Sistema de Ramas */}
-            <Reveal>
-              <Card className="card-hover">
-                <CardContent className="p-6 sm:p-8">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 bg-muted/30 rounded-full flex items-center justify-center">
-                      <Users className="w-5 h-5 text-primary" />
-                    </div>
-                    <h2 className="text-2xl sm:text-3xl font-bold">
-                      Sistema Educativo
-                    </h2>
-                  </div>
-                  <div className="space-y-4 text-muted-foreground">
-                    <p className="text-base sm:text-lg leading-relaxed">
-                      El escultismo toma como base de su sistema educativo:
-                    </p>
-                    <div className="space-y-3">
-                      <div className="p-4 bg-muted/20 rounded-lg">
-                        <h4 className="font-semibold text-foreground mb-2">
-                          🐺 Lobatismo (8-11 años)
-                        </h4>
-                        <p className="text-sm sm:text-base">
-                          Ambiente de familia feliz para niños entre 8 y 11 años
-                        </p>
+                return (
+                  <Reveal key={topic.id}>
+                    <button
+                      onClick={() => setActiveTopicId(topic.id)}
+                      className={`h-full w-full text-left rounded-2xl border p-5 transition-all ${
+                        isActive
+                          ? "border-primary/60 bg-primary/5 shadow-lg"
+                          : "border-border/70 bg-card/75 hover:-translate-y-0.5 hover:border-primary/40"
+                      } ${topic.featured ? "md:col-span-2" : ""}`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted/40">
+                          <Icon className="h-5 w-5 text-primary" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-primary/90">
+                            {topic.eyebrow}
+                          </p>
+                          <h2 className="mt-1 text-xl font-bold sm:text-2xl">{topic.title}</h2>
+                          <p className="mt-2 text-sm text-muted-foreground sm:text-base">{topic.summary}</p>
+                        </div>
                       </div>
-                      <div className="p-4 bg-muted/20 rounded-lg">
-                        <h4 className="font-semibold text-foreground mb-2">
-                          ⚜️ Sistema de Patrullas
-                        </h4>
-                        <p className="text-sm sm:text-base">
-                          Pequeños grupos de amigos, basado en el concepto de pandilla
-                        </p>
-                      </div>
+                    </button>
+                  </Reveal>
+                );
+              })}
+            </div>
+
+            <Reveal>
+              <Card className="border-primary/25 bg-background/80 shadow-xl">
+                <CardContent className="p-6 sm:p-8">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted/30">
+                      <activeTopic.icon className="h-5 w-5 text-primary" />
                     </div>
-                    <p className="text-base sm:text-lg leading-relaxed mt-4">
-                      Dependiendo del grupo scout y la asociación correspondiente a cada país, existen unidades mayores de jóvenes <strong>Caminantes o Rovers</strong>, así como etapas menores previas a Manada según cada asociación.
-                    </p>
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+                        Profundizando
+                      </p>
+                      <h3 className="text-2xl font-bold sm:text-3xl">{activeTopic.title}</h3>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 space-y-4 text-muted-foreground">
+                    {activeTopic.paragraphs.map((paragraph) => (
+                      <p key={paragraph} className="text-base leading-relaxed sm:text-lg">
+                        {paragraph}
+                      </p>
+                    ))}
+
+                    {activeTopic.bullets && (
+                      <ul className="space-y-2 rounded-xl bg-muted/20 p-4 text-base sm:text-lg">
+                        {activeTopic.bullets.map((bullet) => (
+                          <li key={bullet} className="flex items-start gap-2">
+                            <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" />
+                            <span>{bullet}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+
+                    {activeTopic.note && (
+                      <p className="text-sm italic text-muted-foreground/90 sm:text-base">
+                        {activeTopic.note}
+                      </p>
+                    )}
                   </div>
                 </CardContent>
               </Card>
