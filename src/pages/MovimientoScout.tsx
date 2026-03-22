@@ -1,5 +1,4 @@
-﻿import { useMemo, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+﻿import { useEffect, useMemo, useState } from "react";
 import { Compass, Users, Heart, Trophy, Sparkles } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
 
@@ -115,6 +114,14 @@ const MovimientoScout = () => {
     [activeFilter],
   );
 
+  useEffect(() => {
+    if (filteredTopics.length === 0) return;
+    const activeVisible = filteredTopics.some((topic) => topic.id === activeTopicId);
+    if (!activeVisible) {
+      setActiveTopicId(filteredTopics[0].id);
+    }
+  }, [activeTopicId, filteredTopics]);
+
   const activeTopic =
     TOPICS.find((topic) => topic.id === activeTopicId) ?? filteredTopics[0] ?? TOPICS[0];
 
@@ -122,8 +129,8 @@ const MovimientoScout = () => {
     <div className="min-h-screen">
       {/* Hero Section */}
       <section className="pt-24 sm:pt-28 md:pt-32 pb-12 sm:pb-16 bg-gradient-to-b from-background via-background/95 to-muted/25">
-        <div className="container mx-auto px-4">
-          <Reveal className="max-w-4xl mx-auto text-center">
+        <div className="w-full px-4 sm:px-6 lg:px-8 2xl:px-12">
+          <Reveal className="max-w-none text-left">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/30 rounded-full mb-3 sm:mb-4">
               <Compass className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
               <span className="text-primary font-semibold text-xs sm:text-sm">
@@ -133,7 +140,7 @@ const MovimientoScout = () => {
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
               Movimiento Scout
             </h1>
-            <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+            <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-4xl leading-relaxed">
               Un movimiento mundial de educación no formal que forma jóvenes a través de valores, juegos y actividades al aire libre
             </p>
           </Reveal>
@@ -142,8 +149,8 @@ const MovimientoScout = () => {
 
       {/* Content Section */}
       <section className="py-12 sm:py-16">
-        <div className="container mx-auto px-4">
-          <div className="max-w-6xl mx-auto space-y-8">
+        <div className="w-full px-4 sm:px-6 lg:px-8 2xl:px-12">
+          <div className="space-y-8">
             <Reveal>
               <div className="rounded-2xl border border-border/70 bg-card/70 p-4 sm:p-5">
                 <div className="flex flex-wrap items-center gap-2">
@@ -164,81 +171,85 @@ const MovimientoScout = () => {
               </div>
             </Reveal>
 
-            <div className="grid gap-5 md:grid-cols-2">
-              {filteredTopics.map((topic) => {
-                const Icon = topic.icon;
-                const isActive = topic.id === activeTopic.id;
+            <div className="grid gap-6 xl:grid-cols-12">
+              <div className="xl:col-span-5">
+                <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+                  {filteredTopics.map((topic) => {
+                    const Icon = topic.icon;
+                    const isActive = topic.id === activeTopic.id;
 
-                return (
-                  <Reveal key={topic.id}>
-                    <button
-                      onClick={() => setActiveTopicId(topic.id)}
-                      className={`h-full w-full text-left rounded-2xl border p-5 transition-all ${
-                        isActive
-                          ? "border-primary/60 bg-primary/5 shadow-lg"
-                          : "border-border/70 bg-card/75 hover:-translate-y-0.5 hover:border-primary/40"
-                      } ${topic.featured ? "md:col-span-2" : ""}`}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted/40">
-                          <Icon className="h-5 w-5 text-primary" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-xs font-semibold uppercase tracking-wide text-primary/90">
-                            {topic.eyebrow}
-                          </p>
-                          <h2 className="mt-1 text-xl font-bold sm:text-2xl">{topic.title}</h2>
-                          <p className="mt-2 text-sm text-muted-foreground sm:text-base">{topic.summary}</p>
-                        </div>
+                    return (
+                      <Reveal key={topic.id}>
+                        <button
+                          onClick={() => setActiveTopicId(topic.id)}
+                          className={`h-full w-full text-left rounded-2xl border p-5 transition-all ${
+                            isActive
+                              ? "border-primary/60 bg-primary/5 shadow-lg"
+                              : "border-border/70 bg-card/75 hover:-translate-y-0.5 hover:border-primary/40"
+                          } ${topic.featured ? "md:col-span-2 xl:col-span-1 2xl:col-span-2" : ""}`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted/40">
+                              <Icon className="h-5 w-5 text-primary" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-xs font-semibold uppercase tracking-wide text-primary/90">
+                                {topic.eyebrow}
+                              </p>
+                              <h2 className="mt-1 text-xl font-bold sm:text-2xl">{topic.title}</h2>
+                              <p className="mt-2 text-sm text-muted-foreground sm:text-base">{topic.summary}</p>
+                            </div>
+                          </div>
+                        </button>
+                      </Reveal>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="xl:col-span-7">
+                <Reveal>
+                  <section className="xl:sticky xl:top-24 rounded-3xl border border-primary/20 bg-gradient-to-br from-background via-background to-primary/5 p-7 sm:p-10 lg:p-12 shadow-2xl">
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted/40">
+                        <activeTopic.icon className="h-6 w-6 text-primary" />
                       </div>
-                    </button>
-                  </Reveal>
-                );
-              })}
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                          Profundizando
+                        </p>
+                        <h3 className="text-3xl font-black sm:text-4xl leading-tight">{activeTopic.title}</h3>
+                      </div>
+                    </div>
+
+                    <div className="mt-7 space-y-5 text-muted-foreground border-l-2 border-primary/25 pl-5 sm:pl-7">
+                      {activeTopic.paragraphs.map((paragraph) => (
+                        <p key={paragraph} className="text-lg leading-relaxed sm:text-xl">
+                          {paragraph}
+                        </p>
+                      ))}
+
+                      {activeTopic.bullets && (
+                        <ul className="space-y-3 rounded-2xl bg-muted/25 p-5 text-base sm:text-lg">
+                          {activeTopic.bullets.map((bullet) => (
+                            <li key={bullet} className="flex items-start gap-3">
+                              <span className="mt-2 h-2.5 w-2.5 shrink-0 rounded-full bg-primary" />
+                              <span>{bullet}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+
+                      {activeTopic.note && (
+                        <p className="text-base italic text-muted-foreground/90 sm:text-lg">
+                          {activeTopic.note}
+                        </p>
+                      )}
+                    </div>
+                  </section>
+                </Reveal>
+              </div>
             </div>
-
-            <Reveal>
-              <Card className="border-primary/25 bg-background/80 shadow-xl">
-                <CardContent className="p-6 sm:p-8">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted/30">
-                      <activeTopic.icon className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-primary">
-                        Profundizando
-                      </p>
-                      <h3 className="text-2xl font-bold sm:text-3xl">{activeTopic.title}</h3>
-                    </div>
-                  </div>
-
-                  <div className="mt-5 space-y-4 text-muted-foreground">
-                    {activeTopic.paragraphs.map((paragraph) => (
-                      <p key={paragraph} className="text-base leading-relaxed sm:text-lg">
-                        {paragraph}
-                      </p>
-                    ))}
-
-                    {activeTopic.bullets && (
-                      <ul className="space-y-2 rounded-xl bg-muted/20 p-4 text-base sm:text-lg">
-                        {activeTopic.bullets.map((bullet) => (
-                          <li key={bullet} className="flex items-start gap-2">
-                            <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" />
-                            <span>{bullet}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-
-                    {activeTopic.note && (
-                      <p className="text-sm italic text-muted-foreground/90 sm:text-base">
-                        {activeTopic.note}
-                      </p>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </Reveal>
           </div>
         </div>
       </section>

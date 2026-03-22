@@ -26,6 +26,11 @@ const Archivo = lazy(() => import("./pages/Archivo.tsx"));
 const ArchivoScoutpedia = lazy(() => import("./pages/archivo/Scoutpedia"));
 const ArchivoCompania = lazy(() => import("./pages/archivo/Compania"));
 const ArchivoMiembros = lazy(() => import("./pages/archivo/Miembros"));
+const Cancionero = lazy(() => import("./pages/Cancionero"));
+const Veteranos = lazy(() => import("./pages/Veteranos"));
+const Dirigentes = lazy(() => import("./pages/Dirigentes"));
+const Locales = lazy(() => import("./pages/Locales"));
+const Jamborees = lazy(() => import("./pages/eventos/Jamborees"));
 const Galeria = lazy(() => import("./pages/galeria/Galeria"));
 const Contacto = lazy(() => import("./pages/Contacto"));
 const Eventos = lazy(() => import("./pages/eventos/Eventos"));
@@ -210,9 +215,15 @@ const App = () => (
                     <Route path="/archivo/scoutpedia" element={<ArchivoScoutpedia />} />
                     <Route path="/archivo/compania" element={<ArchivoCompania />} />
                     <Route path="/archivo/miembros" element={<ArchivoMiembros />} />
+                    <Route path="/cancionero" element={<Cancionero />} />
+                    <Route path="/veteranos" element={<Veteranos />} />
+                    <Route path="/dirigentes" element={<Dirigentes />} />
+                    <Route path="/archivo/locales" element={<Locales />} />
+                    <Route path="/locales" element={<Navigate to="/archivo/locales" replace />} />
                     <Route path="/galeria" element={<Galeria />} />
                     <Route path="/contacto" element={<Contacto />} />
                     <Route path="/eventos" element={<Eventos />} />
+                    <Route path="/eventos/jamborees" element={<Jamborees />} />
                     <Route path="/area-miembros" element={<AreaMiembros />} />
                     <Route path="/login" element={<LoginMiembros />} />
                     <Route

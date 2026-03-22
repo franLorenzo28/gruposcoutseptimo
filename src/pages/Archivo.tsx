@@ -8,11 +8,15 @@ import {
   Archive,
   ArrowRight,
   BookOpen,
+  Calendar,
   FileText,
+  Flag,
+  Home,
   Image,
   Layers,
   Search,
   Sparkles,
+  Users,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import communityImage from "@/assets/community-scouts.jpg";
@@ -53,6 +57,51 @@ const secciones: ArchiveSection[] = [
     tag: "Multimedia",
     entries: "Colección visual",
     Icon: Image,
+  },
+  {
+    title: "Cancionero",
+    description:
+      "Canciones scouts organizadas por tipo: fogón, marcha y campamento.",
+    to: "/cancionero",
+    tag: "Cultura",
+    entries: "En crecimiento",
+    Icon: BookOpen,
+  },
+  {
+    title: "Veteranos",
+    description:
+      "Registro de ex-integrantes con nombre, años activo y rama.",
+    to: "/veteranos",
+    tag: "Comunidad",
+    entries: "En crecimiento",
+    Icon: Users,
+  },
+  {
+    title: "Dirigentes",
+    description:
+      "Equipo actual de dirigentes con cargo y rama de servicio.",
+    to: "/dirigentes",
+    tag: "Equipo",
+    entries: "En crecimiento",
+    Icon: Flag,
+  },
+  {
+    title: "Locales",
+    description:
+      "Sedes del grupo con dirección y descripción histórica.",
+    to: "/archivo/locales",
+    tag: "Infraestructura",
+    entries: "En crecimiento",
+    Icon: Home,
+  },
+  {
+    title: "Jamborees",
+    description:
+      "Jamborees mundiales y panamericanos con año, lugar y contexto.",
+    to: "/eventos/jamborees",
+    tag: "Eventos internacionales",
+    entries: "En crecimiento",
+    Icon: Calendar,
   },
 ];
 
@@ -105,7 +154,7 @@ const Archivo = () => {
               <div className="grid grid-cols-3 gap-3 max-w-lg">
                 <Card className="bg-card/80 border-border/60 shadow-sm">
                   <CardContent className="p-3 sm:p-4 text-center">
-                    <p className="text-2xl sm:text-3xl font-black text-primary">3</p>
+                    <p className="text-2xl sm:text-3xl font-black text-primary">{secciones.length}</p>
                     <p className="text-xs text-muted-foreground">Secciones</p>
                   </CardContent>
                 </Card>
