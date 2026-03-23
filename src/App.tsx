@@ -17,7 +17,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import ScrollAlInicio from "@/components/layout/ScrollAlInicio";
 import TransicionRuta from "@/components/layout/TransicionRuta";
-import Inicio from "./pages/inicio/Inicio";
+const Inicio = lazy(() => import("./pages/inicio/Inicio"));
 const Historia = lazy(() => import("./pages/historia/Historia.tsx"));
 const Bauen = lazy(() => import("./pages/eventos/Bauen"));
 const AmLagerfeuer = lazy(() => import("./pages/eventos/AmLagerfeuer"));
@@ -62,7 +62,6 @@ import RequireRamaAccess from "@/components/auth/RequireRamaAccess";
 import { supabase } from "@/integrations/supabase/client";
 import FondoAnimado from "@/components/layout/FondoAnimado";
 import { NotificationsProvider } from "@/context/Notifications";
-import { LoadingMessage } from "@/components/ui/loading";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { AdminGuard } from "@/components/AdminGuard";
 import SaltarAlContenido from "@/components/layout/SaltarAlContenido";
@@ -202,7 +201,13 @@ const App = () => (
               <NavegacionPrincipal />
               <ScrollAlInicio />
               <SaltarAlContenido />
-              <Suspense fallback={<LoadingMessage message="Cargando página..." />}>
+              <Suspense
+                fallback={
+                  <div className="flex min-h-screen items-center justify-center">
+                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                  </div>
+                }
+              >
                 <TransicionRuta>
                   <Routes>
                     <Route path="/" element={<Inicio />} />

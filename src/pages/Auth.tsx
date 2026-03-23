@@ -580,6 +580,9 @@ const Auth = () => {
                 src={logoImage}
                 alt="Grupo Scout Séptimo"
                 className="w-full h-full object-contain drop-shadow-sm"
+                loading="eager"
+                fetchPriority="high"
+                decoding="async"
               />
             </div>
           </div>

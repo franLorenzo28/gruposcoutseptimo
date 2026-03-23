@@ -23,6 +23,18 @@ const BackgroundFX = memo(() => {
           filter: "blur(46px)",
         }}
       />
+
+      <div
+        className="absolute inset-0 opacity-[0.07]"
+        style={{
+          backgroundImage:
+            "linear-gradient(hsl(var(--foreground) / 0.08) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--foreground) / 0.08) 1px, transparent 1px)",
+          backgroundSize: "36px 36px",
+          maskImage: "radial-gradient(ellipse at center, black 40%, transparent 80%)",
+          WebkitMaskImage:
+            "radial-gradient(ellipse at center, black 40%, transparent 80%)",
+        }}
+      />
     </div>
   );
 });

@@ -1,17 +1,13 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { cn } from "@/lib/utils";
+import { AnimatePresence, motion } from "framer-motion";
 
 interface RouteTransitionProps {
   children: React.ReactNode;
-  className?: string;
 }
 
-// Aplica una animación de entrada sutil al cambiar de ruta.
-// Respeta 'prefers-reduced-motion'.
 export default function RouteTransition({
   children,
-  className,
 }: RouteTransitionProps) {
   const location = useLocation();
   const [reduceMotion, setReduceMotion] = useState(false);
@@ -25,17 +21,15 @@ export default function RouteTransition({
   }, []);
 
   return (
-    <div
-      key={location.pathname}
-      className={cn(
-        // Sutil fade/slide
-        reduceMotion
-          ? "opacity-100 translate-y-0"
-          : "page-enter page-animate",
-        className,
-      )}
-    >
-      {children}
-    </div>
+    <AnimatePresence mode="wait" initial={false}>
+      <motion.div
+        key={location.pathname}
+        initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={reduceMotion ? { duration: 0 } : { duration: 0.25, ease: "easeOut" }}
+      >
+        {children}
+      </motion.div>
+    </AnimatePresence>
   );
 }

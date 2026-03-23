@@ -79,6 +79,8 @@ const UserAvatar = ({
               src={avatarUrl || ""}
               alt={userName || "Foto de perfil"}
               className="w-full h-auto max-h-[80vh] object-contain rounded-lg"
+              loading="lazy"
+              decoding="async"
             />
           </div>
         </DialogContent>

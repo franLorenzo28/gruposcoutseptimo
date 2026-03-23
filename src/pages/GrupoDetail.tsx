@@ -454,6 +454,8 @@ export default function GrupoDetail() {
               src={group.cover_image}
               alt={group.name}
               className="w-20 h-20 object-cover rounded-lg"
+              loading="lazy"
+              decoding="async"
             />
           )}
 

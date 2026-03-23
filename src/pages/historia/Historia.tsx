@@ -3,9 +3,15 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Calendar, BookOpen } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
+import { OptimizedImage } from "@/components/OptimizedImage";
+import { useCountUp } from "@/hooks/useCountUp";
 import heroImage from "@/assets/hero-scouts.jpg";
 
 const Historia = () => {
+  const fundacion = useCountUp(1964, 800, { start: 1950 });
+  const anios = useCountUp(60, 1200, { start: 0 });
+  const locales = useCountUp(8, 600, { start: 0 });
+
   const timeline = [
     {
       year: "1964",
@@ -69,7 +75,15 @@ const Historia = () => {
     <div className="min-h-screen">
       <section className="relative overflow-hidden pb-16 pt-28 sm:pt-32">
         <div className="absolute inset-0" aria-hidden="true">
-          <img src={heroImage} alt="" className="h-full w-full object-cover" />
+          <OptimizedImage
+            src={heroImage}
+            alt=""
+            className="h-full w-full"
+            objectFit="cover"
+            priority
+            width={1920}
+            height={1080}
+          />
           <div className="absolute inset-0 bg-gradient-to-r from-scout-black/90 via-scout-black/70 to-scout-black/35" />
         </div>
 
@@ -104,13 +118,13 @@ const Historia = () => {
         </div>
       </section>
 
-      <section className="section-padding bg-background/65">
+      <section className="py-8 sm:py-10 bg-background/65">
         <div className="container mx-auto px-4">
           <div className="grid gap-4 md:grid-cols-3">
             <Reveal>
               <Card className="h-full border-border/70 bg-card/80 shadow-lg">
                 <CardContent className="p-6">
-                  <p className="text-4xl font-black text-primary">1964</p>
+                  <p ref={fundacion.ref} className="text-4xl font-black text-primary">{fundacion.value}</p>
                   <p className="mt-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                     Año de fundación
                   </p>
@@ -120,7 +134,9 @@ const Historia = () => {
             <Reveal>
               <Card className="h-full border-border/70 bg-card/80 shadow-lg">
                 <CardContent className="p-6">
-                  <p className="text-4xl font-black text-primary">60+</p>
+                  <p ref={anios.ref} className="text-4xl font-black text-primary">
+                    {anios.value >= 60 ? "60+" : anios.value}
+                  </p>
                   <p className="mt-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                     Años de historia activa
                   </p>
@@ -130,7 +146,7 @@ const Historia = () => {
             <Reveal>
               <Card className="h-full border-border/70 bg-card/80 shadow-lg">
                 <CardContent className="p-6">
-                  <p className="text-4xl font-black text-primary">8</p>
+                  <p ref={locales.ref} className="text-4xl font-black text-primary">{locales.value}</p>
                   <p className="mt-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                     Locales y etapas clave
                   </p>
@@ -141,7 +157,7 @@ const Historia = () => {
         </div>
       </section>
 
-      <section id="timeline" className="relative overflow-hidden py-16 sm:py-20 bg-muted/35">
+      <section id="timeline" className="relative overflow-hidden py-10 sm:py-14 bg-muted/35">
         <div className="container mx-auto px-4">
           <div className="grid gap-8 lg:grid-cols-[320px_1fr]">
             <Reveal>

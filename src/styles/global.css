@@ -143,8 +143,8 @@ All colors MUST be HSL.
     line-height: 1.65;
     letter-spacing: 0.002em;
     background-image:
-      linear-gradient(hsla(0 0% 0% / 0.035) 1px, transparent 1px),
-      linear-gradient(90deg, hsla(0 0% 0% / 0.035) 1px, transparent 1px);
+      linear-gradient(hsla(0 0% 0% / 0.02) 1px, transparent 1px),
+      linear-gradient(90deg, hsla(0 0% 0% / 0.02) 1px, transparent 1px);
     background-size: 36px 36px;
     background-attachment: fixed;
     /* Transición suave de tema, respetando prefers-reduced-motion */
@@ -156,8 +156,8 @@ All colors MUST be HSL.
   .dark body {
     background-color: hsl(var(--background));
     background-image:
-      linear-gradient(hsla(0 0% 100% / 0.045) 1px, transparent 1px),
-      linear-gradient(90deg, hsla(0 0% 100% / 0.045) 1px, transparent 1px);
+      linear-gradient(hsla(0 0% 100% / 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, hsla(0 0% 100% / 0.03) 1px, transparent 1px);
     background-attachment: fixed;
   }
   

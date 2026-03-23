@@ -29,6 +29,7 @@ export function OptimizedImage({
   objectFit = "cover",
   priority = false,
   loading,
+  fetchPriority,
   ...props
 }: OptimizedImageProps) {
   const [hasError, setHasError] = useState(false);
@@ -36,6 +37,7 @@ export function OptimizedImage({
 
   const displaySrc = hasError && fallbackSrc ? fallbackSrc : src;
   const loadingMode = priority ? "eager" : (loading || "lazy");
+  const fetchMode = priority ? "high" : fetchPriority;
 
   return (
     <div 
@@ -59,6 +61,7 @@ export function OptimizedImage({
           alt={alt}
           loading={loadingMode}
           decoding="async"
+          fetchPriority={fetchMode}
           onLoad={() => setIsLoaded(true)}
           onError={() => {
             setHasError(true);

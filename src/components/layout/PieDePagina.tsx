@@ -74,6 +74,8 @@ const FooterNew = () => {
                 src={logoImage}
                 alt="Grupo Scout Séptimo"
                 className="w-12 h-12 object-contain transition-transform duration-300 hover:scale-110"
+                loading="lazy"
+                decoding="async"
               />
               <div>
                 <div className="text-xl font-bold text-foreground">

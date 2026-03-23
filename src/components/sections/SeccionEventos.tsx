@@ -1,5 +1,5 @@
 ﻿import { useEffect, useState } from "react";
-import { Calendar, MapPin, Flag, Users, PlusCircle } from "lucide-react";
+import { Calendar, MapPin, Flag, Users, PlusCircle, EyeOff } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Reveal } from "@/components/Reveal";
@@ -101,11 +101,13 @@ function getGoogleCalendarUrl(event: any) {
   return `${base}&${params.join("&")}`;
 }
 
-const EventCard = ({ event }: { event: any }) => {
+const EventCard = ({ event, index }: { event: any; index: number }) => {
   const fechaValida = event.date && event.date !== "A confirmar";
+  const [imageFailed, setImageFailed] = useState(!event.image);
+  const isUnknown = event.status?.toLowerCase() === "en incógnita";
 
   return (
-    <Reveal>
+    <Reveal delay={index * 0.08}>
       <Card
         className="card-hover overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 group h-full flex flex-col bg-background/70 backdrop-blur-sm shadow-sm hover:shadow-lg"
         role="article"
@@ -114,15 +116,35 @@ const EventCard = ({ event }: { event: any }) => {
       >
         <div className="relative">
           <div className="h-2.5 bg-foreground/10 animate-gradient-x"></div>
-          <img
-            src={event.image || "/placeholder.svg"}
-            alt={`Imagen del evento ${event.title}`}
-            loading="lazy"
-            className="w-full h-48 object-cover"
-            onError={(e) => {
-              e.currentTarget.src = "/placeholder.svg";
-            }}
-          />
+          <div className="relative aspect-video overflow-hidden border-b border-border/60 bg-card">
+            {imageFailed ? (
+              <div className="relative flex h-full w-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-primary/10 via-card to-muted/45">
+                <div className="absolute inset-0 border border-border/60" aria-hidden="true" />
+                <Flag className="h-9 w-9 text-primary" aria-hidden="true" />
+                <p className="text-sm font-semibold text-muted-foreground">{event.type}</p>
+              </div>
+            ) : (
+              <img
+                src={event.image}
+                alt={`Imagen del evento ${event.title}`}
+                loading="lazy"
+                decoding="async"
+                width={640}
+                height={360}
+                className={`h-full w-full object-cover transition-all duration-500 ${isUnknown ? "blur-[2px] scale-105" : ""}`}
+                onError={() => setImageFailed(true)}
+              />
+            )}
+            {isUnknown && (
+              <span
+                className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-muted/60 px-2.5 py-1 text-xs font-semibold text-muted-foreground backdrop-blur-sm border border-border/50"
+                aria-label="Estado del evento"
+              >
+                <EyeOff className="h-3 w-3" />
+                {event.status}
+              </span>
+            )}
+          </div>
         </div>
         <CardHeader className="space-y-3 p-4">
           <div className="flex items-center justify-between gap-2">
@@ -132,12 +154,14 @@ const EventCard = ({ event }: { event: any }) => {
             >
               {event.type}
             </span>
-            <span
-              className="text-xs bg-muted/30 text-foreground px-3 py-1 rounded-full font-semibold border border-border"
-              aria-label="Estado del evento"
-            >
-              {event.status}
-            </span>
+            {!isUnknown && (
+              <span
+                className="text-xs bg-muted/30 text-foreground px-3 py-1 rounded-full font-semibold border border-border"
+                aria-label="Estado del evento"
+              >
+                {event.status}
+              </span>
+            )}
           </div>
           <CardTitle
             id={`event-title-${event.id}`}
@@ -263,8 +287,8 @@ const Events = () => {
         </div>
       ) : events.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mb-12">
-          {events.map((event) => (
-            <EventCard key={event.id} event={event} />
+          {events.map((event, index) => (
+            <EventCard key={event.id} event={event} index={index} />
           ))}
         </div>
       ) : (

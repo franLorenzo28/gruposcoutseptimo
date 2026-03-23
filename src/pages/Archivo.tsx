@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Reveal } from "@/components/Reveal";
+import { OptimizedImage } from "@/components/OptimizedImage";
 import {
   Archive,
   ArrowRight,
@@ -174,12 +175,14 @@ const Archivo = () => {
             </div>
 
             <div className="overflow-hidden rounded-3xl border border-border/60 shadow-xl">
-              <img
+              <OptimizedImage
                 src={communityImage}
                 alt="Archivo histórico del Grupo Scout Séptimo"
-                className="h-[260px] sm:h-[320px] w-full object-cover"
-                loading="lazy"
-                decoding="async"
+                className="h-[260px] sm:h-[320px] w-full"
+                objectFit="cover"
+                priority
+                width={1280}
+                height={720}
               />
             </div>
           </Reveal>
@@ -210,9 +213,12 @@ const Archivo = () => {
               </div>
             </Reveal>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              {seccionesFiltradas.map((section) => (
-                <Reveal key={section.to}>
+            <div
+              className="grid gap-5"
+              style={{ gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))" }}
+            >
+              {seccionesFiltradas.map((section, index) => (
+                <Reveal key={section.to} delay={index * 0.08}>
                   <Card className="group card-hover border border-border/70 shadow-lg bg-card/85 backdrop-blur-sm h-full transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
                     <CardContent className="p-6 min-h-[245px] flex flex-col">
                       <div className="flex items-start justify-between gap-3 mb-4">

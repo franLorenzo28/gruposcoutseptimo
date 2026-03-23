@@ -15,6 +15,10 @@ type RevealProps = {
    * Ej: "0px 0px -10% 0px" revela un poco antes.
    */
   rootMargin?: string;
+  /**
+   * Retraso de entrada en segundos para revelar elementos de forma escalonada.
+   */
+  delay?: number;
 } & HTMLAttributes<HTMLDivElement>;
 
 /**
@@ -24,9 +28,11 @@ type RevealProps = {
 export const Reveal: React.FC<RevealProps> = ({
   children,
   className,
-  animationClassName = "reveal-up",
+  animationClassName = "",
   once = true,
   rootMargin = "0px 0px -10% 0px",
+  delay = 0,
+  style,
   ...rest
 }) => {
   const ref = useRef<HTMLDivElement | null>(null);
@@ -72,10 +78,14 @@ export const Reveal: React.FC<RevealProps> = ({
     <div
       ref={ref}
       className={[
-        "will-change-transform",
-        visible ? animationClassName : "opacity-0 translate-y-10",
+        "will-change-transform transition-all duration-400 ease-out",
+        visible ? `${animationClassName} opacity-100 translate-y-0` : "opacity-0 translate-y-4",
         className ?? "",
       ].join(" ")}
+      style={{
+        transitionDelay: `${Math.max(0, delay)}s`,
+        ...(style ?? {}),
+      }}
       {...rest}
     >
       {children}

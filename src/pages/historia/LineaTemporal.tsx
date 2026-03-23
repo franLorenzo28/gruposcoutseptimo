@@ -82,6 +82,8 @@ const Historia = () => {
                 src={emblemImage}
                 alt="Emblemas Scout"
                 className="w-full rounded-xl shadow-2xl mb-4 transition-transform duration-300 hover:scale-105"
+                loading="lazy"
+                decoding="async"
               />
             </div>
             <div className="lg:col-span-2 flex flex-col justify-center space-y-4 sm:space-y-6">

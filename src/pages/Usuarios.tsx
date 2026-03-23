@@ -875,6 +875,7 @@ const Usuarios = () => {
                           alt="Preview"
                           className="rounded-xl max-h-64 object-cover border"
                           loading="lazy"
+                          decoding="async"
                         />
                         <Button
                           variant="destructive"
@@ -982,6 +983,7 @@ const Usuarios = () => {
                                 alt="imagen del hilo"
                                 className="w-full max-h-96 object-cover"
                                 loading="lazy"
+                                decoding="async"
                               />
                             </div>
                           )}
@@ -1148,6 +1150,7 @@ const Usuarios = () => {
                             alt="Preview"
                             className="w-full h-32 object-cover rounded-lg"
                             loading="lazy"
+                            decoding="async"
                           />
                           <Button
                             variant="destructive"
@@ -1230,6 +1233,7 @@ const Usuarios = () => {
                           alt={group.name}
                           className="w-full h-full object-cover"
                           loading="lazy"
+                          decoding="async"
                         />
                       </div>
                     )}

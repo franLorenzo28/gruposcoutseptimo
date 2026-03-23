@@ -519,6 +519,7 @@ const Galeria = () => {
                 alt={`Imagen ${lightboxIndex + 1}`}
                 className="max-w-full max-h-full object-contain"
                 loading="lazy"
+                decoding="async"
               />
             )}
 
