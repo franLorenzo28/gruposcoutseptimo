@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Building2, MapPin, Compass } from "lucide-react";
+import { Building2 } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
 
 type Local = {
@@ -151,7 +151,7 @@ const LOCALES: Local[] = [
 const Locales = () => {
   return (
     <div className="min-h-screen">
-      <section className="relative overflow-hidden pb-14 pt-28 sm:pt-32 bg-gradient-to-b from-background via-background/95 to-muted/25">
+      <section className="relative overflow-hidden pb-8 pt-24 sm:pb-10 sm:pt-28 bg-gradient-to-b from-background via-background/95 to-muted/25">
         <div className="container mx-auto px-4">
           <Reveal className="max-w-5xl">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-border/70 bg-card/70 px-4 py-2 text-xs font-semibold text-muted-foreground sm:text-sm">
@@ -162,45 +162,15 @@ const Locales = () => {
               Locales
               <span className="block text-primary">y sedes</span>
             </h1>
-            <p className="mt-6 max-w-3xl text-base leading-relaxed text-muted-foreground sm:text-lg">
+            <p className="mt-4 max-w-3xl text-base leading-relaxed text-muted-foreground sm:text-lg">
               Recorrido por sedes historicas y actuales donde el Grupo Septimo desarrolla su vida scout.
             </p>
           </Reveal>
         </div>
       </section>
 
-      <section className="py-14 sm:py-16 bg-background/70">
+      <section className="py-8 sm:py-12 bg-background/70">
         <div className="container mx-auto px-4">
-          <div className="grid gap-5 md:grid-cols-3">
-            <Reveal>
-              <Card className="h-full border-border/70 bg-card/80 shadow-lg">
-                <CardContent className="p-6">
-                  <Building2 className="h-6 w-6 text-primary" />
-                  <p className="mt-3 text-3xl font-black text-primary">{LOCALES.length}</p>
-                  <p className="mt-1 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Sedes registradas</p>
-                </CardContent>
-              </Card>
-            </Reveal>
-            <Reveal>
-              <Card className="h-full border-border/70 bg-card/80 shadow-lg">
-                <CardContent className="p-6">
-                  <MapPin className="h-6 w-6 text-primary" />
-                  <p className="mt-3 text-3xl font-black text-primary">{LOCALES.length}</p>
-                  <p className="mt-1 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Direcciones cargadas</p>
-                </CardContent>
-              </Card>
-            </Reveal>
-            <Reveal>
-              <Card className="h-full border-border/70 bg-card/80 shadow-lg">
-                <CardContent className="p-6">
-                  <Compass className="h-6 w-6 text-primary" />
-                  <p className="mt-3 text-3xl font-black text-primary">{LOCALES.length}</p>
-                  <p className="mt-1 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Descripciones listas</p>
-                </CardContent>
-              </Card>
-            </Reveal>
-          </div>
-
           {LOCALES.length === 0 ? (
             <Reveal>
               <Card className="mt-8 border border-dashed border-primary/35 bg-primary/5">

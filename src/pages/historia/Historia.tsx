@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Calendar, BookOpen } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
-import communityImage from "@/assets/community-scouts.jpg";
 import heroImage from "@/assets/hero-scouts.jpg";
 
 const Historia = () => {
@@ -65,13 +64,6 @@ const Historia = () => {
       place: "Sitio web oficial",
     },
   ] as const;
-
-  const locales = [
-    "Colegio Alemán",
-    "Elías Regules",
-    "Parroquia San Pedro",
-    "Volteadores",
-  ];
 
   return (
     <div className="min-h-screen">
@@ -207,44 +199,6 @@ const Historia = () => {
         </div>
       </section>
 
-      <section className="py-16 sm:py-20 bg-background/70">
-        <div className="container mx-auto px-4">
-          <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-            <Reveal>
-              <div className="overflow-hidden rounded-3xl border border-border/70 shadow-2xl">
-                <img
-                  src={communityImage}
-                  alt="Scouts reunidos en actividad comunitaria"
-                  className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
-                  loading="lazy"
-                  decoding="async"
-                />
-              </div>
-            </Reveal>
-
-            <Reveal>
-              <Card className="h-full rounded-3xl border-border/70 bg-card/85 shadow-xl">
-                <CardContent className="p-6 sm:p-8">
-                  <h3 className="text-2xl font-bold sm:text-3xl">Locales que marcaron epoca</h3>
-                  <p className="mt-3 text-sm text-muted-foreground sm:text-base">
-                    Los espacios cambian, pero la esencia sigue siendo la misma: comunidad, juego, aprendizaje y servicio.
-                  </p>
-                  <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                    {locales.map((local) => (
-                      <div
-                        key={local}
-                        className="rounded-xl border border-border/70 bg-background/80 p-4 text-sm font-semibold transition-colors duration-300 hover:border-primary/45 hover:text-primary"
-                      >
-                        {local}
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </Reveal>
-          </div>
-        </div>
-      </section>
     </div>
   );
 };

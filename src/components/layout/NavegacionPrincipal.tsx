@@ -326,7 +326,7 @@ const Navigation = () => {
                         active ? "text-white nav-link-underline--active" : "text-white/80",
                       )}
                     >
-                      <span>{link.name}</span>
+                      <span className="whitespace-nowrap">{link.name}</span>
                     </Link>
                   );
                 })}

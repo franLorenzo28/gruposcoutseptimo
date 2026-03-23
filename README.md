@@ -4,6 +4,11 @@ Sitio web oficial del Grupo Scout Séptimo.
 
 Frontend principal con React + TypeScript + Vite, diseño con TailwindCSS y shadcn/ui, y soporte de backend local opcional para desarrollo.
 
+## Índice
+
+- [Español](#español)
+- [English](#english)
+
 ## Español
 
 ### Resumen
