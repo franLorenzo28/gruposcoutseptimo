@@ -1,234 +1,198 @@
-# 🏕️ Grupo Scout Séptimo de Montevideo
+# Grupo Scout Séptimo de Montevideo
 
-> Sitio web oficial del Grupo Scout Séptimo - Formando líderes desde 1964
+ES: Sitio web oficial del Grupo Scout Séptimo.
 
-[![Deploy Status](https://img.shields.io/badge/deploy-ready-brightgreen)]()
-[![CI](https://github.com/tu-usuario/lovable-scout-canvas/actions/workflows/ci.yml/badge.svg)](https://github.com/tu-usuario/lovable-scout-canvas/actions)
-[![Security](https://img.shields.io/badge/security-audited-blue)]()
-[![Performance](https://img.shields.io/badge/performance-optimized-orange)]()
+EN: Official website of Grupo Scout Séptimo.
 
----
+ES: Frontend principal con React + TypeScript + Vite, diseño con TailwindCSS y shadcn/ui, y soporte de backend local opcional para desarrollo.
 
-## ⚡ Setup Rápido
+EN: Main frontend built with React + TypeScript + Vite, styled with TailwindCSS and shadcn/ui, with optional local backend support for development.
 
-### 1. Clonar e Instalar
+## ES - Resumen
+
+- Stack frontend: React 18, TypeScript, Vite, React Router, TailwindCSS, shadcn/ui.
+- Estado de datos: modo dual (Supabase o backend local según variable de entorno).
+- Backend opcional: Express + TypeScript en [server](server).
+- Deploy principal: Vercel.
+
+## EN - Summary
+
+- Frontend stack: React 18, TypeScript, Vite, React Router, TailwindCSS, shadcn/ui.
+- Data mode: dual mode (Supabase or local backend based on environment variables).
+- Optional backend: Express + TypeScript in [server](server).
+- Main deployment target: Vercel.
+
+## ES - Puesta en marcha
+
+### Requisitos
+
+- Node.js 20
+- npm
+
+### Instalación
 
 ```bash
-# Clonar repositorio
-git clone https://github.com/tu-usuario/lovable-scout-canvas.git
-cd lovable-scout-canvas
-
-# Instalar dependencias
 npm install
+cd server && npm install
 ```
 
-### 2. Configurar Variables de Entorno
+### Variables de entorno
+
+1. Copiar plantilla:
 
 ```bash
-# Copiar plantilla
 cp .env.example .env.local
-
-# Editar con tus valores
-# NUNCA commitees .env.local - está en .gitignore
 ```
 
-Valores mínimos requeridos:
+2. Configurar al menos:
+
 ```env
-VITE_BACKEND=supabase
-VITE_SUPABASE_URL=tu_url_de_supabase
-VITE_SUPABASE_ANON_KEY=tu_anon_key
-VITE_GOOGLE_MAPS_API_KEY=tu_api_key (opcional)
+VITE_BACKEND=local
+VITE_SUPABASE_URL=...
+VITE_SUPABASE_ANON_KEY=...
 ```
 
-⚠️ **IMPORTANTE**: Lee [SECURITY.md](./SECURITY.md) antes de configurar.
+Notas:
 
-### 3. Iniciar Desarrollo
+- `VITE_BACKEND=local`: usa API local (Express).
+- `VITE_BACKEND=supabase`: usa Supabase en frontend.
 
-```bash
-npm run dev
-```
+## EN - Getting Started
 
-Accede a http://localhost:5173
+### Requirements
 
----
+- Node.js 20
+- npm
 
-## 🔒 Seguridad
-
-Este proyecto fue auditado y todas las **credenciales hardcodeadas fueron removidas**.
-
-**Acciones requeridas antes de deploy**:
-1. Regenera API keys si fueron expuestas (ver [SECURITY.md](./SECURITY.md))
-2. Configura variables de entorno en tu hosting
-3. Revisa el [CHECKLIST.md](./CHECKLIST.md) completo
-
----
-
-## 📖 Documentación Clave
-
-| Documento | Descripción |
-|-----------|-------------|
-| [RESUMEN.md](./RESUMEN.md) | 👈 **Empieza aquí** - Resumen ejecutivo de mejoras |
-| [SECURITY.md](./SECURITY.md) | 🔒 Guía de seguridad y manejo de secrets |
-| [CHECKLIST.md](./CHECKLIST.md) | ✅ Checklist de calidad antes de deploy |
-| [MEJORAS.md](./MEJORAS.md) | 📊 Detalles técnicos de optimizaciones |
-
----
-
-## 🚀 Inicio Rápido (Legacy)
-
-### Desarrollo Local
+### Install
 
 ```bash
-# Instalar dependencias
 npm install
-
-# Iniciar servidor de desarrollo
-npm run dev
+cd server && npm install
 ```
 
-Accede a http://localhost:5173
+### Environment variables
 
-> **Nota**: Este proyecto funciona con Supabase. Toda la autenticación y datos se manejan con Supabase o localmente con `localStorage` en modo desarrollo.
+1. Copy template:
 
----
+```bash
+cp .env.example .env.local
+```
 
-## 📚 Documentación Adicional
+2. Set at least:
 
-### 🏗️ Arquitectura
+```env
+VITE_BACKEND=local
+VITE_SUPABASE_URL=...
+VITE_SUPABASE_ANON_KEY=...
+```
 
-- **[Arquitectura Local](docs/LOCAL_ARCHITECTURE.md)** - Sistema actual sin dependencias externas pesadas
-  
-### (Legacy removido)
+Notes:
 
-Secciones Docker y arquitecturas completas con PostgreSQL fueron removidas del flujo principal.
+- `VITE_BACKEND=local`: uses local API (Express).
+- `VITE_BACKEND=supabase`: uses Supabase from frontend.
 
-### ⚙️ Configuración Inicial
-
-- **[Google Maps](docs/setup/GOOGLE_MAPS.md)** - Configurar Google Maps API
-- **[Google Maps Billing Fix](docs/setup/GOOGLE_MAPS_BILLING_FIX.md)** - Solución sin facturación
-- **[Email Verification](docs/setup/EMAIL_VERIFICATION.md)** - ⚠️ No disponible sin backend
-- **[Avatar](docs/setup/AVATAR.md)** - Configuración de avatares (mockeado)
-- **[Supabase Fix](docs/setup/SUPABASE_FIX.md)** - ⚠️ Obsoleto: Supabase removido
-
-### 🚀 Optimización
-
-- **[Optimizaciones](docs/optimization/OPTIMIZATIONS.md)** - Mejoras de rendimiento aplicadas
-- **[Guía de Performance](docs/optimization/PERFORMANCE_GUIDE.md)** - Buenas prácticas
-
-### ✨ Features
-
-- **[Perfil Fixes](docs/features/PERFIL_FIXES.md)** - Correcciones del perfil de usuario
-- **[Testing Automation](docs/features/TESTING_AUTOMATION.md)** - Automatización de pruebas
-
-### 📖 Guías
-
-- **[Migrar sin Supabase](docs/guides/MIGRAR_SIN_SUPABASE.md)** - Guía de migración
-- **[Instrucciones Migraciones](docs/guides/INSTRUCCIONES_MIGRACIONES.md)** - Migraciones de BD
-
----
-
-## 🛠️ Tecnologías
+## Scripts
 
 ### Frontend
 
-- **React 18** con TypeScript
-- **Vite** - Build tool ultrarrápido
-- **TailwindCSS** - Estilos utility-first
-- **shadcn/ui** - Componentes UI
-- **React Query** - Gestión de estado y cache
-- **React Router** - Enrutamiento
-- **localStorage** - Persistencia de datos local
-
-### Backend (OPCIONAL - No instalado)
-
-- **Node.js 20** con TypeScript
-- **Express** - API REST
-- **PostgreSQL** o **SQLite** - Base de datos
-- **JWT** - Autenticación
-- **Multer** - Upload de archivos
-- **Socket.io** - WebSockets
-
-> ⚠️ **Nota:** El backend no está configurado actualmente. El proyecto funciona con mocks locales.
-
-### ~~Supabase~~ (REMOVIDO)
-
-- ~~Autenticación~~
-- ~~Base de datos~~
-- ~~Storage~~
-- ~~Real-time~~
-
-Reemplazado por sistema de autenticación local en `src/lib/auth-mock.ts`.
-
-### DevOps
-
-- **Vercel** - Hosting y deploy
-- **ESLint / TypeScript** - Calidad de código
-- **Scripts PowerShell** - Tareas de build/deploy
-
----
-
-## 📁 Estructura del Proyecto
-
-```
-lovable-scout-canvas/
-├── src/                    # Código fuente del frontend
-│   ├── components/         # Componentes React
-│   ├── pages/              # Páginas/Rutas
-│   ├── hooks/              # Custom hooks
-│   ├── lib/                # Utilidades y helpers
-│   └── integrations/       # Integraciones (Supabase, etc)
-├── server/                 # Backend API
-│   ├── src/                # Código TypeScript
-│   ├── db/                 # Scripts de base de datos
-│   ├── data/               # SQLite databases
-│   └── uploads/            # Archivos subidos
-├── docs/                   # Documentación
-│   ├── setup/              # Guías de configuración
-│   ├── optimization/       # Optimización
-│   ├── features/           # Features específicas
-│   └── guides/             # Guías generales
-├── scripts/                # Scripts de utilidad
-├── public/                 # Archivos estáticos
-└── scripts/                # Scripts auxiliares
+```bash
+npm run dev
+npm run build
+npm run preview
 ```
 
----
-
----
-
-## 🧪 Scripts Disponibles
+### Backend
 
 ```bash
-# Desarrollo
-npm run dev              # Servidor de desarrollo con HMR
-npm run build            # Build de producción
-npm run preview          # Preview del build
-
-# Calidad de código
-npm run type-check       # Verificar tipos TypeScript
-npm run lint             # Linter
-
-# Deploy
-vercel --prod            # Desplegar a producción (requiere CLI y login)
+npm run dev:server
 ```
 
----
+### Both
 
-## 🤝 Contribuir
+```bash
+npm run dev:all
+```
 
-1. Fork el proyecto
-2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abre un Pull Request
+### Quality
 
----
+```bash
+npm run type-check
+npm run lint
+npm run test
+npm run ci
+npm run security:check
+```
 
-## 📝 Licencia
+## Project Structure
 
-Este proyecto está bajo la licencia MIT.
+```text
+.
+├─ src/
+│  ├─ components/
+│  ├─ hooks/
+│  ├─ lib/
+│  ├─ pages/
+│  └─ integrations/
+├─ server/
+│  ├─ src/
+│  └─ data/
+├─ docs/
+├─ public/
+└─ scripts/
+```
 
----
+## Key Routes
 
+- `/` Inicio / Home
+- `/historia`
+- `/movimiento-scout`
+- `/archivo`
+- `/archivo/scoutpedia`
+- `/archivo/locales`
+- `/eventos`
+- `/eventos/jamborees`
+- `/galeria`
+- `/contacto`
+- `/area-miembros`
 
-**Desarrollado con ❤️ para Grupo Scout**
+## Documentation
+
+- [docs/RESUMEN.md](docs/RESUMEN.md)
+- [docs/SECURITY.md](docs/SECURITY.md)
+- [docs/CHECKLIST.md](docs/CHECKLIST.md)
+- [docs/DEPLOY.md](docs/DEPLOY.md)
+- [docs/VERCEL_DEPLOY.md](docs/VERCEL_DEPLOY.md)
+
+## Security
+
+ES:
+
+- No subir `.env*` reales al repositorio.
+- Revisar [docs/SECURITY.md](docs/SECURITY.md) antes de deploy.
+- Ejecutar `npm run security:check` previo a publicar.
+
+EN:
+
+- Do not commit real `.env*` files.
+- Review [docs/SECURITY.md](docs/SECURITY.md) before deployment.
+- Run `npm run security:check` before publishing.
+
+## Deploy
+
+ES: Producción recomendada: Vercel. También se incluyen scripts de despliegue en [scripts](scripts).
+
+EN: Recommended production target: Vercel. Deployment scripts are also available in [scripts](scripts).
+
+## Historical Archive Notes
+
+- ES: La sección de locales históricos se encuentra en `/archivo/locales`.
+- EN: Historical locations are available at `/archivo/locales`.
+- ES: Las imágenes sugeridas para esa sección se organizan en [src/assets/locales-historicos](src/assets/locales-historicos).
+- EN: Suggested images for that section are organized in [src/assets/locales-historicos](src/assets/locales-historicos).
+
+## License
+
+ES: Proyecto de uso interno/comunitario del Grupo Scout Séptimo.
+
+EN: Internal/community project for Grupo Scout Séptimo.

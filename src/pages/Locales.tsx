@@ -86,7 +86,7 @@ const LOCALES: Local[] = [
     id: "parque-rivera",
     nombre: "Parque Rivera",
     direccion: "Parque Rivera, Montevideo",
-    periodo: "1972 - 1973 (referencias)",
+    periodo: "1972 - 1973",
     descripcion:
       "Espacio de actividades y debate historico sobre su condicion como local, con registros de entrevistas y memoria oral.",
     referencia: "Conversacion documentada, 28-ABR-2023",
@@ -94,8 +94,8 @@ const LOCALES: Local[] = [
   {
     id: "terreno-david",
     nombre: "Terreno de David",
-    direccion: "Av. Bolivia (numeracion historica 2294, actual 2392 bis), Carrasco Norte",
-    periodo: "1979 - 1993 aprox.",
+    direccion: "Av. Bolivia (numeracion historica 2294), Carrasco Norte",
+    periodo: "1979 - 1993",
     descripcion:
       "Terreno de referencia para reuniones y armado de rancho/local en una etapa de crecimiento logístico.",
     hitos: [
@@ -103,12 +103,12 @@ const LOCALES: Local[] = [
       "Funcionamiento compartido con etapa del Tajamar",
       "Inicio de uso de local recibido hacia finales de los 80",
     ],
-    referencia: "David Pinelli, 21-MAR-2022; conversacion 28-ABR-2023",
+    referencia: "David Pinelli, 21-MAR-2022",
   },
   {
     id: "baldio-banco-central",
     nombre: "Baldio Banco Central",
-    direccion: "Av. Bolivia 2282, Carrasco Norte, Montevideo",
+    direccion: "Av. Bolivia 2282, Carrasco Norte",
     periodo: "Desde 1993 (referencias)",
     descripcion:
       "Terreno utilizado para actividades y obras de acondicionamiento comunitario en continuidad con la etapa de Avenida Bolivia.",
@@ -122,8 +122,8 @@ const LOCALES: Local[] = [
   {
     id: "club-juan-ferreira",
     nombre: "Club Juan Ferreira",
-    direccion: "Av. Bolivia 2278, 11500, Carrasco Norte, Montevideo",
-    periodo: "1995 en adelante (referencias)",
+    direccion: "Av. Bolivia 2278, Carrasco Norte",
+    periodo: "1995 en adelante",
     descripcion:
       "Club social y deportivo asociado a reuniones, guardado de materiales y actividades de patrulla.",
     hitos: [
@@ -136,7 +136,7 @@ const LOCALES: Local[] = [
   {
     id: "volteadores",
     nombre: "Volteadores",
-    direccion: "Volteadores 1753, Montevideo, Uruguay",
+    direccion: "Volteadores 1753, Punta Gorda",
     periodo: "Actualidad",
     descripcion:
       "Ubicacion identificada como sede actual del grupo y punto de encuentro para reuniones y propuestas educativas.",
