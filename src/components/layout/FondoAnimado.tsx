@@ -6,35 +6,14 @@ const BackgroundFX = memo(() => {
       className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
       aria-hidden="true"
     >
-      <div
-        className="absolute -top-40 -right-36 h-[32rem] w-[32rem] rounded-full opacity-30 dark:opacity-20"
-        style={{
-          background:
-            "radial-gradient(circle, hsl(0 100% 50% / 0.25) 0%, hsl(0 100% 50% / 0.08) 42%, transparent 72%)",
-          filter: "blur(42px)",
-        }}
-      />
+      <div className="dark:hidden absolute inset-0 bg-gradient-to-br from-white via-slate-50 to-red-50/60" />
+      <div className="dark:hidden absolute inset-0 bg-[radial-gradient(circle_at_14%_20%,hsl(var(--primary)/0.08),transparent_42%)]" />
+      <div className="dark:hidden absolute inset-0 bg-[radial-gradient(circle_at_86%_84%,hsl(45_85%_55%/0.10),transparent_46%)]" />
 
-      <div
-        className="absolute -bottom-44 -left-36 h-[30rem] w-[30rem] rounded-full opacity-25 dark:opacity-20"
-        style={{
-          background:
-            "radial-gradient(circle, hsl(45 85% 55% / 0.22) 0%, hsl(45 85% 55% / 0.08) 40%, transparent 70%)",
-          filter: "blur(46px)",
-        }}
-      />
-
-      <div
-        className="absolute inset-0 opacity-[0.07]"
-        style={{
-          backgroundImage:
-            "linear-gradient(hsl(var(--foreground) / 0.08) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--foreground) / 0.08) 1px, transparent 1px)",
-          backgroundSize: "36px 36px",
-          maskImage: "radial-gradient(ellipse at center, black 40%, transparent 80%)",
-          WebkitMaskImage:
-            "radial-gradient(ellipse at center, black 40%, transparent 80%)",
-        }}
-      />
+      <div className="hidden dark:block bg-blob h-72 w-72 bg-muted/40 -top-24 -right-16 float-slow" />
+      <div className="hidden dark:block bg-blob h-64 w-64 bg-muted/40 -bottom-24 -left-10 drift-slow" />
+      <div className="hidden dark:block absolute inset-0 bg-gradient-to-r from-scout-black/80 via-scout-black/64 to-scout-black/40" />
+      <div className="hidden dark:block absolute inset-0 bg-gradient-to-t from-scout-black/55 via-transparent to-transparent" />
     </div>
   );
 });

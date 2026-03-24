@@ -106,6 +106,13 @@ const Navigation = () => {
   const profileMainPath = needsProfileSetup ? "/perfil/editar" : "/perfil";
   const profileMainLabel = needsProfileSetup ? "Crear perfil" : "Perfil";
   const mobileProfileMainLabel = needsProfileSetup ? "Crear perfil" : "Ver mi perfil";
+  const hiddenWhenLoggedOut = new Set(["/usuarios", "/area-miembros", "/archivo"]);
+  const visibleNavSections = navSections
+    .map((section) => ({
+      ...section,
+      links: section.links.filter((link) => isLoggedIn || !hiddenWhenLoggedOut.has(link.path)),
+    }))
+    .filter((section) => section.links.length > 0);
 
   // Detect scroll
   useEffect(() => {
@@ -273,18 +280,16 @@ const Navigation = () => {
       {/* Desktop & Mobile Navigation */}
       <nav
         className={cn(
-          "fixed top-0 left-0 right-0 z-50 text-white transition-all duration-300 backdrop-blur-sm",
-          isScrolled
-            ? "bg-slate-950/75 supports-[backdrop-filter]:bg-slate-950/65 shadow-md border-b border-white/10"
-            : "bg-slate-950/60 supports-[backdrop-filter]:bg-slate-950/50 border-b border-white/5",
+          "fixed top-0 left-0 right-0 z-50 text-white transition-all duration-300 backdrop-blur-sm supports-[backdrop-filter]:backdrop-blur-sm bg-slate-950/82 dark:bg-slate-950/82 supports-[backdrop-filter]:bg-slate-950/70 border-b border-white/10",
+          isScrolled && "shadow-md",
         )}
       >
         <div className="container mx-auto px-4 md:px-6">
-          <div className="flex items-center justify-between h-16 md:h-20">
+          <div className="relative flex items-center justify-between h-16 md:h-20">
             {/* Logo */}
             <Link
               to="/"
-              className="flex items-center gap-3 group"
+              className="flex items-center gap-3 group shrink-0"
               onClick={() => setIsMobileMenuOpen(false)}
             >
               <div className="relative">
@@ -298,26 +303,24 @@ const Navigation = () => {
                 />
                 <div className="absolute inset-0 bg-muted/40 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
-              <div className="hidden sm:block">
-                <h1 className="text-lg md:text-xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              <div className="hidden xl:block">
+                <h1 className="whitespace-nowrap text-base xl:text-lg font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent leading-none">
                   Grupo Scout Séptimo
                 </h1>
-                <p className="text-xs text-white/70">
+                <p className="whitespace-nowrap text-xs text-white/70 mt-1">
                   Montevideo, Uruguay
                 </p>
               </div>
             </Link>
 
-            {/* Desktop Navigation */}
-            <div className="hidden lg:flex items-center gap-7 xl:gap-8">
-              {/* Main Links */}
-              <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-2 py-1 shadow-sm">
-                {navSections[0].links.map((link) => {
+            {/* Desktop Main Links (Centered) */}
+            <div className="pointer-events-none absolute left-1/2 hidden -translate-x-1/2 xl:flex">
+              <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-white/10 bg-slate-950/55 dark:bg-slate-950/55 backdrop-blur-sm supports-[backdrop-filter]:backdrop-blur-sm px-2 py-1 shadow-sm">
+                {visibleNavSections[0].links.map((link) => {
                   const isSpecialActive =
                     (link.path === "/historia" && isActive("/linea-temporal")) ||
                     (link.path === "/eventos" && isActive("/bauen"));
                   const active = isActive(link.path) || isSpecialActive;
-                  const isHomeLink = link.path === "/";
 
                   return (
                     <Link
@@ -334,57 +337,63 @@ const Navigation = () => {
                   );
                 })}
               </div>
+            </div>
 
-                      {/* Notificaciones */}
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button variant="ghost" size="icon" className="relative">
-                            <Bell className="h-5 w-5" />
-                            {unreadCount > 0 && (
-                              <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] leading-none rounded-full px-1.5 py-1">
-                                {unreadCount}
-                              </span>
-                            )}
+            {/* Desktop Actions */}
+            <div className="hidden xl:flex items-center gap-4 xl:gap-5 ml-auto">
+
+              {/* Notificaciones */}
+              {isLoggedIn && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="ghost" size="icon" className="relative">
+                      <Bell className="h-5 w-5" />
+                      {unreadCount > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] leading-none rounded-full px-1.5 py-1">
+                          {unreadCount}
+                        </span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80 p-0">
+                    <div className="p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-semibold">Notificaciones</span>
+                        {unreadCount > 0 && (
+                          <Button size="sm" variant="ghost" onClick={markAllRead}>
+                            Marcar todo como leído
                           </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-80 p-0">
-                          <div className="p-4">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="font-semibold">Notificaciones</span>
-                              {unreadCount > 0 && (
-                                <Button size="sm" variant="ghost" onClick={markAllRead}>
-                                  Marcar todo como leído
-                                </Button>
-                              )}
-                            </div>
-                            <ul className="space-y-2 max-h-60 overflow-y-auto">
-                              {notifications.length === 0 ? (
-                                <li className="text-sm text-muted-foreground">No hay notificaciones</li>
-                              ) : (
-                                notifications.map((n) => (
-                                  <li key={n.id} className={cn("p-2 rounded-md", !n.read && "bg-accent")}> 
-                                    <div className="flex items-center justify-between gap-2">
-                                      <div>
-                                        <div className="text-sm font-medium">{formatNotification(n).title}</div>
-                                        <div className="text-xs text-muted-foreground truncate">{formatNotification(n).description}</div>
-                                      </div>
-                                      {!n.read && (
-                                        <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={() => markRead(n.id)}>Leer</Button>
-                                      )}
-                                      <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={() => removeNotification(n.id)}>Eliminar</Button>
-                                    </div>
-                                  </li>
-                                ))
-                              )}
-                            </ul>
-                            {hasMore && (
-                              <Button size="sm" variant="ghost" className="w-full mt-2" onClick={loadMore} disabled={loadingMore}>
-                                {loadingMore ? "Cargando..." : "Ver más"}
-                              </Button>
-                            )}
-                          </div>
-                        </PopoverContent>
-                      </Popover>
+                        )}
+                      </div>
+                      <ul className="space-y-2 max-h-60 overflow-y-auto">
+                        {notifications.length === 0 ? (
+                          <li className="text-sm text-muted-foreground">No hay notificaciones</li>
+                        ) : (
+                          notifications.map((n) => (
+                            <li key={n.id} className={cn("p-2 rounded-md", !n.read && "bg-accent")}> 
+                              <div className="flex items-center justify-between gap-2">
+                                <div>
+                                  <div className="text-sm font-medium">{formatNotification(n).title}</div>
+                                  <div className="text-xs text-muted-foreground truncate">{formatNotification(n).description}</div>
+                                </div>
+                                {!n.read && (
+                                  <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={() => markRead(n.id)}>Leer</Button>
+                                )}
+                                <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={() => removeNotification(n.id)}>Eliminar</Button>
+                              </div>
+                            </li>
+                          ))
+                        )}
+                      </ul>
+                      {hasMore && (
+                        <Button size="sm" variant="ghost" className="w-full mt-2" onClick={loadMore} disabled={loadingMore}>
+                          {loadingMore ? "Cargando..." : "Ver más"}
+                        </Button>
+                      )}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              )}
 
               {/* Theme Toggle */}
               <ThemeToggle />
@@ -457,11 +466,11 @@ const Navigation = () => {
             </div>
 
             {/* Mobile Menu Button */}
-            <div className="flex lg:hidden items-center gap-2">
+            <div className="flex xl:hidden items-center gap-2">
               <ThemeToggle />
               <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="lg:hidden">
+                  <Button variant="ghost" size="icon" className="xl:hidden">
                     {isMobileMenuOpen ? (
                       <X className="h-6 w-6" />
                     ) : (
@@ -474,7 +483,7 @@ const Navigation = () => {
                     <SheetTitle className="text-left">Menú</SheetTitle>
                   </SheetHeader>
                   <MobileMenu
-                    navSections={navSections}
+                    navSections={visibleNavSections}
                     isLoggedIn={isLoggedIn}
                     userName={userName}
                     avatarUrl={avatarUrl}

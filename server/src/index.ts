@@ -16,6 +16,7 @@ import { dmsRouter } from "./routes/dms";
 import { threadsRouter } from "./routes/threads";
 import { adminRouter } from "./routes/admin";
 import { usersRouter } from "./routes/users";
+import { notificationsRouter } from "./routes/notifications";
 import "./db"; // ensure DB initialized
 import { createSocket } from "./socket";
 
@@ -41,6 +42,7 @@ app.use("/events", eventsRouter);
 app.use("/threads", threadsRouter);
 app.use("/admin", adminRouter);
 app.use("/users", usersRouter);
+app.use("/notifications", notificationsRouter);
 
 // Health
 app.get("/health", (_req: any, res: any) => res.json({ ok: true }));

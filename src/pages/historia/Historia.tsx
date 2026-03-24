@@ -72,7 +72,13 @@ const Historia = () => {
   ] as const;
 
   return (
-    <div className="min-h-screen">
+    <div className="relative min-h-screen overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden="true">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_14%_22%,hsl(var(--primary)/0.14),transparent_42%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_86%_82%,hsl(45_85%_55%/0.12),transparent_46%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,hsl(var(--background)/0)_0%,hsl(var(--background)/0.55)_68%,hsl(var(--background)/0.9)_100%)]" />
+      </div>
+
       <section className="relative overflow-hidden pb-16 pt-28 sm:pt-32">
         <div className="absolute inset-0" aria-hidden="true">
           <OptimizedImage
@@ -118,7 +124,7 @@ const Historia = () => {
         </div>
       </section>
 
-      <section className="py-8 sm:py-10 bg-background/65">
+      <section className="relative py-8 sm:py-10">
         <div className="container mx-auto px-4">
           <div className="grid gap-4 md:grid-cols-3">
             <Reveal>
@@ -157,7 +163,19 @@ const Historia = () => {
         </div>
       </section>
 
-      <section id="timeline" className="relative overflow-hidden py-10 sm:py-14 bg-muted/35">
+      <section id="timeline" className="relative overflow-hidden py-10 sm:py-14">
+        <div className="absolute inset-0" aria-hidden="true">
+          <OptimizedImage
+            src={heroImage}
+            alt=""
+            className="h-full w-full opacity-[0.09]"
+            objectFit="cover"
+            loading="lazy"
+            width={1920}
+            height={1080}
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-scout-black/25 via-background/70 to-background/90" />
+        </div>
         <div className="container mx-auto px-4">
           <div className="grid gap-8 lg:grid-cols-[320px_1fr]">
             <Reveal>

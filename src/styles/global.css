@@ -142,11 +142,6 @@ All colors MUST be HSL.
     font-size: clamp(0.95rem, 0.2vw + 0.9rem, 1.05rem);
     line-height: 1.65;
     letter-spacing: 0.002em;
-    background-image:
-      linear-gradient(hsla(0 0% 0% / 0.02) 1px, transparent 1px),
-      linear-gradient(90deg, hsla(0 0% 0% / 0.02) 1px, transparent 1px);
-    background-size: 36px 36px;
-    background-attachment: fixed;
     /* Transición suave de tema, respetando prefers-reduced-motion */
     @media (prefers-reduced-motion: no-preference) {
       transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease;
@@ -155,10 +150,6 @@ All colors MUST be HSL.
 
   .dark body {
     background-color: hsl(var(--background));
-    background-image:
-      linear-gradient(hsla(0 0% 100% / 0.03) 1px, transparent 1px),
-      linear-gradient(90deg, hsla(0 0% 100% / 0.03) 1px, transparent 1px);
-    background-attachment: fixed;
   }
   
   h1, h2, h3, h4, h5, h6 {

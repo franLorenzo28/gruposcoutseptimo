@@ -54,6 +54,21 @@ db.exec(`
     PRIMARY KEY (follower_id, following_id)
   );
 
+  CREATE TABLE IF NOT EXISTS notifications (
+    id TEXT PRIMARY KEY,
+    recipient_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    actor_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+    type TEXT NOT NULL,
+    entity_type TEXT,
+    entity_id TEXT,
+    data TEXT,
+    read_at TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_notifications_recipient_created
+  ON notifications(recipient_id, created_at DESC);
+
   CREATE TABLE IF NOT EXISTS groups (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,

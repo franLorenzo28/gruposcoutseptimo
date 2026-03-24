@@ -65,7 +65,9 @@ Actua como desarrollador frontend senior especializado en React y TypeScript par
 - Tipado estricto (nunca usar `any`)
 - Uso correcto y predecible de hooks
 - Mantener estructura de carpetas clara y consistente
-
+- Aplicar siempre los estilos a modo claro y oscuro
+- Pensar siempre en mobile y responsive
+- Mantener patrones de composición de rutas y lazy-loading consistentes con `src/App.tsx`
 ## Workflow
 1. Analyze before writing
 - Read current implementation and identify data flow, state ownership, and coupling points.

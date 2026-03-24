@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { db } from "../db";
 import { authMiddleware } from "../auth";
@@ -48,7 +49,37 @@ followsRouter.post("/follow", authMiddleware, (req: any, res: any) => {
   const stmt = db.prepare(
     "INSERT OR IGNORE INTO follows (follower_id, following_id, status) VALUES (?, ?, ?)",
   );
-  stmt.run(me, targetId, status);
+  const result = stmt.run(me, targetId, status);
+
+  if (result.changes > 0 && status === "pending") {
+    const actorProfile = db
+      .prepare(
+        "SELECT nombre_completo, username, avatar_url FROM profiles WHERE user_id = ?",
+      )
+      .get(me) as
+      | { nombre_completo?: string | null; username?: string | null; avatar_url?: string | null }
+      | undefined;
+
+    const display =
+      actorProfile?.nombre_completo || actorProfile?.username || me.slice(0, 8);
+
+    db.prepare(
+      `
+      INSERT INTO notifications (id, recipient_id, actor_id, type, entity_type, entity_id, data, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `,
+    ).run(
+      randomUUID(),
+      targetId,
+      me,
+      "follow_request",
+      "follow",
+      `${me}:${targetId}`,
+      JSON.stringify({ follower_id: me, display, avatar_url: actorProfile?.avatar_url || null }),
+      new Date().toISOString(),
+    );
+  }
+
   res.json({ ok: true });
 });
 
@@ -69,9 +100,41 @@ followsRouter.post(
   (req: any, res: any) => {
     const me = (req as any).user.id as string;
     const followerId = req.params.followerId;
-    db.prepare(
-      "UPDATE follows SET status = ? WHERE following_id = ? AND follower_id = ?",
-    ).run("accepted", me, followerId);
+    const result = db
+      .prepare(
+        "UPDATE follows SET status = ? WHERE following_id = ? AND follower_id = ? AND status = ?",
+      )
+      .run("accepted", me, followerId, "pending");
+
+    if (result.changes > 0) {
+      const actorProfile = db
+        .prepare(
+          "SELECT nombre_completo, username, avatar_url FROM profiles WHERE user_id = ?",
+        )
+        .get(me) as
+        | { nombre_completo?: string | null; username?: string | null; avatar_url?: string | null }
+        | undefined;
+
+      const display =
+        actorProfile?.nombre_completo || actorProfile?.username || me.slice(0, 8);
+
+      db.prepare(
+        `
+      INSERT INTO notifications (id, recipient_id, actor_id, type, entity_type, entity_id, data, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `,
+      ).run(
+        randomUUID(),
+        followerId,
+        me,
+        "follow_accepted",
+        "follow",
+        `${followerId}:${me}`,
+        JSON.stringify({ followed_id: me, display, avatar_url: actorProfile?.avatar_url || null }),
+        new Date().toISOString(),
+      );
+    }
+
     res.json({ ok: true });
   },
 );

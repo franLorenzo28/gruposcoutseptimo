@@ -291,15 +291,14 @@ const About = () => {
           <Reveal>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {highlights.map((item) => (
-                <Card key={item.label} className="group overflow-hidden rounded-2xl border-0 bg-transparent shadow-none transition-all duration-300 hover:-translate-y-1">
-                  <CardContent className="p-0">
-                    <div className={`h-full rounded-2xl ${item.bg} p-6`}>
-                      <p className="text-4xl font-black tracking-tight text-foreground sm:text-5xl">{item.value}</p>
-                      <p className="mt-2 text-sm font-semibold uppercase tracking-wide text-foreground/80">{item.label}</p>
-                      <p className="mt-3 text-sm text-muted-foreground">{item.detail}</p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <div
+                  key={item.label}
+                  className={`group rounded-2xl ${item.bg} p-6 transition-all duration-300 hover:-translate-y-1`}
+                >
+                  <p className="text-4xl font-black tracking-tight text-foreground sm:text-5xl">{item.value}</p>
+                  <p className="mt-2 text-sm font-semibold uppercase tracking-wide text-foreground/80">{item.label}</p>
+                  <p className="mt-3 text-sm text-muted-foreground">{item.detail}</p>
+                </div>
               ))}
             </div>
           </Reveal>
