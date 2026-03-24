@@ -70,7 +70,7 @@ const Hero = () => {
             <Reveal>
               <p className="text-base xs:text-lg sm:text-xl md:text-2xl text-gray-100/95 leading-relaxed max-w-3xl">
                 Grupo Scout de Montevideo donde niños, adolescentes y jóvenes
-                crecen en comunidad, servicio y aventura al aire libre con el método scout.
+                crecen en comunidad, servicio y aventura al aire libre aplicando el método scout.
               </p>
             </Reveal>
 
