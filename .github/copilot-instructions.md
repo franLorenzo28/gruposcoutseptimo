@@ -7,6 +7,12 @@
 
 **Key Docs**: Read RESUMEN.md for project status, SECURITY.md for secrets handling, CHECKLIST.md for quality standards.
 
+## Mandatory Skill Application
+
+- For any request that creates or modifies code in this repository, always apply the `frontend-architecture` skill located at `.github/skills/frontend-architecture/SKILL.md` before implementing changes.
+- Treat this skill as required project policy for frontend architecture, typing, folder placement, and UX/performance decisions in this workspace.
+- If a task spans customization work and code changes, combine this requirement with the relevant customization guidance, but do not skip `frontend-architecture` for code edits.
+
 ---
 
 ## Architecture

@@ -99,7 +99,7 @@ const Hero = () => {
                   aria-label="Conoce nuestra historia de 61 años"
                 >
                   <Users className="mr-2 transition-transform duration-300 group-hover:scale-110" aria-hidden="true" />
-                  Conoce Nuestra Historia
+                  Quienes Somos
                 </Button>
               </div>
             </Reveal>
@@ -170,7 +170,7 @@ const Hero = () => {
                     <span>1</span>
                   </div>
                   <div className="text-xs sm:text-sm md:text-base text-gray-300 mt-1 sm:mt-2 font-medium">
-                    Locales scouts
+                    Local Scout (prestado)
                   </div>
                 </div>
               </div>
