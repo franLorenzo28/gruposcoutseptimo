@@ -128,7 +128,13 @@ const MovimientoScout = () => {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="pt-24 sm:pt-28 md:pt-32 pb-12 sm:pb-16 bg-gradient-to-b from-background via-background/95 to-muted/25">
+      <section className="relative overflow-hidden pt-24 sm:pt-28 md:pt-32 pb-12 sm:pb-16 bg-gradient-to-b from-background via-background/95 to-muted/25">
+        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+          <div className="bg-blob w-72 h-72 bg-muted/30 -top-16 -right-12 float-slow" />
+          <div className="bg-blob w-64 h-64 bg-muted/30 -bottom-20 -left-12 drift-slow" />
+          <div className="bg-blob w-20 h-20 sm:w-32 sm:h-32 bg-yellow-400/40 top-[56%] left-[7%] [filter:blur(26px)_saturate(1.2)] float-slow" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.08),transparent_45%)]" />
+        </div>
         <div className="w-full px-4 sm:px-6 lg:px-8 2xl:px-12">
           <Reveal className="max-w-none text-left">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/30 rounded-full mb-3 sm:mb-4">

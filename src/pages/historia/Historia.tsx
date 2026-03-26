@@ -6,6 +6,16 @@ import { Reveal } from "@/components/Reveal";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { getOptimizedImageProps } from "@/lib/optimized-images";
 import { useCountUp } from "@/hooks/useCountUp";
+import { Link } from "react-router-dom";
+
+type TimelineItem = {
+  year: string;
+  title: string;
+  description: string;
+  place: string;
+  ctaLabel?: string;
+  ctaHref?: string;
+};
 
 const Historia = () => {
   const heroImages = getOptimizedImageProps("hero");
@@ -13,7 +23,7 @@ const Historia = () => {
   const anios = useCountUp(60, 1200, { start: 0 });
   const locales = useCountUp(8, 600, { start: 0 });
 
-  const timeline = [
+  const timeline: TimelineItem[] = [
     {
       year: "1964",
       title: "Fundación del grupo",
@@ -46,8 +56,10 @@ const Historia = () => {
       year: "2014",
       title: "50 años de legado",
       description:
-        "La comunidad celebra medio siglo de historia y proyecta un legado para futuras generaciones scout.",
-      place: "Aniversario institucional",
+        "La comunidad celebra medio siglo de historia y proyecta un legado para futuras generaciones scout, incluyendo la iniciativa de la Cápsula del Tiempo para su apertura en 2064.",
+      place: "Aniversario del Grupo",
+      ctaLabel: "Ver Cápsula del Tiempo",
+      ctaHref: "/archivo/capsula-del-tiempo",
     },
     {
       year: "2020",
@@ -61,16 +73,9 @@ const Historia = () => {
       title: "20 años del BAUEN",
       description:
         "La comunidad celebra dos décadas de una competencia emblemática para el escultismo uruguayo.",
-      place: "Comunidad scout",
+      place: "Parque Baroffio",
     },
-    {
-      year: "2026",
-      title: "Nueva etapa digital",
-      description:
-        "La web del Grupo Séptimo evoluciona para integrar historia, comunidad y participación con una experiencia moderna.",
-      place: "Sitio web oficial",
-    },
-  ] as const;
+  ];
 
   return (
     <div className="relative min-h-screen overflow-hidden">
@@ -92,27 +97,27 @@ const Historia = () => {
             width={1920}
             height={1080}
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-scout-black/90 via-scout-black/70 to-scout-black/35" />
+          <div className="absolute inset-0 bg-gradient-to-r from-scout-black/72 via-scout-black/52 to-scout-black/24 dark:from-scout-black/90 dark:via-scout-black/70 dark:to-scout-black/35" />
         </div>
 
         <div className="relative container mx-auto px-4">
           <Reveal className="max-w-5xl">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold text-white/90 backdrop-blur-sm sm:text-sm">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/35 bg-black/25 px-4 py-2 text-xs font-semibold text-white/95 backdrop-blur-sm sm:text-sm">
               <BookOpen className="h-4 w-4" />
               Memoria viva del Grupo Scout Séptimo
             </div>
-            <h1 className="text-4xl font-extrabold leading-[0.95] text-white sm:text-6xl md:text-7xl">
+            <h1 className="text-4xl font-extrabold leading-[0.95] text-white [text-shadow:0_3px_14px_rgba(0,0,0,0.55)] sm:text-6xl md:text-7xl">
               Nuestra historia,
               <span className="block text-primary">contada como camino</span>
             </h1>
-            <p className="mt-6 max-w-3xl text-base leading-relaxed text-white/85 sm:text-lg md:text-xl">
+            <p className="mt-6 max-w-3xl text-base leading-relaxed text-white/92 [text-shadow:0_2px_10px_rgba(0,0,0,0.45)] sm:text-lg md:text-xl">
               Más de seis décadas formando personas con propósito. Cada etapa dejó huellas en nuestros locales, en nuestras tradiciones y en la forma de vivir el servicio.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button
                 size="sm"
                 variant="outline"
-                className="rounded-full border-white/50 bg-transparent text-white hover:bg-white/10"
+                className="rounded-full border-border bg-background/45 text-foreground hover:bg-background/75 dark:border-white/50 dark:bg-transparent dark:text-white dark:hover:bg-white/10"
                 onClick={() =>
                   document
                     .getElementById("timeline")
@@ -171,13 +176,13 @@ const Historia = () => {
             src={heroImages.src}
             webpSrc={heroImages.webpSrc}
             alt=""
-            className="h-full w-full opacity-[0.09]"
+            className="h-full w-full opacity-[0.16] dark:opacity-[0.09]"
             objectFit="cover"
             loading="lazy"
             width={1920}
             height={1080}
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-scout-black/25 via-background/70 to-background/90" />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/20 via-background/72 to-background/92 dark:from-scout-black/25 dark:via-background/70 dark:to-background/90" />
         </div>
         <div className="container mx-auto px-4">
           <div className="grid gap-8 lg:grid-cols-[320px_1fr]">
@@ -206,7 +211,7 @@ const Historia = () => {
                     >
                       <div className="pl-12 sm:pl-0">
                         <Card className="group h-full rounded-2xl border border-border/70 bg-card/90 shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-                          <CardContent className="p-5 sm:p-6">
+                          <CardContent className="flex h-full flex-col p-5 sm:p-6">
                             <div className="mb-3 flex items-center gap-3">
                               <Badge className="rounded-full px-3 py-1 text-sm">{item.year}</Badge>
                             </div>
@@ -215,10 +220,15 @@ const Historia = () => {
                               {item.description}
                             </p>
                             {item.place ? (
-                              <p className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-primary">
+                              <p className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-primary">
                                 <MapPin className="h-4 w-4" />
                                 {item.place}
                               </p>
+                            ) : null}
+                            {item.ctaHref ? (
+                              <Button asChild size="sm" variant="outline" className="mt-6 self-center rounded-full px-6">
+                                <Link to={item.ctaHref} className="text-center">{item.ctaLabel}</Link>
+                              </Button>
                             ) : null}
                           </CardContent>
                         </Card>

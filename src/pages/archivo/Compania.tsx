@@ -25,6 +25,7 @@ const Compania = () => {
         <div className="pointer-events-none absolute inset-0" aria-hidden="true">
           <div className="bg-blob w-72 h-72 bg-primary/10 -top-20 -right-16 float-slow" />
           <div className="bg-blob w-64 h-64 bg-muted/20 -bottom-16 -left-12 drift-slow" />
+          <div className="bg-blob w-20 h-20 sm:w-32 sm:h-32 bg-yellow-400/22 top-[55%] left-[8%] float-slow" />
         </div>
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <Reveal className="max-w-4xl mx-auto text-center">

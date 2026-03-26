@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSupabaseUser } from "@/App";
 import { useToast } from "@/hooks/use-toast";
 import { listAlbums, listImages } from "@/lib/gallery";
+import { apiFetch, getAuthUser, isLocalBackend } from "@/lib/backend";
 
 export type AppNotification = {
   id: string;
@@ -42,13 +43,31 @@ export const useNotifications = () => {
 
 export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useSupabaseUser();
+  const [localUserId, setLocalUserId] = useState<string | null>(null);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [oldestPersistedTimestamp, setOldestPersistedTimestamp] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const knownGalleryPathsRef = useRef<Set<string>>(new Set());
   const persistedKeysRef = useRef<Set<string>>(new Set());
+  const localInitializedRef = useRef(false);
+  const localSeenIdsRef = useRef<Set<string>>(new Set());
   const { toast } = useToast();
+  const isLocal = isLocalBackend();
+  const effectiveUserId = isLocal ? localUserId : user?.id || null;
+
+  useEffect(() => {
+    if (!isLocal) return;
+    let mounted = true;
+    (async () => {
+      const auth = await getAuthUser();
+      if (!mounted) return;
+      setLocalUserId(auth?.id || null);
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [isLocal]);
 
   const normalizePersistentNotification = useCallback((r: any): AppNotification => {
     const kind = r?.data?.kind;
@@ -77,7 +96,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
       data?: Record<string, any>;
       createdAt?: string;
     }) => {
-      if (!user) return;
+      if (!effectiveUserId) return;
       if (persistedKeysRef.current.has(args.persistKey)) return;
       persistedKeysRef.current.add(args.persistKey);
 
@@ -89,6 +108,22 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
           : args.data || {};
 
       try {
+        if (isLocal) {
+          await apiFetch("/notifications", {
+            method: "POST",
+            body: JSON.stringify({
+              recipientId: args.recipientId,
+              actorId: args.actorId,
+              type: effectiveType,
+              entityType: args.entityType,
+              entityId: args.entityId,
+              data: payloadData,
+              createdAt: args.createdAt || new Date().toISOString(),
+            }),
+          });
+          return;
+        }
+
         await supabase.from("notifications").insert({
           recipient_id: args.recipientId,
           actor_id: args.actorId,
@@ -99,10 +134,10 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
           created_at: args.createdAt || new Date().toISOString(),
         } as any);
       } catch {
-        // Silencioso: no cortar UX si RLS/políticas bloquean insert.
+        // Silencioso: no cortar UX si falla persistencia.
       }
     },
-    [user],
+    [effectiveUserId, isLocal],
   );
 
   const addNotification = useCallback((n: AppNotification) => {
@@ -113,9 +148,14 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   const markAllRead = useCallback(async () => {
-    if (!user) return;
+    if (!effectiveUserId) return;
     const unread = notifications.filter(n => !n.read);
     if (unread.length === 0) return;
+    if (isLocal) {
+      await apiFetch("/notifications/mark-all-read", { method: "POST" });
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      return;
+    }
     const persistentIds = unread.filter((n: any) => n?.data?._persistent).map(n => n.id);
     if (persistentIds.length > 0) {
       await supabase
@@ -124,24 +164,91 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
         .in("id", persistentIds);
     }
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-  }, [notifications, user]);
+  }, [effectiveUserId, notifications, isLocal]);
 
   const markRead = useCallback(async (id: string) => {
     const target = notifications.find(n => n.id === id);
     if (!target) return;
+    if (isLocal) {
+      if (!target.read) {
+        await apiFetch(`/notifications/${id}/read`, { method: "POST" });
+      }
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+      return;
+    }
     if (!target.read && (target as any)?.data?._persistent) {
       await supabase.from('notifications').update({ read_at: new Date().toISOString() }).eq('id', id);
     }
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
-  }, [notifications]);
+  }, [notifications, isLocal]);
 
   const removeNotification = useCallback((id: string) => {
     setNotifications(prev => prev.filter(n => n.id !== id));
   }, []);
 
+  useEffect(() => {
+    if (!isLocal || !effectiveUserId) return;
+    let cancelled = false;
+
+    const fetchLocalNotifications = async () => {
+      try {
+        const rows = (await apiFetch("/notifications?limit=50&offset=0")) as Array<{
+          id: string;
+          type: AppNotification["type"];
+          created_at: string;
+          read_at?: string | null;
+          data?: Record<string, unknown>;
+        }>;
+
+        const mapped = (rows || []).map((r) => ({
+          id: r.id,
+          type: r.type,
+          created_at: r.created_at,
+          read: !!r.read_at,
+          data: { ...(r.data || {}), _persistent: true },
+        })) as AppNotification[];
+
+        if (!localInitializedRef.current) {
+          mapped.forEach((n) => localSeenIdsRef.current.add(n.id));
+          localInitializedRef.current = true;
+        } else {
+          mapped.forEach((n) => {
+            if (!localSeenIdsRef.current.has(n.id)) {
+              localSeenIdsRef.current.add(n.id);
+              if (n.type === "follow_request") {
+                const display = (n.data as any)?.display || "Alguien";
+                toast({
+                  title: "Nueva solicitud de seguimiento",
+                  description: `${display} quiere seguirte`,
+                });
+              }
+            }
+          });
+        }
+
+        if (!cancelled) {
+          setNotifications(mapped.sort((a, b) => (a.created_at < b.created_at ? 1 : -1)));
+          setHasMore(false);
+        }
+      } catch {
+        // Silencioso en local polling
+      }
+    };
+
+    void fetchLocalNotifications();
+    const timer = setInterval(() => {
+      void fetchLocalNotifications();
+    }, 5000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [isLocal, effectiveUserId, toast]);
+
   // Suscripción a solicitudes de seguimiento nuevas
   useEffect(() => {
-    if (!user) return;
+    if (!user || isLocal) return;
     const channelFollowsToMe = supabase
       .channel(`follows:pending:${user.id}`)
       .on(
@@ -338,11 +445,11 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
       supabase.removeChannel(channelThreads);
       supabase.removeChannel(channelGroupInvites);
     };
-  }, [user, addNotification, toast, persistNotification]);
+  }, [user, addNotification, toast, persistNotification, isLocal]);
 
   // Notificación de nuevas fotos en galería (sondeo liviano)
   useEffect(() => {
-    if (!user) return;
+    if (!user || isLocal) return;
     let cancelled = false;
 
     const scanGallery = async (notify = false) => {
@@ -408,11 +515,11 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
       cancelled = true;
       clearInterval(timer);
     };
-  }, [user, addNotification, toast, persistNotification]);
+  }, [user, addNotification, toast, persistNotification, isLocal]);
 
   // Suscripción a mensajes nuevos en cualquier conversación del usuario
   useEffect(() => {
-    if (!user) return;
+    if (!user || isLocal) return;
     // Suscribirse a todos los mensajes: filtrar en el handler
     const channelMessages = supabase
       .channel(`messages:any:${user.id}`)
@@ -436,11 +543,11 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
       )
       .subscribe();
     return () => { supabase.removeChannel(channelMessages); };
-  }, [user, addNotification, toast]);
+  }, [user, addNotification, toast, isLocal]);
 
   // Cargar notificaciones persistentes (thread_comment, mention) y suscribirse a nuevas
   useEffect(() => {
-    if (!user) return;
+    if (!user || isLocal) return;
     let channel: any;
     (async () => {
       const { data, error } = await supabase
@@ -498,9 +605,10 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
         .subscribe();
     })();
     return () => { if (channel) supabase.removeChannel(channel); };
-  }, [user, addNotification, toast, normalizePersistentNotification]);
+  }, [user, addNotification, toast, normalizePersistentNotification, isLocal]);
 
   const loadMore = useCallback(async () => {
+    if (isLocal) return;
     if (!user || !hasMore || loadingMore || !oldestPersistedTimestamp) return;
     setLoadingMore(true);
     try {
@@ -532,7 +640,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
     } finally {
       setLoadingMore(false);
     }
-  }, [user, hasMore, loadingMore, oldestPersistedTimestamp, normalizePersistentNotification]);
+  }, [user, hasMore, loadingMore, oldestPersistedTimestamp, normalizePersistentNotification, isLocal]);
 
   const unreadCount = notifications.filter(n => !n.read).length;
 

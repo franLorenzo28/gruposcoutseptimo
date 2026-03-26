@@ -98,8 +98,18 @@ const CapsulaTiempo = () => {
     <div className="min-h-screen">
       <section className="relative overflow-hidden pt-24 sm:pt-28 md:pt-32 pb-10 sm:pb-14 bg-gradient-to-b from-background via-background/95 to-muted/25">
         <div className="pointer-events-none absolute inset-0" aria-hidden="true">
-          <div className="bg-blob w-72 h-72 bg-primary/10 -top-20 -right-16 float-slow" />
-          <div className="bg-blob w-64 h-64 bg-muted/20 -bottom-16 -left-12 drift-slow" />
+          <div className="bg-blob h-72 w-72 bg-primary/10 -top-24 -right-24 float-slow" />
+          <div className="bg-blob h-64 w-64 bg-muted/20 -bottom-24 -left-24 drift-slow" />
+
+          <div className="bg-blob h-56 w-56 bg-red-500/22 -top-20 -left-20 float-slow" />
+          <div className="bg-blob h-44 w-44 bg-amber-400/28 top-[24%] -left-16 drift-slow" />
+          <div className="bg-blob h-20 w-20 sm:h-32 sm:w-32 bg-yellow-400/22 top-[52%] left-[2%] float-slow" />
+          <div className="bg-blob h-44 w-44 bg-yellow-400/40 top-[64%] left-[13%] [filter:blur(24px)_saturate(1.2)] drift-slow" />
+          <div className="bg-blob h-52 w-52 bg-yellow-300/22 top-[34%] right-[8%] [filter:blur(46px)_saturate(1.08)] drift-slow" />
+          <div className="bg-blob h-60 w-60 bg-yellow-400/22 -bottom-24 -right-20 float-slow" />
+          <div className="bg-blob h-40 w-40 bg-red-400/22 top-[10%] -right-12 drift-slow" />
+          <div className="bg-blob h-32 w-32 bg-amber-300/26 bottom-[8%] -left-10 float-slow" />
+          <div className="bg-blob h-36 w-36 bg-red-500/18 bottom-[18%] -right-14 drift-slow" />
         </div>
 
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">

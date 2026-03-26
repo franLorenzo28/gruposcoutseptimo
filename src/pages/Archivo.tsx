@@ -141,6 +141,7 @@ const Archivo = () => {
         <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
           <div className="bg-blob w-72 h-72 bg-muted/30 -top-16 -right-12 float-slow" />
           <div className="bg-blob w-64 h-64 bg-muted/30 -bottom-20 -left-10 drift-slow" />
+          <div className="bg-blob w-20 h-20 sm:w-32 sm:h-32 bg-yellow-400/40 top-[56%] left-[6%] [filter:blur(26px)_saturate(1.2)] float-slow" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.08),transparent_45%)]" />
         </div>
 
