@@ -114,7 +114,7 @@ export default function ConfiguracionPerfil() {
                     placeholder="Tu nombre completo"
                     {...field}
                     disabled={isLoading}
-                    className="focus:ring-2"
+                    className="focus:ring-2 focus:shadow-[0_0_0_3px_hsla(0,100%,50%,0.1)]"
                   />
                 </FormControl>
                 <FormDescription>
@@ -138,7 +138,7 @@ export default function ConfiguracionPerfil() {
                     placeholder="Ej: Ingeniero, Docente, Estudiante..."
                     {...field}
                     disabled={isLoading}
-                    className="focus:ring-2"
+                    className="focus:ring-2 focus:shadow-[0_0_0_3px_hsla(0,100%,50%,0.1)]"
                   />
                 </FormControl>
                 <FormDescription>
@@ -160,7 +160,7 @@ export default function ConfiguracionPerfil() {
                 <FormControl>
                   <Textarea
                     placeholder="Cuéntanos un poco sobre ti, tus intereses, experiencias en scouts..."
-                    className="resize-none focus:ring-2"
+                    className="resize-none focus:ring-2 focus:shadow-[0_0_0_3px_hsla(0,100%,50%,0.1)]"
                     rows={4}
                     {...field}
                     disabled={isLoading}
@@ -185,7 +185,7 @@ export default function ConfiguracionPerfil() {
             )}
           />
 
-          <Button type="submit" disabled={isLoading} className="w-full bg-primary hover:bg-primary/90">
+          <Button type="submit" disabled={isLoading} className="w-full bg-primary transition-transform duration-300 hover:scale-105 hover:bg-primary/90 active:scale-95">
             {isLoading ? (
               <>
                 <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />

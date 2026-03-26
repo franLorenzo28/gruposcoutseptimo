@@ -4,7 +4,7 @@ import SobreElGrupo from "@/components/sections/SobreElGrupo";
 
 const Index = () => {
   return (
-    <div className="min-h-screen">
+    <div className="page-animate min-h-screen">
       <HeroInicio />
       <SobreElGrupo />
     </div>

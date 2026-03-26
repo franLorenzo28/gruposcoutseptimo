@@ -29,7 +29,7 @@ export default function RamaLanding({
   accentClass,
 }: RamaLandingProps) {
   return (
-    <div className="min-h-screen bg-background/65">
+    <div className="page-animate min-h-screen bg-background/65">
       <section className="relative overflow-hidden pt-24 pb-12 sm:pt-28 sm:pb-16">
         <div className="pointer-events-none absolute inset-0" aria-hidden="true">
           <div className="absolute -left-24 top-4 h-72 w-72 rounded-full bg-primary/10 blur-3xl" />
@@ -44,13 +44,13 @@ export default function RamaLanding({
                   <Compass className="h-4 w-4 text-primary" />
                   Rama Scout
                 </p>
-                <h1 className="text-4xl font-black leading-[0.95] sm:text-5xl md:text-6xl">
+                <h1 className="text-4xl font-black leading-[0.95] text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent sm:text-5xl md:text-6xl">
                   {title}
                 </h1>
                 <p className={`inline-flex rounded-full px-4 py-1 text-sm font-bold text-white ${accentClass}`}>
                   Lema: {lema}
                 </p>
-                <p className="text-base leading-relaxed text-muted-foreground sm:text-lg">{intro}</p>
+                <p className="text-base leading-8 tracking-[0.01em] text-muted-foreground sm:text-lg">{intro}</p>
                 <div className="flex flex-wrap gap-3 pt-2">
                   <Button asChild>
                     <Link to="/contacto">
@@ -95,7 +95,7 @@ export default function RamaLanding({
         <div className="container mx-auto px-4">
           <div className="grid gap-4 md:grid-cols-3">
             <Reveal>
-              <Card className="h-full border-border/70 bg-card/80 shadow-md">
+              <Card className="h-full border-border/70 bg-card/80 shadow-lg transition-all duration-300 hover:translate-y-[-4px]">
                 <CardContent className="p-5">
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Franja de edad</p>
                   <p className="mt-2 text-3xl font-black text-primary">{ageRange}</p>
@@ -103,7 +103,7 @@ export default function RamaLanding({
               </Card>
             </Reveal>
             <Reveal>
-              <Card className="h-full border-border/70 bg-card/80 shadow-md">
+              <Card className="h-full border-border/70 bg-card/80 shadow-lg transition-all duration-300 hover:translate-y-[-4px]">
                 <CardContent className="p-5">
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Metodo</p>
                   <p className="mt-2 text-2xl font-bold">Aprender haciendo</p>
@@ -111,7 +111,7 @@ export default function RamaLanding({
               </Card>
             </Reveal>
             <Reveal>
-              <Card className="h-full border-border/70 bg-card/80 shadow-md">
+              <Card className="h-full border-border/70 bg-card/80 shadow-lg transition-all duration-300 hover:translate-y-[-4px]">
                 <CardContent className="p-5">
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Enfoque</p>
                   <p className="mt-2 text-2xl font-bold">Comunidad y servicio</p>
@@ -126,10 +126,10 @@ export default function RamaLanding({
         <div className="container mx-auto px-4">
           <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
             <Reveal>
-              <Card className="h-full rounded-3xl border-border/70 bg-card/85 shadow-xl">
-                <CardContent className="p-6 sm:p-8 space-y-4">
+              <Card className="h-full rounded-3xl border-border/70 bg-card/85 shadow-md transition-shadow duration-300 hover:shadow-lg">
+                <CardContent className="space-y-4 p-6 md:p-8">
                   {paragraphs.map((paragraph) => (
-                    <p key={paragraph} className="text-sm leading-relaxed text-muted-foreground sm:text-base">
+                    <p key={paragraph} className="text-sm leading-7 tracking-[0.01em] text-muted-foreground sm:text-base">
                       {paragraph}
                     </p>
                   ))}
@@ -142,7 +142,7 @@ export default function RamaLanding({
                 {bullets.map((item) => (
                   <article
                     key={item}
-                    className="group rounded-2xl border border-border/70 bg-card/80 p-5 shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+                    className="group rounded-2xl border border-border/70 bg-card/80 p-5 shadow-md transition-all duration-300 hover:-translate-y-2 hover:scale-[1.02] hover:shadow-lg"
                   >
                     <p className="flex items-start gap-3 text-sm font-semibold sm:text-base">
                       <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary transition-transform duration-300 group-hover:scale-110" />

@@ -242,12 +242,12 @@ const About = () => {
                     );
                   })()}
                 </div>
-                <div className="rounded-2xl border border-border/70 bg-card/70 p-5 shadow-lg backdrop-blur-sm">
+                <div className="rounded-3xl border border-border/70 bg-card/70 p-6 md:p-7 shadow-lg backdrop-blur-sm [will-change:transform]">
                   <Stars className="h-6 w-6 text-primary" />
                   <p className="mt-3 text-sm font-semibold text-foreground">Promesa y ley en acción</p>
                   <p className="mt-2 text-sm text-muted-foreground">Aprender con desafíos reales y decisiones compartidas.</p>
                 </div>
-                <div className="rounded-2xl border border-border/70 bg-card/70 p-5 shadow-lg backdrop-blur-sm">
+                <div className="rounded-3xl border border-border/70 bg-card/70 p-6 md:p-7 shadow-lg backdrop-blur-sm [will-change:transform]">
                   <Mountain className="h-6 w-6 text-primary" />
                   <p className="mt-3 text-sm font-semibold text-foreground">Aventura con sentido</p>
                   <p className="mt-2 text-sm text-muted-foreground">Campamentos, servicio y vida en naturaleza durante todo el año.</p>
@@ -305,7 +305,7 @@ const About = () => {
               {highlights.map((item) => (
                 <div
                   key={item.label}
-                  className={`group rounded-2xl ${item.bg} p-6 transition-all duration-300 hover:-translate-y-1`}
+                  className={`group rounded-3xl ${item.bg} p-6 md:p-7 transition-all duration-300 hover:-translate-y-1 [will-change:transform]`}
                 >
                   <p className="text-4xl font-black tracking-tight text-foreground sm:text-5xl">{item.value}</p>
                   <p className="mt-2 text-sm font-semibold uppercase tracking-wide text-foreground/80">{item.label}</p>
@@ -339,7 +339,7 @@ const About = () => {
                       <Dialog>
                         <DialogTrigger asChild>
                           <Card
-                            className={`card-hover border border-border/60 shadow-sm cursor-pointer transition-all duration-300 group h-[190px] sm:h-[190px] w-full ${branch.hoverClass}`}
+                            className={`card-hover border border-border/60 shadow-sm cursor-pointer transition-all duration-300 group h-[190px] sm:h-[190px] w-full [will-change:transform] ${branch.hoverClass}`}
                           >
                             <CardContent className="p-4 sm:p-5 flex flex-col items-center justify-center h-full text-center gap-2.5">
                               <div className={`w-14 h-14 bg-muted/30 rounded-xl flex items-center justify-center transition-all duration-300 ${branch.iconHoverBgClass}`}>
@@ -408,7 +408,7 @@ const About = () => {
 
           {/* Values Grid - Pilares */}
           <Reveal>
-            <div className="bg-card/80 text-foreground border border-border/60 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 lg:p-12 shadow-xl">
+            <div className="bg-card/80 text-foreground border border-border/60 rounded-3xl p-4 sm:p-6 md:p-8 lg:p-12 shadow-xl [will-change:transform]">
               <div id="pilares" className="text-center mb-6 sm:mb-10">
                 <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2 sm:mb-3">
                   Los Pilares del Escultismo
@@ -423,9 +423,9 @@ const About = () => {
               {values.map((value, index) => (
                 <Card
                   key={index}
-                  className="card-hover border border-border/60 shadow-md bg-background/70 backdrop-blur-sm group"
+                  className="card-hover border border-border/60 shadow-md bg-background/70 backdrop-blur-sm group rounded-3xl [will-change:transform]"
                 >
-                  <CardContent className="p-6 space-y-2">
+                  <CardContent className="p-6 md:p-7 space-y-2">
                     <div>
                       <h4 className="text-lg font-bold mb-2">{value.title}</h4>
                       <p className="text-sm text-muted-foreground leading-relaxed">

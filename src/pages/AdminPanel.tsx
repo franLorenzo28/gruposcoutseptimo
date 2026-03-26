@@ -28,7 +28,7 @@ export default function AdminPanel() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25">
+    <div className="page-animate min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25">
       <Dashboard />
     </div>
   );

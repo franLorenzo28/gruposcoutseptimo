@@ -187,7 +187,7 @@ export default function ConfiguracionNotificaciones() {
       <Button 
         onClick={handleSave} 
         disabled={isLoading} 
-        className="w-full bg-primary hover:bg-primary/90"
+        className="w-full bg-primary transition-transform duration-300 hover:scale-105 hover:bg-primary/90 active:scale-95"
       >
         {isLoading ? (
           <>

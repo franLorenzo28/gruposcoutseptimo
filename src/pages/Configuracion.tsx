@@ -79,7 +79,7 @@ export default function Configuracion() {
               variant="ghost"
               size="icon"
               onClick={() => navigate("/perfil")}
-              className="shrink-0"
+              className="shrink-0 transition-transform duration-300 hover:scale-105 active:scale-95"
             >
               <ArrowLeft className="w-5 h-5" />
             </Button>
@@ -107,7 +107,7 @@ export default function Configuracion() {
                       className={`w-full text-left px-4 py-3 rounded-lg transition-all flex items-center gap-3 ${
                         isActive
                           ? "bg-primary text-primary-foreground shadow-md"
-                          : "bg-muted/40 hover:bg-muted/60 text-foreground"
+                          : "bg-muted/40 hover:bg-muted/60 text-foreground hover:scale-[1.02] active:scale-[0.98]"
                       }`}
                     >
                       <Icon className="w-5 h-5 shrink-0" />

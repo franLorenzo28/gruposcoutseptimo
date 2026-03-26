@@ -45,12 +45,12 @@ const Hero = () => {
         />
         <div className="bg-blob w-72 h-72 bg-muted/40 -top-24 -right-16 float-slow" />
         <div className="bg-blob w-64 h-64 bg-muted/40 -bottom-24 -left-10 drift-slow" />
-        <div className="absolute inset-0 bg-gradient-to-r from-scout-black/80 via-scout-black/64 to-scout-black/40" />
+        <div className="absolute inset-0 bg-gradient-to-r from-scout-black/80 via-scout-black/64 to-scout-black/50" />
         <div className="absolute inset-0 bg-gradient-to-t from-scout-black/55 via-transparent to-transparent" />
       </div>
 
       {/* Content */}
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 z-10 pt-24 pb-24 sm:pt-28 sm:pb-28 md:pt-32 md:pb-36">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 z-10 pt-28 pb-28 sm:pt-32 sm:pb-32 md:pt-36 md:pb-40">
         <div className="max-w-5xl">
           <div className="space-y-9 md:space-y-11">
             {/* Main Title */}
@@ -62,7 +62,7 @@ const Hero = () => {
                 <span className="text-primary block mb-3 md:mb-4">
                   Grupo Scout Séptimo
                 </span>
-                <span className="block text-white drop-shadow-lg">
+                <span className="block text-white drop-shadow-xl">
                   Montevideo
                 </span>
               </h1>
@@ -83,7 +83,7 @@ const Hero = () => {
                   <Button
                     size="lg"
                     variant="hero"
-                    className="text-base sm:text-lg w-full sm:w-auto whitespace-normal text-center leading-tight transition-all duration-300 hover:shadow-2xl hover:scale-105"
+                    className="text-base sm:text-lg w-full sm:w-auto whitespace-normal text-center leading-tight transition-all duration-300 hover:shadow-2xl hover:scale-110"
                     aria-label="Únete al Grupo Scout Séptimo"
                   >
                     Únete al Grupo
@@ -97,7 +97,7 @@ const Hero = () => {
                   }}
                   size="lg"
                   variant="heroSecondary"
-                  className="group text-base sm:text-lg w-full sm:w-auto whitespace-normal text-center leading-tight transition-all duration-300 hover:shadow-xl hover:scale-105"
+                  className="group text-base sm:text-lg w-full sm:w-auto whitespace-normal text-center leading-tight transition-all duration-300 hover:shadow-xl hover:scale-110"
                   aria-label="Conoce nuestra historia de 61 años"
                 >
                   <Users className="mr-2 transition-transform duration-300 group-hover:scale-110" aria-hidden="true" />

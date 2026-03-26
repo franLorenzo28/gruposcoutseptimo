@@ -125,7 +125,7 @@ export default function ConfiguracionSeguridad() {
                         placeholder="Ingresa tu contraseña actual"
                         {...field}
                         disabled={isLoading}
-                        className="focus:ring-2"
+                        className="focus:ring-2 focus:shadow-[0_0_0_3px_hsla(0,100%,50%,0.1)]"
                       />
                     </FormControl>
                     <FormMessage />
@@ -145,7 +145,7 @@ export default function ConfiguracionSeguridad() {
                         placeholder="Ingresa tu nueva contraseña"
                         {...field}
                         disabled={isLoading}
-                        className="focus:ring-2"
+                        className="focus:ring-2 focus:shadow-[0_0_0_3px_hsla(0,100%,50%,0.1)]"
                       />
                     </FormControl>
                     <FormDescription>
@@ -210,7 +210,7 @@ export default function ConfiguracionSeguridad() {
                         placeholder="Confirma tu nueva contraseña"
                         {...field}
                         disabled={isLoading}
-                        className="focus:ring-2"
+                        className="focus:ring-2 focus:shadow-[0_0_0_3px_hsla(0,100%,50%,0.1)]"
                       />
                     </FormControl>
                     <FormMessage />
@@ -221,7 +221,7 @@ export default function ConfiguracionSeguridad() {
               <Button 
                 type="submit" 
                 disabled={isLoading || !hasUpperCase || !hasLowerCase || !hasNumber || !hasMinLength}
-                className="w-full bg-primary hover:bg-primary/90"
+                className="w-full bg-primary transition-transform duration-300 hover:scale-105 hover:bg-primary/90 active:scale-95"
               >
                 {isLoading ? (
                   <>

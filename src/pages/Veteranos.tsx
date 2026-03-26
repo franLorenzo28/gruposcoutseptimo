@@ -34,7 +34,7 @@ const VETERANOS: Veterano[] = [
 
 const Veteranos = () => {
   return (
-    <div className="min-h-screen">
+    <div className="page-animate min-h-screen">
       <section className="relative overflow-hidden pb-14 pt-28 sm:pt-32 bg-gradient-to-b from-background via-background/95 to-muted/25">
         <div className="container mx-auto px-4">
           <Reveal className="max-w-5xl">
@@ -42,11 +42,11 @@ const Veteranos = () => {
               <Users2 className="h-4 w-4 text-primary" />
               Comunidad historica
             </div>
-            <h1 className="text-4xl font-extrabold leading-[0.95] sm:text-6xl md:text-7xl">
+            <h1 className="text-4xl font-extrabold leading-[0.95] text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent sm:text-6xl md:text-7xl">
               Veteranos
               <span className="block text-primary">del Grupo Septimo</span>
             </h1>
-            <p className="mt-6 max-w-3xl text-base leading-relaxed text-muted-foreground sm:text-lg">
+            <p className="mt-6 max-w-3xl text-base leading-8 tracking-[0.01em] text-muted-foreground sm:text-lg">
               Reconocimiento a ex-integrantes que marcaron historia en distintas ramas y epocas del grupo.
             </p>
           </Reveal>
@@ -102,10 +102,10 @@ const Veteranos = () => {
             <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
               {VETERANOS.map((veterano) => (
                 <Reveal key={veterano.id}>
-                  <Card className="h-full border-border/70 bg-card/85 shadow-md">
-                    <CardContent className="p-5">
+                  <Card className="h-full border-border/70 bg-card/85 shadow-md transition-shadow duration-300 hover:shadow-lg">
+                    <CardContent className="p-6 md:p-8">
                       <h2 className="text-xl font-bold">{veterano.nombre}</h2>
-                      <p className="mt-2 text-sm text-muted-foreground">{veterano.aniosActivo}</p>
+                      <p className="mt-2 text-sm leading-7 tracking-[0.01em] text-muted-foreground">{veterano.aniosActivo}</p>
                       <Badge className="mt-3">{veterano.rama}</Badge>
                     </CardContent>
                   </Card>

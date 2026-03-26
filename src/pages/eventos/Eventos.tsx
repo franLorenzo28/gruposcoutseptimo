@@ -7,7 +7,7 @@ import { Reveal } from "@/components/Reveal";
 
 const Eventos = () => {
   return (
-    <div className="min-h-screen">
+    <div className="page-animate min-h-screen">
       {/* Hero Section */}
       <section className="relative overflow-hidden pt-16 sm:pt-20 md:pt-24 pb-10 sm:pb-14 bg-gradient-to-b from-background via-background/95 to-muted/25">
         <div className="absolute inset-0 pointer-events-none" aria-hidden="true">

@@ -54,7 +54,7 @@ const UserAvatar = ({
   return (
     <>
       <Avatar 
-        className={`${sizeClasses[size]} ${className} ${clickable && avatarUrl ? 'cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all' : ''}`}
+        className={`${sizeClasses[size]} shadow-md transition-transform duration-300 hover:scale-105 hover:shadow-lg ${className} ${clickable && avatarUrl ? 'cursor-pointer hover:ring-2 hover:ring-primary/50' : ''}`}
         onClick={handleClick}
       >
         {avatarUrl && <AvatarImage src={avatarUrl} alt={userName || "Usuario"} loading="lazy" />}

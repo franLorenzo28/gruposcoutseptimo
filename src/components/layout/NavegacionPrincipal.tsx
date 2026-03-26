@@ -296,7 +296,7 @@ const Navigation = () => {
                 <img
                   src={logoImage}
                   alt="Grupo Scout Séptimo"
-                  className="h-10 w-10 md:h-12 md:w-12 object-contain transition-transform group-hover:scale-110"
+                  className="h-10 w-10 md:h-12 md:w-12 object-contain transition-transform group-hover:scale-110 [will-change:transform]"
                   loading="eager"
                   fetchPriority="high"
                   decoding="async"
@@ -327,8 +327,8 @@ const Navigation = () => {
                       key={link.path}
                       to={link.path}
                       className={cn(
-                        "relative px-4 py-2.5 rounded-full text-sm font-medium transition-all group nav-link-underline",
-                        "hover:bg-white/10 hover:text-white",
+                        "relative px-4 py-2.5 rounded-full text-sm font-medium transition-all duration-300 group nav-link-underline [will-change:transform]",
+                        "hover:bg-white/10 hover:text-primary",
                         active ? "text-white nav-link-underline--active" : "text-white/80",
                       )}
                     >
@@ -560,14 +560,14 @@ function MobileMenu({
           
           {/* Opciones de cuenta (collapsible) */}
           {accountMenuOpen && (
-            <div className="space-y-1 px-2 animate-in slide-in-from-top-2 duration-200">
+            <div className="space-y-1 px-2 animate-in slide-in-from-top-2 duration-200 [will-change:transform]">
               <Link
                 to={profileMainPath}
                 onClick={() => {
                   setAccountMenuOpen(false);
                   onLinkClick();
                 }}
-                className="flex items-center gap-3 px-4 py-2.5 rounded-md hover:bg-muted/30 transition-colors text-sm"
+                className="flex items-center gap-3 px-4 py-2.5 rounded-md hover:bg-muted/30 hover:text-primary transition-all duration-300 text-sm"
               >
                 <User className="h-4 w-4" />
                 <span>{profileMainLabel}</span>
@@ -578,7 +578,7 @@ function MobileMenu({
                   setAccountMenuOpen(false);
                   onLinkClick();
                 }}
-                className="flex items-center gap-3 px-4 py-2.5 rounded-md hover:bg-muted/30 transition-colors text-sm"
+                className="flex items-center gap-3 px-4 py-2.5 rounded-md hover:bg-muted/30 hover:text-primary transition-all duration-300 text-sm"
               >
                 <Settings className="h-4 w-4" />
                 <span>Configuración</span>
@@ -590,7 +590,7 @@ function MobileMenu({
                     setAccountMenuOpen(false);
                     onLinkClick();
                   }}
-                  className="flex items-center gap-3 px-4 py-2.5 rounded-md hover:bg-accent transition-colors text-sm font-semibold text-primary"
+                  className="flex items-center gap-3 px-4 py-2.5 rounded-md hover:bg-accent transition-all duration-300 text-sm font-semibold text-primary"
                 >
                   <Shield className="h-4 w-4" />
                   <span>Panel Admin</span>
@@ -602,7 +602,7 @@ function MobileMenu({
                   setAccountMenuOpen(false);
                   onLinkClick();
                 }}
-                className="flex items-center gap-3 px-4 py-2.5 rounded-md hover:bg-destructive/10 text-destructive transition-colors w-full text-sm"
+                className="flex items-center gap-3 px-4 py-2.5 rounded-md hover:bg-destructive/10 text-destructive transition-all duration-300 w-full text-sm"
               >
                 <LogOut className="h-4 w-4" />
                 <span>Cerrar sesión</span>
@@ -631,8 +631,8 @@ function MobileMenu({
                   to={link.path}
                   onClick={onLinkClick}
                   className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-md transition-colors",
-                    "hover:bg-nav-hover hover:text-nav-hover-foreground",
+                    "flex items-center gap-3 px-4 py-3 rounded-md transition-all duration-300 [will-change:transform]",
+                    "hover:bg-nav-hover hover:text-primary",
                     isActive(link.path)
                       ? "bg-primary text-primary-foreground"
                       : "text-foreground",

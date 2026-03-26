@@ -19,19 +19,19 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 222 28% 12%;
 
-    --primary: 0 92% 52%;
+    --primary: 0 100% 50%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 45 90% 56%;
+    --secondary: 45 92% 54%;
     --secondary-foreground: 222 30% 10%;
 
     --muted: 220 14% 89%;
     --muted-foreground: 220 12% 38%;
 
-    --accent: 45 92% 58%;
+    --accent: 45 96% 55%;
     --accent-foreground: 222 30% 10%;
   /* Hover accent (tono amarillo más discreto para hover) */
-  --accent-hover: 45 88% 52%;
+  --accent-hover: 45 92% 50%;
   
   /* Nav hover - subtle and discrete */
   --nav-hover: 220 14% 90%;
@@ -57,10 +57,10 @@ All colors MUST be HSL.
     --gradient-dark: linear-gradient(135deg, hsl(0 0% 10%) 0%, hsl(0 0% 20%) 100%);
     
     /* Shadows */
-    --shadow-sm: 0 2px 8px hsla(0 100% 50% / 0.1);
-    --shadow-md: 0 4px 16px hsla(0 100% 50% / 0.15);
-    --shadow-lg: 0 8px 32px hsla(0 100% 50% / 0.2);
-    --shadow-glow: 0 0 24px hsla(0 100% 50% / 0.3);
+    --shadow-sm: 0 3px 10px hsla(0 0% 0% / 0.12);
+    --shadow-md: 0 8px 24px hsla(0 0% 0% / 0.18);
+    --shadow-lg: 0 18px 48px hsla(0 0% 0% / 0.24);
+    --shadow-glow: 0 0 30px hsla(0 0% 0% / 0.3);
     
     /* Transitions */
     --transition-base: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -95,16 +95,16 @@ All colors MUST be HSL.
     --popover: 222 19% 16%;
     --popover-foreground: 210 24% 95%;
 
-    --primary: 0 90% 58%;
+    --primary: 0 100% 54%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 45 92% 60%;
+    --secondary: 45 92% 58%;
     --secondary-foreground: 222 30% 10%;
 
     --muted: 222 17% 19%;
     --muted-foreground: 215 14% 74%;
 
-    --accent: 45 96% 64%;
+    --accent: 45 96% 62%;
     --accent-foreground: 222 30% 10%;
   /* Hover accent (tono amarillo más discreto para hover) */
   --accent-hover: 45 94% 68%;
@@ -161,15 +161,15 @@ All colors MUST be HSL.
   h1 {
     font-size: clamp(2.1rem, 1.2rem + 3.6vw, 4.8rem);
     line-height: 1.08;
-    letter-spacing: -0.025em;
-    font-weight: 800;
+    letter-spacing: -0.028em;
+    font-weight: 900;
   }
 
   h2 {
     font-size: clamp(1.7rem, 1.2rem + 2vw, 3rem);
     line-height: 1.14;
-    letter-spacing: -0.018em;
-    font-weight: 750;
+    letter-spacing: -0.02em;
+    font-weight: 800;
   }
 
   h3 {
@@ -186,7 +186,7 @@ All colors MUST be HSL.
   a,
   button,
   [role="button"] {
-    transition: color 200ms ease, background-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
+    transition: color 250ms cubic-bezier(0.22, 1, 0.36, 1), background-color 250ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 300ms cubic-bezier(0.22, 1, 0.36, 1), transform 300ms cubic-bezier(0.22, 1, 0.36, 1);
   }
 }
 
@@ -278,6 +278,17 @@ All colors MUST be HSL.
     100% { opacity: 0.18; }
   }
 
+  @keyframes pulseGlow {
+    0% { box-shadow: 0 0 0 hsla(0 0% 0% / 0); }
+    50% { box-shadow: 0 0 28px hsla(0 0% 0% / 0.28); }
+    100% { box-shadow: 0 0 0 hsla(0 0% 0% / 0); }
+  }
+
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
   @keyframes slideRight {
     0% { transform: translate3d(0, 0, 0); opacity: 0.6; }
     50% { transform: translate3d(48px, 0, 0); opacity: 1; }
@@ -313,6 +324,41 @@ All colors MUST be HSL.
   @keyframes revealUp {
     0% { opacity: 0; transform: translate3d(0, 40px, 0); }
     100% { opacity: 1; transform: translate3d(0, 0, 0); }
+  }
+
+  @keyframes scaleIn {
+    0% { transform: scale(0.95); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  @keyframes slideInLeft {
+    0% { transform: translateX(-20px); opacity: 0; }
+    100% { transform: translateX(0); opacity: 1; }
+  }
+
+  @keyframes slideInRight {
+    0% { transform: translateX(20px); opacity: 0; }
+    100% { transform: translateX(0); opacity: 1; }
+  }
+
+  @keyframes fadeInDown {
+    0% { transform: translateY(-10px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+
+  @keyframes rotate360 {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+
+  @keyframes glow {
+    0%, 100% { box-shadow: 0 0 12px hsla(0, 100%, 50%, 0.3); }
+    50% { box-shadow: 0 0 20px hsla(0, 100%, 50%, 0.5); }
   }
 
   .bg-blob {
@@ -376,6 +422,10 @@ All colors MUST be HSL.
     animation: sectionRise 700ms ease-out both;
     animation-delay: 80ms;
     will-change: transform, opacity;
+  }
+
+  .page-animate section:not(:last-child) {
+    margin-bottom: 2rem;
   }
 
   .page-animate header,
@@ -481,6 +531,38 @@ All colors MUST be HSL.
     will-change: transform, opacity;
   }
 
+  .animate-scale-in {
+    animation: scaleIn 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .animate-slide-in-left {
+    animation: slideInLeft 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .animate-slide-in-right {
+    animation: slideInRight 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .animate-fade-in-down {
+    animation: fadeInDown 600ms ease-out;
+  }
+
+  .animate-rotate-360 {
+    animation: rotate360 2s linear infinite;
+  }
+
+  .animate-pulse-subtle {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite;
+  }
+
+  .group-hover\:scale-110:hover {
+    transform: scale(1.1);
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .bg-blob,
     .animate-blob,
@@ -503,8 +585,19 @@ All colors MUST be HSL.
     .page-animate ul li,
     .page-animate ol li,
     .reveal-up,
-    .page-animate img {
+    .page-animate img,
+    .animate-scale-in,
+    .animate-slide-in-left,
+    .animate-slide-in-right,
+    .animate-fade-in-down,
+    .animate-rotate-360,
+    .animate-pulse-subtle,
+    .animate-glow {
       animation: none !important;
+    }
+
+    .group-hover\:scale-110:hover {
+      transform: none !important;
     }
   }
   

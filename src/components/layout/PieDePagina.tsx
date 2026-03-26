@@ -13,7 +13,7 @@ const FooterLink = ({ to, children, external = false }: FooterLinkProps) => {
   const scrollTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
 
   const className =
-    "text-sm text-foreground/80 hover:text-primary transition-all duration-300 inline-flex items-center group focus:outline-none focus-visible:ring-2 focus-visible:ring-primary";
+    "text-sm text-foreground/80 hover:text-primary transition-colors duration-300 inline-flex items-center group focus:outline-none focus-visible:ring-2 focus-visible:ring-primary";
 
   if (external) {
     return (
@@ -64,11 +64,11 @@ const FooterNew = () => {
   const currentYear = new Date().getFullYear();
   return (
     <footer role="contentinfo" aria-label="Pie de página Grupo Scout Séptimo" className="bg-background/80 backdrop-blur-sm text-foreground/80 border-t border-border/60">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-16">
         {/* Main Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-12 mb-8">
           {/* Logo & Description - Larger on desktop */}
-          <div className="lg:col-span-5">
+          <div className="lg:col-span-5 rounded-2xl border border-border/40 bg-background/30 p-5 shadow-md">
             <div className="flex items-center space-x-3 mb-4">
               <img
                 src={logoImage}
@@ -111,7 +111,7 @@ const FooterNew = () => {
           </div>
 
           {/* Quick Links */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-3 rounded-2xl border border-border/40 bg-background/30 p-5 shadow-md">
             <h3 className="text-foreground font-bold mb-4 text-lg">
               Enlaces Rápidos
             </h3>
@@ -141,7 +141,7 @@ const FooterNew = () => {
           </div>
 
           {/* Ramas */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 rounded-2xl border border-border/40 bg-background/30 p-5 shadow-md">
             <h3 className="text-foreground font-bold mb-4 text-lg">Ramas</h3>
             <ul className="space-y-2.5">
               <li>
@@ -166,7 +166,7 @@ const FooterNew = () => {
           </div>
 
           {/* Contact */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 rounded-2xl border border-border/40 bg-background/30 p-5 shadow-md">
             <h3 className="text-foreground font-bold mb-4 text-lg">Contacto</h3>
             <ul className="space-y-3">
               <li className="flex items-start group">
@@ -179,7 +179,7 @@ const FooterNew = () => {
                 <Phone className="w-5 h-5 mr-2 text-primary flex-shrink-0 transition-transform duration-300 group-hover:rotate-12" />
                 <a
                   href="tel:+59898138668"
-                  className="text-sm hover:text-primary transition-colors"
+                  className="text-sm hover:text-primary transition-colors duration-300"
                 >
                   +598 098 138 668
                 </a>
@@ -188,7 +188,7 @@ const FooterNew = () => {
                 <Mail className="w-5 h-5 mr-2 text-primary flex-shrink-0 transition-transform duration-300 group-hover:-translate-y-1" />
                 <a
                   href="mailto:scoutsseptimo7@gmail.com"
-                  className="text-xs sm:text-sm whitespace-nowrap hover:text-primary transition-colors"
+                  className="text-xs sm:text-sm whitespace-nowrap hover:text-primary transition-colors duration-300"
                 >
                   scoutsseptimo7@gmail.com
                 </a>

@@ -130,14 +130,14 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
       console.log("📍 Sesión obtenida:", u?.email);
       if (u) fetchUserAndProfile(u);
     }).catch(err => {
-      console.error("❌ Error getSession:", err);
+      console.error("Error getSession:", err);
     });
 
     // Escuchar cambios de auth
     const { data: listener } = supabase.auth.onAuthStateChange(
       (event, session) => {
         const u = session?.user ?? null;
-        console.log(`📨 Auth change: ${event}`);
+        console.log(`Auth change: ${event}`);
         if (u) fetchUserAndProfile(u);
       },
     );

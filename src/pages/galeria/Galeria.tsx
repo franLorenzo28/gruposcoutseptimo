@@ -286,7 +286,7 @@ const Galeria = () => {
 
   return (
     <EmailVerificationGuard featureName="Galería">
-    <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25">
+    <div className="page-animate min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25">
       {/* Hero */}
       <section className="pt-24 sm:pt-28 md:pt-32 pb-4 sm:pb-6">
         <div className="container mx-auto px-4">
