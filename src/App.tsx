@@ -25,6 +25,7 @@ const MovimientoScout = lazy(() => import("./pages/MovimientoScout"));
 const Archivo = lazy(() => import("./pages/Archivo.tsx"));
 const ArchivoScoutpedia = lazy(() => import("./pages/archivo/Scoutpedia"));
 const ArchivoCompania = lazy(() => import("./pages/archivo/Compania"));
+const ArchivoCapsulaTiempo = lazy(() => import("./pages/archivo/CapsulaTiempo"));
 const ArchivoMiembros = lazy(() => import("./pages/archivo/Miembros"));
 const Cancionero = lazy(() => import("./pages/Cancionero"));
 const Veteranos = lazy(() => import("./pages/Veteranos"));
@@ -220,6 +221,7 @@ const App = () => (
                     <Route path="/archivo" element={<Archivo />} />
                     <Route path="/archivo/scoutpedia" element={<ArchivoScoutpedia />} />
                     <Route path="/archivo/compania" element={<ArchivoCompania />} />
+                    <Route path="/archivo/capsula-del-tiempo" element={<ArchivoCapsulaTiempo />} />
                     <Route path="/archivo/miembros" element={<ArchivoMiembros />} />
                     <Route path="/cancionero" element={<Cancionero />} />
                     <Route path="/veteranos" element={<Veteranos />} />
@@ -273,6 +275,7 @@ const App = () => (
                       }
                     />
                     <Route path="/auth" element={<Auth />} />
+                    <Route path="/auth/callback" element={<Auth />} />
                     <Route path="/verificar-email" element={<VerificarEmail />} />
                     <Route path="/perfil" element={<PerfilView />} />
                     <Route path="/perfil/editar" element={<Perfil />} />

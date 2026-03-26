@@ -54,15 +54,23 @@ import {
 } from "@/lib/groups";
 import { Trash2, Image as ImageIcon, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import {
+  RAMA_LABEL,
+  getRamaFromProfile,
+  getRamaLabel,
+  type RamaKey,
+  type RamaProfileFields,
+} from "@/lib/rama";
 
-type Profile = {
+type Profile = RamaProfileFields & {
   user_id: string;
   nombre_completo: string | null;
   avatar_url: string | null;
-  edad: number | null;
   is_public: boolean | null;
   username?: string | null;
 };
+
+const ENABLE_RAMA_FILTER = false;
 
 const Usuarios = () => {
   // React Query hooks (reemplazan useState + useEffect)
@@ -71,7 +79,7 @@ const Usuarios = () => {
   const { data: groupsData = [], isLoading: loadingGroups, refetch: refetchGroups } = useGroups();
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [ramaFilter, setRamaFilter] = useState<string>("all");
+  const [ramaFilter, setRamaFilter] = useState<RamaKey | "all">("all");
   const [visibilityFilter, setVisibilityFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("name");
   const [currentUserId, setCurrentUserId] = useState<string>("");
@@ -142,14 +150,21 @@ const Usuarios = () => {
     // Filter by search term
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase();
-      filtered = filtered.filter((p) =>
-        p.nombre_completo?.toLowerCase().includes(term),
-      );
+      filtered = filtered.filter((p) => {
+        const searchable = [
+          p.nombre_completo || "",
+          p.username || "",
+          getRamaLabel(p),
+        ]
+          .join(" ")
+          .toLowerCase();
+        return searchable.includes(term);
+      });
     }
 
     // Filter by rama
-    if (ramaFilter !== "all") {
-      filtered = filtered.filter((p) => getRamaActual(p.edad) === ramaFilter);
+    if (ENABLE_RAMA_FILTER && ramaFilter !== "all") {
+      filtered = filtered.filter((p) => getRamaFromProfile(p) === ramaFilter);
     }
 
     // Filter by visibility
@@ -170,18 +185,18 @@ const Usuarios = () => {
     } else if (sortBy === "age-desc") {
       sorted.sort((a, b) => (b.edad || 0) - (a.edad || 0));
     } else if (sortBy === "rama") {
-      const ramaOrder: { [key: string]: number } = {
-        Manada: 1,
-        Tropa: 2,
-        Pionero: 3,
-        Rover: 4,
-        Adulto: 5,
-        Desconocido: 6,
+      const ramaOrder: Record<RamaKey, number> = {
+        manada: 1,
+        tropa: 2,
+        pioneros: 3,
+        rovers: 4,
+        adulto: 5,
+        "sin-rama": 6,
       };
       sorted.sort((a, b) => {
-        const ramaA = getRamaActual(a.edad);
-        const ramaB = getRamaActual(b.edad);
-        return (ramaOrder[ramaA] || 999) - (ramaOrder[ramaB] || 999);
+        const ramaA = getRamaFromProfile(a);
+        const ramaB = getRamaFromProfile(b);
+        return ramaOrder[ramaA] - ramaOrder[ramaB];
       });
     }
 
@@ -451,16 +466,6 @@ const Usuarios = () => {
     }
   };
 
-  const getRamaActual = (edad: number | null) => {
-    if (!edad) return "Scout";
-    if (edad >= 21) return "Adulto";
-    if (edad >= 18) return "Rover";
-    if (edad >= 15) return "Pionero";
-    if (edad >= 11) return "Tropa";
-    if (edad >= 7) return "Manada";
-    return "Scout";
-  };
-
   // Renderizado con resaltado de menciones @usuario
   const renderWithMentions = (text: string): ReactNode[] => {
     const parts: ReactNode[] = [];
@@ -597,27 +602,36 @@ const Usuarios = () => {
                 <label className="text-sm font-medium mb-2 block text-muted-foreground">
                   Rama
                 </label>
-                <Select value={ramaFilter} onValueChange={setRamaFilter}>
+                <Select
+                  value={ENABLE_RAMA_FILTER ? ramaFilter : "all"}
+                  onValueChange={(value) => setRamaFilter(value as RamaKey | "all")}
+                  disabled={!ENABLE_RAMA_FILTER}
+                >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Todas las ramas" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todas las ramas</SelectItem>
-                    <SelectItem value="Manada">
+                    <SelectItem value="manada">
                       🐺 Manada (7-10 años)
                     </SelectItem>
-                    <SelectItem value="Tropa">⛺ Tropa (11-14 años)</SelectItem>
-                    <SelectItem value="Pionero">
+                    <SelectItem value="tropa">⛺ Tropa (11-14 años)</SelectItem>
+                    <SelectItem value="pioneros">
                       🏕️ Pioneros (15-17 años)
                     </SelectItem>
-                    <SelectItem value="Rover">
+                    <SelectItem value="rovers">
                       🎒 Rovers (18-20 años)
                     </SelectItem>
-                    <SelectItem value="Adulto">
+                    <SelectItem value="adulto">
                       👤 Adultos (21+ años)
                     </SelectItem>
                   </SelectContent>
                 </Select>
+                {!ENABLE_RAMA_FILTER && (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Filtro por rama temporalmente deshabilitado.
+                  </p>
+                )}
                   </div>
 
               {/* Filtro por visibilidad */}
@@ -666,7 +680,7 @@ const Usuarios = () => {
             </Card>
 
             {/* Filtros activos (badges) */}
-            {(ramaFilter !== "all" ||
+            {((ENABLE_RAMA_FILTER && ramaFilter !== "all") ||
               visibilityFilter !== "all" ||
               searchTerm) && (
               <div className="flex flex-wrap gap-2 mb-4">
@@ -685,9 +699,9 @@ const Usuarios = () => {
                     </button>
                   </Badge>
                 )}
-                {ramaFilter !== "all" && (
+                {ENABLE_RAMA_FILTER && ramaFilter !== "all" && (
                   <Badge variant="secondary" className="gap-1">
-                    {ramaFilter}
+                    {RAMA_LABEL[ramaFilter]}
                     <button
                       onClick={() => setRamaFilter("all")}
                       className="ml-1 hover:text-destructive"
@@ -709,7 +723,7 @@ const Usuarios = () => {
                     </button>
                   </Badge>
                 )}
-                {(ramaFilter !== "all" ||
+                {((ENABLE_RAMA_FILTER && ramaFilter !== "all") ||
                   visibilityFilter !== "all" ||
                   searchTerm) && (
                   <Button
@@ -717,7 +731,7 @@ const Usuarios = () => {
                     variant="ghost"
                     onClick={() => {
                       setSearchTerm("");
-                      setRamaFilter("all");
+                      if (ENABLE_RAMA_FILTER) setRamaFilter("all");
                       setVisibilityFilter("all");
                     }}
                     className="h-6 text-xs"
@@ -780,7 +794,7 @@ const Usuarios = () => {
                               )}
                             </div>
                             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
-                              <span>{getRamaActual(profile.edad)}</span>
+                              <span>{getRamaLabel(profile)}</span>
                               {profile.edad && (
                                 <span>• {profile.edad} años</span>
                               )}

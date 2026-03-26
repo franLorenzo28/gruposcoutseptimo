@@ -502,7 +502,7 @@ const Auth = () => {
     setLoading(true);
     try {
       // Evita redirects a deployments efímeros usando dominio canónico cuando esté configurado.
-      const redirectUrl = buildAuthRedirect("/auth");
+      const redirectUrl = buildAuthRedirect("/auth/callback");
       console.log("Iniciando OAuth con redirect a:", redirectUrl);
 
       localStorage.setItem("oauth_intent", intent);

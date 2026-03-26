@@ -33,6 +33,15 @@ type ArchiveSection = {
 
 const secciones: ArchiveSection[] = [
   {
+    title: "Cápsula del Tiempo",
+    description:
+      "Proyecto del 50 aniversario: cápsula enterrada en el Colegio Alemán para abrir en 2064.",
+    to: "/archivo/capsula-del-tiempo",
+    tag: "Memoria histórica",
+    entries: "Evento 2014",
+    Icon: Calendar,
+  },
+  {
     title: "Scoutpedia",
     description:
       "Definiciones, términos y contenidos enciclopédicos del historial scout.",
@@ -107,6 +116,7 @@ const secciones: ArchiveSection[] = [
 ];
 
 const actividadReciente = [
+  "Se creó la sección Cápsula del Tiempo",
   "Actualización de material histórico en Scoutpedia",
   "Revisión y curaduría de documentos de Compañía",
   "Nuevas fotos incorporadas en Galería",
