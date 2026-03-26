@@ -488,17 +488,12 @@ const Usuarios = () => {
     <EmailVerificationGuard featureName="Comuni 7">
     {loading ? (
       <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25">
-        {/* Navigation global en App.tsx */}
-        <div className="h-20"></div>
         <div className="flex items-center justify-center py-20">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
         </div>
       </div>
     ) : (
     <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25">
-      {/* Navigation global en App.tsx */}
-      <div className="h-14 sm:h-16"></div>
-
       <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
         <Card className="mb-4 sm:mb-6 overflow-hidden border-border/70 bg-card/85 shadow-xl backdrop-blur-sm">
           <CardContent className="p-4 sm:p-6">

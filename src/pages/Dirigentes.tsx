@@ -10,8 +10,27 @@ type Dirigente = {
   rama: string;
 };
 
-const DIRIGENTES: Dirigente[] = [];
-// TODO: agregar contenido de wiki
+const DIRIGENTES: Dirigente[] = [
+  {
+    id: "1",
+    nombre: "Roberto Martinez",
+    cargo: "Jefe de Grupo",
+    rama: "Supervision General",
+  },
+  {
+    id: "2",
+    nombre: "Gabriela Nunez",
+    cargo: "Coordinadora de Ramas",
+    rama: "Administracion",
+  },
+  {
+    id: "3",
+    nombre: "Diego Rodriguez",
+    cargo: "Guía de Scouts",
+    rama: "Scouts",
+  },
+];
+// Estructura lista para cargar equipo de wiki
 
 const Dirigentes = () => {
   return (
@@ -71,10 +90,10 @@ const Dirigentes = () => {
               <Card className="mt-8 border border-dashed border-primary/35 bg-primary/5">
                 <CardContent className="p-8 text-center">
                   <Badge variant="outline" className="border-primary/35 text-primary bg-background/70">
-                    En carga
+                    Datos en actualizacion
                   </Badge>
                   <p className="mt-4 text-base text-muted-foreground sm:text-lg">
-                    Proximamente veras nombre, cargo y rama de cada dirigente actual segun la informacion de la wiki.
+                    Mostramos datos de ejemplo. Se completara con toda la informacion de dirigentes activos desde la wiki del grupo.
                   </p>
                 </CardContent>
               </Card>

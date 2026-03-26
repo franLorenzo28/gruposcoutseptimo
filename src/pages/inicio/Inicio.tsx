@@ -4,7 +4,7 @@ import SobreElGrupo from "@/components/sections/SobreElGrupo";
 
 const Index = () => {
   return (
-    <div id="main-content" className="min-h-screen">
+    <div className="min-h-screen">
       <HeroInicio />
       <SobreElGrupo />
     </div>

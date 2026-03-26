@@ -1,8 +1,10 @@
 ﻿import { Card, CardContent } from "@/components/ui/card";
 import { Calendar } from "lucide-react";
-import emblemImage from "@/assets/scout-emblem.jpg";
+import { getOptimizedImageProps } from "@/lib/optimized-images";
+import { OptimizedImage } from "@/components/OptimizedImage";
 
 const Historia = () => {
+  const emblemImages = getOptimizedImageProps("emblem");
   const milestones = [
     {
       year: "1964",
@@ -78,12 +80,12 @@ const Historia = () => {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-12 mb-12 sm:mb-16">
             <div className="text-center lg:text-left">
-              <img
-                src={emblemImage}
+              <OptimizedImage
+                src={emblemImages.src}
+                webpSrc={emblemImages.webpSrc}
                 alt="Emblemas Scout"
                 className="w-full rounded-xl shadow-2xl mb-4 transition-transform duration-300 hover:scale-105"
                 loading="lazy"
-                decoding="async"
               />
             </div>
             <div className="lg:col-span-2 flex flex-col justify-center space-y-4 sm:space-y-6">

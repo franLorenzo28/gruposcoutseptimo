@@ -21,7 +21,6 @@ export default function DashboardMiembros() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25">
-      <div className="h-16 sm:h-20" />
       <section className="container mx-auto px-4 py-8 sm:py-12 space-y-6">
         <Reveal>
           <div className="mx-auto grid max-w-6xl gap-6 rounded-3xl border border-border/70 bg-card/80 p-6 shadow-xl sm:p-8 lg:grid-cols-[1.15fr_0.85fr]">

@@ -21,10 +21,9 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Reveal } from "@/components/Reveal";
-import communityImage from "@/assets/community-scouts.jpg";
-import tropaPopupImage from "@/assets/sistema de patrullas.jpg";
-import heroImage from "@/assets/hero-scouts.jpg";
-
+              import { OptimizedImage } from "@/components/OptimizedImage";
+              import { getOptimizedImageProps } from "@/lib/optimized-images";
+              import tropaPopupImage from "@/assets/sistema de patrullas.jpg";
 const WolfHowlingIcon = ({ className = "" }: { className?: string }) => (
   <svg
     viewBox="0 0 24 24"
@@ -51,6 +50,7 @@ const WolfHowlingIcon = ({ className = "" }: { className?: string }) => (
 );
 
 const About = () => {
+  const communityImages = getOptimizedImageProps("community");
   const branches = [
     {
       icon: WolfHowlingIcon,
@@ -228,13 +228,19 @@ const About = () => {
             <Reveal>
               <div className="grid grid-cols-2 gap-3 sm:gap-4">
                 <div className="col-span-2 overflow-hidden rounded-3xl border border-border/70 shadow-2xl">
-                  <img
-                    src={heroImage}
-                    alt="Grupo Scout Séptimo en actividad"
-                    className="h-[240px] w-full object-cover transition-transform duration-700 hover:scale-105 sm:h-[320px]"
-                    loading="lazy"
-                    decoding="async"
-                  />
+                  {(() => {
+                    const heroImages = getOptimizedImageProps("hero");
+                    return (
+                      <OptimizedImage
+                        src={heroImages.src}
+                        webpSrc={heroImages.webpSrc}
+                        alt="Grupo Scout Séptimo en actividad"
+                        className="h-[240px] sm:h-[320px] w-full transition-transform duration-700 hover:scale-105"
+                        objectFit="cover"
+                        loading="lazy"
+                      />
+                    );
+                  })()}
                 </div>
                 <div className="rounded-2xl border border-border/70 bg-card/70 p-5 shadow-lg backdrop-blur-sm">
                   <Stars className="h-6 w-6 text-primary" />
@@ -254,13 +260,19 @@ const About = () => {
 
       <section className="relative py-14 sm:py-20">
         <div className="absolute inset-0" aria-hidden="true">
-          <img
-            src={communityImage}
-            alt=""
-            className="h-full w-full object-cover"
-            loading="lazy"
-            decoding="async"
-          />
+          {(() => {
+            const communityImages = getOptimizedImageProps("community");
+            return (
+              <OptimizedImage
+                src={communityImages.src}
+                webpSrc={communityImages.webpSrc}
+                alt=""
+                className="h-full w-full"
+                objectFit="cover"
+                loading="lazy"
+              />
+            );
+          })()}
           <div className="absolute inset-0 bg-gradient-to-r from-scout-black/85 via-scout-black/55 to-transparent" />
         </div>
         <div className="relative container mx-auto px-4">
@@ -360,7 +372,7 @@ const About = () => {
                             <div className="w-full space-y-4">
                               <div className="overflow-hidden rounded-xl border border-border/60">
                                 <img
-                                  src={branch.image ?? communityImage}
+                                  src={branch.image ?? communityImages.src}
                                   alt={`Foto representativa de la rama ${branch.title}`}
                                   className={`w-full bg-transparent ${
                                     branch.route === "tropa"

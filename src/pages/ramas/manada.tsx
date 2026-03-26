@@ -1,14 +1,15 @@
 ﻿import RamaLanding from "@/components/sections/RamaLanding";
-import communityImage from "@/assets/community-scouts.jpg";
+import { getOptimizedImageProps } from "@/lib/optimized-images";
 
 const Manada = () => {
+  const communityImages = getOptimizedImageProps("community");
   return (
     <RamaLanding
       title="Manada"
       lema="Siempre lo mejor"
       ageRange="7 a 10"
       intro="La puerta de entrada al escultismo: juego, fantasía y trabajo en equipo en un entorno cuidado."
-      image={communityImage}
+      image={communityImages}
       imageAlt="Manada del Grupo Scout Séptimo"
       accentClass="bg-[#FEB21A]"
       paragraphs={[

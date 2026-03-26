@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Reveal } from "@/components/Reveal";
 import { OptimizedImage } from "@/components/OptimizedImage";
+import { getOptimizedImageProps } from "@/lib/optimized-images";
 import {
   Archive,
   ArrowRight,
@@ -20,7 +21,6 @@ import {
   Users,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import communityImage from "@/assets/community-scouts.jpg";
 
 type ArchiveSection = {
   title: string;
@@ -113,6 +113,7 @@ const actividadReciente = [
 ];
 
 const Archivo = () => {
+  const communityImages = getOptimizedImageProps("community");
   const [query, setQuery] = useState("");
 
   const seccionesFiltradas = useMemo(() => {
@@ -176,7 +177,8 @@ const Archivo = () => {
 
             <div className="overflow-hidden rounded-3xl border border-border/60 shadow-xl">
               <OptimizedImage
-                src={communityImage}
+                src={communityImages.src}
+                webpSrc={communityImages.webpSrc}
                 alt="Archivo histórico del Grupo Scout Séptimo"
                 className="h-[260px] sm:h-[320px] w-full"
                 objectFit="cover"

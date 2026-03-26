@@ -10,8 +10,27 @@ type Veterano = {
   rama: string;
 };
 
-const VETERANOS: Veterano[] = [];
-// TODO: agregar contenido de wiki
+const VETERANOS: Veterano[] = [
+  {
+    id: "1",
+    nombre: "Carlos Alberto Lopez Garcia",
+    aniosActivo: "1985-1992 (7 anos)",
+    rama: "Scouts",
+  },
+  {
+    id: "2",
+    nombre: "Maria Ines Fernandez",
+    aniosActivo: "1990-2005 (15 anos)",
+    rama: "Guias",
+  },
+  {
+    id: "3",
+    nombre: "Luis Miguel Sanchez",
+    aniosActivo: "2000-2018 (18 anos)",
+    rama: "Rafa",
+  },
+];
+// Estructura lista para completar registro desde wiki
 
 const Veteranos = () => {
   return (
@@ -71,10 +90,10 @@ const Veteranos = () => {
               <Card className="mt-8 border border-dashed border-primary/35 bg-primary/5">
                 <CardContent className="p-8 text-center">
                   <Badge variant="outline" className="border-primary/35 text-primary bg-background/70">
-                    Pendiente de contenido
+                    Historial en construccion
                   </Badge>
                   <p className="mt-4 text-base text-muted-foreground sm:text-lg">
-                    Esta seccion mostrara nombre, anios activo y rama de cada veterano cuando carguemos la informacion desde la wiki.
+                    Mostramos veteranos de ejemplo. Se completara con el historial completo de ex-integrantes desde la wiki.
                   </p>
                 </CardContent>
               </Card>

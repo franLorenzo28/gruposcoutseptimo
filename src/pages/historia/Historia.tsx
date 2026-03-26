@@ -4,10 +4,11 @@ import { Badge } from "@/components/ui/badge";
 import { MapPin, Calendar, BookOpen } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
 import { OptimizedImage } from "@/components/OptimizedImage";
+import { getOptimizedImageProps } from "@/lib/optimized-images";
 import { useCountUp } from "@/hooks/useCountUp";
-import heroImage from "@/assets/hero-scouts.jpg";
 
 const Historia = () => {
+  const heroImages = getOptimizedImageProps("hero");
   const fundacion = useCountUp(1964, 800, { start: 1950 });
   const anios = useCountUp(60, 1200, { start: 0 });
   const locales = useCountUp(8, 600, { start: 0 });
@@ -82,7 +83,8 @@ const Historia = () => {
       <section className="relative overflow-hidden pb-16 pt-28 sm:pt-32">
         <div className="absolute inset-0" aria-hidden="true">
           <OptimizedImage
-            src={heroImage}
+            src={heroImages.src}
+            webpSrc={heroImages.webpSrc}
             alt=""
             className="h-full w-full"
             objectFit="cover"
@@ -166,7 +168,8 @@ const Historia = () => {
       <section id="timeline" className="relative overflow-hidden py-10 sm:py-14">
         <div className="absolute inset-0" aria-hidden="true">
           <OptimizedImage
-            src={heroImage}
+            src={heroImages.src}
+            webpSrc={heroImages.webpSrc}
             alt=""
             className="h-full w-full opacity-[0.09]"
             objectFit="cover"

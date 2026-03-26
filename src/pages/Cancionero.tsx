@@ -14,8 +14,30 @@ type Cancion = {
   letra: string;
 };
 
-const CANCIONES: Cancion[] = [];
-// TODO: agregar contenido de wiki
+const CANCIONES: Cancion[] = [
+  {
+    id: "1",
+    titulo: "La Marcha de Zumbador",
+    tipo: "marcha",
+    resumen: "Clásica marcha scout de motivación y unidad",
+    letra: "Vamos todos, compañeros, con la frente en alto, a cumplir nuestra promesa, el honor y el ideal.",
+  },
+  {
+    id: "2",
+    titulo: "Fuego de Campamento",
+    tipo: "fogon",
+    resumen: "Canción tradicional para fogón, ambiente contemplativo",
+    letra: "Fuego sagrado que iluminas la noche, en tu resplandor vemos la amistad verdadera.",
+  },
+  {
+    id: "3",
+    titulo: "Baden en el Cielo",
+    tipo: "campamento",
+    resumen: "Homenaje al fundador, canto de reflexión",
+    letra: "En lo alto del cielo brilla una estrella, es Baden-Powell que nos guía siempre.",
+  },
+];
+// Estructura lista para integrar datos de wiki
 
 const TIPO_LABEL: Record<TipoCancion, string> = {
   fogon: "Fogon",
@@ -89,10 +111,10 @@ const Cancionero = () => {
               <Card className="mt-8 border border-dashed border-primary/35 bg-primary/5">
                 <CardContent className="p-8 text-center">
                   <Badge variant="outline" className="border-primary/35 text-primary bg-background/70">
-                    En construccion
+                    Muestra de ejemplo
                   </Badge>
                   <p className="mt-4 text-base text-muted-foreground sm:text-lg">
-                    Aun no hay canciones cargadas. Cuando integremos la wiki, apareceran organizadas por tipo con letra y resumen.
+                    Se muestran algunas canciones de ejemplo. El repertorio completo se alimentara de la wiki del grupo scout.
                   </p>
                 </CardContent>
               </Card>

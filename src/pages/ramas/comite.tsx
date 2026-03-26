@@ -1,14 +1,15 @@
 ﻿import RamaLanding from "@/components/sections/RamaLanding";
-import communityImage from "@/assets/community-scouts.jpg";
+import { getOptimizedImageProps } from "@/lib/optimized-images";
 
 const Comite = () => {
+  const communityImages = getOptimizedImageProps("community");
   return (
     <RamaLanding
       title="Comité de Padres"
       lema="Apoyar y construir comunidad"
       ageRange="Familias voluntarias"
       intro="Madres, padres y referentes que hacen posible la logística y el sostén de la vida de grupo."
-      image={communityImage}
+      image={communityImages}
       imageAlt="Comité de familias del Grupo Scout Séptimo"
       accentClass="bg-zinc-600"
       paragraphs={[

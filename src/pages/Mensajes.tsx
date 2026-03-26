@@ -358,9 +358,6 @@ export default function Mensajes() {
   return (
     <EmailVerificationGuard featureName="Mensajes">
     <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25 pb-20">
-      {/* Navigation global en App.tsx */}
-      <div className="h-16 sm:h-20"></div>
-
       <div className="max-w-5xl mx-auto px-2 sm:px-4 py-4 sm:py-6 lg:py-8">
         {/* Layout responsive: stack en móvil, grid en desktop */}
         <div className="flex flex-col lg:grid lg:grid-cols-3 gap-4 lg:gap-6">

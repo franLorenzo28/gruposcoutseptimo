@@ -3,12 +3,13 @@ import { ArrowRight, Users, Hand, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Reveal } from "@/components/Reveal";
 import { OptimizedImage } from "@/components/OptimizedImage";
-import heroImage from "@/assets/hero-scouts.jpg";
+import { getOptimizedImageProps } from "@/lib/optimized-images";
 import { useToast } from "@/hooks/use-toast";
 import { useSupabaseUser } from "@/App";
 const Hero = () => {
   const { toast } = useToast();
   const { user } = useSupabaseUser();
+  const heroImages = getOptimizedImageProps("hero");
 
   const scrollToWithOffset = (id: string, offset = 120) => {
     const target = document.getElementById(id);
@@ -35,7 +36,8 @@ const Hero = () => {
       {/* Background Image with Enhanced Overlay */}
       <div className="absolute inset-0 z-0" aria-hidden="true">
         <OptimizedImage
-          src={heroImage}
+          src={heroImages.src}
+          webpSrc={heroImages.webpSrc}
           alt="Grupo Scout Séptimo de Montevideo en actividad al aire libre"
           className="absolute inset-0 object-left"
           objectFit="cover"

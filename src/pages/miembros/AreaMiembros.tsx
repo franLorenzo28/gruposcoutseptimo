@@ -10,7 +10,6 @@ export default function AreaMiembros() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25">
-      <div className="h-16 sm:h-20" />
       <section className="container mx-auto px-4 py-10 sm:py-14 space-y-8">
         <Reveal>
           <div className="mx-auto grid max-w-6xl gap-6 rounded-3xl border border-border/70 bg-card/80 p-6 shadow-xl backdrop-blur-sm sm:p-8 lg:grid-cols-[1.2fr_0.8fr]">

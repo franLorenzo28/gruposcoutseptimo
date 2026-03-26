@@ -71,8 +71,6 @@ export default function Configuracion() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25">
-      <div className="h-16 sm:h-20" />
-
       <div className="max-w-6xl mx-auto px-4 py-8 sm:py-12">
         {/* Header */}
         <Reveal>

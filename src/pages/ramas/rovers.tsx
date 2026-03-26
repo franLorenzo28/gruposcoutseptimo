@@ -1,14 +1,15 @@
 ﻿import RamaLanding from "@/components/sections/RamaLanding";
-import communityImage from "@/assets/community-scouts.jpg";
+import { getOptimizedImageProps } from "@/lib/optimized-images";
 
 const Rovers = () => {
+  const communityImages = getOptimizedImageProps("community");
   return (
     <RamaLanding
       title="Rovers"
       lema="Servir"
       ageRange="18 a 21"
       intro="Una etapa de madurez y elección vocacional donde el servicio se transforma en proyecto de vida."
-      image={communityImage}
+      image={communityImages}
       imageAlt="Rama Rovers del Grupo Scout Séptimo"
       accentClass="bg-[#DD0303]"
       paragraphs={[

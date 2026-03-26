@@ -201,15 +201,16 @@ const App = () => (
               <NavegacionPrincipal />
               <ScrollAlInicio />
               <SaltarAlContenido />
-              <Suspense
-                fallback={
-                  <div className="flex min-h-screen items-center justify-center">
-                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                  </div>
-                }
-              >
-                <TransicionRuta>
-                  <Routes>
+              <main id="main-content" tabIndex={-1} className="min-h-screen">
+                <Suspense
+                  fallback={
+                    <div className="flex min-h-screen items-center justify-center">
+                      <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                    </div>
+                  }
+                >
+                  <TransicionRuta>
+                    <Routes>
                     <Route path="/" element={<Inicio />} />
                     <Route path="/linea-temporal" element={<Navigate to="/historia" replace />} />
                     <Route path="/historia" element={<Historia />} />
@@ -298,9 +299,10 @@ const App = () => (
                     <Route path="/admin" element={<AdminGuard><AdminPanel /></AdminGuard>} />
                     {/* Ruta por defecto */}
                     <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </TransicionRuta>
-              </Suspense>
+                    </Routes>
+                  </TransicionRuta>
+                </Suspense>
+              </main>
               <PieDePagina />
               </NotificationsProvider>
               </MemberAuthProvider>

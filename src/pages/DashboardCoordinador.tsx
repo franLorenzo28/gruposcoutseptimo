@@ -302,7 +302,6 @@ const DashboardCoordinador = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25">
-        <div className="h-20"></div>
         <div className="container mx-auto px-4 py-8 space-y-6">
           {/* Header skeleton */}
           <div className="flex items-center gap-4">
@@ -355,8 +354,6 @@ const DashboardCoordinador = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25">
-      <div className="h-20"></div>
-
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">

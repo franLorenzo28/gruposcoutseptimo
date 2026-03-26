@@ -420,8 +420,6 @@ export default function GrupoDetail() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25">
-        {/* Navigation global en App.tsx */}
-        <div className="h-20"></div>
         <div className="flex items-center justify-center py-20">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
         </div>
@@ -435,9 +433,6 @@ export default function GrupoDetail() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25">
-      {/* Navigation global en App.tsx */}
-      <div className="h-16 sm:h-20"></div>
-
       <div className="max-w-6xl mx-auto px-4 py-6">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">

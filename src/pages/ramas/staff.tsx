@@ -1,14 +1,15 @@
 ﻿import RamaLanding from "@/components/sections/RamaLanding";
-import communityImage from "@/assets/community-scouts.jpg";
+import { getOptimizedImageProps } from "@/lib/optimized-images";
 
 const Staff = () => {
+  const communityImages = getOptimizedImageProps("community");
   return (
     <RamaLanding
       title="Educadores"
       lema="Formar para servir"
       ageRange="Adultos voluntarios"
       intro="El equipo adulto sostiene el proyecto educativo y acompaña cada proceso de crecimiento juvenil."
-      image={communityImage}
+      image={communityImages}
       imageAlt="Equipo de educadores del Grupo Scout Séptimo"
       accentClass="bg-violet-700"
       paragraphs={[

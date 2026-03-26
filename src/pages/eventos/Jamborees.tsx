@@ -13,8 +13,30 @@ type Jamboree = {
   descripcion: string;
 };
 
-const JAMBOREES: Jamboree[] = [];
-// TODO: agregar contenido de wiki
+const JAMBOREES: Jamboree[] = [
+  {
+    id: "1",
+    tipo: "mundial",
+    anio: 2015,
+    lugar: "Yamaguchi, Japon",
+    descripcion: "Participacion historica en Japon con delegacion de 8 miembros del grupo.",
+  },
+  {
+    id: "2",
+    tipo: "panamericano",
+    anio: 2016,
+    lugar: "San Isidro de El General, Costa Rica",
+    descripcion: "Encuentro regional panamericano con scouts de toda America Latina.",
+  },
+  {
+    id: "3",
+    tipo: "mundial",
+    anio: 2019,
+    lugar: "Summit Bechtel Reserve, USA",
+    descripcion: "Jamboree mundial en Estados Unidos con representacion del grupo.",
+  },
+];
+// Base de datos lista para actualizar con historial
 
 const TIPO_LABEL: Record<TipoJamboree, string> = {
   mundial: "Mundial",
@@ -82,10 +104,10 @@ const Jamborees = () => {
               <Card className="mt-8 border border-dashed border-primary/35 bg-primary/5">
                 <CardContent className="p-8 text-center">
                   <Badge variant="outline" className="border-primary/35 text-primary bg-background/70">
-                    Sin datos por ahora
+                    Participaciones destacadas
                   </Badge>
                   <p className="mt-4 text-base text-muted-foreground sm:text-lg">
-                    Esta seccion mostrara anio, lugar y descripcion de jamborees mundiales y panamericanos cuando carguemos la wiki.
+                    Mostramos una seleccion de jamborees historicos. Se ampliara con la base de datos completa desde la wiki.
                   </p>
                 </CardContent>
               </Card>

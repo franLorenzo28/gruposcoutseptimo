@@ -3,6 +3,7 @@ import { ArrowRight, Compass, Flame, ShieldCheck } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Reveal } from "@/components/Reveal";
+import { OptimizedImage } from "@/components/OptimizedImage";
 
 type RamaLandingProps = {
   title: string;
@@ -11,7 +12,7 @@ type RamaLandingProps = {
   intro: string;
   paragraphs: string[];
   bullets: string[];
-  image: string;
+  image: string | { src: string; webpSrc: string };
   imageAlt: string;
   accentClass: string;
 };
@@ -66,13 +67,24 @@ export default function RamaLanding({
 
             <Reveal>
               <div className="overflow-hidden rounded-3xl border border-border/70 shadow-2xl">
-                <img
-                  src={image}
-                  alt={imageAlt}
-                  className="h-[320px] w-full object-cover transition-transform duration-700 hover:scale-105 sm:h-[420px]"
-                  loading="lazy"
-                  decoding="async"
-                />
+                {typeof image === "string" ? (
+                  <img
+                    src={image}
+                    alt={imageAlt}
+                    className="h-[320px] w-full object-cover transition-transform duration-700 hover:scale-105 sm:h-[420px]"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                ) : (
+                  <OptimizedImage
+                    src={image.src}
+                    webpSrc={image.webpSrc}
+                    alt={imageAlt}
+                    className="h-[320px] sm:h-[420px] w-full transition-transform duration-700 hover:scale-105"
+                    objectFit="cover"
+                    loading="lazy"
+                  />
+                )}
               </div>
             </Reveal>
           </div>

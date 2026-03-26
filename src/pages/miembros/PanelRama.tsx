@@ -55,7 +55,6 @@ export default function PanelRama({ rama }: { rama: MiembroRama }) {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25">
-      <div className="h-16 sm:h-20" />
       <section className="container mx-auto px-4 py-8 sm:py-12 space-y-6">
         <div className="max-w-6xl mx-auto space-y-6">
           <Reveal>

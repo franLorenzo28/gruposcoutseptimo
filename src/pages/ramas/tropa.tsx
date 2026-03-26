@@ -1,14 +1,15 @@
 ﻿import RamaLanding from "@/components/sections/RamaLanding";
-import tropaImage from "@/assets/tropa-nueva.jpeg";
+import { getOptimizedImageProps } from "@/lib/optimized-images";
 
 const Tropa = () => {
+  const tropaImages = getOptimizedImageProps("tropa");
   return (
     <RamaLanding
       title="Tropa"
       lema="Siempre listos"
       ageRange="11 a 14"
       intro="Patrullas, campamentos y desafío constante para construir liderazgo real en equipo."
-      image={tropaImage}
+      image={tropaImages}
       imageAlt="Rama Tropa del Grupo Scout Séptimo"
       accentClass="bg-[#344F1F]"
       paragraphs={[
