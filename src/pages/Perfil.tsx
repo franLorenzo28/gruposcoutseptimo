@@ -20,8 +20,6 @@ function validateProfile(data: ProfileFormData) {
   // Nombre obligatorio y sin caracteres peligrosos
   if (!data.nombre_completo.trim()) errors.push("El nombre completo es obligatorio.");
   if (/[^\p{L} .'-]/u.test(data.nombre_completo)) errors.push("El nombre contiene caracteres inválidos.");
-  // Teléfono: opcional pero si existe debe ser numérico
-  if (data.telefono && !/^\+?\d{7,15}$/.test(data.telefono)) errors.push("El teléfono debe ser válido (solo números, puede incluir +).");
   // Fecha de nacimiento: formato YYYY-MM-DD
   if (data.fecha_nacimiento && !/^\d{4}-\d{2}-\d{2}$/.test(data.fecha_nacimiento)) errors.push("La fecha de nacimiento no es válida.");
   // Adultos: rol obligatorio para definir permisos internos

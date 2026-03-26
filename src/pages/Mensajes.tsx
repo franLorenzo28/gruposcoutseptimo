@@ -6,13 +6,12 @@ import { isLocalBackend, apiFetch } from "@/lib/backend";
 import { getFollowers, getFollowing } from "@/lib/follows";
 import { createOrGetConversation, listDMs, sendDM } from "@/lib/dms";
 import { useToast } from "@/hooks/use-toast";
-import { Smile, Sticker } from "lucide-react";
+import { Smile } from "lucide-react";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import EmailVerificationGuard from "@/components/EmailVerificationGuard";
 
 interface ProfileLite {
@@ -58,14 +57,6 @@ const EMOJIS = [
   "🪵",
   "🔥",
 ];
-
-// Stickers scouts al estilo Instagram
-const STICKERS = {
-  actividades: ["🏕️", "🥾", "🔥", "⛺", "🎒", "🧗"],
-  scout: ["⚜️", "🪢", "🦅", "🐺", "🏆", "🎯"],
-  naturaleza: ["🌲", "🌙", "☀️", "⛰️", "🌊", "🌸"],
-  energia: ["💪", "⚡", "🔦", "🧭", "✨", "⭐"],
-};
 
 export default function Mensajes() {
   const [directory, setDirectory] = useState<ProfileLite[]>([]);
@@ -427,26 +418,6 @@ export default function Mensajes() {
     setNewMessage((prev) => prev + emoji);
   };
 
-  const sendSticker = async (sticker: string) => {
-    if (!conversationId) return;
-    try {
-      if (isLocalBackend()) {
-        await sendDM(conversationId, sticker);
-      } else {
-        const { data: userData } = await supabase.auth.getUser();
-        const sender_id = userData.user?.id;
-        const { error } = await supabase.from("messages").insert({
-          conversation_id: conversationId,
-          sender_id,
-          content: sticker,
-        });
-        if (error) throw error;
-      }
-    } catch (e: any) {
-      toast({ title: "Error", description: e.message, variant: "destructive" });
-    }
-  };
-
   return (
     <EmailVerificationGuard featureName="Mensajes">
       <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25 pb-4">
@@ -645,58 +616,17 @@ export default function Mensajes() {
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-[280px] sm:w-80" align="end">
-                            <Tabs defaultValue="emojis">
-                              <TabsList className="grid w-full grid-cols-2">
-                                <TabsTrigger value="emojis" className="text-xs sm:text-sm">
-                                  <Smile className="mr-1 h-3 w-3 sm:mr-2 sm:h-4 sm:w-4" />
-                                  Emojis
-                                </TabsTrigger>
-                                <TabsTrigger value="stickers" className="text-xs sm:text-sm">
-                                  <Sticker className="mr-1 h-3 w-3 sm:mr-2 sm:h-4 sm:w-4" />
-                                  Stickers
-                                </TabsTrigger>
-                              </TabsList>
-
-                              <TabsContent value="emojis" className="mt-2">
-                                <div className="grid grid-cols-8 gap-1 sm:grid-cols-10">
-                                  {EMOJIS.map((emoji, i) => (
-                                    <button
-                                      key={i}
-                                      onClick={() => insertEmoji(emoji)}
-                                      className="rounded p-1 text-xl transition-colors hover:bg-muted sm:text-2xl"
-                                    >
-                                      {emoji}
-                                    </button>
-                                  ))}
-                                </div>
-                              </TabsContent>
-
-                              <TabsContent value="stickers" className="mt-2">
-                                <div className="max-h-48 space-y-3 overflow-auto pr-2 sm:max-h-80">
-                                  {Object.entries(STICKERS).map(([category, stickers]) => (
-                                    <div key={category}>
-                                      <div className="mb-2 text-xs font-semibold text-muted-foreground capitalize">
-                                        {category === "actividades" && "🏕️ Actividades"}
-                                        {category === "scout" && "⚜️ Scout"}
-                                        {category === "naturaleza" && "🌲 Naturaleza"}
-                                        {category === "energia" && "⚡ Energia"}
-                                      </div>
-                                      <div className="grid grid-cols-6 gap-2">
-                                        {stickers.map((emoji, i) => (
-                                          <button
-                                            key={i}
-                                            onClick={() => sendSticker(emoji)}
-                                            className="rounded-lg p-2 text-4xl transition-transform hover:scale-110 hover:bg-muted/50 active:scale-95"
-                                          >
-                                            {emoji}
-                                          </button>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </TabsContent>
-                            </Tabs>
+                            <div className="grid grid-cols-8 gap-1 sm:grid-cols-10">
+                              {EMOJIS.map((emoji, i) => (
+                                <button
+                                  key={i}
+                                  onClick={() => insertEmoji(emoji)}
+                                  className="rounded p-1 text-xl transition-colors hover:bg-muted sm:text-2xl"
+                                >
+                                  {emoji}
+                                </button>
+                              ))}
+                            </div>
                           </PopoverContent>
                         </Popover>
 

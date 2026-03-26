@@ -203,6 +203,46 @@ const PerfilView = () => {
     })();
   }, [targetUserId]);
 
+  useEffect(() => {
+    if (!isOwnProfile) return;
+
+    let cancelled = false;
+    const refreshPending = async () => {
+      try {
+        const { data: pend } = await getPendingRequestsForMe();
+        if (cancelled) return;
+        setPending(
+          pend
+            ? pend.map((x: any) => ({
+                follower_id: String(x.follower_id),
+                created_at: String(x.created_at),
+                follower: x.follower
+                  ? {
+                      id: String(x.follower.user_id || x.follower.id),
+                      nombre_completo: x.follower.nombre_completo ?? null,
+                      avatar_url: x.follower.avatar_url ?? null,
+                      username: x.follower.username ?? null,
+                    }
+                  : undefined,
+              }))
+            : [],
+        );
+      } catch {
+        // Silencioso: no interrumpir vista de perfil
+      }
+    };
+
+    void refreshPending();
+    const timer = setInterval(() => {
+      void refreshPending();
+    }, 5000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [isOwnProfile]);
+
   // Lazy load lists when dialogs open
   useEffect(() => {
     (async () => {

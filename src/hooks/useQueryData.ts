@@ -18,9 +18,9 @@ export function useProfiles() {
     queryKey: ["profiles"],
     queryFn: async () => {
       if (isLocalBackend()) {
-        return apiFetch("/profiles");
+        return apiFetch("/profiles/directory?limit=200&offset=0");
       }
-      const { data, error } = await supabase.from("profiles").select("*");
+      const { data, error } = await supabase.rpc("list_profiles_directory");
       if (error) throw error;
       return data || [];
     },
