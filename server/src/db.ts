@@ -69,6 +69,16 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_notifications_recipient_created
   ON notifications(recipient_id, created_at DESC);
 
+  CREATE TABLE IF NOT EXISTS user_presence (
+    user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    status TEXT NOT NULL DEFAULT 'active', -- active | away
+    last_seen_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_user_presence_last_seen
+  ON user_presence(last_seen_at DESC);
+
   CREATE TABLE IF NOT EXISTS groups (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,

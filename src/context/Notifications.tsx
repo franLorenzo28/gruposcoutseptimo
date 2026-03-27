@@ -208,11 +208,66 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
           data: { ...(r.data || {}), _persistent: true },
         })) as AppNotification[];
 
+        const pendingFollows = (await apiFetch("/follows/pending")) as Array<{
+          follower_id: string;
+          created_at: string;
+        }>;
+
+        let pendingProfiles: Array<{
+          user_id: string;
+          nombre_completo?: string;
+          username?: string;
+          avatar_url?: string;
+        }> = [];
+
+        if (pendingFollows.length > 0) {
+          pendingProfiles = (await apiFetch("/profiles/batch", {
+            method: "POST",
+            body: JSON.stringify({ ids: pendingFollows.map((f) => f.follower_id) }),
+          })) as Array<{
+            user_id: string;
+            nombre_completo?: string;
+            username?: string;
+            avatar_url?: string;
+          }>;
+        }
+
+        const mergedMap = new Map(mapped.map((n) => [n.id, n] as const));
+        for (const f of pendingFollows) {
+          const alreadyExists = Array.from(mergedMap.values()).some((n) => {
+            if (n.type !== "follow_request") return false;
+            return (n.data as any)?.follower_id === f.follower_id;
+          });
+          if (alreadyExists) continue;
+
+          const prof = pendingProfiles.find((p) => p.user_id === f.follower_id);
+          const display =
+            prof?.nombre_completo || prof?.username || f.follower_id.slice(0, 8);
+
+          mergedMap.set(`follow-pending-local-${f.follower_id}-${f.created_at}`, {
+            id: `follow-pending-local-${f.follower_id}-${f.created_at}`,
+            type: "follow_request",
+            created_at: f.created_at,
+            read: false,
+            data: {
+              follower_id: f.follower_id,
+              display,
+              username: prof?.username || null,
+              avatar_url: prof?.avatar_url || null,
+              _fallback_from_follows: true,
+            },
+          });
+        }
+
+        const merged = Array.from(mergedMap.values()).sort((a, b) =>
+          a.created_at < b.created_at ? 1 : -1,
+        );
+
         if (!localInitializedRef.current) {
-          mapped.forEach((n) => localSeenIdsRef.current.add(n.id));
+          merged.forEach((n) => localSeenIdsRef.current.add(n.id));
           localInitializedRef.current = true;
         } else {
-          mapped.forEach((n) => {
+          merged.forEach((n) => {
             if (!localSeenIdsRef.current.has(n.id)) {
               localSeenIdsRef.current.add(n.id);
               if (n.type === "follow_request") {
@@ -227,7 +282,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
         }
 
         if (!cancelled) {
-          setNotifications(mapped.sort((a, b) => (a.created_at < b.created_at ? 1 : -1)));
+          setNotifications(merged);
           setHasMore(false);
         }
       } catch {
@@ -269,7 +324,12 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
               type: "follow_request",
               created_at: row.created_at || new Date().toISOString(),
               read: false,
-              data: { follower_id: row.follower_id, display, avatar_url: prof?.avatar_url || null }
+              data: {
+                follower_id: row.follower_id,
+                display,
+                username: prof?.username || null,
+                avatar_url: prof?.avatar_url || null,
+              }
             };
             addNotification(notif);
             toast({ title: "Nueva solicitud de seguimiento", description: `${display} quiere seguirte` });
@@ -298,7 +358,12 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
               type: "follow_accepted",
               created_at: row.created_at || new Date().toISOString(),
               read: false,
-              data: { follower_id: row.follower_id, display, avatar_url: prof?.avatar_url || null }
+              data: {
+                follower_id: row.follower_id,
+                display,
+                username: prof?.username || null,
+                avatar_url: prof?.avatar_url || null,
+              }
             };
             addNotification(notif);
             toast({ title: "Nuevo seguidor", description: `${display} ahora te sigue` });
@@ -335,7 +400,12 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
             type: "follow_accepted",
             created_at: new Date().toISOString(),
             read: false,
-            data: { follower_id: row.follower_id, display, avatar_url: prof?.avatar_url || null }
+            data: {
+              follower_id: row.follower_id,
+              display,
+              username: prof?.username || null,
+              avatar_url: prof?.avatar_url || null,
+            }
           };
           addNotification(notif);
           toast({ title: "Nuevo seguidor", description: `${display} ahora te sigue` });
@@ -579,6 +649,58 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
           setHasMore(false);
         }
       }
+
+      // Fallback: si hay solicitudes pendientes en follows sin registro en notifications,
+      // mostrarlas igual en la campanita para no perder señal cuando el usuario no estaba online.
+      const { data: pendingFollows, error: pendingError } = await supabase
+        .from("follows")
+        .select("follower_id, created_at")
+        .eq("followed_id", user.id)
+        .eq("status", "pending")
+        .order("created_at", { ascending: false })
+        .limit(50);
+
+      if (!pendingError && pendingFollows && pendingFollows.length > 0) {
+        const followerIds = pendingFollows.map((f) => f.follower_id);
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("user_id, nombre_completo, username, avatar_url")
+          .in("user_id", followerIds);
+
+        setNotifications((prev) => {
+          const map = new Map(prev.map((n) => [n.id, n] as const));
+
+          for (const f of pendingFollows) {
+            const alreadyExists = Array.from(map.values()).some((n) => {
+              if (n.type !== "follow_request") return false;
+              return (n.data as any)?.follower_id === f.follower_id;
+            });
+            if (alreadyExists) continue;
+
+            const prof = profiles?.find((p) => p.user_id === f.follower_id);
+            const display = prof?.nombre_completo || prof?.username || f.follower_id.slice(0, 8);
+
+            map.set(`follow-pending-${f.follower_id}-${f.created_at}`, {
+              id: `follow-pending-${f.follower_id}-${f.created_at}`,
+              type: "follow_request",
+              created_at: f.created_at,
+              read: false,
+              data: {
+                follower_id: f.follower_id,
+                display,
+                username: prof?.username || null,
+                avatar_url: prof?.avatar_url || null,
+                _fallback_from_follows: true,
+              },
+            });
+          }
+
+          return Array.from(map.values()).sort((a, b) =>
+            a.created_at < b.created_at ? 1 : -1,
+          );
+        });
+      }
+
       channel = supabase
         .channel(`notifications:ins:${user.id}`)
         .on(

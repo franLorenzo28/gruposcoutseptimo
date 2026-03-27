@@ -9,6 +9,14 @@ import { isLocalBackend, apiFetch } from "@/lib/backend";
 import { listGroups } from "@/lib/groups";
 import { useToast } from "@/hooks/use-toast";
 
+export type PresenceStatus = "active" | "away" | "offline";
+
+export type PresenceEntry = {
+  user_id: string;
+  status: PresenceStatus;
+  last_seen_at: string | null;
+};
+
 // ============================================================================
 // PROFILES
 // ============================================================================
@@ -96,7 +104,7 @@ export function useFollows(userId: string | null) {
 // THREADS (Comuni 7)
 // ============================================================================
 
-export function useThreads() {
+export function useThreads(enabled: boolean = true) {
   return useQuery({
     queryKey: ["threads"],
     queryFn: async () => {
@@ -111,6 +119,7 @@ export function useThreads() {
       return data || [];
     },
     staleTime: 1 * 60 * 1000, // 1 minuto (más dinámico)
+    enabled,
   });
 }
 
@@ -139,11 +148,38 @@ export function useThreadComments(threadId: string | null) {
 // GROUPS
 // ============================================================================
 
-export function useGroups() {
+export function useGroups(enabled: boolean = true) {
   return useQuery({
     queryKey: ["groups"],
     queryFn: async () => listGroups(),
     staleTime: 3 * 60 * 1000,
+    enabled,
+  });
+}
+
+export function usePresence(userIds: string[], enabled: boolean = true) {
+  const sortedIds = [...userIds].sort();
+  return useQuery({
+    queryKey: ["presence", sortedIds.join(",")],
+    queryFn: async () => {
+      if (!enabled || sortedIds.length === 0) return [] as PresenceEntry[];
+
+      if (isLocalBackend()) {
+        const ids = encodeURIComponent(sortedIds.join(","));
+        const rows = (await apiFetch(`/presence?ids=${ids}`)) as PresenceEntry[];
+        return rows || [];
+      }
+
+      return sortedIds.map((id) => ({
+        user_id: id,
+        status: "offline" as const,
+        last_seen_at: null,
+      }));
+    },
+    enabled: enabled && sortedIds.length > 0,
+    staleTime: 15 * 1000,
+    refetchInterval: enabled ? 20 * 1000 : false,
+    refetchOnWindowFocus: true,
   });
 }
 

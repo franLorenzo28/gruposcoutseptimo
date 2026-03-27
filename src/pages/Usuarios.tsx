@@ -2,9 +2,16 @@
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { isLocalBackend, apiFetch, getAuthUser } from "@/lib/backend";
+import { useDebounce } from "@/hooks/use-debounce";
 import UserAvatar from "@/components/UserAvatar";
 import EmailVerificationGuard from "@/components/EmailVerificationGuard";
-import { useProfiles, useThreads, useGroups } from "@/hooks/useQueryData";
+import {
+  useProfiles,
+  useThreads,
+  useGroups,
+  usePresence,
+  type PresenceStatus,
+} from "@/hooks/useQueryData";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -73,17 +80,20 @@ type Profile = RamaProfileFields & {
 const ENABLE_RAMA_FILTER = false;
 
 const Usuarios = () => {
+  const [activeTab, setActiveTab] = useState<string>("personas");
+  const shouldLoadThreads = activeTab === "hilos";
+  const shouldLoadGroups = activeTab === "grupos";
+
   // React Query hooks (reemplazan useState + useEffect)
   const { data: profiles = [], isLoading: loadingProfiles } = useProfiles();
-  const { data: threadsData = [], isLoading: loadingThreads, refetch: refetchThreads } = useThreads();
-  const { data: groupsData = [], isLoading: loadingGroups, refetch: refetchGroups } = useGroups();
+  const { data: threadsData = [], isLoading: loadingThreads, refetch: refetchThreads } = useThreads(shouldLoadThreads);
+  const { data: groupsData = [], isLoading: loadingGroups, refetch: refetchGroups } = useGroups(shouldLoadGroups);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [ramaFilter, setRamaFilter] = useState<RamaKey | "all">("all");
   const [visibilityFilter, setVisibilityFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("name");
   const [currentUserId, setCurrentUserId] = useState<string>("");
-  const [activeTab, setActiveTab] = useState<string>("personas");
   const [newThreadText, setNewThreadText] = useState("");
   const [newThreadFile, setNewThreadFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -109,8 +119,245 @@ const Usuarios = () => {
 
   const navigate = useNavigate();
   const { toast } = useToast();
+  const debouncedSearchTerm = useDebounce(searchTerm, 220);
 
-  const loading = loadingProfiles || loadingThreads || loadingGroups;
+  const loading =
+    loadingProfiles ||
+    (activeTab === "hilos" && loadingThreads) ||
+    (activeTab === "grupos" && loadingGroups);
+
+  const profileById = useMemo(() => {
+    const map = new Map<string, Profile>();
+    profiles.forEach((profile) => {
+      map.set(profile.user_id, profile);
+    });
+    return map;
+  }, [profiles]);
+
+  const currentUserProfile = useMemo(
+    () => profileById.get(currentUserId) || null,
+    [profileById, currentUserId],
+  );
+
+  const [supabasePresenceById, setSupabasePresenceById] = useState<
+    Map<string, PresenceStatus>
+  >(new Map());
+
+  const presenceIds = useMemo(
+    () => profiles.map((p) => p.user_id).sort(),
+    [profiles],
+  );
+
+  const { data: presenceRows = [] } = usePresence(
+    presenceIds,
+    activeTab === "personas" && isLocalBackend(),
+  );
+
+  const presenceById = useMemo(() => {
+    const map = new Map<string, PresenceStatus>();
+    for (const row of presenceRows) {
+      map.set(row.user_id, row.status);
+    }
+    return map;
+  }, [presenceRows]);
+
+  useEffect(() => {
+    if (!isLocalBackend() || !currentUserId) return;
+
+    const AWAY_AFTER_MS = 90_000;
+    let lastActivityAt = Date.now();
+    let currentStatus: "active" | "away" = "active";
+
+    const sendHeartbeat = async (status: "active" | "away") => {
+      await apiFetch("/presence/heartbeat", {
+        method: "POST",
+        body: JSON.stringify({ status }),
+      }).catch(() => {
+        // Silencioso para no interrumpir UX.
+      });
+    };
+
+    const setActive = () => {
+      lastActivityAt = Date.now();
+      if (currentStatus !== "active") {
+        currentStatus = "active";
+        void sendHeartbeat("active");
+      }
+    };
+
+    const onVisibility = () => {
+      if (document.hidden) {
+        if (currentStatus !== "away") {
+          currentStatus = "away";
+          void sendHeartbeat("away");
+        }
+        return;
+      }
+      setActive();
+    };
+
+    const onActivity = () => setActive();
+
+    void sendHeartbeat("active");
+
+    const interval = window.setInterval(() => {
+      const idleFor = Date.now() - lastActivityAt;
+      const nextStatus: "active" | "away" =
+        document.hidden || idleFor > AWAY_AFTER_MS ? "away" : "active";
+
+      if (nextStatus !== currentStatus) {
+        currentStatus = nextStatus;
+      }
+
+      void sendHeartbeat(currentStatus);
+    }, 30_000);
+
+    window.addEventListener("mousemove", onActivity);
+    window.addEventListener("keydown", onActivity);
+    window.addEventListener("click", onActivity);
+    window.addEventListener("scroll", onActivity, { passive: true });
+    window.addEventListener("touchstart", onActivity, { passive: true });
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("mousemove", onActivity);
+      window.removeEventListener("keydown", onActivity);
+      window.removeEventListener("click", onActivity);
+      window.removeEventListener("scroll", onActivity);
+      window.removeEventListener("touchstart", onActivity);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [currentUserId]);
+
+  useEffect(() => {
+    if (isLocalBackend() || !currentUserId) return;
+
+    const AWAY_AFTER_MS = 90_000;
+    let lastActivityAt = Date.now();
+    let currentStatus: "active" | "away" = "active";
+
+    const channel = supabase.channel("presence:comuni7", {
+      config: { presence: { key: currentUserId } },
+    });
+
+    const syncPresence = () => {
+      const state = channel.presenceState() as Record<
+        string,
+        Array<{ user_id?: string; status?: string }>
+      >;
+      const next = new Map<string, PresenceStatus>();
+
+      for (const [key, entries] of Object.entries(state)) {
+        const userId = entries[0]?.user_id || key;
+        let resolved: PresenceStatus = "offline";
+
+        if (entries.some((entry) => entry?.status === "active")) {
+          resolved = "active";
+        } else if (entries.some((entry) => entry?.status === "away")) {
+          resolved = "away";
+        } else if (entries.length > 0) {
+          resolved = "active";
+        }
+
+        next.set(userId, resolved);
+      }
+
+      next.set(currentUserId, currentStatus);
+      setSupabasePresenceById(next);
+    };
+
+    const trackPresence = async (status: "active" | "away") => {
+      currentStatus = status;
+      await channel
+        .track({
+          user_id: currentUserId,
+          status,
+          last_seen_at: new Date().toISOString(),
+        })
+        .catch(() => {
+          // Silencioso para no afectar UX.
+        });
+      syncPresence();
+    };
+
+    const setActive = () => {
+      lastActivityAt = Date.now();
+      if (currentStatus !== "active") {
+        void trackPresence("active");
+      }
+    };
+
+    const onVisibility = () => {
+      if (document.hidden) {
+        if (currentStatus !== "away") {
+          void trackPresence("away");
+        }
+        return;
+      }
+      setActive();
+    };
+
+    const onActivity = () => setActive();
+
+    channel
+      .on("presence", { event: "sync" }, syncPresence)
+      .on("presence", { event: "join" }, syncPresence)
+      .on("presence", { event: "leave" }, syncPresence)
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          void trackPresence("active");
+        }
+      });
+
+    const interval = window.setInterval(() => {
+      const idleFor = Date.now() - lastActivityAt;
+      const nextStatus: "active" | "away" =
+        document.hidden || idleFor > AWAY_AFTER_MS ? "away" : "active";
+
+      void trackPresence(nextStatus);
+    }, 30_000);
+
+    window.addEventListener("mousemove", onActivity);
+    window.addEventListener("keydown", onActivity);
+    window.addEventListener("click", onActivity);
+    window.addEventListener("scroll", onActivity, { passive: true });
+    window.addEventListener("touchstart", onActivity, { passive: true });
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("mousemove", onActivity);
+      window.removeEventListener("keydown", onActivity);
+      window.removeEventListener("click", onActivity);
+      window.removeEventListener("scroll", onActivity);
+      window.removeEventListener("touchstart", onActivity);
+      document.removeEventListener("visibilitychange", onVisibility);
+      supabase.removeChannel(channel);
+    };
+  }, [currentUserId]);
+
+  const getPresenceMeta = (status: PresenceStatus) => {
+    if (status === "active") {
+      return {
+        label: "Activo",
+        dotClass: "bg-emerald-500",
+        textClass: "text-emerald-600 dark:text-emerald-400",
+      };
+    }
+    if (status === "away") {
+      return {
+        label: "Ausente",
+        dotClass: "bg-amber-500",
+        textClass: "text-amber-600 dark:text-amber-400",
+      };
+    }
+    return {
+      label: "Desconectado",
+      dotClass: "bg-muted-foreground/60",
+      textClass: "text-muted-foreground",
+    };
+  };
 
   useEffect(() => {
     (async () => {
@@ -131,7 +378,7 @@ const Usuarios = () => {
   // Enriquecer threads con datos del autor (useMemo para evitar recalcular)
   const threads = useMemo(() => {
     return threadsData.map((thread) => {
-      const author = profiles.find((p) => p.user_id === thread.author_id);
+      const author = profileById.get(thread.author_id);
       return {
         ...thread,
         author_name: author?.nombre_completo,
@@ -139,7 +386,7 @@ const Usuarios = () => {
         author_avatar: author?.avatar_url,
       };
     });
-  }, [threadsData, profiles]);
+  }, [threadsData, profileById]);
 
   const groups = groupsData;
 
@@ -148,8 +395,8 @@ const Usuarios = () => {
     let filtered = profiles;
 
     // Filter by search term
-    if (searchTerm.trim()) {
-      const term = searchTerm.toLowerCase();
+    if (debouncedSearchTerm.trim()) {
+      const term = debouncedSearchTerm.toLowerCase();
       filtered = filtered.filter((p) => {
         const searchable = [
           p.nombre_completo || "",
@@ -201,7 +448,7 @@ const Usuarios = () => {
     }
 
     return sorted;
-  }, [profiles, searchTerm, ramaFilter, visibilityFilter, sortBy]);
+  }, [profiles, debouncedSearchTerm, ramaFilter, visibilityFilter, sortBy]);
 
   const submitThread = async () => {
     if (!newThreadText.trim() && !newThreadFile) return;
@@ -528,11 +775,11 @@ const Usuarios = () => {
                 </div>
                 <div className="rounded-lg border border-border/70 bg-background/70 px-3 py-2">
                   <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Hilos</p>
-                  <p className="text-lg font-bold">{threads.length}</p>
+                  <p className="text-lg font-bold">{shouldLoadThreads ? threads.length : "-"}</p>
                 </div>
                 <div className="rounded-lg border border-border/70 bg-background/70 px-3 py-2">
                   <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Grupos</p>
-                  <p className="text-lg font-bold">{groups.length}</p>
+                  <p className="text-lg font-bold">{shouldLoadGroups ? groups.length : "-"}</p>
                 </div>
               </div>
             </div>
@@ -769,6 +1016,16 @@ const Usuarios = () => {
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {filteredProfiles.map((profile) => {
                   const isCurrentUser = profile.user_id === currentUserId;
+                  const localStatus = presenceById.get(profile.user_id);
+                  const supaStatus = supabasePresenceById.get(profile.user_id);
+                  const status = isLocalBackend()
+                    ? isCurrentUser
+                      ? localStatus || "active"
+                      : localStatus || "offline"
+                    : isCurrentUser
+                      ? supaStatus || "active"
+                      : supaStatus || "offline";
+                  const presence = getPresenceMeta(status);
                   return (
                     <Card
                       key={profile.user_id}
@@ -798,6 +1055,15 @@ const Usuarios = () => {
                               {profile.edad && (
                                 <span>• {profile.edad} años</span>
                               )}
+                            </div>
+                            <div className="mb-2 flex items-center gap-2">
+                              <span
+                                className={`inline-flex h-2.5 w-2.5 rounded-full ${presence.dotClass}`}
+                                aria-hidden="true"
+                              />
+                              <span className={`text-xs font-medium ${presence.textClass}`}>
+                                {presence.label}
+                              </span>
                             </div>
                             <div className="flex items-center gap-2 mb-3">
                               {profile.is_public ? (
@@ -845,14 +1111,8 @@ const Usuarios = () => {
               <CardContent className="p-4">
                 <div className="flex gap-3">
                   <UserAvatar
-                    avatarUrl={
-                      profiles.find((p) => p.user_id === currentUserId)
-                        ?.avatar_url || null
-                    }
-                    userName={
-                      profiles.find((p) => p.user_id === currentUserId)
-                        ?.nombre_completo || null
-                    }
+                    avatarUrl={currentUserProfile?.avatar_url || null}
+                    userName={currentUserProfile?.nombre_completo || null}
                     size="md"
                     className="flex-shrink-0"
                   />

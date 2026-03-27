@@ -46,7 +46,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import UserAvatar from "@/components/UserAvatar";
 import AvatarCropDialog from "@/components/AvatarCropDialog";
-import { ArrowLeft, Eye, EyeOff, Save, Upload, X, Mail, AlertCircle } from "lucide-react";
+import { ArrowLeft, Save, Upload, X, Mail, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   AlertDialog,
@@ -74,7 +74,6 @@ type ProfileUpdate = Tables["profiles"]["Update"];
 const Perfil = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -923,30 +922,17 @@ const Perfil = () => {
                 />
               </div>
 
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="password">Nueva contraseña (opcional)</Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    value={formData.password}
-                    onChange={handleChange}
-                    placeholder="Dejar vacáo para mantener"
-                    className="bg-background pr-10"
-                  />
+              <div className="md:col-span-2 rounded-md border border-border/60 bg-muted/25 p-3">
+                <p className="text-sm text-muted-foreground">
+                  No encontrás la configuración que estás buscando?{" "}
                   <button
                     type="button"
-                    onClick={() => setShowPassword((s) => !s)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"
+                    onClick={() => navigate("/configuracion")}
+                    className="font-medium text-primary underline-offset-4 hover:underline"
                   >
-                    {showPassword ? (
-                      <Eye className="w-4 h-4" />
-                    ) : (
-                      <EyeOff className="w-4 h-4" />
-                    )}
+                    Ir a Configuración
                   </button>
-                </div>
+                </p>
               </div>
             </div>
           </div>

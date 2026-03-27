@@ -1,6 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +18,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Lock, Shield, Trash2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { deleteMyAccount } from "@/lib/api";
+import { isLocalBackend } from "@/lib/backend";
 
 const passwordSchema = z.object({
   password_actual: z.string().min(1, "Ingresa tu contraseña actual"),
@@ -39,8 +43,13 @@ type PasswordFormValues = z.infer<typeof passwordSchema>;
 
 export default function ConfiguracionSeguridad() {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [deletePhrase, setDeletePhrase] = useState("");
+  const [deleteConfirmPhrase, setDeleteConfirmPhrase] = useState("");
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const allowDeleteAccount = isLocalBackend();
 
   const form = useForm<PasswordFormValues>({
     resolver: zodResolver(passwordSchema),
@@ -88,6 +97,39 @@ export default function ConfiguracionSeguridad() {
   const hasLowerCase = /[a-z]/.test(passwordValue);
   const hasNumber = /[0-9]/.test(passwordValue);
   const hasMinLength = passwordValue?.length >= 8;
+  const deleteReady =
+    deletePhrase.trim().toUpperCase() === "BORRAR" &&
+    deleteConfirmPhrase.trim().toUpperCase() === "BORRAR";
+
+  const handleDeleteAccount = async () => {
+    if (!deleteReady) return;
+    try {
+      setDeletingAccount(true);
+      await deleteMyAccount();
+
+      try {
+        localStorage.removeItem("local_api_token");
+      } catch {
+        // noop
+      }
+      try {
+        await supabase.auth.signOut();
+      } catch {
+        // noop
+      }
+
+      toast({ title: "Cuenta eliminada" });
+      navigate("/auth");
+    } catch (err: any) {
+      toast({
+        title: "Error",
+        description: err?.message || "No se pudo eliminar la cuenta",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingAccount(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -286,26 +328,56 @@ export default function ConfiguracionSeguridad() {
         </CardContent>
       </Card>
 
-      {/* Eliminar cuenta */}
+      {/* ATENCION */}
       <Card className="border-destructive/50 bg-destructive/5 hover:border-destructive/70 transition-colors">
         <CardHeader>
           <CardTitle className="text-base text-destructive font-semibold flex items-center gap-2">
-            <Trash2 className="w-5 h-5" /> Zona de peligro
+            <Trash2 className="w-5 h-5" /> ATENCION
           </CardTitle>
           <CardDescription>
-            Acciones irreversibles que afectarán tu cuenta
+            Eliminar tu cuenta es irreversible y borrará todos tus datos
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground mb-4">
-            Si eliminas tu cuenta, toda tu información será perdida permanentemente. Esta acción no se puede deshacer.
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Esta acción eliminará perfil, seguidores, solicitudes, mensajes y demás contenido asociado a tu usuario.
           </p>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Escribe BORRAR para continuar</label>
+            <Input
+              value={deletePhrase}
+              onChange={(e) => setDeletePhrase(e.target.value)}
+              placeholder="BORRAR"
+              className="bg-background"
+              autoComplete="off"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Vuelve a escribir BORRAR para confirmar</label>
+            <Input
+              value={deleteConfirmPhrase}
+              onChange={(e) => setDeleteConfirmPhrase(e.target.value)}
+              placeholder="BORRAR"
+              className="bg-background"
+              autoComplete="off"
+            />
+          </div>
+
+          {!allowDeleteAccount && (
+            <p className="text-xs text-muted-foreground">
+              La eliminación de cuenta está disponible actualmente en modo local.
+            </p>
+          )}
+
           <Button
             variant="destructive"
-            disabled
+            disabled={!deleteReady || deletingAccount || !allowDeleteAccount}
             className="w-full"
+            onClick={handleDeleteAccount}
           >
-            Eliminar mi cuenta
+            {deletingAccount ? "Eliminando..." : "Eliminar mi cuenta"}
           </Button>
         </CardContent>
       </Card>

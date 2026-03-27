@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getAuthUser, isLocalBackend, apiFetch } from "@/lib/backend";
 import { Button } from "@/components/ui/button";
 import UserAvatar from "@/components/UserAvatar";
-import { getProfile, deleteMyAccount } from "@/lib/api";
+import { getProfile } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Settings, Check, X } from "lucide-react";
 import {
@@ -19,17 +19,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
+  ScrollArea,
+} from "@/components/ui/scroll-area";
 import type { Database } from "@/integrations/supabase/types";
 import {
   getPendingRequestsForMe,
@@ -101,7 +92,6 @@ const PerfilView = () => {
       };
     }>
   >([]);
-  const [deleting, setDeleting] = useState(false);
   const [followStatus, setFollowStatus] = useState<"none" | "following" | "pending">("none");
   const [followLoading, setFollowLoading] = useState(false);
   const navigate = useNavigate();
@@ -495,62 +485,6 @@ const PerfilView = () => {
                       <span className="hidden xs:inline">Editar perfil</span>
                       <span className="xs:hidden">Editar</span>
                     </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          className="gap-1 flex-1 sm:flex-none text-xs sm:text-sm"
-                          disabled={deleting}
-                        >
-                          Eliminar cuenta
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>¿Eliminar tu cuenta?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Esta acción eliminará tu usuario y todos los datos
-                            asociados (perfil, follows, grupos, DMs, hilos) en el
-                            backend local. No podrás deshacerlo.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={async () => {
-                              try {
-                                setDeleting(true);
-                                await deleteMyAccount();
-                                // Cerrar sesión local y de Supabase por si estaba activa
-                                try {
-                                  localStorage.removeItem("local_api_token");
-                                } catch {
-                                  /* noop */
-                                }
-                                try {
-                                  await supabase.auth.signOut();
-                                } catch {
-                                  /* noop */
-                                }
-                                toast({ title: "Cuenta eliminada" });
-                                navigate("/auth");
-                              } catch (err: any) {
-                                toast({
-                                  title: "Error",
-                                  description: err?.message || "No se pudo eliminar la cuenta",
-                                  variant: "destructive",
-                                });
-                              } finally {
-                                setDeleting(false);
-                              }
-                            }}
-                          >
-                            Sá, eliminar
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
                   </>
                 )}
               </div>
@@ -812,11 +746,11 @@ const PerfilView = () => {
                             size="md"
                           />
                           <div className="flex flex-col min-w-0 flex-1">
-                            <span className="text-sm font-semibold truncate">
+                            <span className="text-sm font-semibold leading-tight break-words">
                               {req.follower?.nombre_completo || "Usuario"}
                             </span>
                             {req.follower?.username && (
-                              <span className="text-xs text-muted-foreground truncate">
+                              <span className="text-xs text-muted-foreground leading-tight break-all">
                                 @{req.follower.username}
                               </span>
                             )}
@@ -826,7 +760,9 @@ const PerfilView = () => {
                           <Button
                             size="sm"
                             variant="default"
-                            className="w-full gap-1.5"
+                            className="w-full"
+                            aria-label="Aceptar solicitud"
+                            title="Aceptar solicitud"
                             onClick={async () => {
                               const { error } = await acceptFollow(
                                 req.follower_id,
@@ -848,12 +784,14 @@ const PerfilView = () => {
                               toast({ title: "Solicitud aceptada" });
                             }}
                           >
-                            <Check className="w-4 h-4" /> Aceptar
+                            <Check className="w-4 h-4" />
                           </Button>
                           <Button
                             size="sm"
                             variant="outline"
-                            className="w-full gap-1.5"
+                            className="w-full"
+                            aria-label="Rechazar solicitud"
+                            title="Rechazar solicitud"
                             onClick={async () => {
                               const { error } = await rejectFollow(
                                 req.follower_id,
@@ -874,7 +812,7 @@ const PerfilView = () => {
                               toast({ title: "Solicitud rechazada" });
                             }}
                           >
-                            <X className="w-4 h-4" /> Rechazar
+                            <X className="w-4 h-4" />
                           </Button>
                         </div>
                       </div>
@@ -888,11 +826,11 @@ const PerfilView = () => {
                             size="md"
                           />
                           <div className="flex flex-col min-w-0">
-                            <span className="text-sm font-semibold truncate">
+                            <span className="text-sm font-semibold leading-tight break-words">
                               {req.follower?.nombre_completo || "Usuario"}
                             </span>
                             {req.follower?.username && (
-                              <span className="text-xs text-muted-foreground truncate">
+                              <span className="text-xs text-muted-foreground leading-tight break-all">
                                 @{req.follower.username}
                               </span>
                             )}
@@ -900,9 +838,10 @@ const PerfilView = () => {
                         </div>
                         <div className="flex gap-2 flex-shrink-0">
                           <Button
-                            size="sm"
                             variant="default"
-                            className="gap-1.5"
+                            size="icon"
+                            aria-label="Aceptar solicitud"
+                            title="Aceptar solicitud"
                             onClick={async () => {
                               const { error } = await acceptFollow(
                                 req.follower_id,
@@ -924,12 +863,13 @@ const PerfilView = () => {
                               toast({ title: "Solicitud aceptada" });
                             }}
                           >
-                            <Check className="w-4 h-4" /> Aceptar
+                            <Check className="w-4 h-4" />
                           </Button>
                           <Button
-                            size="sm"
                             variant="outline"
-                            className="gap-1.5"
+                            size="icon"
+                            aria-label="Rechazar solicitud"
+                            title="Rechazar solicitud"
                             onClick={async () => {
                               const { error } = await rejectFollow(
                                 req.follower_id,
@@ -950,7 +890,7 @@ const PerfilView = () => {
                               toast({ title: "Solicitud rechazada" });
                             }}
                           >
-                            <X className="w-4 h-4" /> Rechazar
+                            <X className="w-4 h-4" />
                           </Button>
                         </div>
                       </div>

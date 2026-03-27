@@ -3,6 +3,8 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Menu,
   X,
+  Check,
+  Dot,
   LogOut,
   User,
   Settings,
@@ -47,6 +49,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { isLocalBackend, apiFetch } from "@/lib/backend";
 import { cn } from "@/lib/utils";
+import { acceptFollow, rejectFollow } from "@/lib/follows";
 import logoImage from "@/assets/grupo-scout-logo.png";
 
 interface NavLink {
@@ -275,6 +278,63 @@ const Navigation = () => {
     }
   };
 
+  const getNotificationActor = (n: any) => {
+    const d = n?.data || {};
+    return d.display || (d.username ? `@${d.username}` : null);
+  };
+
+  const getNotificationRelativeTime = (createdAt: string) => {
+    const now = Date.now();
+    const then = new Date(createdAt).getTime();
+    const diffSeconds = Math.max(1, Math.floor((now - then) / 1000));
+
+    if (diffSeconds < 60) return `${diffSeconds}s`;
+    const minutes = Math.floor(diffSeconds / 60);
+    if (minutes < 60) return `${minutes}m`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h`;
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days}d`;
+    const weeks = Math.floor(days / 7);
+    return `${weeks}sem`;
+  };
+
+  const renderNotificationContent = (n: any) => {
+    const d = n?.data || {};
+    const actor = getNotificationActor(n);
+
+    switch (n.type) {
+      case "follow_request":
+        return (
+          <p className="text-sm leading-snug">
+            <span className="font-semibold">{actor || "Alguien"}</span>{" "}
+            quiere seguirte
+          </p>
+        );
+      case "follow_accepted":
+        return (
+          <p className="text-sm leading-snug">
+            <span className="font-semibold">{actor || "Alguien"}</span>{" "}
+            ahora te sigue
+          </p>
+        );
+      case "message":
+        return (
+          <p className="text-sm leading-snug">
+            <span className="font-semibold">{actor || "Nuevo mensaje"}</span>{" "}
+            <span className="text-muted-foreground">{(d.content || "te envió un mensaje").slice(0, 70)}</span>
+          </p>
+        );
+      default:
+        return (
+          <p className="text-sm leading-snug">
+            <span className="font-semibold">{formatNotification(n).title}</span>{" "}
+            <span className="text-muted-foreground">{formatNotification(n).description}</span>
+          </p>
+        );
+    }
+  };
+
   return (
     <>
       {/* Desktop & Mobile Navigation */}
@@ -285,7 +345,7 @@ const Navigation = () => {
         )}
       >
         <div className="container mx-auto px-4 md:px-6">
-          <div className="relative flex items-center justify-between h-16 md:h-20">
+          <div className="relative flex h-16 items-center gap-3 md:h-20">
             {/* Logo */}
             <Link
               to="/"
@@ -313,9 +373,9 @@ const Navigation = () => {
               </div>
             </Link>
 
-            {/* Desktop Main Links (Centered) */}
-            <div className="pointer-events-none absolute left-1/2 hidden -translate-x-1/2 xl:flex">
-              <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-white/10 bg-slate-950/55 dark:bg-slate-950/55 backdrop-blur-sm supports-[backdrop-filter]:backdrop-blur-sm px-2 py-1 shadow-sm">
+            {/* Desktop Main Links */}
+            <div className="hidden min-w-0 flex-1 justify-center px-2 xl:flex xl:px-4 2xl:px-8">
+              <div className="flex items-center gap-2 rounded-full border border-white/10 bg-slate-950/55 px-2 py-1 shadow-sm backdrop-blur-sm supports-[backdrop-filter]:backdrop-blur-sm dark:bg-slate-950/55">
                 {visibleNavSections[0].links.map((link) => {
                   const isSpecialActive =
                     (link.path === "/historia" && isActive("/linea-temporal")) ||
@@ -340,13 +400,13 @@ const Navigation = () => {
             </div>
 
             {/* Desktop Actions */}
-            <div className="hidden xl:flex items-center gap-4 xl:gap-5 ml-auto">
+            <div className="hidden shrink-0 items-center gap-2 xl:flex xl:gap-3">
 
               {/* Notificaciones */}
               {isLoggedIn && (
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="ghost" size="icon" className="relative">
+                    <Button variant="ghost" size="icon" className="relative h-9 w-9">
                       <Bell className="h-5 w-5" />
                       {unreadCount > 0 && (
                         <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] leading-none rounded-full px-1.5 py-1">
@@ -355,38 +415,126 @@ const Navigation = () => {
                       )}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-80 p-0">
-                    <div className="p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-semibold">Notificaciones</span>
+                  <PopoverContent className="w-[360px] p-0">
+                    <div className="p-0">
+                      <div className="flex items-center justify-between border-b px-4 py-3">
+                        <span className="text-sm font-semibold">Notificaciones</span>
                         {unreadCount > 0 && (
-                          <Button size="sm" variant="ghost" onClick={markAllRead}>
+                          <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={markAllRead}>
                             Marcar todo como leído
                           </Button>
                         )}
                       </div>
-                      <ul className="space-y-2 max-h-60 overflow-y-auto">
+                      <ul className="max-h-80 overflow-y-auto">
                         {notifications.length === 0 ? (
-                          <li className="text-sm text-muted-foreground">No hay notificaciones</li>
+                          <li className="px-4 py-8 text-center text-sm text-muted-foreground">No hay notificaciones</li>
                         ) : (
                           notifications.map((n) => (
-                            <li key={n.id} className={cn("p-2 rounded-md", !n.read && "bg-accent")}> 
-                              <div className="flex items-center justify-between gap-2">
-                                <div>
-                                  <div className="text-sm font-medium">{formatNotification(n).title}</div>
-                                  <div className="text-xs text-muted-foreground truncate">{formatNotification(n).description}</div>
+                            <li
+                              key={n.id}
+                              className={cn(
+                                "border-b px-4 py-3 transition-colors",
+                                !n.read ? "bg-primary/5" : "hover:bg-muted/30",
+                              )}
+                            >
+                              <div className="flex items-start gap-3">
+                                <UserAvatar
+                                  avatarUrl={(n.data as any)?.avatar_url || null}
+                                  userName={(n.data as any)?.display || "Scout"}
+                                  size="sm"
+                                />
+                                <div className="min-w-0 flex-1">
+                                  {renderNotificationContent(n)}
+                                  <div className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
+                                    <span>{getNotificationRelativeTime(n.created_at)}</span>
+                                    {!n.read && <Dot className="h-4 w-4 text-primary" />}
+                                  </div>
                                 </div>
-                                {!n.read && (
-                                  <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={() => markRead(n.id)}>Leer</Button>
+                                {n.type === "follow_request" ? (
+                                  <div className="flex items-center gap-1.5">
+                                    <Button
+                                      size="icon"
+                                      className="h-7 w-7"
+                                      aria-label="Aceptar solicitud"
+                                      title="Aceptar solicitud"
+                                      onClick={async () => {
+                                        const followerId = (n.data as any)?.follower_id as string | undefined;
+                                        if (!followerId) return;
+                                        const { error } = await acceptFollow(followerId);
+                                        if (error) {
+                                          toast({
+                                            title: "Error",
+                                            description: (error as any).message || "No se pudo aceptar",
+                                            variant: "destructive",
+                                          });
+                                          return;
+                                        }
+                                        markRead(n.id);
+                                        removeNotification(n.id);
+                                        toast({ title: "Solicitud aceptada" });
+                                      }}
+                                    >
+                                      <Check className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      size="icon"
+                                      variant="outline"
+                                      className="h-7 w-7"
+                                      aria-label="Rechazar solicitud"
+                                      title="Rechazar solicitud"
+                                      onClick={async () => {
+                                        const followerId = (n.data as any)?.follower_id as string | undefined;
+                                        if (!followerId) return;
+                                        const { error } = await rejectFollow(followerId);
+                                        if (error) {
+                                          toast({
+                                            title: "Error",
+                                            description: (error as any).message || "No se pudo rechazar",
+                                            variant: "destructive",
+                                          });
+                                          return;
+                                        }
+                                        markRead(n.id);
+                                        removeNotification(n.id);
+                                        toast({ title: "Solicitud rechazada" });
+                                      }}
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-1">
+                                    {!n.read && (
+                                      <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        className="h-7 w-7"
+                                        aria-label="Marcar como leído"
+                                        title="Marcar como leído"
+                                        onClick={() => markRead(n.id)}
+                                      >
+                                        <Check className="h-4 w-4" />
+                                      </Button>
+                                    )}
+                                    <Button
+                                      size="icon"
+                                      variant="ghost"
+                                      className="h-7 w-7"
+                                      aria-label="Eliminar notificación"
+                                      title="Eliminar notificación"
+                                      onClick={() => removeNotification(n.id)}
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </Button>
+                                  </div>
                                 )}
-                                <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={() => removeNotification(n.id)}>Eliminar</Button>
                               </div>
                             </li>
                           ))
                         )}
                       </ul>
                       {hasMore && (
-                        <Button size="sm" variant="ghost" className="w-full mt-2" onClick={loadMore} disabled={loadingMore}>
+                        <Button size="sm" variant="ghost" className="w-full rounded-none py-3" onClick={loadMore} disabled={loadingMore}>
                           {loadingMore ? "Cargando..." : "Ver más"}
                         </Button>
                       )}
@@ -404,7 +552,7 @@ const Navigation = () => {
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="ghost"
-                      className="relative h-10 w-10 rounded-full"
+                      className="relative h-9 w-9 rounded-full"
                     >
                       <UserAvatar
                         userName={userName}
@@ -466,7 +614,7 @@ const Navigation = () => {
             </div>
 
             {/* Mobile Menu Button */}
-            <div className="flex xl:hidden items-center gap-2">
+            <div className="ml-auto flex items-center gap-2 xl:hidden">
               <ThemeToggle />
               <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                 <SheetTrigger asChild>
