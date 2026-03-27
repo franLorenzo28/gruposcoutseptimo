@@ -64,6 +64,12 @@ function getOAuthSafety() {
   const configuredBaseUrl =
     (import.meta.env.VITE_APP_URL as string | undefined)?.trim() || "";
 
+  // En desarrollo siempre usamos el origen actual (localhost o IP LAN)
+  // para evitar que OAuth redirija accidentalmente al dominio de producción.
+  if (!import.meta.env.PROD) {
+    return { safe: true, baseUrl: window.location.origin, reason: "", warning: "" };
+  }
+
   if (configuredBaseUrl) {
     try {
       const parsed = new URL(configuredBaseUrl);
