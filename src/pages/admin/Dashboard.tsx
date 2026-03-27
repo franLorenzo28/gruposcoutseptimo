@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -54,6 +54,8 @@ export default function Dashboard() {
   const [messages, setMessages] = useState<any[]>([]);
   const [groupMessages, setGroupMessages] = useState<any[]>([]);
   const [pages, setPages] = useState<any[]>([]);
+  const [follows, setFollows] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
   const [editGroup, setEditGroup] = useState<any | null>(null);
   const [editEvent, setEditEvent] = useState<any | null>(null);
   const [editPage, setEditPage] = useState<any | null>(null);
@@ -86,7 +88,7 @@ export default function Dashboard() {
 
   async function fetchAdminData() {
     setLoadingAdmin(true);
-    const [groupsRes, eventsRes, threadsRes, commentsRes, messagesRes, groupMessagesRes, pagesRes] = await Promise.all([
+    const [groupsRes, eventsRes, threadsRes, commentsRes, messagesRes, groupMessagesRes, pagesRes, followsRes, notificationsRes] = await Promise.all([
       supabase.from("groups").select("*").order("created_at", { ascending: false }).limit(200),
       supabase.from("eventos").select("*").order("fecha_inicio", { ascending: false }).limit(200),
       supabase.from("threads").select("*").order("created_at", { ascending: false }).limit(200),
@@ -94,9 +96,11 @@ export default function Dashboard() {
       supabase.from("messages").select("*").order("created_at", { ascending: false }).limit(200),
       supabase.from("group_messages").select("*").order("created_at", { ascending: false }).limit(200),
       supabase.from("site_pages").select("*").order("updated_at", { ascending: false }),
+      supabase.from("follows").select("*").order("created_at", { ascending: false }).limit(500),
+      supabase.from("notifications").select("*").order("created_at", { ascending: false }).limit(500),
     ]);
 
-    if (groupsRes.error || eventsRes.error || threadsRes.error || commentsRes.error || messagesRes.error || groupMessagesRes.error || pagesRes.error) {
+    if (groupsRes.error || eventsRes.error || threadsRes.error || commentsRes.error || messagesRes.error || groupMessagesRes.error || pagesRes.error || followsRes.error || notificationsRes.error) {
       toast({
         title: "Error al cargar datos admin",
         description: "Revisa permisos y poláticas en Supabase.",
@@ -111,8 +115,59 @@ export default function Dashboard() {
     setMessages(messagesRes.data || []);
     setGroupMessages(groupMessagesRes.data || []);
     setPages(pagesRes.data || []);
+    setFollows(followsRes.data || []);
+    setNotifications(notificationsRes.data || []);
     setLoadingAdmin(false);
   }
+
+  const today = new Date().toISOString().slice(0, 10);
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+  const extraStats = useMemo(() => {
+    const usersWithUsername = users.filter((u) => !!u.username).length;
+    const publicProfiles = users.filter((u) => u.is_public === true).length;
+    const privateProfiles = users.length - publicProfiles;
+
+    const eventsProximos = events.filter((e) => {
+      const d = e?.fecha_inicio ? new Date(e.fecha_inicio) : null;
+      return !!d && Number.isFinite(d.getTime()) && d >= new Date();
+    }).length;
+
+    const activeGroups = groups.filter((g) => {
+      const created = g?.created_at ? new Date(g.created_at) : null;
+      return !!created && Number.isFinite(created.getTime()) && created >= sevenDaysAgo;
+    }).length;
+
+    const postsConImagen = threads.filter((t) => !!t.image_url).length;
+
+    const actividad7d =
+      threads.filter((t) => t?.created_at && new Date(t.created_at) >= sevenDaysAgo).length +
+      threadComments.filter((c) => c?.created_at && new Date(c.created_at) >= sevenDaysAgo).length +
+      messages.filter((m) => m?.created_at && new Date(m.created_at) >= sevenDaysAgo).length +
+      groupMessages.filter((m) => m?.created_at && new Date(m.created_at) >= sevenDaysAgo).length;
+
+    const followPendientes = follows.filter((f) => f?.status === "pending").length;
+    const notificationsSinLeer = notifications.filter((n) => !n?.read_at).length;
+
+    const registrosHoy = users.filter((u) => u?.created_at?.startsWith(today)).length;
+    const mensajesHoy = messages.filter((m) => m?.created_at?.startsWith(today)).length;
+    const publicacionesHoy = threads.filter((t) => t?.created_at?.startsWith(today)).length;
+
+    return {
+      usersWithUsername,
+      publicProfiles,
+      privateProfiles,
+      eventsProximos,
+      activeGroups,
+      postsConImagen,
+      actividad7d,
+      followPendientes,
+      notificationsSinLeer,
+      registrosHoy,
+      mensajesHoy,
+      publicacionesHoy,
+    };
+  }, [users, events, groups, threads, threadComments, messages, groupMessages, follows, notifications, today, sevenDaysAgo]);
 
   useEffect(() => {
     fetchData();
@@ -444,8 +499,9 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        <Tabs defaultValue="users" className="w-full">
+        <Tabs defaultValue="overview" className="w-full">
           <TabsList className="flex flex-wrap gap-1 sm:gap-2 bg-muted/50 p-1 sm:p-2 rounded-lg w-full justify-start overflow-x-auto">
+            <TabsTrigger value="overview" className="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2">Resumen</TabsTrigger>
             <TabsTrigger value="users" className="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2">Usuarios</TabsTrigger>
             <TabsTrigger value="groups" className="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2">Grupos</TabsTrigger>
             <TabsTrigger value="events" className="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2">Eventos</TabsTrigger>
@@ -455,6 +511,100 @@ export default function Dashboard() {
             <TabsTrigger value="groupMessages" className="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2">Msgs Grupo</TabsTrigger>
             <TabsTrigger value="pages" className="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2">Páginas</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="overview">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
+              <Card>
+                <CardHeader className="pb-2"><CardTitle className="text-sm">Actividad 7 días</CardTitle></CardHeader>
+                <CardContent>
+                  <p className="text-2xl font-bold">{extraStats.actividad7d}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Posts + comentarios + mensajes</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2"><CardTitle className="text-sm">Notificaciones sin leer</CardTitle></CardHeader>
+                <CardContent>
+                  <p className="text-2xl font-bold">{extraStats.notificationsSinLeer}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Pendientes de atención</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2"><CardTitle className="text-sm">Solicitudes de follow</CardTitle></CardHeader>
+                <CardContent>
+                  <p className="text-2xl font-bold">{extraStats.followPendientes}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Estado pending</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2"><CardTitle className="text-sm">Eventos próximos</CardTitle></CardHeader>
+                <CardContent>
+                  <p className="text-2xl font-bold">{extraStats.eventsProximos}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Con fecha futura</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Distribución de perfiles</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center justify-between text-sm">
+                    <span>Públicos</span>
+                    <span className="font-semibold">{extraStats.publicProfiles}</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-muted overflow-hidden">
+                    <div
+                      className="h-full bg-emerald-500"
+                      style={{ width: `${users.length ? (extraStats.publicProfiles / users.length) * 100 : 0}%` }}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between text-sm mt-3">
+                    <span>Privados</span>
+                    <span className="font-semibold">{extraStats.privateProfiles}</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-muted overflow-hidden">
+                    <div
+                      className="h-full bg-slate-500"
+                      style={{ width: `${users.length ? (extraStats.privateProfiles / users.length) * 100 : 0}%` }}
+                    />
+                  </div>
+
+                  <div className="pt-2 text-xs text-muted-foreground">
+                    Usuarios con username: {extraStats.usersWithUsername} / {users.length}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Pulso del día</CardTitle>
+                </CardHeader>
+                <CardContent className="grid grid-cols-3 gap-3">
+                  <div className="rounded-lg border p-3">
+                    <p className="text-[11px] uppercase text-muted-foreground">Registros</p>
+                    <p className="text-xl font-bold mt-1">{extraStats.registrosHoy}</p>
+                  </div>
+                  <div className="rounded-lg border p-3">
+                    <p className="text-[11px] uppercase text-muted-foreground">Posts</p>
+                    <p className="text-xl font-bold mt-1">{extraStats.publicacionesHoy}</p>
+                  </div>
+                  <div className="rounded-lg border p-3">
+                    <p className="text-[11px] uppercase text-muted-foreground">Mensajes</p>
+                    <p className="text-xl font-bold mt-1">{extraStats.mensajesHoy}</p>
+                  </div>
+                  <div className="rounded-lg border p-3 col-span-3">
+                    <p className="text-[11px] uppercase text-muted-foreground">Extras</p>
+                    <p className="text-sm mt-1 text-muted-foreground">
+                      Grupos recientes (7 días): <span className="font-semibold text-foreground">{extraStats.activeGroups}</span> · Publicaciones con imagen: <span className="font-semibold text-foreground">{extraStats.postsConImagen}</span>
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
 
           <TabsContent value="users">
             <div className="flex flex-col gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-6">
