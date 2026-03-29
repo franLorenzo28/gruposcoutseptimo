@@ -1,6 +1,7 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import { Compass, Users, Heart, Trophy, Sparkles } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
+import NovedadesRecientes from "@/components/sections/NovedadesRecientes";
 
 type TopicCategory = "fundamentos" | "historia" | "metodo" | "sistema";
 
@@ -259,6 +260,8 @@ const MovimientoScout = () => {
           </div>
         </div>
       </section>
+
+      <NovedadesRecientes />
 
       {/* Footer global en App.tsx */}
     </div>

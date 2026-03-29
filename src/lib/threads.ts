@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { isLocalBackend, apiFetch, uploadImage } from "@/lib/backend";
+import { ensureAdminForMediaUpload } from "@/lib/admin-permissions";
 
 export type Thread = {
   id: string;
@@ -83,6 +84,8 @@ export async function createThread(
 
     let imageUrl: string | null = null;
     if (file) {
+      await ensureAdminForMediaUpload();
+
       // Validar tipo y tamaño de imagen
       const validTypes = [
         "image/jpeg",

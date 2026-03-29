@@ -20,6 +20,14 @@ type Novedad = {
 
 const novedades: Novedad[] = [
   {
+    titulo: "Cancionero actualizado",
+    fecha: "29 de marzo de 2026",
+    descripcion:
+      "Se agregó un repositorio de canciones y soporte para subir audios (solo admin).",
+    href: "/cancionero",
+    etiqueta: "Actualización",
+  },
+  {
     titulo: "Cápsula del Tiempo",
     fecha: "26 de marzo de 2026",
     descripcion:

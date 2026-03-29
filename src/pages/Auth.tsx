@@ -116,9 +116,16 @@ function getAuthBaseUrl(): string {
   return getOAuthSafety().baseUrl.replace(/\/+$/, "");
 }
 
+function getRuntimeAuthBaseUrl(): string {
+  if (!import.meta.env.PROD) {
+    return window.location.origin.replace(/\/+$/, "");
+  }
+  return getAuthBaseUrl();
+}
+
 function buildAuthRedirect(path: string): string {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-  return `${getAuthBaseUrl()}${normalizedPath}`;
+  return `${getRuntimeAuthBaseUrl()}${normalizedPath}`;
 }
 
 const Auth = () => {

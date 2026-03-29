@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { OptimizedImage } from "@/components/ui/optimized-image";
 import { getAuthUser } from "@/lib/backend";
+import { isCurrentUserAdmin } from "@/lib/admin-permissions";
 import {
   createAlbum,
   listAlbums,
@@ -45,13 +46,6 @@ import {
 } from "@/lib/gallery";
 import { useToast } from "@/hooks/use-toast";
 import EmailVerificationGuard from "@/components/EmailVerificationGuard";
-
-// Lista de emails con permisos de administración separados por comas
-const ADMIN_EMAILS = (
-  import.meta.env.VITE_GALLERY_ADMIN_EMAILS || "admin@example.com"
-)
-  .split(",")
-  .map((e: string) => e.trim().toLowerCase());
 
 type Album = {
   name: string;
@@ -90,9 +84,9 @@ const Galeria = () => {
           return;
         }
 
-        // Verificar admin por email (soporta backend local y Supabase)
-        const email = auth?.email || "";
-        setIsAdmin(ADMIN_EMAILS.includes(email.toLowerCase()));
+        // Verificar admin usando el perfil del usuario actual
+        const admin = await isCurrentUserAdmin();
+        setIsAdmin(admin);
 
         // Cargar álbumes desde Storage
         console.log("Cargando álbumes...");

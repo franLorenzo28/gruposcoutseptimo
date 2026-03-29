@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Calendar, Flag } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
+import NovedadesRecientes from "@/components/sections/NovedadesRecientes";
 
 const Eventos = () => {
   return (
@@ -123,6 +124,8 @@ const Eventos = () => {
           </div>
         </div>
       </section>
+
+      <NovedadesRecientes />
     </div>
   );
 };

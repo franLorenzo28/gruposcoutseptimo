@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { isLocalBackend, apiFetch, ensureLocalToken } from "@/lib/backend";
+import { ensureAdminForMediaUpload } from "@/lib/admin-permissions";
 
 export type GalleryAlbum = { name: string; coverUrl?: string };
 
@@ -126,6 +127,8 @@ export async function uploadImage(album: string, file: File): Promise<void> {
     });
     return;
   }
+  await ensureAdminForMediaUpload();
+
   const ext = file.name.split(".").pop();
   const name = `${crypto.randomUUID()}.${ext}`;
   const path = `${album}/${name}`;

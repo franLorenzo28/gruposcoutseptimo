@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Reveal } from "@/components/Reveal";
+import NovedadesRecientes from "@/components/sections/NovedadesRecientes";
 import {
   BookOpen,
   FileText,
@@ -480,6 +481,8 @@ const Scoutpedia = () => {
           </div>
         </div>
       </section>
+
+      <NovedadesRecientes />
     </div>
   );
 };

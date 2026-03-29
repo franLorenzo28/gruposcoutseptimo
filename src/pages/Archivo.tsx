@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Reveal } from "@/components/Reveal";
+import NovedadesRecientes from "@/components/sections/NovedadesRecientes";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { getOptimizedImageProps } from "@/lib/optimized-images";
 import {
@@ -12,13 +13,10 @@ import {
   BookOpen,
   Calendar,
   FileText,
-  Flag,
-  Home,
   Image,
   Layers,
   Search,
   Sparkles,
-  Users,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -27,9 +25,37 @@ type ArchiveSection = {
   description: string;
   to: string;
   tag: string;
+  group: "Memoria" | "Conocimiento" | "Comunidad" | "Visual";
   entries: string;
   Icon: typeof BookOpen;
 };
+
+const sectionGroupMeta: Array<{
+  key: ArchiveSection["group"];
+  title: string;
+  description: string;
+}> = [
+  {
+    key: "Memoria",
+    title: "Memoria histórica",
+    description: "Hechos, lugares y registros de etapas del grupo.",
+  },
+  {
+    key: "Conocimiento",
+    title: "Conocimiento scout",
+    description: "Conceptos, canciones y material formativo.",
+  },
+  {
+    key: "Comunidad",
+    title: "Personas y comunidad",
+    description: "Dirigentes, exintegrantes y red humana del grupo.",
+  },
+  {
+    key: "Visual",
+    title: "Archivo visual",
+    description: "Fotos y contenido multimedia de actividades.",
+  },
+];
 
 const secciones: ArchiveSection[] = [
   {
@@ -38,6 +64,7 @@ const secciones: ArchiveSection[] = [
       "Proyecto del 50 aniversario: cápsula enterrada en el Colegio Alemán para abrir en 2064.",
     to: "/archivo/capsula-del-tiempo",
     tag: "Memoria histórica",
+    group: "Memoria",
     entries: "Evento 2014",
     Icon: Calendar,
   },
@@ -47,6 +74,7 @@ const secciones: ArchiveSection[] = [
       "Definiciones, términos y contenidos enciclopédicos del historial scout.",
     to: "/archivo/scoutpedia",
     tag: "Historia y método",
+    group: "Conocimiento",
     entries: "20+ entradas",
     Icon: BookOpen,
   },
@@ -56,6 +84,7 @@ const secciones: ArchiveSection[] = [
       "Historia, actividades y documentación específica de la Compañía.",
     to: "/archivo/compania",
     tag: "Unidad",
+    group: "Memoria",
     entries: "En crecimiento",
     Icon: Layers,
   },
@@ -65,6 +94,7 @@ const secciones: ArchiveSection[] = [
       "Fotos del grupo, campamentos y actividades para revivir cada etapa.",
     to: "/galeria",
     tag: "Multimedia",
+    group: "Visual",
     entries: "Colección visual",
     Icon: Image,
   },
@@ -74,44 +104,9 @@ const secciones: ArchiveSection[] = [
       "Canciones scouts organizadas por tipo: fogón, marcha y campamento.",
     to: "/cancionero",
     tag: "Cultura",
+    group: "Conocimiento",
     entries: "En crecimiento",
     Icon: BookOpen,
-  },
-  {
-    title: "Veteranos",
-    description:
-      "Registro de ex-integrantes con nombre, años activo y rama.",
-    to: "/veteranos",
-    tag: "Comunidad",
-    entries: "En crecimiento",
-    Icon: Users,
-  },
-  {
-    title: "Dirigentes",
-    description:
-      "Equipo actual de dirigentes con cargo y rama de servicio.",
-    to: "/dirigentes",
-    tag: "Equipo",
-    entries: "En crecimiento",
-    Icon: Flag,
-  },
-  {
-    title: "Locales",
-    description:
-      "Sedes del grupo con dirección y descripción histórica.",
-    to: "/archivo/locales",
-    tag: "Infraestructura",
-    entries: "En crecimiento",
-    Icon: Home,
-  },
-  {
-    title: "Jamborees",
-    description:
-      "Jamborees mundiales y panamericanos con año, lugar y contexto.",
-    to: "/eventos/jamborees",
-    tag: "Eventos internacionales",
-    entries: "En crecimiento",
-    Icon: Calendar,
   },
 ];
 
@@ -134,6 +129,15 @@ const Archivo = () => {
       return text.includes(term);
     });
   }, [query]);
+
+  const seccionesAgrupadas = useMemo(() => {
+    return sectionGroupMeta
+      .map((group) => ({
+        ...group,
+        items: seccionesFiltradas.filter((section) => section.group === group.key),
+      }))
+      .filter((group) => group.items.length > 0);
+  }, [seccionesFiltradas]);
 
   return (
     <div className="min-h-screen">
@@ -226,41 +230,59 @@ const Archivo = () => {
               </div>
             </Reveal>
 
-            <div
-              className="grid gap-5"
-              style={{ gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))" }}
-            >
-              {seccionesFiltradas.map((section, index) => (
-                <Reveal key={section.to} delay={index * 0.08}>
-                  <Card className="group card-hover border border-border/70 shadow-lg bg-card/85 backdrop-blur-sm h-full transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-                    <CardContent className="p-6 min-h-[245px] flex flex-col">
-                      <div className="flex items-start justify-between gap-3 mb-4">
-                        <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center">
-                          <section.Icon className="w-5 h-5 text-primary" />
-                        </div>
-                        <Badge variant="outline" className="border-primary/30 text-primary bg-primary/5">
-                          {section.tag}
-                        </Badge>
+            <div className="space-y-10">
+              {seccionesAgrupadas.map((group, groupIndex) => (
+                <Reveal key={group.key} delay={groupIndex * 0.05}>
+                  <div>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+                      <div>
+                        <h3 className="text-xl sm:text-2xl font-bold">{group.title}</h3>
+                        <p className="text-sm text-muted-foreground">{group.description}</p>
                       </div>
+                      <Badge variant="secondary" className="w-fit">
+                        {group.items.length} sección{group.items.length > 1 ? "es" : ""}
+                      </Badge>
+                    </div>
 
-                      <h3 className="text-xl font-bold mb-2">{section.title}</h3>
-                      <p className="text-sm text-muted-foreground/90 mb-4 flex-1">
-                        {section.description}
-                      </p>
+                    <div
+                      className="grid gap-5"
+                      style={{ gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))" }}
+                    >
+                      {group.items.map((section, index) => (
+                        <Reveal key={section.to} delay={index * 0.08}>
+                          <Card className="group card-hover border border-border/70 shadow-lg bg-card/85 backdrop-blur-sm h-full transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+                            <CardContent className="p-6 min-h-[245px] flex flex-col">
+                              <div className="flex items-start justify-between gap-3 mb-4">
+                                <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center">
+                                  <section.Icon className="w-5 h-5 text-primary" />
+                                </div>
+                                <Badge variant="outline" className="border-primary/30 text-primary bg-primary/5">
+                                  {section.tag}
+                                </Badge>
+                              </div>
 
-                      <div className="flex items-center justify-between pt-2 border-t border-border/60">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                          {section.entries}
-                        </p>
-                        <Link to={section.to}>
-                          <Button size="sm" className="gap-1.5">
-                            Abrir
-                            <ArrowRight className="w-4 h-4" />
-                          </Button>
-                        </Link>
-                      </div>
-                    </CardContent>
-                  </Card>
+                              <h3 className="text-xl font-bold mb-2">{section.title}</h3>
+                              <p className="text-sm text-muted-foreground/90 mb-4 flex-1">
+                                {section.description}
+                              </p>
+
+                              <div className="flex items-center justify-between pt-2 border-t border-border/60">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                  {section.entries}
+                                </p>
+                                <Link to={section.to}>
+                                  <Button size="sm" className="gap-1.5">
+                                    Abrir
+                                    <ArrowRight className="w-4 h-4" />
+                                  </Button>
+                                </Link>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </Reveal>
+                      ))}
+                    </div>
+                  </div>
                 </Reveal>
               ))}
             </div>
@@ -336,6 +358,8 @@ const Archivo = () => {
           </div>
         </div>
       </section>
+
+      <NovedadesRecientes />
     </div>
   );
 };

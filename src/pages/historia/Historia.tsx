@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Calendar, BookOpen } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
+import NovedadesRecientes from "@/components/sections/NovedadesRecientes";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { getOptimizedImageProps } from "@/lib/optimized-images";
 import { useCountUp } from "@/hooks/useCountUp";
@@ -37,6 +38,8 @@ const Historia = () => {
       description:
         "El grupo inaugura su primer local y consolida su presencia en la comunidad.",
       place: "Primer local institucional",
+      ctaLabel: "Ver sección de Locales",
+      ctaHref: "/archivo/locales",
     },
     {
       year: "1990",
@@ -245,6 +248,8 @@ const Historia = () => {
           </div>
         </div>
       </section>
+
+      <NovedadesRecientes />
 
     </div>
   );

@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { isLocalBackend, apiFetch, uploadImage } from "@/lib/backend";
+import { ensureAdminForMediaUpload } from "@/lib/admin-permissions";
 
 export type GroupRole = "owner" | "admin" | "member";
 
@@ -145,6 +146,8 @@ export async function createGroup(
 
   // Subir imagen de portada si existe
   if (coverImage) {
+    await ensureAdminForMediaUpload();
+
     const validTypes = [
       "image/jpeg",
       "image/jpg",
@@ -418,6 +421,8 @@ export async function sendGroupMessage(
 
   // Subir imagen si existe
   if (image) {
+    await ensureAdminForMediaUpload();
+
     const validTypes = [
       "image/jpeg",
       "image/jpg",
@@ -528,6 +533,8 @@ export async function updateGroup(
   }
 
   if (updates.cover_image) {
+    await ensureAdminForMediaUpload();
+
     const {
       data: { user },
     } = await supabase.auth.getUser();
