@@ -25,13 +25,13 @@ export async function isCurrentUserAdmin(): Promise<boolean> {
 
   const { data: profile, error } = await supabase
     .from("profiles")
-    .select("rol_adulto")
+    .select("rol_adulto, role")
     .eq("user_id", user.id)
     .maybeSingle();
 
   if (error) throw error;
 
-  return profile?.rol_adulto === "admin";
+  return profile?.rol_adulto === "admin" || profile?.role === "admin";
 }
 
 export async function ensureAdminForMediaUpload(): Promise<void> {

@@ -2,12 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Music, Footprints, BookOpen, Upload, Download } from "lucide-react";
+import { Music, Footprints, BookOpen, Upload, Download, Trash2 } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
 import { useToast } from "@/hooks/use-toast";
 import {
   listCancioneroAudios,
   uploadCancioneroAudio,
+  deleteCancioneroAudio,
   type CancioneroAudio,
 } from "@/lib/cancionero-audios";
 import { isCurrentUserAdmin } from "@/lib/admin-permissions";
@@ -57,13 +58,14 @@ const MUSIC_SECTIONS: ArchiveMusicSection[] = [
           "Oh ven a acampar\ndeja tras ti el dolor\ny las penas deja tras de ti\npues junto al fogon\nhallaras el amor\nde la naturaleza sin par.\n\nOh! ven a acampar\ndeja tras ti la enorme ciudad\ny ven a admirar la salvaje beldad\nde la naturaleza sin fin.\n\nCon el crepitar\ndel ardiente fogon\ny la noche que cae sobre ti\nel fresco verdor de la vegetacion\nte dara deseos de vivir.\n\nOh! ven a acampar\ndeja tras ti la enorme ciudad\ny ven a admirar la salvaje beldad\nde la naturaleza sin fin.",
         notas: [
           "Musica/Tonada: Home on the Range.",
-          "Home on the Range es himno del estado de Kansas, Estados Unidos.",
-          "El Dr. Brewster M. Higley (1823-1911) escribio la letra original en el poema My Western Home en la decada de 1870.",
-          "La musica fue compuesta por Daniel E. Kelley.",
-          "Cancion tradicional del Grupo 7o.",
-          "Letra/Adaptacion: Diego (Buffel) Pose (1966).",
-          "Animas I fue en el campamento del aguila en lo de los Clement.",
-          "En agosto de 2013 Leopoldo pregunto por las canciones; para completar estrofas de A.II se consulto al autor por correo original.",
+          "Home on the Range es el himno del estado estadounidense de Kansas.",
+          "El Dr. Brewster M. Higley (1823-1911) originalmente escribio la letra en un poema titulado 'My Western Home' a principios de la decada de 1870.",
+          "La musica fue compuesta por un amigo de Higley llamado Daniel E. Kelley.",
+          "La cancion fue adoptada por colonos, vaqueros y otros, y difundida a traves de los Estados Unidos de diversas maneras.",
+          "Canción tradicional Grupo 7º.",
+          "Letra/Adaptacion: Diego (Büffel) Pose (1966)",
+          "Ánimas I fue en el campamento del águila en lo de los Clement. Ricardo Hein. 30-JUL-2022",
+          "En agosto de 2013 Leopoldo preguntó por las canciones, yo no me acordaba de las últimas estrofas del A.II, le pedimos ayuda al autor y aquí copio de su mail original. Ricardo Hein. 30-JUL-2022",
         ],
         credito: "Registro y memoria oral: Ricardo Hein (30-JUL-2022).",
       },
@@ -105,6 +107,7 @@ const Cancionero = () => {
   const [audios, setAudios] = useState<CancioneroAudio[]>([]);
   const [loadingAudios, setLoadingAudios] = useState(true);
   const [uploadingAudio, setUploadingAudio] = useState(false);
+  const [deletingAudioPath, setDeletingAudioPath] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
 
   const cancionesRepositorio =
@@ -167,6 +170,30 @@ const Cancionero = () => {
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
+    }
+  };
+
+  const handleAudioDelete = async (audio: CancioneroAudio) => {
+    const confirmed = window.confirm(`¿Eliminar el audio "${audio.name}"?`);
+    if (!confirmed) return;
+
+    try {
+      setDeletingAudioPath(audio.path);
+      await deleteCancioneroAudio(audio.path);
+      toast({
+        title: "Audio eliminado",
+        description: `Se elimino ${audio.name}`,
+      });
+      await loadAudios();
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "No se pudo eliminar el audio";
+      toast({
+        title: "Error",
+        description: message,
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingAudioPath(null);
     }
   };
 
@@ -298,7 +325,7 @@ const Cancionero = () => {
                           className="gap-2"
                         >
                           <Upload className="h-4 w-4" />
-                          {uploadingAudio ? "Subiendo..." : "Subir audios"}
+                          {uploadingAudio ? "Subiendo..." : "Subir archivos"}
                         </Button>
                       </div>
                     ) : null}
@@ -332,13 +359,25 @@ const Cancionero = () => {
                               <source src={audio.url} />
                               Tu navegador no soporta el reproductor de audio.
                             </audio>
-                            <div className="mt-3">
-                              <a href={audio.url} target="_blank" rel="noopener noreferrer" download>
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              <a href={audio.url} target="_blank" rel="noopener noreferrer" download={audio.name}>
                                 <Button variant="outline" size="sm" className="gap-2">
                                   <Download className="h-4 w-4" />
                                   Descargar
                                 </Button>
                               </a>
+                              {isAdmin ? (
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  className="gap-2"
+                                  onClick={() => handleAudioDelete(audio)}
+                                  disabled={deletingAudioPath === audio.path}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                  {deletingAudioPath === audio.path ? "Eliminando..." : "Eliminar"}
+                                </Button>
+                              ) : null}
                             </div>
                           </div>
                         ))}

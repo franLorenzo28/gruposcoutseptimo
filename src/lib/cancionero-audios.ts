@@ -3,6 +3,12 @@ import { ensureAdminForMediaUpload } from "@/lib/admin-permissions";
 
 const BUCKET_NAME = "cancionero-audios";
 
+function toDisplayAudioName(storagePath: string): string {
+  const fileName = storagePath.split("/").pop() ?? storagePath;
+  // Los uploads se guardan como "timestamp-nombre.ext"; limpiamos solo el prefijo tecnico.
+  return fileName.replace(/^\d{10,}-/, "");
+}
+
 export type CancioneroAudio = {
   name: string;
   path: string;
@@ -25,7 +31,7 @@ export async function listCancioneroAudios(): Promise<CancioneroAudio[]> {
     .map((file) => {
       const { data } = supabase.storage.from(BUCKET_NAME).getPublicUrl(file.name);
       return {
-        name: file.name,
+        name: toDisplayAudioName(file.name),
         path: file.name,
         url: data.publicUrl,
         createdAt: file.created_at ?? null,
@@ -50,5 +56,12 @@ export async function uploadCancioneroAudio(file: File): Promise<void> {
       contentType: file.type,
     });
 
+  if (error) throw error;
+}
+
+export async function deleteCancioneroAudio(path: string): Promise<void> {
+  await ensureAdminForMediaUpload();
+
+  const { error } = await supabase.storage.from(BUCKET_NAME).remove([path]);
   if (error) throw error;
 }
