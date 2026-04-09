@@ -24,8 +24,11 @@ const Jamboree1981 = () => {
   ];
 
   return (
-    <div className="min-h-screen page-animate">
-      <section className="relative overflow-hidden pb-12 pt-24 sm:pt-28 md:pt-32 bg-gradient-to-b from-background via-background/95 to-muted/25">
+    <div className="min-h-screen page-animate relative bg-gradient-to-br from-background via-background to-background">
+      <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-accent/10 pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_150%_150%_at_50%_0%,var(--color-primary)_0%,transparent_50%)] opacity-5 pointer-events-none" />
+      <div className="relative z-10">
+      <section className="relative overflow-hidden pb-12 pt-24 sm:pt-28 md:pt-32">
         <div className="container mx-auto px-4">
           <Button
             variant="ghost"
@@ -77,7 +80,7 @@ const Jamboree1981 = () => {
           <div className="space-y-16 sm:space-y-20">
             <Reveal delay={0.1}>
               <div className="max-w-2xl">
-                <p className="leading-relaxed text-base">
+                <p className="leading-relaxed text-xl">
                   Por mediados del mes de noviembre de 1980 se comenzó de lleno a trabajar en los preparativos para el Jamboree. Esto llevó a que los grupos y los distritos trabajaran en algunos proyectos que hicieran del adelanto parte de los preparativos.
                 </p>
               </div>
@@ -86,7 +89,7 @@ const Jamboree1981 = () => {
             <Reveal delay={0.15}>
               <div className="border-t border-border/30 pt-10 max-w-xl ml-auto pr-4 sm:pr-12">
                 <h3 className="text-lg font-semibold text-foreground mb-4">Competencia de Pionerismo - Grupo 40</h3>
-                <p className="leading-relaxed text-base">
+                <p className="leading-relaxed text-xl">
                   Uno de ellos, por el cual se obtenía puntuación era la 'Competencia de Pionerismo' del Grupo 40, de la cual, a falta de modestia, sería tema aparte para charlar y del cual el Grupo ganó con sus dos patrullas y con los máximos puntajes.
                 </p>
               </div>
@@ -95,7 +98,7 @@ const Jamboree1981 = () => {
             <Reveal delay={0.2}>
               <div className="border-t border-border/30 pt-10 max-w-2xl">
                 <h3 className="text-lg font-semibold text-foreground mb-4">Encuentro en Parque Roosevelt</h3>
-                <p className="leading-relaxed text-base">
+                <p className="leading-relaxed text-xl">
                   Uno de los últimos desafíos fue un encuentro en el Parque Roosevelt en el cual también nos volvimos a destacar.
                 </p>
               </div>
@@ -104,7 +107,7 @@ const Jamboree1981 = () => {
             <Reveal delay={0.25}>
               <div className="border-t border-border/30 pt-10 max-w-2xl ml-auto pr-4 sm:pr-16">
                 <h3 className="text-lg font-semibold text-foreground mb-4">Debates sobre Adelanto y Religión</h3>
-                <p className="leading-relaxed text-base">
+                <p className="leading-relaxed text-xl">
                   Con respecto al adelanto y a la religión, puntos neurálgicos de nuestra generación en el Grupo, siempre tuvimos nuestros roces. Es allí que surgió por parte de Raúl Sola el tema de los 'Agnósticos'. Temas que me llevaron muchas veces a tener que vérmelas con Roberto Linn (de la ANBSU – Asociación Boy Scouts del Uruguay) y sus Scouters Colaboradores.
                 </p>
               </div>
@@ -113,7 +116,7 @@ const Jamboree1981 = () => {
             <Reveal delay={0.3}>
               <div className="border-t border-border/30 pt-10 max-w-xl">
                 <h3 className="text-lg font-semibold text-foreground mb-4">Participación Ampliada</h3>
-                <p className="leading-relaxed text-base">
+                <p className="leading-relaxed text-xl">
                   También asistieron grupos del Instituto Uruguayo de Escultismo (IUDE) y su Jefe Juan José Álvarez.
                 </p>
               </div>
@@ -122,7 +125,7 @@ const Jamboree1981 = () => {
             <Reveal delay={0.35}>
               <div className="border-t border-border/30 pt-10 max-w-3xl ml-auto pr-4 sm:pr-8">
                 <h3 className="text-lg font-semibold text-foreground mb-6">Delegación Participante</h3>
-                <p className="leading-relaxed text-base mb-6 text-muted-foreground">13 miembros participaron en esta histórica delegación</p>
+                <p className="leading-relaxed text-xl mb-6 text-muted-foreground">13 miembros participaron en esta histórica delegación</p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                   {participantes.map((nombre) => (
                     <Badge key={nombre} variant="outline" className="bg-primary/5 text-primary border-primary/20 justify-center py-2">
@@ -136,7 +139,7 @@ const Jamboree1981 = () => {
             <Reveal delay={0.4}>
               <div className="border-t border-border/30 pt-10 max-w-2xl">
                 <h3 className="text-lg font-semibold text-foreground mb-4">El Viaje</h3>
-                <p className="leading-relaxed text-base">
+                <p className="leading-relaxed text-xl">
                   Con ellos, y el resto de la delegación (algunos padres tales como los Lorenzos), partió el ómnibus hacia Río Negro y después a la frontera para entrar luego en territorio brasileño y, desde allí, hasta Porto Alegre, al Parque Saint Hilaire.
                 </p>
               </div>
@@ -145,7 +148,7 @@ const Jamboree1981 = () => {
             <Reveal delay={0.45}>
               <div className="border-t border-primary/30 pt-10 max-w-xl ml-auto pr-4 sm:pr-12">
                 <h3 className="text-lg font-semibold text-foreground mb-4">Una Anécdota</h3>
-                <p className="leading-relaxed text-base text-muted-foreground italic">
+                <p className="leading-relaxed text-xl text-muted-foreground italic">
                   El único problema que tuvimos fue que el guía de la Falken, Luis Lorenzo, se indispuso y lo tuvieron un día en observación.
                 </p>
               </div>
@@ -153,6 +156,7 @@ const Jamboree1981 = () => {
           </div>
         </div>
       </section>
+      </div>
     </div>
   );
 };
