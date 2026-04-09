@@ -1,7 +1,9 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Globe2, Flag, CalendarDays, MapPin } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Globe2, Flag, CalendarDays, MapPin, BookOpen } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
+import { useNavigate } from "react-router-dom";
 
 type TipoJamboree = "mundial" | "panamericano";
 
@@ -16,25 +18,25 @@ type Jamboree = {
 const JAMBOREES: Jamboree[] = [
   {
     id: "1",
-    tipo: "mundial",
-    anio: 2015,
-    lugar: "Yamaguchi, Japon",
-    descripcion: "Participacion historica en Japon con delegacion de 8 miembros del grupo.",
+    tipo: "panamericano",
+    anio: 1981,
+    lugar: "Porto Alegre, Brasil",
+    descripcion: "4º Jamboree Panamericano en el Parque Saint Hilaire. Delegacion destacada con participacion de 13 miembros incluyendo jovenes scouts y padres.",
   },
   {
     id: "2",
     tipo: "panamericano",
-    anio: 2016,
-    lugar: "San Isidro de El General, Costa Rica",
-    descripcion: "Encuentro regional panamericano con scouts de toda America Latina.",
+    anio: 2014,
+    lugar: "Chile",
+    descripcion: "Jamboree Panamericano con participación de rovers. Experiencia memorable marcada por la solidaridad del grupo ante desafíos inesperados.",
   },
   {
     id: "3",
-    tipo: "mundial",
-    anio: 2019,
-    lugar: "Summit Bechtel Reserve, USA",
-    descripcion: "Jamboree mundial en Estados Unidos con representacion del grupo.",
-  },
+    tipo: "panamericano",
+    anio: 2023,
+    lugar: "Paso de los Libres, Corrientes, Argentina",
+    descripcion: "Jamboree Sudamericano con participación de Rovers y Pioneros. Experiencia desafiante que fortaleció la unidad del grupo a través de las dificultades.",
+  }
 ];
 // Base de datos lista para actualizar con historial
 
@@ -44,6 +46,7 @@ const TIPO_LABEL: Record<TipoJamboree, string> = {
 };
 
 const Jamborees = () => {
+  const navigate = useNavigate();
   const mundiales = JAMBOREES.filter((j) => j.tipo === "mundial");
   const panamericanos = JAMBOREES.filter((j) => j.tipo === "panamericano");
 
@@ -116,8 +119,8 @@ const Jamborees = () => {
             <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
               {JAMBOREES.map((jamboree) => (
                 <Reveal key={jamboree.id}>
-                  <Card className="h-full border-border/70 bg-card/85 shadow-md transition-shadow duration-300 hover:shadow-lg">
-                    <CardContent className="p-6 md:p-8">
+                  <Card className="h-full border-border/70 bg-card/85 shadow-md transition-shadow duration-300 hover:shadow-lg flex flex-col">
+                    <CardContent className="p-6 md:p-8 flex-1">
                       <Badge className="mb-3">{TIPO_LABEL[jamboree.tipo]}</Badge>
                       <h2 className="text-xl font-bold">{jamboree.anio}</h2>
                       <p className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-primary">
@@ -125,6 +128,36 @@ const Jamborees = () => {
                         {jamboree.lugar}
                       </p>
                       <p className="mt-3 text-sm leading-7 tracking-[0.01em] text-muted-foreground">{jamboree.descripcion}</p>
+                      {jamboree.id === "1" && (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="mt-4 w-full"
+                          onClick={() => navigate("/eventos/jamboree-1981")}
+                        >
+                          Ver narrativa completa
+                        </Button>
+                      )}
+                      {jamboree.id === "2" && (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="mt-4 w-full"
+                          onClick={() => navigate("/eventos/jamboree-2014")}
+                        >
+                          Ver narrativa completa
+                        </Button>
+                      )}
+                      {jamboree.id === "3" && (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="mt-4 w-full"
+                          onClick={() => navigate("/eventos/jamboree-2023")}
+                        >
+                          Ver narrativa completa
+                        </Button>
+                      )}
                     </CardContent>
                   </Card>
                 </Reveal>

@@ -32,6 +32,9 @@ const Veteranos = lazy(() => import("./pages/Veteranos"));
 const Dirigentes = lazy(() => import("./pages/Dirigentes"));
 const Locales = lazy(() => import("./pages/Locales"));
 const Jamborees = lazy(() => import("./pages/eventos/Jamborees"));
+const Jamboree1981 = lazy(() => import("./pages/eventos/Jamboree1981"));
+const Jamboree2014 = lazy(() => import("./pages/eventos/Jamboree2014"));
+const Jamboree2023 = lazy(() => import("./pages/eventos/Jamboree2023"));
 const Galeria = lazy(() => import("./pages/galeria/Galeria"));
 const Contacto = lazy(() => import("./pages/Contacto"));
 const Eventos = lazy(() => import("./pages/eventos/Eventos"));
@@ -234,6 +237,9 @@ const App = () => (
                     <Route path="/contacto" element={<Contacto />} />
                     <Route path="/eventos" element={<Eventos />} />
                     <Route path="/eventos/jamborees" element={<Jamborees />} />
+                    <Route path="/eventos/jamboree-1981" element={<Jamboree1981 />} />
+                    <Route path="/eventos/jamboree-2014" element={<Jamboree2014 />} />
+                    <Route path="/eventos/jamboree-2023" element={<Jamboree2023 />} />
                     <Route path="/area-miembros" element={<AreaMiembros />} />
                     <Route path="/login" element={<LoginMiembros />} />
                     <Route
