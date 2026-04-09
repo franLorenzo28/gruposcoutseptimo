@@ -30,7 +30,7 @@ const sampleEvents = [
     date: "A confirmar, 2026",
     location: "Parque Baroffio",
     participants: "Grupos Scouts de todo el país",
-    type: "Evento de 2 días",
+    type: "Evento Construcción de 2 días",
     status: "En incógnita",
     image: "https://images.unsplash.com/photo-1599946343513-c4963d360293?q=80&w=1932&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   },
@@ -110,18 +110,18 @@ const EventCard = ({ event, index }: { event: any; index: number }) => {
           </div>
           <CardTitle
             id={`event-title-${event.id}`}
-            className="text-xl leading-tight group-hover:text-primary transition-colors"
+            className="text-xl leading-tight text-foreground hover:text-primary transition-colors"
           >
             {event.title}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 p-4 pt-0 flex-grow">
           <TooltipProvider>
-            <div className="space-y-3 text-sm text-muted-foreground">
+            <div className="space-y-3 text-sm text-foreground">
               <Tooltip>
-                <TooltipTrigger className="flex items-start text-left w-full group-hover:text-primary transition-colors">
+                <TooltipTrigger className="flex items-start text-left w-full text-foreground hover:text-primary transition-colors">
                   <Calendar
-                    className="w-4 h-4 mr-3 mt-0.5 flex-shrink-0 transition-transform duration-300 group-hover:scale-110"
+                    className="w-4 h-4 mr-3 mt-0.5 flex-shrink-0 transition-transform duration-300 hover:scale-110"
                     aria-hidden="true"
                   />
                   <span>{event.date}</span>
@@ -131,9 +131,9 @@ const EventCard = ({ event, index }: { event: any; index: number }) => {
                 </TooltipContent>
               </Tooltip>
               <Tooltip>
-                <TooltipTrigger className="flex items-start text-left w-full group-hover:text-primary transition-colors">
+                <TooltipTrigger className="flex items-start text-left w-full text-foreground hover:text-primary transition-colors">
                   <MapPin
-                    className="w-4 h-4 mr-3 mt-0.5 flex-shrink-0 transition-transform duration-300 group-hover:scale-110"
+                    className="w-4 h-4 mr-3 mt-0.5 flex-shrink-0 transition-transform duration-300 hover:scale-110"
                     aria-hidden="true"
                   />
                   <span>{event.location}</span>
@@ -143,9 +143,9 @@ const EventCard = ({ event, index }: { event: any; index: number }) => {
                 </TooltipContent>
               </Tooltip>
               <Tooltip>
-                <TooltipTrigger className="flex items-start text-left w-full group-hover:text-primary transition-colors">
+                <TooltipTrigger className="flex items-start text-left w-full text-foreground hover:text-primary transition-colors">
                   <Users
-                    className="w-4 h-4 mr-3 mt-0.5 flex-shrink-0 transition-transform duration-300 group-hover:scale-110"
+                    className="w-4 h-4 mr-3 mt-0.5 flex-shrink-0 transition-transform duration-300 hover:scale-110"
                     aria-hidden="true"
                   />
                   <span>{event.participants}</span>
