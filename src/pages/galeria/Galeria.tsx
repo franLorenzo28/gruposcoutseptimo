@@ -403,7 +403,7 @@ const Galeria = () => {
                   <div className="relative aspect-square">
                     <OptimizedImage
                       src={img.url}
-                      alt={`foto-${idx}`}
+                      alt={img.descripcion || `Foto de galería ${idx + 1}`}
                       aspectRatio="square"
                       loading="lazy"
                       showPlaceholder

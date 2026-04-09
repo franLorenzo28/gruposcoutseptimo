@@ -53,7 +53,7 @@ const Contacto = () => {
     if (!valid) {
       toast({
         title: "Error en el formulario",
-        description: errors.join("\n"),
+        description: errors.length > 1 ? errors.join(" • ") : errors[0],
         variant: "destructive",
       });
       return;

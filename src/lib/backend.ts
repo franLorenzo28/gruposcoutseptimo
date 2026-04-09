@@ -121,7 +121,12 @@ export async function ensureLocalToken() {
   return token;
 }
 
+// API fetch with 15 second timeout using AbortController
 export async function apiFetch(path: string, init: RequestInit = {}) {
+  const timeout = 15000; // 15 seconds timeout
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+
   async function doRequest(): Promise<Response> {
     const token = await ensureLocalToken();
     const headers = new Headers(init.headers || {});
@@ -129,49 +134,62 @@ export async function apiFetch(path: string, init: RequestInit = {}) {
     if (!headers.has("Content-Type") && !(init.body instanceof FormData)) {
       headers.set("Content-Type", "application/json");
     }
-    return fetch(`${API_BASE}${path}`, { ...init, headers });
+    return fetch(`${API_BASE}${path}`, { ...init, headers, signal: controller.signal });
   }
 
-  // Primer intento
-  let res = await doRequest();
-  // Si token inválido/usuario faltante, limpiar y reintentar una vez
-  if (res.status === 401) {
-    clearStoredToken();
-    res = await doRequest();
-  }
-
-  if (!res.ok) {
-    let msg = `Error ${res.status}`;
-    try {
-      const j = await res.json();
-      if (j?.error) {
-        if (typeof j.error === "string") msg = j.error;
-        else if (typeof j.error?.message === "string") msg = j.error.message;
-        else msg = JSON.stringify(j.error);
-      } else if (typeof j?.message === "string") {
-        msg = j.message;
-      }
-    } catch {
-      // mantener mensaje genérico
+  try {
+    // Primer intento
+    let res = await doRequest();
+    // Si token inválido/usuario faltante, limpiar y reintentar una vez
+    if (res.status === 401) {
+      clearStoredToken();
+      res = await doRequest();
     }
-    throw new Error(msg);
+
+    if (!res.ok) {
+      let msg = `Error ${res.status}`;
+      try {
+        const j = await res.json();
+        if (j?.error) {
+          if (typeof j.error === "string") msg = j.error;
+          else if (typeof j.error?.message === "string") msg = j.error.message;
+          else msg = JSON.stringify(j.error);
+        } else if (typeof j?.message === "string") {
+          msg = j.message;
+        }
+      } catch {
+        // mantener mensaje genérico
+      }
+      throw new Error(msg);
+    }
+    const contentType = res.headers.get("content-type") || "";
+    return contentType.includes("application/json") ? res.json() : res.text();
+  } finally {
+    clearTimeout(timeoutId);
   }
-  const contentType = res.headers.get("content-type") || "";
-  return contentType.includes("application/json") ? res.json() : res.text();
 }
 
 export async function uploadImage(file: File): Promise<string> {
-  const token = await ensureLocalToken();
-  const fd = new FormData();
-  fd.append("file", file);
-  const res = await fetch(`${API_BASE}/upload/image`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}` },
-    body: fd,
-  });
-  if (!res.ok) throw new Error("Error al subir imagen");
-  const data = await res.json();
-  return data.url as string;
+  const timeout = 15000;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+  try {
+    const token = await ensureLocalToken();
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await fetch(`${API_BASE}/upload/image`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: fd,
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new Error("Error al subir imagen");
+    const data = await res.json();
+    return data.url as string;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 // Helper: obtener usuario autenticado de forma agnóstica (local o Supabase)
@@ -197,9 +215,16 @@ export async function getAuthUser(): Promise<{
     } catch {
       return null;
     }
+  } else {
+    const { data } = await supabase.auth.getUser();
+    if (data?.user) {
+      return {
+        id: data.user.id,
+        email: data.user.email,
+        email_verified: !!data.user.email_confirmed_at,
+        isLocal: false,
+      };
+    }
+    return null;
   }
-  const { data } = await supabase.auth.getUser();
-  const user = data?.user;
-  if (!user) return null;
-  return { id: user.id, email: user.email, email_verified: true, isLocal: false };
 }

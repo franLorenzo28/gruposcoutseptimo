@@ -46,7 +46,7 @@ const Jamboree1981 = () => {
               Narrativa Histórica
             </div>
 
-            <h1 className="text-4xl font-extrabold leading-[0.95] text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent sm:text-6xl md:text-7xl">
+            <h1 className="text-4xl font-extrabold leading-tight text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent sm:text-6xl md:text-7xl">
               4º Jamboree Panamericano
               <span className="block text-primary">Porto Alegre, Brasil 1981</span>
             </h1>

@@ -42,7 +42,7 @@ const Jamboree2023 = () => {
               Narrativa Histórica
             </div>
 
-            <h1 className="text-4xl font-extrabold leading-[0.95] text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent sm:text-5xl md:text-6xl">
+            <h1 className="text-4xl font-extrabold leading-tight text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent sm:text-5xl md:text-6xl">
               Jamboree Sudamericano
               <span className="block text-primary">Paso de los Libres, Argentina 2023</span>
             </h1>

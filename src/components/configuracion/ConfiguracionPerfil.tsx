@@ -32,14 +32,14 @@ export default function ConfiguracionPerfil() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
-  const [charCount, setCharCount] = useState(user?.profile?.descripcion_personal?.length || 0);
+  const [charCount, setCharCount] = useState(0);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
       nombre_completo: user?.profile?.nombre_completo || "",
-      profesion_ocupacion: user?.profile?.profesion_ocupacion || "",
-      descripcion_personal: user?.profile?.descripcion_personal || "",
+      profesion_ocupacion: "",
+      descripcion_personal: "",
     },
   });
 
@@ -185,7 +185,7 @@ export default function ConfiguracionPerfil() {
             )}
           />
 
-          <Button type="submit" disabled={isLoading} className="w-full bg-primary transition-transform duration-300 hover:scale-105 hover:bg-primary/90 active:scale-95">
+          <Button type="submit" disabled={isLoading} className="w-full bg-primary transition-all duration-300 hover:bg-primary/90 active:scale-95">
             {isLoading ? (
               <>
                 <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />

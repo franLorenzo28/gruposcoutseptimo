@@ -65,6 +65,8 @@ import { MemberAuthProvider } from "@/context/MemberAuthContext";
 import RequireMemberAuth from "@/components/auth/RequireMemberAuth";
 import RequireRamaAccess from "@/components/auth/RequireRamaAccess";
 import { supabase } from "@/integrations/supabase/client";
+import type { User } from "@supabase/supabase-js";
+import type { Profile } from "@/types/profile";
 import FondoAnimado from "@/components/layout/FondoAnimado";
 import { NotificationsProvider } from "@/context/Notifications";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -83,9 +85,13 @@ const queryClient = new QueryClient({
   },
 });
 
-//  Contexto global de usuario Supabase
+//  Contexto global de usuario Supabase - Combined type for user + profile
+type SupabaseUserWithProfile = User & {
+  profile?: Partial<Profile>;
+} & Partial<Profile>;
+
 interface SupabaseUserContextType {
-  user: any | null;
+  user: SupabaseUserWithProfile | null;
 }
 
 export const SupabaseUserContext = createContext<SupabaseUserContextType>({
@@ -96,7 +102,7 @@ export const useSupabaseUser = () => useContext(SupabaseUserContext);
 
 // 🌐 Proveedor de usuario Supabase
 const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<any | null>(null);
+  const [user, setUser] = useState<SupabaseUserWithProfile | null>(null);
 
   useEffect(() => {
     async function fetchUserAndProfile(sessionUser: any) {
@@ -126,7 +132,14 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
       const combinedUser = { ...sessionUser, ...profile };
       console.log("✅ Usuario guardado:", combinedUser?.email, "Rol:", (combinedUser as any)?.role);
       setUser(combinedUser);
-      localStorage.setItem("adminUser", JSON.stringify(combinedUser));
+      
+      // Try to persist to localStorage with error handling
+      try {
+        localStorage.setItem("adminUser", JSON.stringify(combinedUser));
+      } catch (e) {
+        console.error("⚠️ No se pudo guardar en localStorage:", e instanceof Error ? e.message : String(e));
+        // App still works without localStorage
+      }
     }
 
     // Obtener sesión inicial
@@ -139,7 +152,7 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     // Escuchar cambios de auth
-    const { data: listener } = supabase.auth.onAuthStateChange(
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         const u = session?.user ?? null;
         console.log(`Auth change: ${event}`);
@@ -148,7 +161,7 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
     );
 
     return () => {
-      listener.subscription.unsubscribe();
+      subscription?.unsubscribe();
     };
   }, []);
 

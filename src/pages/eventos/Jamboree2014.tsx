@@ -29,7 +29,7 @@ const Jamboree2014 = () => {
               Narrativa Histórica
             </div>
 
-            <h1 className="text-4xl font-extrabold leading-[0.95] text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent sm:text-5xl md:text-6xl">
+            <h1 className="text-4xl font-extrabold leading-tight text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent sm:text-5xl md:text-6xl">
               Jamboree Panamericano
               <span className="block text-primary">Chile 2014</span>
             </h1>

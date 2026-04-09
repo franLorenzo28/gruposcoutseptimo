@@ -553,7 +553,7 @@ const Navigation = () => {
                       )}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-[360px] p-0">
+                  <PopoverContent className="w-[min(100vw-2rem,360px)] sm:w-[360px] p-0 max-h-[80vh]">
                     <div className="p-0">
                       <div className="flex items-center justify-between border-b px-4 py-3">
                         <span className="text-sm font-semibold">Notificaciones</span>

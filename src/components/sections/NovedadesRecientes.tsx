@@ -9,8 +9,11 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 type Novedad = {
+  id: string;
   titulo: string;
   fecha: string;
   descripcion: string;
@@ -18,26 +21,54 @@ type Novedad = {
   etiqueta: string;
 };
 
-const novedades: Novedad[] = [
-  {
-    titulo: "Cancionero actualizado",
-    fecha: "29 de marzo de 2026",
-    descripcion:
-      "Se agregó un repositorio de canciones y soporte para subir audios (solo admin).",
-    href: "/cancionero",
-    etiqueta: "Actualización",
-  },
-  {
-    titulo: "Cápsula del Tiempo",
-    fecha: "26 de marzo de 2026",
-    descripcion:
-      "Nuevo contenido en Archivo con fotos y memoria histórica de la cápsula.",
-    href: "/archivo/capsula-del-tiempo",
-    etiqueta: "Nuevo contenido",
-  },
-];
-
 const NovedadesRecientes = () => {
+  // Cargar novedades de Supabase
+  const { data: novedadesApi = [] } = useQuery<Novedad[]>({
+    queryKey: ["novedades"],
+    queryFn: async () => {
+      try {
+        const { data, error } = await supabase
+          .from("novedades")
+          .select("id, titulo, descripcion, href, etiqueta, created_at")
+          .eq("activa", true)
+          .order("created_at", { ascending: false })
+          .limit(10);
+
+        if (error) throw error;
+        return (
+          data?.map((n: any) => ({
+            ...n,
+            fecha: new Date(n.created_at).toLocaleDateString("es-ES", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            }),
+          })) || []
+        );
+      } catch (error) {
+        console.error("Error cargando novedades:", error);
+        return [];
+      }
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Fallback: novedades por defecto si la API no retorna nada
+  const novedades =
+    novedadesApi.length > 0
+      ? novedadesApi
+      : [
+          {
+            id: "1",
+            titulo: "Cancionero actualizado",
+            fecha: "29 de marzo de 2026",
+            descripcion:
+              "Se agregó un repositorio de canciones y soporte para subir audios (solo admin).",
+            href: "/cancionero",
+            etiqueta: "Actualización",
+          },
+        ];
+
   return (
     <div
       aria-label="Novedades del sitio"
@@ -81,7 +112,7 @@ const NovedadesRecientes = () => {
           <div className="mt-6 space-y-3">
             {novedades.map((novedad) => (
               <article
-                key={novedad.href}
+                key={novedad.id}
                 className="rounded-xl border border-border/70 bg-card/70 p-4"
               >
                 <div className="flex flex-wrap items-center gap-2">
