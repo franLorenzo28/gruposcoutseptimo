@@ -1,9 +1,16 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Globe2, Flag, CalendarDays, MapPin, BookOpen } from "lucide-react";
+import { Globe2, Flag, CalendarDays, MapPin, BookOpen, ChevronRight, Users } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import { Suspense, lazy } from "react";
+
+const JamboresMundiales = lazy(() =>
+  import("@/components/sections/JamboresMundiales").then(m => ({
+    default: m.JamboresMundiales
+  }))
+);
 
 type TipoJamboree = "mundial" | "panamericano";
 
@@ -51,7 +58,10 @@ const Jamborees = () => {
   const panamericanos = JAMBOREES.filter((j) => j.tipo === "panamericano");
 
   return (
-    <div className="page-animate min-h-screen">
+    <div className="min-h-screen page-animate relative bg-gradient-to-br from-background via-background to-background">
+      <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-accent/10 pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_150%_150%_at_50%_0%,var(--color-primary)_0%,transparent_50%)] opacity-5 pointer-events-none" />
+      <div className="relative z-10">
       <section className="relative overflow-hidden pb-14 pt-28 sm:pt-32 bg-gradient-to-b from-background via-background/95 to-muted/25">
         <div className="container mx-auto px-4">
           <Reveal className="max-w-5xl">
@@ -70,9 +80,9 @@ const Jamborees = () => {
         </div>
       </section>
 
-      <section className="py-14 sm:py-16 bg-background/70">
+      <section className="relative py-14 sm:py-16 overflow-hidden">
         <div className="container mx-auto px-4">
-          <div className="grid gap-5 md:grid-cols-3">
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             <Reveal>
               <Card className="h-full border-border/70 bg-card/80 shadow-lg">
                 <CardContent className="p-6">
@@ -100,6 +110,15 @@ const Jamborees = () => {
                 </CardContent>
               </Card>
             </Reveal>
+            <Reveal>
+              <Card className="h-full border-border/70 bg-card/80 shadow-lg">
+                <CardContent className="p-6">
+                  <BookOpen className="h-6 w-6 text-primary" />
+                  <p className="mt-3 text-3xl font-black text-primary">14</p>
+                  <p className="mt-1 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Históricos mundiales</p>
+                </CardContent>
+              </Card>
+            </Reveal>
           </div>
 
           {JAMBOREES.length === 0 ? (
@@ -116,7 +135,9 @@ const Jamborees = () => {
               </Card>
             </Reveal>
           ) : (
-            <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            <div className="relative mt-8 pt-8">
+              {/* Cards Grid */}
+              <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
               {JAMBOREES.map((jamboree) => (
                 <Reveal key={jamboree.id}>
                   <Card className="h-full border-border/70 bg-card/85 shadow-md transition-shadow duration-300 hover:shadow-lg flex flex-col">
@@ -163,9 +184,71 @@ const Jamborees = () => {
                 </Reveal>
               ))}
             </div>
-          )}
+            </div>          )}
+        </div>      </section>
+
+      {/* Jamborees Mundiales Section */}
+      <section className="py-14 sm:py-16">
+        <div className="container mx-auto px-4">
+          <Reveal>
+            <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-border/70 bg-card/70 px-4 py-2 text-xs font-semibold text-muted-foreground sm:text-sm">
+              <BookOpen className="h-4 w-4 text-primary" />
+              Participación Global
+            </div>
+            <h2 className="mb-2 text-3xl font-bold sm:text-4xl">Jamborees mundiales del Séptimo</h2>
+            <p className="mb-8 text-muted-foreground sm:text-lg">
+              El Grupo Scout Séptimo participó en importantes encuentros internacionales representando a Uruguay.
+            </p>
+          </Reveal>
+
+          <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            <Reveal>
+              <Card className="h-full border-border/70 bg-card/85 shadow-md transition-shadow duration-300 hover:shadow-lg flex flex-col">
+                <CardContent className="p-6 md:p-8 flex-1">
+                  <Badge className="mb-3">Mundial</Badge>
+                  <h2 className="text-xl font-bold">1967</h2>
+                  <p className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-primary">
+                    <MapPin className="h-4 w-4" />
+                    Farragut State Park, Idaho, EE.UU.
+                  </p>
+                  <p className="mt-3 text-sm leading-7 tracking-[0.01em] text-muted-foreground">
+                    12º Jamboree Scout Mundial. "Por la Amistad" • 31 julio - 9 agosto 1967. Representación histórica del Grupo Scout Séptimo en este encuentro internacional.
+                  </p>
+                </CardContent>
+              </Card>
+            </Reveal>
+          </div>
         </div>
       </section>
+
+      {/* Jamborees Mundiales Historical Section */}
+      <section className="py-14 sm:py-20">
+        <div className="container mx-auto px-4">
+          <Reveal>
+            <div className="mb-8">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-2 text-xs font-semibold text-primary sm:text-sm">
+                <Globe2 className="h-4 w-4" />
+                Historial completo
+              </div>
+              <h2 className="text-3xl sm:text-4xl font-bold mb-3">
+                Historia de Jamborees Mundiales
+              </h2>
+              <p className="text-muted-foreground max-w-2xl">
+                Exploraen el historial de todos los Jamborees Mundiales Scout desde 1967 hasta la actualidad.
+              </p>
+            </div>
+          </Reveal>
+
+          <Suspense fallback={<div className="text-center py-12">Cargando jamborees mundiales...</div>}>
+            <Reveal>
+              <div className="mt-8">
+                <JamboresMundiales />
+              </div>
+            </Reveal>
+          </Suspense>
+        </div>
+      </section>
+      </div>
     </div>
   );
 };

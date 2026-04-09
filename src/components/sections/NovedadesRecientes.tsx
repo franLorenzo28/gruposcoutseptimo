@@ -28,7 +28,7 @@ const NovedadesRecientes = () => {
     queryFn: async () => {
       try {
         const { data, error } = await supabase
-          .from("novedades")
+          .from("novedades" as any)
           .select("id, titulo, descripcion, href, etiqueta, created_at")
           .eq("activa", true)
           .order("created_at", { ascending: false })
