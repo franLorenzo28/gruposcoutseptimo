@@ -291,3 +291,48 @@ export function getFormErrors(
     {} as Record<string, string>,
   );
 }
+
+/**
+ * Validación de bloque de narrativa
+ */
+export const narrativaBloqueSchema = z.object({
+  id: z.string().optional(),
+  tipo: z.enum(["texto", "imagen"]),
+  contenido: z
+    .string({ required_error: errorMessages.required })
+    .min(1, "El contenido no puede estar vacío"),
+});
+
+export type NarrativaBloqueFormData = z.infer<typeof narrativaBloqueSchema>;
+
+/**
+ * Validación de narrativa (relato histórico)
+ */
+export const narrativaSchema = z.object({
+  titulo: z
+    .string({ required_error: errorMessages.required })
+    .min(5, errorMessages.minLength(5))
+    .max(200, errorMessages.maxLength(200)),
+
+  year_section: z
+    .string({ required_error: errorMessages.required })
+    .min(4, "Debe ingresar un año (ej: 1964 o JUN-1964)")
+    .max(20, errorMessages.maxLength(20)),
+
+  fecha_publicacion: z
+    .string({ required_error: errorMessages.required })
+    .refine(
+      (date) => {
+        const d = new Date(date);
+        return !isNaN(d.getTime());
+      },
+      { message: errorMessages.date },
+    ),
+
+  bloques: z
+    .array(narrativaBloqueSchema)
+    .min(1, "Debe agregar al menos un bloque")
+    .max(50, "No se pueden agregar más de 50 bloques"),
+});
+
+export type NarrativaFormData = z.infer<typeof narrativaSchema>;

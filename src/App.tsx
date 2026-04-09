@@ -8,6 +8,7 @@
 } from "react";
 import NavegacionPrincipal from "@/components/layout/NavegacionPrincipal";
 import PieDePagina from "@/components/layout/PieDePagina";
+import { NewsPopup } from "@/components/layout/NewsPopup";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -57,6 +58,7 @@ const Pioneros = lazy(() => import("./pages/ramas/pioneros"));
 const Rovers = lazy(() => import("./pages/ramas/rovers"));
 const Staff = lazy(() => import("./pages/ramas/staff"));
 const Comite = lazy(() => import("./pages/ramas/comite"));
+const Narrativas = lazy(() => import("./pages/narrativas"));
 import { MemberAuthProvider } from "@/context/MemberAuthContext";
 import RequireMemberAuth from "@/components/auth/RequireMemberAuth";
 import RequireRamaAccess from "@/components/auth/RequireRamaAccess";
@@ -200,6 +202,7 @@ const App = () => (
               <NotificationsProvider>
               <FondoAnimado />
               <NavegacionPrincipal />
+              <NewsPopup />
               <ScrollAlInicio />
               <SaltarAlContenido />
               <main id="main-content" tabIndex={-1} className="min-h-screen">
@@ -215,6 +218,7 @@ const App = () => (
                     <Route path="/" element={<Inicio />} />
                     <Route path="/linea-temporal" element={<Navigate to="/historia" replace />} />
                     <Route path="/historia" element={<Historia />} />
+                    <Route path="/narrativas" element={<Narrativas />} />
                     <Route path="/bauen" element={<Bauen />} />
                     <Route path="/am-lagerfeuer" element={<AmLagerfeuer />} />
                     <Route path="/movimiento-scout" element={<MovimientoScout />} />

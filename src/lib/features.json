@@ -1,0 +1,14 @@
+{
+  "lastSeen": "2026-04-08",
+  "features": [
+    {
+      "id": "narrativas-feature",
+      "name": "Narrativas",
+      "date": "2026-04-08",
+      "description": "Nueva sección para relatos históricos del movimiento scout, organizados por años. Solo admins pueden crear, todos pueden ver.",
+      "type": "feature",
+      "icon": "BookOpen",
+      "status": "new"
+    }
+  ]
+}

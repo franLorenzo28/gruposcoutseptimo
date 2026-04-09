@@ -70,7 +70,7 @@ const Historia = () => {
             </h1>
             <p className="text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed max-w-3xl mx-auto">
               Desde 1964, hemos sido parte fundamental del movimiento scout
-              uruguayo, formando generaciones de láderes comprometidos con su
+              uruguayo, formando generaciones de líderes comprometidos con su
               comunidad.
             </p>
           </div>
@@ -96,8 +96,8 @@ const Historia = () => {
               <p className="text-sm sm:text-base md:text-lg text-muted-foreground leading-relaxed">
                 El Grupo Scout Séptimo de Montevideo fue fundado en 1964 por un
                 grupo de jóvenes comprometidos con los ideales de Baden-Powell.
-                Desde entonces, hemos crecido hasta convertirnos en uno de los
-                grupos scouts más reconocidos del Uruguay.
+                Desde entonces, hemos crecido hasta convertirnos en un grupo muy grande
+                pero más que nada en una familia.
               </p>
               <p className="text-sm sm:text-base md:text-lg text-muted-foreground leading-relaxed">
                 A lo largo de más de seis décadas, hemos formado a miles de

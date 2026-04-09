@@ -19,6 +19,10 @@ import {
   MessageSquare,
   Shield,
   Archive,
+  Building,
+  Music,
+  Images,
+  Tent,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -65,17 +69,42 @@ interface NavSection {
 
 const navSections: NavSection[] = [
   {
-    label: "Principal",
+    label: "Inicio",
     links: [
       { name: "Inicio", path: "/", icon: Home },
       { name: "Comuni 7", path: "/usuarios", icon: Users },
-      { name: "Historia", path: "/historia", icon: History },
-      { name: "Archivo", path: "/archivo", icon: Archive },
-      { name: "Scoutpedia", path: "/archivo/scoutpedia", icon: BookOpen },
-      { name: "Eventos", path: "/eventos", icon: Calendar },
-      { name: "Movimiento Scout", path: "/movimiento-scout", icon: BookOpen },
-      { name: "Área de miembros", path: "/area-miembros", icon: Shield },
       { name: "Contacto", path: "/contacto", icon: Mail },
+    ],
+  },
+  {
+    label: "Archivo e Historia",
+    links: [
+      { name: "Historia", path: "/historia", icon: History },
+      { name: "Narrativas", path: "/narrativas", icon: BookOpen },
+      { name: "Archivo General", path: "/archivo", icon: Archive },
+      { name: "Scoutpedia", path: "/archivo/scoutpedia", icon: BookOpen },
+      { name: "Compañía", path: "/archivo/compania", icon: Archive },
+      { name: "Cápsula del Tiempo", path: "/archivo/capsula-del-tiempo", icon: Archive },
+      { name: "Miembros", path: "/archivo/miembros", icon: Users },
+      { name: "Locales", path: "/archivo/locales", icon: Building },
+    ],
+  },
+  {
+    label: "Explorar",
+    links: [
+      { name: "Eventos", path: "/eventos", icon: Calendar },
+      { name: "Jamborees", path: "/eventos/jamborees", icon: Tent },
+      { name: "Movimiento Scout", path: "/movimiento-scout", icon: BookOpen },
+      { name: "Cancionero", path: "/cancionero", icon: Music },
+      { name: "Galería", path: "/galeria", icon: Images },
+    ],
+  },
+  {
+    label: "Comunidad",
+    links: [
+      { name: "Veteranos", path: "/veteranos", icon: Users },
+      { name: "Dirigentes", path: "/dirigentes", icon: Users },
+      { name: "Área de Miembros", path: "/area-miembros", icon: Shield },
     ],
   },
 ];
@@ -375,8 +404,9 @@ const Navigation = () => {
 
             {/* Desktop Main Links */}
             <div className="hidden min-w-0 flex-1 justify-center px-2 xl:flex xl:px-4 2xl:px-8">
-              <div className="flex items-center gap-2 rounded-full border border-white/10 bg-slate-950/55 px-2 py-1 shadow-sm backdrop-blur-sm supports-[backdrop-filter]:backdrop-blur-sm dark:bg-slate-950/55">
-                {visibleNavSections[0].links.map((link) => {
+              <div className="flex items-center gap-1 rounded-full border border-white/10 bg-slate-950/55 px-2 py-1 shadow-sm backdrop-blur-sm supports-[backdrop-filter]:backdrop-blur-sm dark:bg-slate-950/55">
+                {/* Mostrar primer sección siempre horizontal */}
+                {visibleNavSections[0]?.links.map((link) => {
                   const isSpecialActive =
                     (link.path === "/historia" && isActive("/linea-temporal")) ||
                     (link.path === "/eventos" && isActive("/bauen"));
@@ -386,8 +416,9 @@ const Navigation = () => {
                     <Link
                       key={link.path}
                       to={link.path}
+                      onClick={() => setIsMobileMenuOpen(false)}
                       className={cn(
-                        "relative px-4 py-2.5 rounded-full text-sm font-medium transition-all duration-300 group nav-link-underline [will-change:transform]",
+                        "relative px-3 py-2 rounded-full text-xs md:text-sm font-medium transition-all duration-300 group nav-link-underline [will-change:transform]",
                         "hover:bg-white/10 hover:text-primary",
                         active ? "text-white nav-link-underline--active" : "text-white/80",
                       )}
@@ -396,6 +427,43 @@ const Navigation = () => {
                     </Link>
                   );
                 })}
+
+                {/* Dropdowns para otras secciones */}
+                {visibleNavSections.slice(1).map((section) => (
+                  <DropdownMenu key={section.label}>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="px-3 py-2 text-xs md:text-sm font-medium text-white/80 hover:text-primary hover:bg-white/10"
+                      >
+                        <span className="whitespace-nowrap">{section.label}</span>
+                        <ChevronDown className="ml-1 h-3 w-3" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="center" className="w-56">
+                      {section.links.map((link) => {
+                        const Icon = link.icon;
+                        const active = isActive(link.path);
+                        return (
+                          <DropdownMenuItem key={link.path} asChild>
+                            <Link
+                              to={link.path}
+                              onClick={() => setIsMobileMenuOpen(false)}
+                              className={cn(
+                                "flex items-center gap-2 px-2 py-2 cursor-pointer",
+                                active && "bg-primary/10 text-primary font-semibold"
+                              )}
+                            >
+                              {Icon && <Icon className="h-4 w-4" />}
+                              <span>{link.name}</span>
+                            </Link>
+                          </DropdownMenuItem>
+                        );
+                      })}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ))}
               </div>
             </div>
 

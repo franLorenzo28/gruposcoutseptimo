@@ -160,6 +160,21 @@ db.exec(`
 
   CREATE INDEX IF NOT EXISTS idx_threads_created ON threads(created_at DESC);
   CREATE INDEX IF NOT EXISTS idx_thread_comments_thread ON thread_comments(thread_id, created_at);
+
+  -- Narrativas (relatos históricos por año)
+  CREATE TABLE IF NOT EXISTS narrativas (
+    id TEXT PRIMARY KEY,
+    titulo TEXT NOT NULL,
+    year_section TEXT NOT NULL,
+    bloques TEXT NOT NULL,
+    autor_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    fecha_publicacion TEXT NOT NULL DEFAULT (datetime('now')),
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_narrativas_year ON narrativas(year_section);
+  CREATE INDEX IF NOT EXISTS idx_narrativas_created ON narrativas(created_at DESC);
 `);
 
 export type UserRow = {
