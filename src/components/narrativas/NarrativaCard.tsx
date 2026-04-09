@@ -28,18 +28,6 @@ export function NarrativaCard({
   const canEdit = isAdmin || isAuthor;
   const canDelete = isAdmin || isAuthor;
 
-  console.log("NarrativaCard Debug:", {
-    titulo: narrativa.titulo,
-    currentUserId,
-    autorId: narrativa.autor_id,
-    isAuthor,
-    isAdmin,
-    canEdit,
-    canDelete,
-    hasOnEdit: !!onEdit,
-    hasOnDelete: !!onDelete,
-  });
-
   const handleDelete = async () => {
     if (!confirm("¿Eliminar esta narrativa?")) return;
     if (onDelete) {
