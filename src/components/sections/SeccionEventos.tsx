@@ -1,5 +1,5 @@
 ﻿import { useEffect, useState } from "react";
-import { Calendar, MapPin, Flag, Users, PlusCircle, EyeOff } from "lucide-react";
+import { Calendar, MapPin, Flag, Users, EyeOff } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Reveal } from "@/components/Reveal";
@@ -16,90 +16,35 @@ import {
 const sampleEvents = [
   {
     id: 1,
-    title: "Campamento de Verano 2027",
-    date: "A confirmar, 2027",
-    location: "Parque Nacional Santa Teresa",
-    participants: "Todas las ramas",
-    type: "Campamento",
+    title: "Lobabi",
+    date: "A confirmar, 2026",
+    location: "Parque Rivera",
+    participants: "Manada",
+    type: "Evento de un día",
     status: "En incógnita",
     image: "https://images.unsplash.com/photo-1533599329424-34869443a571?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   },
   {
     id: 2,
-    title: "Juego de Ciudad",
+    title: "Bauen",
     date: "A confirmar, 2026",
-    location: "Centro de Montevideo",
-    participants: "Tropa y Comunidad",
-    type: "Actividad",
+    location: "Parque Baroffio",
+    participants: "Grupos Scouts de todo el país",
+    type: "Evento de 2 días",
     status: "En incógnita",
     image: "https://images.unsplash.com/photo-1599946343513-c4963d360293?q=80&w=1932&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   },
   {
     id: 3,
-    title: "Fogón de Aniversario",
+    title: "Eniesc",
     date: "A confirmar, 2026",
-    location: "Sede del Grupo",
-    participants: "Todo el grupo",
-    type: "Celebración",
-    status: "En incógnita",
-    image: "", // Evento sin imagen para mostrar el placeholder
+    location: "Rivera, Uruguay",
+    participants: "Tropa, Pioneros y Rovers",
+    type: "Evento internacional",
+    status: "Confirmado",
+    image: "", 
   },
 ];
-
-function getGoogleCalendarUrl(event: any) {
-  let start = "";
-  let end = "";
-  const months: { [key: string]: string } = {
-    Enero: "01",
-    Febrero: "02",
-    Marzo: "03",
-    Abril: "04",
-    Mayo: "05",
-    Junio: "06",
-    Julio: "07",
-    Agosto: "08",
-    Setiembre: "09",
-    Septiembre: "09",
-    Octubre: "10",
-    Noviembre: "11",
-    Diciembre: "12",
-  };
-  let match = event.date.match(/(\d{1,2})-(\d{1,2})\s+(\w+),\s*(\d{4})/);
-  if (match) {
-    const year = match[4];
-    const month = months[match[3]] || "01";
-    start = `${year}${month}${match[1].padStart(2, "0")}T090000`;
-    end = `${year}${month}${match[2].padStart(2, "0")}T170000`;
-  } else {
-    match = event.date.match(/(\d{1,2})\s+(\w+),\s*(\d{4})/);
-    if (match) {
-      const year = match[3];
-      const month = months[match[2]] || "01";
-      start = `${year}${month}${match[1].padStart(2, "0")}T090000`;
-      end = `${year}${month}${match[1].padStart(2, "0")}T170000`;
-    } else {
-      match = event.date.match(/(\w+)\s*(\d{4})/);
-      if (match) {
-        const year = match[2];
-        const month = months[match[1]] || "01";
-        start = `${year}${month}01T090000`;
-        end = `${year}${month}01T170000`;
-      }
-    }
-  }
-  const base = "https://www.google.com/calendar/render?action=TEMPLATE";
-  if (!start || !end) return base; // Devuelve un enlace genérico si no se puede parsear la fecha
-
-  const params = [
-    `text=${encodeURIComponent(event.title)}`,
-    `dates=${start}/${end}`,
-    `details=${encodeURIComponent("Evento scout organizado por Grupo Séptimo. Más detalles en nuestro sitio web.")}`,
-    `location=${encodeURIComponent(event.location)}`,
-    `sf=true`,
-    `output=xml`,
-  ];
-  return `${base}&${params.join("&")}`;
-}
 
 const EventCard = ({ event, index }: { event: any; index: number }) => {
   const fechaValida = event.date && event.date !== "A confirmar";
@@ -212,28 +157,6 @@ const EventCard = ({ event, index }: { event: any; index: number }) => {
             </div>
           </TooltipProvider>
         </CardContent>
-        {fechaValida && (
-          <div className="p-4 pt-2 mt-auto">
-            <hr className="mb-4 border-dashed border-border" />
-            <a
-              href={getGoogleCalendarUrl(event)}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`Añadir ${event.title} a Google Calendar`}
-              tabIndex={0}
-              className="w-full"
-            >
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary hover:bg-muted/20 hover:text-primary"
-              >
-                <PlusCircle className="w-4 h-4 mr-2" />
-                Añadir a Google Calendar
-              </Button>
-            </a>
-          </div>
-        )}
       </Card>
     </Reveal>
   );

@@ -26,7 +26,7 @@ const Eventos = () => {
               CARTELERA DE <span className="text-foreground">EVENTOS</span>
             </h1>
             <p className="text-base sm:text-lg text-muted-foreground mb-4 max-w-2xl">
-              Descubre torneos, watch parties y reuniones de la comunidad. No te pierdas la acción en vivo.
+              Aqui anunciaremos los eventos más importantes del año, tanto internos como externos. ¡No te pierdas nada!
             </p>
             <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
               <Calendar className="w-4 h-4" />
@@ -73,11 +73,9 @@ const Eventos = () => {
       </section>
 
       {/* Sección destacada BAUEN */}
-      <section id="bauen" className="py-12 sm:py-16 bg-gradient-to-b from-background via-background/95 to-muted/25">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-5xl mx-auto">
-            <Card className="card-hover border-2 border-primary/20 shadow-2xl bg-background/70 backdrop-blur-sm overflow-hidden">
-              <CardContent className="p-6 sm:p-8 md:p-10 lg:p-12">
+      <section id="bauen" className="py-12 sm:py-16 bg-gradient-to-b from-background via-background/95 to-muted/25 w-full">
+        <Card className="card-hover border-2 border-primary/20 shadow-2xl bg-background/70 backdrop-blur-sm overflow-hidden rounded-none w-full">
+          <CardContent className="p-6 sm:p-8 md:p-10 lg:p-12 max-w-7xl mx-auto">
                 <div className="text-center mb-8">
                   <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-muted/40 backdrop-blur-sm rounded-full mb-4">
                     <Flag className="w-5 h-5 text-primary" />
@@ -120,9 +118,7 @@ const Eventos = () => {
                   </Link>
                 </div>
               </CardContent>
-            </Card>
-          </div>
-        </div>
+        </Card>
       </section>
 
       <NovedadesRecientes />

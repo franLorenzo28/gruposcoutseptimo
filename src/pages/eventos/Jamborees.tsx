@@ -54,7 +54,6 @@ const TIPO_LABEL: Record<TipoJamboree, string> = {
 
 const Jamborees = () => {
   const navigate = useNavigate();
-  const mundiales = JAMBOREES.filter((j) => j.tipo === "mundial");
   const panamericanos = JAMBOREES.filter((j) => j.tipo === "panamericano");
 
   return (
@@ -87,7 +86,7 @@ const Jamborees = () => {
               <Card className="h-full border-border/70 bg-card/80 shadow-lg">
                 <CardContent className="p-6">
                   <Globe2 className="h-6 w-6 text-primary" />
-                  <p className="mt-3 text-3xl font-black text-primary">{JAMBOREES.length}</p>
+                  <p className="mt-3 text-3xl font-black text-primary">{JAMBOREES.length + 15}</p>
                   <p className="mt-1 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Jamborees registrados</p>
                 </CardContent>
               </Card>
@@ -96,7 +95,7 @@ const Jamborees = () => {
               <Card className="h-full border-border/70 bg-card/80 shadow-lg">
                 <CardContent className="p-6">
                   <Flag className="h-6 w-6 text-primary" />
-                  <p className="mt-3 text-3xl font-black text-primary">{mundiales.length}</p>
+                  <p className="mt-3 text-3xl font-black text-primary">1</p>
                   <p className="mt-1 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Mundiales</p>
                 </CardContent>
               </Card>
