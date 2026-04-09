@@ -65,7 +65,8 @@ export function NarrativaCard({
       {/* Autor y fecha */}
       <div className="flex items-center gap-3 pt-4 border-t border-border mb-4">
         <UserAvatar
-          user={narrativa.autor}
+          avatarUrl={narrativa.autor?.avatar_url}
+          userName={narrativa.autor?.nombre_completo || narrativa.autor?.username}
           size="sm"
         />
         <div className="text-xs text-muted-foreground">
@@ -89,7 +90,7 @@ export function NarrativaCard({
             <Eye className="h-4 w-4" />
           </Button>
         )}
-        {onEdit && (
+        {canEdit && onEdit && (
           <Button
             size="icon"
             variant="ghost"
@@ -100,7 +101,7 @@ export function NarrativaCard({
             <Edit2 className="h-4 w-4" />
           </Button>
         )}
-        {onDelete && (
+        {canDelete && onDelete && (
           <Button
             size="icon"
             variant="ghost"

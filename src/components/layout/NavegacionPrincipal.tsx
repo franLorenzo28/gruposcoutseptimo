@@ -23,6 +23,10 @@ import {
   Music,
   Images,
   Tent,
+  FileText,
+  Compass,
+  Clock,
+  MapPin,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -58,8 +62,10 @@ import logoImage from "@/assets/grupo-scout-logo.png";
 
 interface NavLink {
   name: string;
-  path: string;
+  path?: string;
   icon?: React.ElementType;
+  type?: "link" | "label" | "separator";
+  subitems?: NavLink[];
 }
 
 interface NavSection {
@@ -72,6 +78,7 @@ const navSections: NavSection[] = [
     label: "Inicio",
     links: [
       { name: "Inicio", path: "/", icon: Home },
+      { name: "Narrativas", path: "/narrativas", icon: BookOpen },
       { name: "Comuni 7", path: "/usuarios", icon: Users },
       { name: "Contacto", path: "/contacto", icon: Mail },
     ],
@@ -79,22 +86,27 @@ const navSections: NavSection[] = [
   {
     label: "Archivo e Historia",
     links: [
-      { name: "Historia", path: "/historia", icon: History },
-      { name: "Narrativas", path: "/narrativas", icon: BookOpen },
-      { name: "Archivo General", path: "/archivo", icon: Archive },
-      { name: "Scoutpedia", path: "/archivo/scoutpedia", icon: BookOpen },
-      { name: "Compañía", path: "/archivo/compania", icon: Archive },
-      { name: "Cápsula del Tiempo", path: "/archivo/capsula-del-tiempo", icon: Archive },
-      { name: "Miembros", path: "/archivo/miembros", icon: Users },
-      { name: "Locales", path: "/archivo/locales", icon: Building },
+      { name: "Historia", path: "/historia", icon: History, type: "link" },
+      {
+        name: "Archivo General",
+        path: "/archivo",
+        icon: FileText,
+        type: "link",
+        subitems: [
+          { name: "Scoutpedia", path: "/archivo/scoutpedia", icon: Compass, type: "link" },
+          { name: "Cápsula del Tiempo", path: "/archivo/capsula-del-tiempo", icon: Clock, type: "link" },
+          { name: "Locales", path: "/archivo/locales", icon: Building, type: "link" },
+        ],
+      },
+      { name: "Compañía", path: "/archivo/compania", icon: MessageSquare, type: "link" },
     ],
   },
   {
     label: "Explorar",
     links: [
-      { name: "Eventos", path: "/eventos", icon: Calendar },
-      { name: "Jamborees", path: "/eventos/jamborees", icon: Tent },
-      { name: "Movimiento Scout", path: "/movimiento-scout", icon: BookOpen },
+      { name: "Eventos", path: "/eventos", icon: Calendar, type: "link" },
+      { name: "Jamborees", path: "/eventos/jamborees", icon: Tent, type: "link" },
+      { name: "Movimiento Scout", path: "/movimiento-scout", icon: Shield, type: "link" },
       { name: "Cancionero", path: "/cancionero", icon: Music },
       { name: "Galería", path: "/galeria", icon: Images },
     ],
@@ -102,9 +114,9 @@ const navSections: NavSection[] = [
   {
     label: "Comunidad",
     links: [
-      { name: "Veteranos", path: "/veteranos", icon: Users },
+      // { name: "Veteranos", path: "/veteranos", icon: Users }, // Cerrado temporalmente
       { name: "Dirigentes", path: "/dirigentes", icon: Users },
-      { name: "Área de Miembros", path: "/area-miembros", icon: Shield },
+      { name: "Área de Miembros", path: "/area-miembros", icon: Settings },
     ],
   },
 ];
@@ -443,12 +455,70 @@ const Navigation = () => {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="center" className="w-56">
                       {section.links.map((link) => {
+                        if (link.type === "separator") {
+                          return (
+                            <div key={`separator-${link.name}`}>
+                              <DropdownMenuSeparator />
+                              {link.name && (
+                                <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-2 py-2">
+                                  {link.name}
+                                </DropdownMenuLabel>
+                              )}
+                            </div>
+                          );
+                        }
+
                         const Icon = link.icon;
-                        const active = isActive(link.path);
+                        const active = isActive(link.path || "");
+                        const hasSubitems = link.subitems && link.subitems.length > 0;
+
+                        if (hasSubitems) {
+                          return (
+                            <Popover key={link.path}>
+                              <PopoverTrigger asChild>
+                                <button className="w-full p-0">
+                                  <div className={cn(
+                                    "flex items-center justify-between px-2 py-2 cursor-pointer rounded-sm hover:bg-muted/40",
+                                    active && "bg-primary/10 text-primary font-semibold"
+                                  )}>
+                                    <div className="flex items-center gap-2">
+                                      {Icon && <Icon className="h-4 w-4" />}
+                                      <span className="text-sm">{link.name}</span>
+                                    </div>
+                                    <ChevronDown className="h-3 w-3 ml-1" />
+                                  </div>
+                                </button>
+                              </PopoverTrigger>
+                              <PopoverContent side="right" align="start" className="w-48 p-2">
+                                <div className="space-y-1">
+                                  {link.subitems.map((subitem) => {
+                                    const SubIcon = subitem.icon;
+                                    const subActive = isActive(subitem.path || "");
+                                    return (
+                                      <Link
+                                        key={subitem.path}
+                                        to={subitem.path || "#"}
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                        className={cn(
+                                          "flex items-center gap-2 px-2 py-2 rounded-sm cursor-pointer hover:bg-muted/40",
+                                          subActive && "bg-primary/10 text-primary font-semibold"
+                                        )}
+                                      >
+                                        {SubIcon && <SubIcon className="h-4 w-4" />}
+                                        <span className="text-sm">{subitem.name}</span>
+                                      </Link>
+                                    );
+                                  })}
+                                </div>
+                              </PopoverContent>
+                            </Popover>
+                          );
+                        }
+
                         return (
                           <DropdownMenuItem key={link.path} asChild>
                             <Link
-                              to={link.path}
+                              to={link.path || "#"}
                               onClick={() => setIsMobileMenuOpen(false)}
                               className={cn(
                                 "flex items-center gap-2 px-2 py-2 cursor-pointer",
@@ -747,8 +817,15 @@ function MobileMenu({
   onLinkClick,
 }: MobileMenuProps) {
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const profileMainPath = needsProfileSetup ? "/perfil/editar" : "/perfil";
   const profileMainLabel = needsProfileSetup ? "Crear perfil" : "Ver mi perfil";
+
+  const toggleExpanded = (path: string) => {
+    setExpandedItems(prev =>
+      prev.includes(path) ? prev.filter(p => p !== path) : [...prev, path]
+    );
+  };
 
   return (
     <div className="flex flex-col gap-6 mt-6">
@@ -841,15 +918,81 @@ function MobileMenu({
             {section.label}
           </h3>
           <div className="space-y-1">
-              {section.links.map((link) => (
+            {section.links.map((link) => {
+              if (link.type === "separator") {
+                return (
+                  <div key={`separator-${link.name}`} className="pt-2">
+                    <div className="border-t border-muted mb-2" />
+                    {link.name && (
+                      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2 py-2">
+                        {link.name}
+                      </h4>
+                    )}
+                  </div>
+                );
+              }
+
+              const isExpanded = expandedItems.includes(link.path || "");
+              const hasSubitems = link.subitems && link.subitems.length > 0;
+
+              if (hasSubitems) {
+                return (
+                  <div key={link.path}>
+                    <button
+                      onClick={() => toggleExpanded(link.path || "")}
+                      className={cn(
+                        "w-full flex items-center justify-between px-4 py-3 rounded-md transition-all duration-300",
+                        "hover:bg-nav-hover hover:text-primary",
+                        isActive(link.path || "")
+                          ? "bg-primary text-primary-foreground"
+                          : "text-foreground",
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        {link.icon && <link.icon className="h-5 w-5" />}
+                        <span className="text-sm font-medium">{link.name}</span>
+                      </div>
+                      <ChevronDown
+                        className={cn(
+                          "h-4 w-4 transition-transform duration-300",
+                          isExpanded && "rotate-180"
+                        )}
+                      />
+                    </button>
+                    {isExpanded && (
+                      <div className="pl-6 space-y-1 mt-1">
+                        {link.subitems.map((subitem) => (
+                          <Link
+                            key={subitem.path}
+                            to={subitem.path || "#"}
+                            onClick={onLinkClick}
+                            className={cn(
+                              "flex items-center gap-3 px-4 py-2 rounded-md transition-all duration-300",
+                              "hover:bg-nav-hover hover:text-primary",
+                              isActive(subitem.path || "")
+                                ? "bg-primary text-primary-foreground"
+                                : "text-foreground text-sm",
+                            )}
+                          >
+                            {subitem.icon && <subitem.icon className="h-4 w-4" />}
+                            <span className="text-sm font-medium">{subitem.name}</span>
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              return (
                 <Link
                   key={link.path}
-                  to={link.path}
+                  to={link.path || "#"}
                   onClick={onLinkClick}
                   className={cn(
                     "flex items-center gap-3 px-4 py-3 rounded-md transition-all duration-300 [will-change:transform]",
                     "hover:bg-nav-hover hover:text-primary",
-                    isActive(link.path)
+                    isActive(link.path || "")
                       ? "bg-primary text-primary-foreground"
                       : "text-foreground",
                   )}
@@ -857,7 +1000,8 @@ function MobileMenu({
                   {link.icon && <link.icon className="h-5 w-5" />}
                   <span className="text-sm font-medium">{link.name}</span>
                 </Link>
-              ))}
+              );
+            })}
           </div>
         </div>
       ))}

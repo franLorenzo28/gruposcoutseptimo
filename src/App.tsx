@@ -27,7 +27,6 @@ const Archivo = lazy(() => import("./pages/Archivo.tsx"));
 const ArchivoScoutpedia = lazy(() => import("./pages/archivo/Scoutpedia"));
 const ArchivoCompania = lazy(() => import("./pages/archivo/Compania"));
 const ArchivoCapsulaTiempo = lazy(() => import("./pages/archivo/CapsulaTiempo"));
-const ArchivoMiembros = lazy(() => import("./pages/archivo/Miembros"));
 const Cancionero = lazy(() => import("./pages/Cancionero"));
 const Veteranos = lazy(() => import("./pages/Veteranos"));
 const Dirigentes = lazy(() => import("./pages/Dirigentes"));
@@ -226,10 +225,9 @@ const App = () => (
                     <Route path="/archivo/scoutpedia" element={<ArchivoScoutpedia />} />
                     <Route path="/archivo/compania" element={<ArchivoCompania />} />
                     <Route path="/archivo/capsula-del-tiempo" element={<ArchivoCapsulaTiempo />} />
-                    <Route path="/archivo/miembros" element={<ArchivoMiembros />} />
                     <Route path="/cancionero" element={<Cancionero />} />
-                    <Route path="/veteranos" element={<Veteranos />} />
-                    <Route path="/dirigentes" element={<Dirigentes />} />
+                    <Route path="/veteranos" element={<AdminGuard><Veteranos /></AdminGuard>} />
+                    <Route path="/dirigentes" element={<AdminGuard><Dirigentes /></AdminGuard>} />
                     <Route path="/archivo/locales" element={<Locales />} />
                     <Route path="/locales" element={<Navigate to="/archivo/locales" replace />} />
                     <Route path="/galeria" element={<Galeria />} />
