@@ -414,6 +414,26 @@ const PerfilView = () => {
     );
   }
 
+  // Si el perfil no pudo cargarse (null) pero no es una vista restringida, mostrar error
+  if (!loading && !profile && !isRestrictedView) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25">
+        <div className="max-w-4xl mx-auto px-4 py-6 sm:py-8">
+          <div className="flex flex-col items-center justify-center py-20">
+            <h1 className="text-2xl font-semibold mb-4">Perfil no encontrado</h1>
+            <p className="text-muted-foreground mb-6">No pudimos cargar el perfil solicitado.</p>
+            <Button onClick={() => navigate(-1)}>Volver</Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Si el perfil es null después de pasar las validaciones anteriores, no renderizar nada más
+  if (!profile) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25">
       <div className="max-w-4xl mx-auto px-4 py-6 sm:py-8">
@@ -494,7 +514,7 @@ const PerfilView = () => {
             <div className="flex flex-wrap gap-6 sm:gap-8 mb-4 justify-center sm:justify-start">
               <div className="text-center sm:text-left">
                 <span className="font-semibold text-sm sm:text-base">
-                  {profile.edad || "0"}
+                  {profile?.edad || "0"}
                 </span>
                 <span className="text-muted-foreground ml-1 text-xs sm:text-sm">
                   años
@@ -587,7 +607,7 @@ const PerfilView = () => {
             </h2>
 
             {/* Mostrar unidades para jóvenes O para educadores adultos */}
-            {(profile.seisena ||
+            {(profile?.seisena ||
               (profile?.edad && profile?.edad >= 7 && profile?.edad <= 20) ||
               (profile?.edad && profile?.edad >= 21 && profile?.rol_adulto === "Educador/a")) && (
               <div className="bg-muted/50 rounded-lg p-3 sm:p-4">
@@ -602,7 +622,7 @@ const PerfilView = () => {
               </div>
             )}
 
-            {(profile.patrulla ||
+            {(profile?.patrulla ||
               (profile?.edad && profile?.edad >= 11 && profile?.edad <= 20) ||
               (profile?.edad && profile?.edad >= 21 && profile?.rol_adulto === "Educador/a")) && (
               <div className="bg-muted/50 rounded-lg p-3 sm:p-4">
@@ -617,7 +637,7 @@ const PerfilView = () => {
               </div>
             )}
 
-            {(profile.equipo_pioneros ||
+            {(profile?.equipo_pioneros ||
               (profile?.edad && profile?.edad >= 15 && profile?.edad <= 20) ||
               (profile?.edad && profile?.edad >= 21 && profile?.rol_adulto === "Educador/a")) && (
               <div className="bg-muted/50 rounded-lg p-3 sm:p-4">
@@ -632,7 +652,7 @@ const PerfilView = () => {
               </div>
             )}
 
-            {(profile.comunidad_rovers ||
+            {(profile?.comunidad_rovers ||
               (profile?.edad && profile?.edad >= 18 && profile?.edad <= 20) ||
               (profile?.edad && profile?.edad >= 21 && profile?.rol_adulto === "Educador/a")) && (
               <div className="bg-muted/50 rounded-lg p-3 sm:p-4">

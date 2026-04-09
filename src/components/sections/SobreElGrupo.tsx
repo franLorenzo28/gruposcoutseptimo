@@ -18,7 +18,6 @@ import {
   DialogContent,
   DialogTitle,
   DialogDescription,
-  DialogClose,
 } from "@/components/ui/dialog";
 import { Reveal } from "@/components/Reveal";
               import { OptimizedImage } from "@/components/OptimizedImage";
@@ -384,11 +383,6 @@ const About = () => {
                                 />
                               </div>
                               <div className="flex gap-3 justify-end">
-                                <DialogClose asChild>
-                                  <Button variant="outline" size="sm">
-                                    Cerrar
-                                  </Button>
-                                </DialogClose>
                                 <Button asChild size="sm">
                                   <Link to={`/ramas/${branch.route}`}>
                                     Más información

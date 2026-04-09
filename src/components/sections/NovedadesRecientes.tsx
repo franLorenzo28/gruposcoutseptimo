@@ -50,7 +50,10 @@ const NovedadesRecientes = () => {
         return [];
       }
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
+    gcTime: 1 * 60 * 1000, // 1 minuto
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 
   // Fallback: novedades por defecto si la API no retorna nada
@@ -78,21 +81,11 @@ const NovedadesRecientes = () => {
         <SheetTrigger asChild>
           <button
             type="button"
-            className="pointer-events-auto fixed bottom-5 right-4 z-[60] inline-flex h-11 w-11 items-center justify-center rounded-full border border-primary/30 bg-background/95 shadow-md backdrop-blur-sm transition-colors hover:bg-background md:hidden"
-            aria-label="Abrir novedades del sitio"
-          >
-            <Sparkles className="h-4 w-4 text-primary" aria-hidden="true" />
-          </button>
-        </SheetTrigger>
-
-        <SheetTrigger asChild>
-          <button
-            type="button"
-            className="pointer-events-auto group hidden items-center gap-2 rounded-l-xl border border-r-0 border-primary/30 bg-background/95 px-2.5 py-3 shadow-md backdrop-blur-sm transition-colors hover:bg-background md:flex"
+            className="pointer-events-auto group inline-flex items-center gap-2 rounded-l-xl border border-r-0 border-primary/30 bg-background/95 px-2.5 py-3 shadow-md backdrop-blur-sm transition-colors hover:bg-background"
             aria-label="Abrir novedades del sitio"
           >
             <Sparkles className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
-            <span className="-rotate-180 text-[11px] font-semibold uppercase tracking-[0.14em] text-foreground/80 [writing-mode:vertical-rl] group-hover:text-foreground">
+            <span className="-rotate-180 text-[11px] font-semibold uppercase tracking-[0.14em] text-foreground/80 [writing-mode:vertical-rl] group-hover:text-foreground hidden md:inline">
               Novedades
             </span>
           </button>
@@ -109,7 +102,7 @@ const NovedadesRecientes = () => {
             </SheetDescription>
           </SheetHeader>
 
-          <div className="mt-6 space-y-3">
+          <div className="mt-6 max-h-[calc(100vh-200px)] space-y-3 overflow-y-auto pr-2">
             {novedades.map((novedad) => (
               <article
                 key={novedad.id}
