@@ -139,7 +139,7 @@ export default function ConfiguracionSeguridad() {
   return (
     <div className="space-y-6">
       {isSaved && (
-        <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-900 rounded-lg p-3 flex items-center gap-2 text-green-700 dark:text-green-400 text-sm animate-in slide-in-from-top">
+        <div className="bg-red-50 dark:bg-red-950/30 border border-scout-red dark:border-red-900 rounded-lg p-3 flex items-center gap-2 text-scout-red dark:text-red-400 text-sm animate-in slide-in-from-top">
           <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
           </svg>
@@ -200,40 +200,40 @@ export default function ConfiguracionSeguridad() {
                     </FormDescription>
                     <div className="space-y-2 mt-3">
                       <div className={`flex items-center gap-2 text-xs ${
-                        hasMinLength ? "text-green-600" : "text-muted-foreground"
+                        hasMinLength ? "text-scout-red" : "text-muted-foreground"
                       }`}>
                         <div className={`w-4 h-4 rounded-full flex items-center justify-center border ${
-                          hasMinLength ? "bg-green-600 border-green-600" : "border-muted-foreground"
+                          hasMinLength ? "bg-scout-red border-scout-red" : "border-muted-foreground"
                         }`}>
                           {hasMinLength && <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>}
                         </div>
                         <span>Mínimo 8 caracteres</span>
                       </div>
                       <div className={`flex items-center gap-2 text-xs ${
-                        hasUpperCase ? "text-green-600" : "text-muted-foreground"
+                        hasUpperCase ? "text-scout-red" : "text-muted-foreground"
                       }`}>
                         <div className={`w-4 h-4 rounded-full flex items-center justify-center border ${
-                          hasUpperCase ? "bg-green-600 border-green-600" : "border-muted-foreground"
+                          hasUpperCase ? "bg-scout-red border-scout-red" : "border-muted-foreground"
                         }`}>
                           {hasUpperCase && <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>}
                         </div>
                         <span>Una mayúscula (A-Z)</span>
                       </div>
                       <div className={`flex items-center gap-2 text-xs ${
-                        hasLowerCase ? "text-green-600" : "text-muted-foreground"
+                        hasLowerCase ? "text-scout-red" : "text-muted-foreground"
                       }`}>
                         <div className={`w-4 h-4 rounded-full flex items-center justify-center border ${
-                          hasLowerCase ? "bg-green-600 border-green-600" : "border-muted-foreground"
+                          hasLowerCase ? "bg-scout-red border-scout-red" : "border-muted-foreground"
                         }`}>
                           {hasLowerCase && <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>}
                         </div>
                         <span>Una minúscula (a-z)</span>
                       </div>
                       <div className={`flex items-center gap-2 text-xs ${
-                        hasNumber ? "text-green-600" : "text-muted-foreground"
+                        hasNumber ? "text-scout-red" : "text-muted-foreground"
                       }`}>
                         <div className={`w-4 h-4 rounded-full flex items-center justify-center border ${
-                          hasNumber ? "bg-green-600 border-green-600" : "border-muted-foreground"
+                          hasNumber ? "bg-scout-red border-scout-red" : "border-muted-foreground"
                         }`}>
                           {hasNumber && <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>}
                         </div>

@@ -175,7 +175,25 @@ db.exec(`
 
   CREATE INDEX IF NOT EXISTS idx_narrativas_year ON narrativas(year_section);
   CREATE INDEX IF NOT EXISTS idx_narrativas_created ON narrativas(created_at DESC);
+
+  CREATE TABLE IF NOT EXISTS rama_documentos (
+    id TEXT PRIMARY KEY,
+    rama TEXT NOT NULL CHECK (rama IN ('lobatos','caminantes','pioneros','rover')),
+    nombre TEXT NOT NULL,
+    original_filename TEXT NOT NULL,
+    mime_type TEXT NOT NULL,
+    tamaño INTEGER NOT NULL DEFAULT 0,
+    storage_path TEXT NOT NULL,
+    subido_por TEXT NOT NULL REFERENCES users(id) ON DELETE SET NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_rama_documentos_rama ON rama_documentos(rama, created_at DESC);
+  CREATE INDEX IF NOT EXISTS idx_rama_documentos_subido_por ON rama_documentos(subido_por);
+  CREATE INDEX IF NOT EXISTS idx_rama_documentos_created ON rama_documentos(created_at DESC);
 `);
+
 
 export type UserRow = {
   id: string;

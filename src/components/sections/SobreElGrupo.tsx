@@ -169,7 +169,7 @@ const About = () => {
       value: "+25",
       label: "educadores activos en el staff",
       detail: "Voluntarios que sostienen y acompañan cada proceso",
-      bg: "bg-emerald-500/20",
+      bg: "bg-red-500/20 dark:bg-red-950/40",
     },
     {
       value: "+20",

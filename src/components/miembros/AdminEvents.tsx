@@ -52,14 +52,14 @@ export function AdminEvents({
   };
 
   return (
-    <Card className="border-purple-200 bg-purple-50/50">
+    <Card className="border-2 border-scout-red bg-red-50 dark:bg-slate-900 dark:border-red-900">
       <CardContent className="p-4 space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold text-purple-900">Gestionar eventos</h3>
+          <h3 className="text-lg font-bold text-scout-red dark:text-red-400">Gestionar eventos</h3>
           {!isCreating && (
             <Button
               size="sm"
-              className="bg-purple-600 hover:bg-purple-700"
+              className="bg-scout-red hover:bg-red-700 dark:hover:bg-red-800"
               onClick={() => setIsCreating(true)}
             >
               <Plus className="h-4 w-4 mr-1" />
@@ -70,11 +70,11 @@ export function AdminEvents({
 
         {/* Create form */}
         {isCreating && (
-          <div className="space-y-3 rounded-lg border border-purple-200 bg-white p-4">
-            <h4 className="font-semibold text-purple-900">Crear nuevo evento</h4>
+          <div className="space-y-3 rounded-lg border border-scout-red bg-white dark:bg-slate-950 p-4">
+            <h4 className="font-semibold text-scout-red dark:text-red-400">Crear nuevo evento</h4>
 
             <div>
-              <label className="text-xs font-semibold text-purple-900">
+              <label className="text-xs font-semibold text-scout-red dark:text-red-400">
                 Título *
               </label>
               <input
@@ -84,13 +84,13 @@ export function AdminEvents({
                   setFormData({ ...formData, titulo: e.target.value })
                 }
                 placeholder="Ej: Reunión de rama"
-                className="mt-1 w-full rounded-lg border border-purple-300 px-3 py-2 text-sm"
+                className="mt-1 w-full rounded-lg border border-scout-red px-3 py-2 text-sm bg-white dark:bg-slate-950 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-scout-red"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-semibold text-purple-900">
+                <label className="text-xs font-semibold text-scout-red dark:text-red-400">
                   Fecha *
                 </label>
                 <input
@@ -99,11 +99,11 @@ export function AdminEvents({
                   onChange={(e) =>
                     setFormData({ ...formData, fecha: e.target.value })
                   }
-                  className="mt-1 w-full rounded-lg border border-purple-300 px-3 py-2 text-sm"
+                  className="mt-1 w-full rounded-lg border border-scout-red px-3 py-2 text-sm bg-white dark:bg-slate-950 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-scout-red"
                 />
               </div>
               <div>
-                <label className="text-xs font-semibold text-purple-900">
+                <label className="text-xs font-semibold text-scout-red dark:text-red-400">
                   Hora *
                 </label>
                 <input
@@ -112,13 +112,13 @@ export function AdminEvents({
                   onChange={(e) =>
                     setFormData({ ...formData, hora: e.target.value })
                   }
-                  className="mt-1 w-full rounded-lg border border-purple-300 px-3 py-2 text-sm"
+                  className="mt-1 w-full rounded-lg border border-scout-red px-3 py-2 text-sm bg-white dark:bg-slate-950 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-scout-red"
                 />
               </div>
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-purple-900">
+              <label className="text-xs font-semibold text-scout-red dark:text-red-400">
                 Lugar
               </label>
               <input
@@ -128,12 +128,12 @@ export function AdminEvents({
                   setFormData({ ...formData, lugar: e.target.value })
                 }
                 placeholder="Ej: Sede Scout"
-                className="mt-1 w-full rounded-lg border border-purple-300 px-3 py-2 text-sm"
+                className="mt-1 w-full rounded-lg border border-scout-red px-3 py-2 text-sm bg-white dark:bg-slate-950 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-scout-red"
               />
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-purple-900">
+              <label className="text-xs font-semibold text-scout-red dark:text-red-400">
                 Descripción
               </label>
               <textarea
@@ -143,13 +143,13 @@ export function AdminEvents({
                 }
                 placeholder="Detalles adicionales del evento"
                 rows={2}
-                className="mt-1 w-full rounded-lg border border-purple-300 px-3 py-2 text-sm"
+                className="mt-1 w-full rounded-lg border border-scout-red px-3 py-2 text-sm bg-white dark:bg-slate-950 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-scout-red"
               />
             </div>
 
             <div className="flex gap-2 pt-2">
               <Button
-                className="bg-purple-600 hover:bg-purple-700"
+                className="bg-scout-red hover:bg-red-700 dark:hover:bg-red-800"
                 onClick={handleCreateEvent}
               >
                 Crear evento
@@ -176,14 +176,14 @@ export function AdminEvents({
         {/* Events list */}
         {eventos.length > 0 && (
           <div>
-            <h4 className="text-sm font-semibold text-purple-900 mb-3">
+            <h4 className="text-sm font-semibold text-scout-red dark:text-red-400 mb-3">
               Eventos de {ramaName}
             </h4>
             <div className="space-y-3">
               {eventos.map((evento) => (
                 <div
                   key={evento.id}
-                  className="rounded-lg border border-purple-200 bg-white p-3 space-y-2"
+                  className="rounded-lg border border-scout-red dark:border-red-900 bg-white dark:bg-slate-950 p-3 space-y-2"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
@@ -224,7 +224,7 @@ export function AdminEvents({
         )}
 
         {eventos.length === 0 && !isCreating && (
-          <div className="flex items-center justify-center rounded-lg border border-purple-200 bg-white px-3 py-4 text-sm text-gray-600">
+          <div className="flex items-center justify-center rounded-lg border border-scout-red dark:border-red-900 bg-white dark:bg-slate-950 px-3 py-4 text-sm text-gray-600 dark:text-gray-400">
             <p>No hay eventos programados. ¡Crea el primero!</p>
           </div>
         )}
