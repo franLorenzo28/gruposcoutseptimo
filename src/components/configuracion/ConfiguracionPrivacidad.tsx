@@ -6,8 +6,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/hooks/useUser";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Info } from "lucide-react";
-
-const STORAGE_KEY = "privacy-preferences";
+import { supabase } from "@/integrations/supabase/client";
+import { isLocalBackend, apiFetch } from "@/lib/backend";
 
 const DEFAULT_SETTINGS = {
   perfil_publico: true,
@@ -20,48 +20,94 @@ const DEFAULT_SETTINGS = {
 export default function ConfiguracionPrivacidad() {
   const { user } = useUser();
   const { toast } = useToast();
-  const storageKey = user?.id ? `${STORAGE_KEY}:${user.id}` : STORAGE_KEY;
   const [isLoading, setIsLoading] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
 
-  // Cargar preferencias desde localStorage
+  // Cargar preferencias desde Supabase
   useEffect(() => {
-    const scoped = localStorage.getItem(storageKey);
-    const legacy = user?.id ? localStorage.getItem(STORAGE_KEY) : null;
-    const saved = scoped ?? legacy;
+    if (!user?.id) return;
 
-    if (!scoped && legacy && user?.id) {
-      localStorage.setItem(storageKey, legacy);
-    }
-
-    if (saved) {
+    const loadSettings = async () => {
       try {
-        setSettings(JSON.parse(saved));
-      } catch {
+        if (isLocalBackend()) {
+          const data = await apiFetch(`/profiles/${user.id}`);
+          if (data?.privacy_preferences) {
+            setSettings({ ...DEFAULT_SETTINGS, ...data.privacy_preferences });
+          }
+        } else {
+          const { data, error } = await supabase
+            .from("profiles")
+            .select("privacy_preferences")
+            .eq("user_id", user.id)
+            .single();
+
+          if (error) throw error;
+          if (data?.privacy_preferences) {
+            setSettings({ ...DEFAULT_SETTINGS, ...data.privacy_preferences });
+          }
+        }
+      } catch (error) {
+        console.error("Error loading privacy preferences:", error);
         setSettings(DEFAULT_SETTINGS);
       }
-    }
-  }, [storageKey, user?.id]);
+    };
 
-  const handleToggle = (key: keyof typeof settings) => {
+    loadSettings();
+  }, [user?.id]);
+
+  const handleToggle = async (key: keyof typeof settings) => {
     const newSettings = {
       ...settings,
       [key]: !settings[key],
     };
     setSettings(newSettings);
-    localStorage.setItem(storageKey, JSON.stringify(newSettings));
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 2000);
+    
+    // Guardar automáticamente en Supabase
+    try {
+      if (isLocalBackend()) {
+        await apiFetch(`/profiles/${user?.id}`, {
+          method: "PUT",
+          body: { privacy_preferences: newSettings },
+        });
+      } else {
+        const { error } = await supabase
+          .from("profiles")
+          .update({ privacy_preferences: newSettings })
+          .eq("user_id", user?.id);
+        if (error) throw error;
+      }
+      
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 2000);
+    } catch (error) {
+      console.error("Error saving privacy preferences:", error);
+      // Revertir cambio si falla
+      setSettings(settings);
+      toast({
+        title: "Error",
+        description: "No pudimos guardar tus preferencias. Intenta de nuevo.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSave = async () => {
     try {
       setIsLoading(true);
-      // Aquí iría la llamada a la API para guardar preferencias de privacidad
-      // await apiFetch("/profiles/privacy", { method: "PUT", body: settings });
-
-      localStorage.setItem(storageKey, JSON.stringify(settings));
+      
+      if (isLocalBackend()) {
+        await apiFetch(`/profiles/${user?.id}`, {
+          method: "PUT",
+          body: { privacy_preferences: settings },
+        });
+      } else {
+        const { error } = await supabase
+          .from("profiles")
+          .update({ privacy_preferences: settings })
+          .eq("user_id", user?.id);
+        if (error) throw error;
+      }
 
       toast({
         title: "✓ Privacidad actualizada",

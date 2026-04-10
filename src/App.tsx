@@ -53,7 +53,6 @@ const AdminPanel = lazy(() => import("./pages/AdminPanel"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const AreaMiembros = lazy(() => import("./pages/miembros/AreaMiembros"));
 const LoginMiembros = lazy(() => import("./pages/miembros/LoginMiembros"));
-const DashboardMiembros = lazy(() => import("./pages/miembros/DashboardMiembros"));
 const PanelRama = lazy(() => import("./pages/miembros/PanelRama"));
 const Manada = lazy(() => import("./pages/ramas/manada"));
 const Tropa = lazy(() => import("./pages/ramas/tropa"));
@@ -62,7 +61,7 @@ const Rovers = lazy(() => import("./pages/ramas/rovers"));
 const Staff = lazy(() => import("./pages/ramas/staff"));
 const Comite = lazy(() => import("./pages/ramas/comite"));
 const Narrativas = lazy(() => import("./pages/narrativas"));
-import { MemberAuthProvider } from "@/context/MemberAuthContext";
+import { MemberAuthProvider, useMemberAuth } from "@/context/MemberAuthContext";
 import RequireMemberAuth from "@/components/auth/RequireMemberAuth";
 import RequireRamaAccess from "@/components/auth/RequireRamaAccess";
 import { supabase } from "@/integrations/supabase/client";
@@ -205,6 +204,17 @@ async function ensureProfileExists(user: { id: string; email?: string | null; us
   }
 }
 
+// Componente que redirija automáticamente al panel de rama del usuario
+function Dashboard() {
+  const { session } = useMemberAuth();
+  
+  if (!session) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  return <Navigate to={`/area-miembros/ramas/${session.rama}`} replace />;
+}
+
 const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
@@ -261,7 +271,7 @@ const App = () => (
                       path="/dashboard"
                       element={
                         <RequireMemberAuth>
-                          <DashboardMiembros />
+                          <Dashboard />
                         </RequireMemberAuth>
                       }
                     />

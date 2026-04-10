@@ -87,7 +87,7 @@ export function AdminRamaContent({
     return (
       <Button
         variant="outline"
-        className="border-emerald-300 text-emerald-800 hover:bg-emerald-50"
+        className="border-scout-red text-white bg-scout-red hover:bg-red-700 dark:hover:bg-red-600"
         onClick={() => setIsEditing(true)}
       >
         Editar información de rama
@@ -96,10 +96,10 @@ export function AdminRamaContent({
   }
 
   return (
-    <Card className="border-emerald-200 bg-emerald-50/50">
+    <Card className="border-scout-red bg-slate-50 dark:bg-slate-900 border-2">
       <CardContent className="p-4 space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold text-emerald-900">
+          <h3 className="text-lg font-bold text-scout-red">
             Editando información de {ramaName}
           </h3>
           <Button
@@ -116,34 +116,34 @@ export function AdminRamaContent({
 
         {/* Lema */}
         <div>
-          <label className="text-sm font-semibold text-emerald-900">Lema</label>
+          <label className="text-sm font-semibold text-scout-red">Lema</label>
           <input
             type="text"
             value={data.lema}
             onChange={(e) => setData({ ...data, lema: e.target.value })}
-            className="mt-1 w-full rounded-lg border border-emerald-300 px-3 py-2 text-sm"
+            className="mt-1 w-full rounded-lg border border-scout-red bg-white dark:bg-slate-950 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-scout-red"
             placeholder="Ej: Siempre mejor"
           />
         </div>
 
         {/* Reuniones */}
         <div>
-          <label className="text-sm font-semibold text-emerald-900">
+          <label className="text-sm font-semibold text-scout-red">
             Reuniones
           </label>
           <div className="mt-2 space-y-2">
             {data.reuniones.map((reunion, idx) => (
               <div
                 key={idx}
-                className="flex items-center justify-between rounded-lg border border-emerald-200 bg-white px-3 py-2"
+                className="flex items-center justify-between rounded-lg border border-scout-red bg-white dark:bg-slate-900 px-3 py-2"
               >
-                <span className="text-sm">{reunion}</span>
+                <span className="text-sm text-slate-900 dark:text-white">{reunion}</span>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => handleRemoveReunion(idx)}
                 >
-                  <X className="h-4 w-4 text-red-500" />
+                  <X className="h-4 w-4 text-scout-red" />
                 </Button>
               </div>
             ))}
@@ -154,13 +154,13 @@ export function AdminRamaContent({
               value={newReunion}
               onChange={(e) => setNewReunion(e.target.value)}
               placeholder="Ej: Lunes 20:00 - 22:00"
-              className="flex-1 rounded-lg border border-emerald-300 px-3 py-2 text-sm"
+              className="flex-1 rounded-lg border border-scout-red bg-white dark:bg-slate-950 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-scout-red"
             />
             <Button
               variant="outline"
               size="sm"
               onClick={handleAddReunion}
-              className="border-emerald-300"
+              className="border-scout-red text-white bg-scout-red hover:bg-red-700 dark:hover:bg-red-600"
             >
               Agregar
             </Button>
@@ -169,22 +169,22 @@ export function AdminRamaContent({
 
         {/* Información */}
         <div>
-          <label className="text-sm font-semibold text-emerald-900">
+          <label className="text-sm font-semibold text-scout-red">
             Información interna
           </label>
           <div className="mt-2 space-y-2">
             {data.info.map((item, idx) => (
               <div
                 key={idx}
-                className="flex items-center justify-between rounded-lg border border-emerald-200 bg-white px-3 py-2"
+                className="flex items-center justify-between rounded-lg border border-scout-red bg-white dark:bg-slate-900 px-3 py-2"
               >
-                <span className="text-sm">{item}</span>
+                <span className="text-sm text-slate-900 dark:text-white">{item}</span>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => handleRemoveInfo(idx)}
                 >
-                  <X className="h-4 w-4 text-red-500" />
+                  <X className="h-4 w-4 text-scout-red" />
                 </Button>
               </div>
             ))}
@@ -195,13 +195,13 @@ export function AdminRamaContent({
               value={newInfo}
               onChange={(e) => setNewInfo(e.target.value)}
               placeholder="Ej: Trabajar en progresiones de rama"
-              className="flex-1 rounded-lg border border-emerald-300 px-3 py-2 text-sm"
+              className="flex-1 rounded-lg border border-scout-red bg-white dark:bg-slate-950 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-scout-red"
             />
             <Button
               variant="outline"
               size="sm"
               onClick={handleAddInfo}
-              className="border-emerald-300"
+              className="border-scout-red text-white bg-scout-red hover:bg-red-700 dark:hover:bg-red-600"
             >
               Agregar
             </Button>
@@ -210,22 +210,22 @@ export function AdminRamaContent({
 
         {/* Avisos */}
         <div>
-          <label className="text-sm font-semibold text-emerald-900">
+          <label className="text-sm font-semibold text-scout-yellow">
             Avisos internos
           </label>
           <div className="mt-2 space-y-2">
             {data.avisos.map((aviso, idx) => (
               <div
                 key={idx}
-                className="flex items-start justify-between gap-2 rounded-lg border border-amber-200 bg-amber-50/50 px-3 py-2"
+                className="flex items-start justify-between gap-2 rounded-lg border border-scout-yellow bg-yellow-50 dark:bg-slate-900 px-3 py-2"
               >
-                <span className="text-sm flex-1">{aviso}</span>
+                <span className="text-sm flex-1 text-slate-900 dark:text-white">{aviso}</span>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => handleRemoveAviso(idx)}
                 >
-                  <X className="h-4 w-4 text-red-500" />
+                  <X className="h-4 w-4 text-scout-red" />
                 </Button>
               </div>
             ))}
@@ -235,14 +235,14 @@ export function AdminRamaContent({
               value={newAviso}
               onChange={(e) => setNewAviso(e.target.value)}
               placeholder="Ej: Traer autorización para la salida del próximo sábado"
-              className="flex-1 rounded-lg border border-emerald-300 px-3 py-2 text-sm"
+              className="flex-1 rounded-lg border border-scout-yellow bg-white dark:bg-slate-950 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-scout-yellow"
               rows={2}
             />
             <Button
               variant="outline"
               size="sm"
               onClick={handleAddAviso}
-              className="border-emerald-300 h-auto"
+              className="border-scout-yellow text-white bg-scout-yellow hover:bg-yellow-600 dark:hover:bg-yellow-700 h-auto"
             >
               Agregar
             </Button>
@@ -251,7 +251,7 @@ export function AdminRamaContent({
 
         <div className="flex gap-2 pt-2">
           <Button
-            className="bg-emerald-600 hover:bg-emerald-700"
+            className="bg-scout-red hover:bg-red-700 dark:hover:bg-red-600 text-white"
             onClick={handleSave}
           >
             <Save className="h-4 w-4 mr-2" />

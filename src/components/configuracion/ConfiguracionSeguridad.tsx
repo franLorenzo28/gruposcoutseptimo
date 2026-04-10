@@ -64,27 +64,32 @@ export default function ConfiguracionSeguridad() {
     try {
       setIsLoading(true);
 
-      // Aquí iría la llamada a la API para cambiar la contraseña
-      // await apiFetch("/auth/change-password", {
-      //   method: "POST",
-      //   body: {
-      //     currentPassword: data.password_actual,
-      //     newPassword: data.password_nueva,
-      //   },
-      // });
+      if (isLocalBackend()) {
+        // Para backend local, usar la API Express (no implementado aún)
+        throw new Error("Cambio de contraseña disponible solo en Supabase");
+      } else {
+        // Para Supabase, usar updateUser que maneja la seguridad internamente
+        // Nota: Supabase no valida la contraseña actual en updateUser,
+        // envía un email de confirmación en su lugar
+        const { error } = await supabase.auth.updateUser({
+          password: data.password_nueva,
+        });
+        
+        if (error) throw error;
+      }
 
       toast({
         title: "✓ Contraseña actualizada",
-        description: "Tu contraseña ha sido cambiada correctamente.",
+        description: "Tu contraseña ha sido cambiada correctamente. Por favor recarga la página.",
       });
 
       form.reset();
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 2000);
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "No pudimos cambiar tu contraseña. Intenta de nuevo.",
+        description: error?.message || "No pudimos cambiar tu contraseña. Intenta de nuevo.",
         variant: "destructive",
       });
     } finally {

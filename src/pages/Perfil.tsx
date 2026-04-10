@@ -537,7 +537,7 @@ const Perfil = () => {
 
       // Permitir a Adultos Educadores guardar sus unidades a cargo
       if (sanitized.edad >= 21 && sanitized.rol_adulto === "Educador/a") {
-        profileData.seisena = sanitized.seisena || null;
+        profileData.seisena = null;
         profileData.patrulla = sanitized.patrulla || null;
         profileData.equipo_pioneros = sanitized.equipo_pioneros || null;
         profileData.comunidad_rovers = sanitized.comunidad_rovers || null;
@@ -1058,23 +1058,6 @@ const Perfil = () => {
                   </div>
 
                   {/* Campos específicos según la rama */}
-                  {ramaEducador === "manada" && (
-                    <div className="space-y-2">
-                      <Label htmlFor="seisena_educador">Seisena de Manada (opcional)</Label>
-                      <Input
-                        id="seisena_educador"
-                        name="seisena"
-                        value={formData.seisena}
-                        onChange={handleChange}
-                        placeholder="Ej: Seisena Roja, Seisena Azul..."
-                        className="bg-background"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Nombre de la seisena que coordinas en Manada
-                      </p>
-                    </div>
-                  )}
-
                   {ramaEducador === "tropa" && (
                     <div className="space-y-2">
                       <Label htmlFor="patrulla_educador">Patrulla de Tropa (opcional)</Label>

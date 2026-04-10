@@ -157,9 +157,6 @@ export default function PanelRama({ rama }: { rama: MiembroRama }) {
                   <Button asChild variant="outline">
                     <Link to="/area-miembros">Área de miembros</Link>
                   </Button>
-                  <Button asChild variant="outline">
-                    <Link to="/dashboard">Ir al dashboard</Link>
-                  </Button>
                   <Button variant="destructive" onClick={logout}>
                     Cerrar sesión
                   </Button>

@@ -1,6 +1,6 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/hooks/useUser";
 import { Progress } from "@/components/ui/progress";
+import { supabase } from "@/integrations/supabase/client";
+import { isLocalBackend, apiFetch } from "@/lib/backend";
 
 const profileSchema = z.object({
   nombre_completo: z.string().min(3, "Nombre debe tener al menos 3 caracteres"),
@@ -38,17 +40,76 @@ export default function ConfiguracionPerfil() {
     resolver: zodResolver(profileSchema),
     defaultValues: {
       nombre_completo: user?.profile?.nombre_completo || "",
-      profesion_ocupacion: "",
-      descripcion_personal: "",
+      profesion_ocupacion: user?.profile?.profesion_ocupacion || "",
+      descripcion_personal: user?.profile?.descripcion_personal || "",
     },
   });
+
+  // Cargar datos del perfil desde Supabase
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const loadProfile = async () => {
+      try {
+        if (isLocalBackend()) {
+          const data = await apiFetch(`/profiles/${user.id}`);
+          if (data) {
+            form.reset({
+              nombre_completo: data.nombre_completo || "",
+              profesion_ocupacion: data.profesion_ocupacion || "",
+              descripcion_personal: data.descripcion_personal || "",
+            });
+            setCharCount(data.descripcion_personal?.length || 0);
+          }
+        } else {
+          const { data, error } = await supabase
+            .from("profiles")
+            .select("nombre_completo, profesion_ocupacion, descripcion_personal")
+            .eq("user_id", user.id)
+            .single();
+
+          if (error) throw error;
+          if (data) {
+            form.reset({
+              nombre_completo: data.nombre_completo || "",
+              profesion_ocupacion: data.profesion_ocupacion || "",
+              descripcion_personal: data.descripcion_personal || "",
+            });
+            setCharCount(data.descripcion_personal?.length || 0);
+          }
+        }
+      } catch (error) {
+        console.error("Error loading profile:", error);
+      }
+    };
+
+    loadProfile();
+  }, [user?.id, form]);
 
   const onSubmit = async (data: ProfileFormValues) => {
     try {
       setIsLoading(true);
 
-      // Aquí iría la llamada a la API para actualizar perfil
-      // await apiFetch("/profiles/update", { method: "PUT", body: data });
+      if (isLocalBackend()) {
+        await apiFetch(`/profiles/${user?.id}`, {
+          method: "PUT",
+          body: {
+            nombre_completo: data.nombre_completo,
+            profesion_ocupacion: data.profesion_ocupacion || null,
+            descripcion_personal: data.descripcion_personal || null,
+          },
+        });
+      } else {
+        const { error } = await supabase
+          .from("profiles")
+          .update({
+            nombre_completo: data.nombre_completo,
+            profesion_ocupacion: data.profesion_ocupacion || null,
+            descripcion_personal: data.descripcion_personal || null,
+          })
+          .eq("user_id", user?.id);
+        if (error) throw error;
+      }
 
       toast({
         title: "✓ Perfil actualizado",

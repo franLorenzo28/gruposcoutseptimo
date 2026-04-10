@@ -37,7 +37,7 @@ export default function AreaMiembros() {
                   </p>
                   <div className="flex flex-wrap gap-3">
                     <Button asChild>
-                      <Link to="/dashboard">Ir a mi dashboard</Link>
+                      <Link to={`/area-miembros/ramas/${session.rama}`}>Ir al panel de rama</Link>
                     </Button>
                     <Button variant="outline" onClick={logout}>
                       Cerrar sesión
