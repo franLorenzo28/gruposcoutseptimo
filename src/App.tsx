@@ -18,6 +18,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import ScrollAlInicio from "@/components/layout/ScrollAlInicio";
 import TransicionRuta from "@/components/layout/TransicionRuta";
+import BotonVolverGlobal from "@/components/layout/BotonVolverGlobal";
 const Inicio = lazy(() => import("./pages/inicio/Inicio"));
 const Historia = lazy(() => import("./pages/historia/Historia.tsx"));
 const Bauen = lazy(() => import("./pages/eventos/Bauen"));
@@ -220,6 +221,7 @@ const App = () => (
               <NewsPopup />
               <ScrollAlInicio />
               <SaltarAlContenido />
+              <BotonVolverGlobal />
               <main id="main-content" tabIndex={-1} className="min-h-screen">
                 <Suspense
                   fallback={

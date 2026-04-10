@@ -1,10 +1,12 @@
 import { Link, useSearchParams } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useMemberAuth } from "@/context/MemberAuthContext";
 import type { MiembroRama } from "@/lib/member-auth";
 import { Calendar, FileText, Image, Info, AlertTriangle, ShieldCheck } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
+import { RamaAdminSection } from "@/components/miembros/RamaAdminSection";
 
 const ramaConfig: Record<
   MiembroRama,
@@ -52,6 +54,74 @@ export default function PanelRama({ rama }: { rama: MiembroRama }) {
   const denied = searchParams.get("acceso") === "denegado";
   const config = ramaConfig[rama];
   const isRamaAdmin = !!session?.isRamaAdmin && session?.rama === rama;
+
+  // State for admin data
+  const [ramaContent, setRamaContent] = useState(() => {
+    if (typeof window === "undefined") return { lema: config.lema, reuniones: config.reuniones, info: config.info, avisos: [] };
+    const stored = localStorage.getItem(`rama_${rama}_content`);
+    return stored ? JSON.parse(stored) : { lema: config.lema, reuniones: config.reuniones, info: config.info, avisos: [] };
+  });
+
+  const [documentos, setDocumentos] = useState(() => {
+    if (typeof window === "undefined") return [];
+    const stored = localStorage.getItem(`rama_${rama}_documentos`);
+    return stored ? JSON.parse(stored) : [];
+  });
+
+  const [eventos, setEventos] = useState(() => {
+    if (typeof window === "undefined") return [];
+    const stored = localStorage.getItem(`rama_${rama}_eventos`);
+    return stored ? JSON.parse(stored) : [];
+  });
+
+  // Save content to localStorage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(`rama_${rama}_content`, JSON.stringify(ramaContent));
+    }
+  }, [ramaContent, rama]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(`rama_${rama}_documentos`, JSON.stringify(documentos));
+    }
+  }, [documentos, rama]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(`rama_${rama}_eventos`, JSON.stringify(eventos));
+    }
+  }, [eventos, rama]);
+
+  const handleSaveContent = (newContent: typeof ramaContent) => {
+    setRamaContent(newContent);
+  };
+
+  const handleUploadDocument = (file: File) => {
+    const newDoc = {
+      id: Date.now().toString(),
+      nombre: file.name,
+      tipo: file.type || "Archivo",
+      fechaSubida: new Date().toLocaleDateString("es-AR"),
+    };
+    setDocumentos([...documentos, newDoc]);
+  };
+
+  const handleDeleteDocument = (docId: string) => {
+    setDocumentos(documentos.filter((d) => d.id !== docId));
+  };
+
+  const handleAddEvent = (eventData: Pick<any, 'titulo' | 'fecha' | 'hora' | 'lugar' | 'descripcion'>) => {
+    const newEvent = {
+      id: Date.now().toString(),
+      ...eventData,
+    };
+    setEventos([...eventos, newEvent]);
+  };
+
+  const handleDeleteEvent = (eventId: string) => {
+    setEventos(eventos.filter((e) => e.id !== eventId));
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25">
@@ -106,7 +176,7 @@ export default function PanelRama({ rama }: { rama: MiembroRama }) {
                   <h2 className="text-lg font-bold">Calendario</h2>
                 </div>
                 <ul className="text-sm text-muted-foreground space-y-2">
-                  {config.reuniones.map((item) => (
+                  {ramaContent.reuniones.map((item: string) => (
                     <li key={item}>⬢ {item}</li>
                   ))}
                 </ul>
@@ -124,6 +194,19 @@ export default function PanelRama({ rama }: { rama: MiembroRama }) {
                     <li key={item}>⬢ {item}</li>
                   ))}
                 </ul>
+                {documentos.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-border/50">
+                    <p className="text-xs font-semibold text-primary mb-2">Archivos subidos:</p>
+                    {documentos.slice(0, 3).map((doc: any) => (
+                      <p key={doc.id} className="text-xs text-muted-foreground truncate">
+                        📎 {doc.nombre}
+                      </p>
+                    ))}
+                    {documentos.length > 3 && (
+                      <p className="text-xs text-primary mt-1">+{documentos.length - 3} más</p>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -143,37 +226,50 @@ export default function PanelRama({ rama }: { rama: MiembroRama }) {
               <CardContent>
                 <div className="mb-3 flex items-center gap-2 pt-4">
                   <Info className="h-5 w-5 text-primary" />
-                  <h2 className="text-lg font-bold">Informacion interna</h2>
+                  <h2 className="text-lg font-bold">Información interna</h2>
                 </div>
                 <ul className="text-sm text-muted-foreground space-y-2">
-                  {config.info.map((item) => (
+                  {ramaContent.info.map((item: string) => (
                     <li key={item}>⬢ {item}</li>
                   ))}
                 </ul>
+                {ramaContent.avisos.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-border/50">
+                    <p className="text-xs font-semibold text-amber-600 mb-2">Avisos:</p>
+                    {ramaContent.avisos.slice(0, 2).map((aviso: string, idx: number) => (
+                      <p key={idx} className="text-xs text-amber-700 mb-1">
+                        ⚠️ {aviso.substring(0, 40)}...
+                      </p>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
 
           {isRamaAdmin && (
-            <Card className="border-emerald-200 bg-emerald-50/70 shadow-sm">
-              <CardContent className="p-5">
-                <h2 className="text-lg font-bold text-emerald-800">Herramientas de administración</h2>
-                <p className="mt-2 text-sm text-emerald-700">
-                  Tienes permisos de educador/a para gestionar contenido de esta rama.
+            <div className="space-y-6">
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50/70 p-4">
+                <h2 className="text-lg font-bold text-emerald-800">🛡️ Panel de Administración de Rama</h2>
+                <p className="mt-1 text-sm text-emerald-700">
+                  Gestiona el contenido, documentos y eventos de {config.titulo}. Los cambios se guardan automáticamente.
                 </p>
-                <div className="mt-4 flex flex-wrap gap-3">
-                  <Button variant="outline" className="border-emerald-300 text-emerald-800">
-                    Subir calendario
-                  </Button>
-                  <Button variant="outline" className="border-emerald-300 text-emerald-800">
-                    Subir archivos
-                  </Button>
-                  <Button variant="outline" className="border-emerald-300 text-emerald-800">
-                    Publicar aviso interno
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+              </div>
+
+              <Reveal>
+                <RamaAdminSection
+                  ramaName={config.titulo}
+                  ramaContent={ramaContent}
+                  documentos={documentos}
+                  eventos={eventos}
+                  onSaveContent={handleSaveContent}
+                  onUploadDocument={handleUploadDocument}
+                  onDeleteDocument={handleDeleteDocument}
+                  onAddEvent={handleAddEvent}
+                  onDeleteEvent={handleDeleteEvent}
+                />
+              </Reveal>
+            </div>
           )}
         </div>
       </section>

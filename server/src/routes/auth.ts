@@ -19,44 +19,55 @@ const registerSchema = z.object({
 });
 
 authRouter.post("/register", async (req: any, res: any) => {
-  const parse = registerSchema.safeParse(req.body);
-  if (!parse.success)
-    return res.status(400).json({ error: parse.error.flatten() });
-  const { email, password, username } = parse.data;
-
-  const existing = db
-    .prepare("SELECT id FROM users WHERE email = ? OR username = ?")
-    .get(email, username);
-  if (existing)
-    return res.status(409).json({ error: "Email o usuario ya existe" });
-
-  const id = randomUUID();
-  const password_hash = bcrypt.hashSync(password, 10);
-  db.prepare(
-    "INSERT INTO users (id, email, password_hash, username) VALUES (?, ?, ?, ?)",
-  ).run(id, email, password_hash, username);
-  db.prepare(
-    `INSERT INTO profiles (user_id, nombre_completo, is_public, seisena, patrulla, equipo_pioneros, comunidad_rovers, fecha_nacimiento, rol_adulto, rama_que_educa, telefono, avatar_url) 
-    VALUES (?, ?, ?, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)`,
-  ).run(id, username, 0);
-
-  // Generar token de verificación
-  const verificationToken = randomUUID();
-  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24 horas
-  db.prepare(
-    "INSERT INTO verification_tokens (id, user_id, token, expires_at) VALUES (?, ?, ?, ?)",
-  ).run(randomUUID(), id, verificationToken, expiresAt);
-
-  // Enviar email de verificación
   try {
-    await sendVerificationEmail(email, verificationToken);
-  } catch (error) {
-    console.error("Error al enviar email de verificación:", error);
-    // No bloquear el registro si falla el email
-  }
+    const parse = registerSchema.safeParse(req.body);
+    if (!parse.success)
+      return res.status(400).json({ error: parse.error.flatten() });
+    const { email, password, username } = parse.data;
 
-  const token = signToken({ userId: id });
-  res.json({ token, user: { id, email, username } });
+    const existing = db
+      .prepare("SELECT id FROM users WHERE email = ? OR username = ?")
+      .get(email, username);
+    if (existing)
+      return res.status(409).json({ error: "Email o usuario ya existe" });
+
+    const id = randomUUID();
+    const password_hash = bcrypt.hashSync(password, 10);
+    
+    // Insert user
+    db.prepare(
+      "INSERT INTO users (id, email, password_hash, username) VALUES (?, ?, ?, ?)",
+    ).run(id, email, password_hash, username);
+    
+    // Insert profile (nombre_completo should be a proper name, not username)
+    db.prepare(
+      `INSERT INTO profiles (user_id, nombre_completo, is_public) 
+      VALUES (?, ?, ?)`,
+    ).run(id, username, 0);
+
+    // Generar token de verificación
+    const verificationToken = randomUUID();
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24 horas
+    db.prepare(
+      "INSERT INTO verification_tokens (id, user_id, token, expires_at) VALUES (?, ?, ?, ?)",
+    ).run(randomUUID(), id, verificationToken, expiresAt);
+
+    // Enviar email de verificación
+    try {
+      await sendVerificationEmail(email, verificationToken);
+    } catch (error) {
+      console.error("Error al enviar email de verificación:", error);
+      // No bloquear el registro si falla el email
+    }
+
+    const token = signToken({ userId: id });
+    res.json({ token, user: { id, email, username } });
+  } catch (error: any) {
+    console.error("Error al registrar usuario:", error);
+    res.status(500).json({
+      error: error.message || "Error al registrar usuario. Intenta de nuevo."
+    });
+  }
 });
 
 const loginSchema = z.object({

@@ -115,7 +115,7 @@ const navSections: NavSection[] = [
     label: "Comunidad",
     links: [
       // { name: "Veteranos", path: "/veteranos", icon: Users }, // Cerrado temporalmente
-      { name: "Dirigentes", path: "/dirigentes", icon: Users },
+      { name: "Educadores", path: "/dirigentes", icon: Users },
       { name: "Área de Miembros", path: "/area-miembros", icon: Settings },
     ],
   },

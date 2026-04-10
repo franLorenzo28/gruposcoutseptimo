@@ -24,3 +24,4 @@ if (import.meta.env.DEV) {
 }
 
 export type { Database };
+

@@ -48,7 +48,7 @@ const sectionGroupMeta: Array<{
   {
     key: "Comunidad",
     title: "Personas y comunidad",
-    description: "Dirigentes, exintegrantes y red humana del grupo.",
+    description: "Educadores, exintegrantes y red humana del grupo.",
   },
   {
     key: "Visual",

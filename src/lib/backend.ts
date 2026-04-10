@@ -123,6 +123,11 @@ export async function ensureLocalToken() {
 
 // API fetch with 15 second timeout using AbortController
 export async function apiFetch(path: string, init: RequestInit = {}) {
+  // Si no es backend local, lanzar error indicando que debe usarse Supabase
+  if (!isLocalBackend()) {
+    throw new Error("apiFetch solo funciona con backend local. Usa Supabase para operaciones remotas.");
+  }
+
   const timeout = 15000; // 15 seconds timeout
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -170,6 +175,11 @@ export async function apiFetch(path: string, init: RequestInit = {}) {
 }
 
 export async function uploadImage(file: File): Promise<string> {
+  // Si no es backend local, lanzar error
+  if (!isLocalBackend()) {
+    throw new Error("uploadImage solo funciona con backend local. Para Supabase, usa el cliente de storage directamente.");
+  }
+
   const timeout = 15000;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);

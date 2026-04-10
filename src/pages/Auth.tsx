@@ -371,6 +371,14 @@ const Auth = () => {
       });
       return;
     }
+    if (!sanitized.telefono) {
+      toast({
+        title: "Error en el formulario",
+        description: "El teléfono es obligatorio para registrarse.",
+        variant: "destructive",
+      });
+      return;
+    }
     setLoading(true);
     try {
       // Usar cliente Supabase (mock o real según configuración)
@@ -379,7 +387,7 @@ const Auth = () => {
         email: sanitized.email,
         password: sanitized.password,
         options: {
-          data: { nombre: sanitized.nombreCompleto || null, telefono: sanitized.telefono || null },
+          data: { nombre: sanitized.nombreCompleto || "", telefono: sanitized.telefono },
           emailRedirectTo: redirectUrl,
         },
       });
