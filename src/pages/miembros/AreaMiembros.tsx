@@ -4,12 +4,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useMemberAuth } from "@/context/MemberAuthContext";
 import { Lock, Users, FileText, Image } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
+import { PageGridBackground } from "@/components/PageGridBackground";
 
 export default function AreaMiembros() {
   const { isAuthenticated, session, logout } = useMemberAuth();
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25">
+    <PageGridBackground>
       <section className="container mx-auto px-4 py-10 sm:py-14 space-y-8">
         <Reveal>
           <div className="mx-auto grid max-w-6xl gap-6 rounded-3xl border border-border/70 bg-card/80 p-6 shadow-xl backdrop-blur-sm sm:p-8 lg:grid-cols-[1.2fr_0.8fr]">
@@ -90,7 +91,7 @@ export default function AreaMiembros() {
           </Reveal>
         </div>
       </section>
-    </div>
+    </PageGridBackground>
   );
 }
 

@@ -32,6 +32,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Mail, Phone, MapPin, Clock } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
+import { PageGridBackground } from "@/components/PageGridBackground";
 import { useToast } from "@/hooks/use-toast";
 // Usa MapComponentEmbed si tienes problemas con billing de Google Cloud
 // import MapComponent from "../components/MapComponentEmbed";
@@ -92,7 +93,7 @@ const Contacto = () => {
   ];
 
   return (
-    <div className="min-h-screen">
+    <PageGridBackground>
       {/* Hero Section */}
       <section className="relative overflow-hidden pt-24 sm:pt-28 md:pt-32 pb-12 sm:pb-16 bg-gradient-to-b from-background via-background/95 to-muted/25">
         <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
@@ -268,7 +269,7 @@ const Contacto = () => {
       </section>
 
       {/* Footer global en App.tsx */}
-    </div>
+    </PageGridBackground>
   );
 };
 

@@ -1,6 +1,7 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import { Compass, Users, Heart, Trophy, Sparkles } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
+import { PageGridBackground } from "@/components/PageGridBackground";
 import NovedadesRecientes from "@/components/sections/NovedadesRecientes";
 
 type TopicCategory = "fundamentos" | "historia" | "metodo" | "sistema";
@@ -127,7 +128,7 @@ const MovimientoScout = () => {
     TOPICS.find((topic) => topic.id === activeTopicId) ?? filteredTopics[0] ?? TOPICS[0];
 
   return (
-    <div className="min-h-screen">
+    <PageGridBackground>
       {/* Hero Section */}
       <section className="relative overflow-hidden pt-24 sm:pt-28 md:pt-32 pb-12 sm:pb-16 bg-gradient-to-b from-background via-background/95 to-muted/25">
         <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
@@ -264,7 +265,7 @@ const MovimientoScout = () => {
       <NovedadesRecientes />
 
       {/* Footer global en App.tsx */}
-    </div>
+    </PageGridBackground>
   );
 };
 

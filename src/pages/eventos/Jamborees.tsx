@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Globe2, Flag, CalendarDays, MapPin, BookOpen, ChevronRight, Users } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
+import { PageGridBackground } from "@/components/PageGridBackground";
 import { useNavigate, Link } from "react-router-dom";
 import { Suspense, lazy } from "react";
 
@@ -57,10 +58,7 @@ const Jamborees = () => {
   const panamericanos = JAMBOREES.filter((j) => j.tipo === "panamericano");
 
   return (
-    <div className="min-h-screen page-animate relative bg-gradient-to-br from-background via-background to-background">
-      <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-accent/10 pointer-events-none" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_150%_150%_at_50%_0%,var(--color-primary)_0%,transparent_50%)] opacity-5 pointer-events-none" />
-      <div className="relative z-10">
+    <PageGridBackground>
       <section className="relative overflow-hidden pb-14 pt-28 sm:pt-32 bg-gradient-to-b from-background via-background/95 to-muted/25">
         <div className="container mx-auto px-4">
           <Reveal className="max-w-5xl">
@@ -247,8 +245,7 @@ const Jamborees = () => {
           </Suspense>
         </div>
       </section>
-      </div>
-    </div>
+    </PageGridBackground>
   );
 };
 

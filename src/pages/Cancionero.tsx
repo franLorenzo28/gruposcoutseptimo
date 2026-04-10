@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Music, Footprints, BookOpen, Upload, Download, Trash2 } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
+import { PageGridBackground } from "@/components/PageGridBackground";
 import { useToast } from "@/hooks/use-toast";
 import {
   listCancioneroAudios,
@@ -198,7 +199,7 @@ const Cancionero = () => {
   };
 
   return (
-    <div className="page-animate min-h-screen">
+    <PageGridBackground>
       <section className="relative overflow-hidden pb-14 pt-28 sm:pt-32 bg-gradient-to-b from-background via-background/95 to-muted/25">
         <div className="container mx-auto px-4">
           <Reveal className="max-w-5xl">
@@ -391,7 +392,7 @@ const Cancionero = () => {
 
         </div>
       </section>
-    </div>
+    </PageGridBackground>
   );
 };
 

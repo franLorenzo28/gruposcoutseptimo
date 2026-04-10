@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, BookOpen, MapPin, CalendarDays, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Reveal } from "@/components/Reveal";
+import { PageGridBackground } from "@/components/PageGridBackground";
 
 const Jamboree2014 = () => {
   const navigate = useNavigate();

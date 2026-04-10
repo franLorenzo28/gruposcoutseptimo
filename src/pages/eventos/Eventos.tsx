@@ -4,11 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Calendar, Flag } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
+import { PageGridBackground } from "@/components/PageGridBackground";
 import NovedadesRecientes from "@/components/sections/NovedadesRecientes";
 
 const Eventos = () => {
   return (
-    <div className="page-animate min-h-screen">
+    <PageGridBackground>
       {/* Hero Section */}
       <section className="relative overflow-hidden pt-16 sm:pt-20 md:pt-24 pb-10 sm:pb-14 bg-gradient-to-b from-background via-background/95 to-muted/25">
         <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
@@ -122,7 +123,7 @@ const Eventos = () => {
       </section>
 
       <NovedadesRecientes />
-    </div>
+    </PageGridBackground>
   );
 };
 

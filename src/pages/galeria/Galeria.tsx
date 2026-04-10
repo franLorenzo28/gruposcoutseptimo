@@ -34,6 +34,8 @@ import {
   X,
 } from "lucide-react";
 import { OptimizedImage } from "@/components/ui/optimized-image";
+import { Reveal } from "@/components/Reveal";
+import { PageGridBackground } from "@/components/PageGridBackground";
 import { getAuthUser } from "@/lib/backend";
 import { isCurrentUserAdmin } from "@/lib/admin-permissions";
 import {
@@ -280,7 +282,7 @@ const Galeria = () => {
 
   return (
     <EmailVerificationGuard featureName="Galería">
-    <div className="page-animate min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25">
+    <PageGridBackground>
       {/* Hero */}
       <section className="pt-24 sm:pt-28 md:pt-32 pb-4 sm:pb-6">
         <div className="container mx-auto px-4">
@@ -562,7 +564,7 @@ const Galeria = () => {
       </Dialog>
 
       {/* Footer global en App.tsx */}
-    </div>
+    </PageGridBackground>
     </EmailVerificationGuard>
   );
 };

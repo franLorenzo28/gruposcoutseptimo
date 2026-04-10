@@ -17,6 +17,7 @@ import {
   ArrowLeft,
   ArrowRight,
 } from "lucide-react";
+import { PageGridBackground } from "@/components/PageGridBackground";
 
 type TopicCategory =
   | "referentes"
@@ -233,7 +234,7 @@ const Scoutpedia = () => {
   };
 
   return (
-    <div className="min-h-screen">
+    <PageGridBackground>
       <section className="relative overflow-hidden pt-24 sm:pt-28 md:pt-32 pb-12 sm:pb-16 bg-gradient-to-b from-background via-background/95 to-muted/25">
         <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
           <div className="bg-blob w-72 h-72 bg-muted/30 -top-16 -right-12 float-slow" />
@@ -483,7 +484,7 @@ const Scoutpedia = () => {
       </section>
 
       <NovedadesRecientes />
-    </div>
+    </PageGridBackground>
   );
 };
 
