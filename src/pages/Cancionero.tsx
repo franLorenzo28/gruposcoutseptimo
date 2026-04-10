@@ -225,38 +225,37 @@ const Cancionero = () => {
               const Icon = section.Icon;
               return (
                 <Reveal key={section.id} delay={sectionIndex * 0.08}>
-                  <Card className="h-full border-border/70 bg-card/85 shadow-lg">
+                  <Card className="h-full border-border/50 bg-gradient-to-br from-card via-card to-card/80 shadow-xl hover:shadow-2xl transition-all duration-300">
                     <CardContent className="p-6 md:p-8">
-                      <div className="mb-4 flex items-start justify-between gap-3">
-                        <div>
-                          <div className="mb-2 inline-flex h-10 w-10 items-center justify-center rounded-full bg-muted/40">
-                            <Icon className="h-5 w-5 text-primary" />
+                      <div className="mb-6 flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-primary/20 to-accent/10">
+                            <Icon className="h-6 w-6 text-primary" />
                           </div>
-                          <h2 className="text-2xl font-bold">{section.titulo}</h2>
-                          <p className="mt-1 text-sm text-muted-foreground">{section.subtitulo}</p>
+                          <h2 className="text-3xl font-bold">{section.titulo}</h2>
+                          <p className="mt-2 text-sm font-medium text-primary/70">{section.subtitulo}</p>
                         </div>
-                        <Badge variant="outline" className="border-primary/30 text-primary bg-primary/5">
-                          {section.items.length} items
+                        <Badge className="bg-primary/20 text-primary border border-primary/30 text-xs">
+                          {section.items.length > 0 ? `${section.items.length} temas` : "En crecimiento"}
                         </Badge>
                       </div>
 
-                      <p className="mb-6 text-sm leading-7 tracking-[0.01em] text-muted-foreground">
+                      <p className="mb-6 text-sm leading-relaxed text-muted-foreground">
                         {section.descripcion}
                       </p>
 
                       {section.testimonio ? (
-                        <div className="mb-6 rounded-xl border border-primary/25 bg-primary/5 p-4">
-                          <p className="text-xs font-semibold uppercase tracking-wide text-primary">
-                            {section.testimonio.titulo}
-                          </p>
-                          <p className="mt-2 text-sm italic text-foreground/90">
+                        <div className="mb-6 rounded-lg border border-primary/20 bg-gradient-to-r from-primary/8 to-accent/5 p-5">
+                          <p className="text-xs font-bold uppercase tracking-widest text-primary/80">
+                            ✨ {section.testimonio.titulo}</p>
+                          <p className="mt-3 text-sm italic leading-relaxed text-foreground/90">
                             "{section.testimonio.cita}"
                           </p>
-                          <p className="mt-3 text-sm text-muted-foreground">
+                          <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
                             {section.testimonio.contexto}
                           </p>
-                          <p className="mt-2 text-xs font-medium text-muted-foreground">
-                            {section.testimonio.autor} · {section.testimonio.fecha}
+                          <p className="mt-3 text-xs font-semibold text-muted-foreground">
+                            — {section.testimonio.autor} · {section.testimonio.fecha}
                           </p>
                         </div>
                       ) : null}
@@ -264,21 +263,24 @@ const Cancionero = () => {
                       {section.registrosHistoricos?.length ? (
                         <div className="mb-6 space-y-4">
                           {section.registrosHistoricos.map((registro) => (
-                            <div key={registro.id} className="rounded-xl border border-border/70 bg-background/70 p-4">
-                              <p className="text-base font-bold text-foreground">{registro.titulo}</p>
+                            <div key={registro.id} className="rounded-lg border border-border/50 bg-gradient-to-br from-background/80 to-background/60 p-5">
+                              <div className="flex items-center gap-2 mb-3">
+                                <Music className="h-4 w-4 text-primary" />
+                                <p className="text-lg font-bold text-foreground">{registro.titulo}</p>
+                              </div>
                               {registro.letra ? (
-                                <p className="mt-3 whitespace-pre-line text-sm leading-7 text-foreground/90">
+                                <pre className="mt-4 bg-background/50 rounded p-4 text-xs leading-relaxed text-foreground/80 overflow-x-auto border border-border/30">
                                   {registro.letra}
-                                </p>
+                                </pre>
                               ) : null}
-                              <div className="mt-4 space-y-2">
-                                {registro.notas.map((nota) => (
-                                  <p key={nota} className="text-sm text-muted-foreground">
-                                    {nota}
+                              <div className="mt-4 space-y-1.5 pb-3 border-b border-border/30">
+                                {registro.notas.map((nota, idx) => (
+                                  <p key={idx} className="text-xs text-muted-foreground leading-relaxed">
+                                    • {nota}
                                   </p>
                                 ))}
                               </div>
-                              <p className="mt-3 text-xs font-medium text-muted-foreground">{registro.credito}</p>
+                              <p className="mt-3 text-xs font-medium text-primary/70">{registro.credito}</p>
                             </div>
                           ))}
                         </div>
@@ -286,9 +288,9 @@ const Cancionero = () => {
 
                       <div className="space-y-3">
                         {section.items.map((item) => (
-                          <div key={item.id} className="rounded-xl border border-border/70 bg-background/60 p-4">
-                            <p className="font-semibold">{item.titulo}</p>
-                            <p className="mt-1 text-sm text-muted-foreground">{item.descripcion}</p>
+                          <div key={item.id} className="rounded-lg border border-border/40 bg-gradient-to-r from-background/60 to-background/40 p-4 hover:bg-background/80 hover:border-primary/20 transition-all duration-200">
+                            <p className="font-semibold text-foreground">{item.titulo}</p>
+                            <p className="mt-1.5 text-sm text-muted-foreground">{item.descripcion}</p>
                           </div>
                         ))}
                       </div>
@@ -299,15 +301,18 @@ const Cancionero = () => {
             })}
           </div>
 
-          <div className="mt-10">
+          <div className="mt-12">
             <Reveal>
-              <Card className="border-border/70 bg-card/85 shadow-lg">
+              <Card className="border-border/50 bg-gradient-to-br from-card via-card to-card/80 shadow-xl">
                 <CardContent className="p-6 md:p-8">
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <h2 className="text-2xl font-bold">Repositorio de canciones</h2>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        Registro centralizado de canciones del Grupo Septimo.
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <Music className="h-6 w-6 text-primary" />
+                        <h2 className="text-2xl font-bold">Repositorio de canciones</h2>
+                      </div>
+                      <p className="mt-2 text-sm text-muted-foreground max-w-2xl">
+                        Registro centralizado de canciones, audios y materiales del Grupo Septimo. Los administradores pueden compartir archivos de audio.
                       </p>
                     </div>
                     {isAdmin ? (
@@ -323,47 +328,59 @@ const Cancionero = () => {
                         <Button
                           onClick={() => fileInputRef.current?.click()}
                           disabled={uploadingAudio}
-                          className="gap-2"
+                          className="gap-2 whitespace-nowrap"
                         >
                           <Upload className="h-4 w-4" />
-                          {uploadingAudio ? "Subiendo..." : "Subir archivos"}
+                          {uploadingAudio ? "Subiendo..." : "Subir audios"}
                         </Button>
                       </div>
                     ) : null}
                   </div>
 
                   {cancionesRepositorio.length === 0 ? (
-                    <p className="mt-4 text-sm text-muted-foreground">No hay canciones cargadas aun.</p>
+                    <div className="mt-6 rounded-lg border border-dashed border-border/40 bg-background/40 p-6 text-center">
+                      <Music className="mx-auto h-8 w-8 text-muted-foreground/50 mb-2" />
+                      <p className="text-sm text-muted-foreground">Aún no hay canciones cargadas.</p>
+                    </div>
                   ) : (
-                    <div className="mt-5 space-y-3">
+                    <div className="mt-6 space-y-3">
                       {cancionesRepositorio.map((cancion) => (
-                        <div key={cancion.id} className="rounded-xl border border-border/70 bg-background/60 p-4">
-                          <p className="font-semibold">{cancion.titulo}</p>
-                          <p className="mt-1 text-xs text-muted-foreground">{cancion.credito}</p>
+                        <div key={cancion.id} className="rounded-lg border border-border/40 bg-gradient-to-r from-background/50 to-background/30 p-4 hover:bg-background/60 transition-colors">
+                          <p className="font-semibold text-foreground">{cancion.titulo}</p>
+                          <p className="mt-1.5 text-xs text-muted-foreground">{cancion.credito}</p>
                         </div>
                       ))}
                     </div>
                   )}
 
-                  <div className="mt-8">
-                    <h3 className="text-lg font-semibold">Audios subidos</h3>
+                  <div className="mt-10 pt-8 border-t border-border/30">
+                    <h3 className="text-lg font-semibold mb-1 flex items-center gap-2">
+                      🎵 Audios subidos
+                    </h3>
+                    <p className="text-xs text-muted-foreground mb-4">Archivos de audio compartidos para el grupo</p>
                     {loadingAudios ? (
-                      <p className="mt-3 text-sm text-muted-foreground">Cargando audios...</p>
+                      <p className="mt-4 text-sm text-muted-foreground">Cargando audios...</p>
                     ) : audios.length === 0 ? (
-                      <p className="mt-3 text-sm text-muted-foreground">No hay audios subidos aun.</p>
+                      <div className="mt-4 rounded-lg border border-dashed border-border/40 bg-background/40 p-6 text-center">
+                        <Music className="mx-auto h-8 w-8 text-muted-foreground/50 mb-2" />
+                        <p className="text-sm text-muted-foreground">No hay audios compartidos aún.</p>
+                      </div>
                     ) : (
                       <div className="mt-4 space-y-3">
                         {audios.map((audio) => (
-                          <div key={audio.path} className="rounded-xl border border-border/70 bg-background/60 p-4">
-                            <p className="font-semibold">{audio.name}</p>
-                            <audio className="mt-3 w-full" controls preload="none">
+                          <div key={audio.path} className="rounded-lg border border-border/40 bg-gradient-to-r from-background/60 to-background/40 p-5">
+                            <div className="flex items-center gap-3 mb-3">
+                              <Music className="h-5 w-5 text-primary flex-shrink-0" />
+                              <p className="font-semibold text-foreground truncate">{audio.name}</p>
+                            </div>
+                            <audio className="mt-4 w-full h-8" controls preload="none">
                               <source src={audio.url} />
                               Tu navegador no soporta el reproductor de audio.
                             </audio>
-                            <div className="mt-3 flex flex-wrap gap-2">
+                            <div className="mt-4 flex flex-wrap gap-2">
                               <a href={audio.url} target="_blank" rel="noopener noreferrer" download={audio.name}>
-                                <Button variant="outline" size="sm" className="gap-2">
-                                  <Download className="h-4 w-4" />
+                                <Button variant="outline" size="sm" className="gap-2 text-xs">
+                                  <Download className="h-3 w-3" />
                                   Descargar
                                 </Button>
                               </a>
@@ -371,11 +388,11 @@ const Cancionero = () => {
                                 <Button
                                   variant="destructive"
                                   size="sm"
-                                  className="gap-2"
+                                  className="gap-2 text-xs"
                                   onClick={() => handleAudioDelete(audio)}
                                   disabled={deletingAudioPath === audio.path}
                                 >
-                                  <Trash2 className="h-4 w-4" />
+                                  <Trash2 className="h-3 w-3" />
                                   {deletingAudioPath === audio.path ? "Eliminando..." : "Eliminar"}
                                 </Button>
                               ) : null}
