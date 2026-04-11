@@ -77,32 +77,12 @@ export default function PanelRama({ rama }: { rama: MiembroRama }) {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      localStorage.setItem(`rama_${rama}_documentos`, JSON.stringify(documentos));
-    }
-  }, [documentos, rama]);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
       localStorage.setItem(`rama_${rama}_eventos`, JSON.stringify(eventos));
     }
   }, [eventos, rama]);
 
   const handleSaveContent = (newContent: typeof ramaContent) => {
     setRamaContent(newContent);
-  };
-
-  const handleUploadDocument = (file: File) => {
-    const newDoc = {
-      id: Date.now().toString(),
-      nombre: file.name,
-      tipo: file.type || "Archivo",
-      fechaSubida: new Date().toLocaleDateString("es-AR"),
-    };
-    setDocumentos([...documentos, newDoc]);
-  };
-
-  const handleDeleteDocument = (docId: string) => {
-    setDocumentos(documentos.filter((d) => d.id !== docId));
   };
 
   const handleAddEvent = (eventData: Pick<any, 'titulo' | 'fecha' | 'hora' | 'lugar' | 'descripcion'>) => {
