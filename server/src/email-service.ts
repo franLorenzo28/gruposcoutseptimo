@@ -105,7 +105,7 @@ Podrás solicitar un nuevo enlace desde tu perfil en cualquier momento.
     await transporter.sendMail(mailOptions);
     console.log(`📧 Email de verificación enviado a ${to}`);
   } catch (error) {
-    console.error("❌ Error al enviar email:", error);
+    console.error("Error al enviar email:", error);
     // En desarrollo, mostrar el link en consola como fallback
     if (process.env.NODE_ENV !== "production") {
       console.log("\n🔗 Link de verificación (fallback):", verifyUrl, "\n");

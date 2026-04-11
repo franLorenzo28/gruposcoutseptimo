@@ -13,14 +13,14 @@ const url = import.meta.env.VITE_SUPABASE_URL;
 const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!url || !key) {
-  console.error("❌ ERROR: Variables de Supabase no configuradas");
+  console.error("ERROR: Variables de Supabase no configuradas");
   throw new Error("Supabase credentials missing");
 }
 
 export const supabase = createClient<Database>(url, key);
 
 if (import.meta.env.DEV) {
-  console.log("✅ Cliente de Supabase inicializado correctamente");
+  console.log("Cliente de Supabase inicializado correctamente");
 }
 
 export type { Database };

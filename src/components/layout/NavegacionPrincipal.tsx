@@ -218,27 +218,27 @@ const Navigation = () => {
 
   const handleSignOut = async () => {
     try {
-      console.log("🔓 Cerrando sesión...");
+      console.log("Cerrando sesión...");
       
       // Limpiar TODOS los sistemas de autenticación
       if (isLocalBackend()) {
-        console.log("🔓 Modo local: limpiando token del backend");
+        console.log("Modo local: limpiando token del backend");
         localStorage.removeItem("local_api_token");
       } else {
-        console.log("🔓 Modo Supabase: signOut");
+        console.log("Modo Supabase: signOut");
         await supabase.auth.signOut();
       }
       
       // IMPORTANTE: Limpiar también la sesión mock de Supabase (usado en modo local)
-      console.log("🔓 Limpiando sesión mock de Supabase");
+      console.log("Limpiando sesión mock de Supabase");
       localStorage.removeItem("scout-session");
       
       // Limpiar cualquier otro dato de sesión
-      console.log("🔓 Limpiando sessionStorage");
+      console.log("Limpiando sessionStorage");
       sessionStorage.clear();
       
       // Actualizar estado local
-      console.log("🔓 Actualizando estado...");
+      console.log("Actualizando estado...");
       setIsLoggedIn(false);
       setUserName(null);
       setAvatarUrl(null);
@@ -248,10 +248,10 @@ const Navigation = () => {
         description: "Has cerrado sesión exitosamente",
       });
       
-      console.log("🔓 Redirigiendo a /auth...");
+      console.log("Redirigiendo a /auth...");
       navigate("/auth", { replace: true });
     } catch (error) {
-      console.error("❌ Error al cerrar sesión:", error);
+      console.error("Error al cerrar sesión:", error);
       toast({
         title: "Error",
         description: "No se pudo cerrar sesión",

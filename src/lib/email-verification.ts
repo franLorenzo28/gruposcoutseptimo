@@ -46,11 +46,11 @@ export async function sendVerificationEmail() {
     const { data: tokenData, error: tokenError } = await supabase.rpc('resend_verification_email').single();
 
     if (tokenError) {
-      console.error('❌ Error generando token:', tokenError);
+      console.error('Error generando token:', tokenError);
       throw new Error(tokenError.message || 'Error generando token de verificación');
     }
 
-    console.log('✅ Token generado:', tokenData);
+    console.log('Token generado:', tokenData);
 
     // Extraer token (el RPC devuelve token, expires_at, email pero solo necesitamos token)
     const token = (tokenData as any)?.token;
@@ -69,9 +69,9 @@ export async function sendVerificationEmail() {
     // Intentar copiar al clipboard
     try {
       await navigator.clipboard.writeText(verificationUrl);
-      console.log('✅ Link copiado al portapapeles!');
+      console.log('Link copiado al portapapeles!');
     } catch (e) {
-      console.log('⚠️ No se pudo copiar al portapapeles');
+      console.log('[Warning] No se pudo copiar al portapapeles');
     }
 
     // Fallback: devolver link para desarrollo (sin intentar Edge Function por ahora)
@@ -83,7 +83,7 @@ export async function sendVerificationEmail() {
     };
 
   } catch (error: any) {
-    console.error('❌ Error en sendVerificationEmail:', error);
+    console.error('Error en sendVerificationEmail:', error);
     throw new Error(error.message || 'Error enviando email de verificación');
   }
 }
@@ -93,13 +93,13 @@ export async function sendVerificationEmail() {
  */
 export async function verifyEmailToken(token: string) {
   try {
-    console.log('🔍 Verificando token...');
+    console.log('Verificando token...');
 
     // @ts-ignore - La función se agrega vía SQL y no está en los tipos generados
     const { data, error } = await supabase.rpc('verify_email_token', { p_token: token }).single();
 
     if (error) {
-      console.error('❌ Error verificando token:', error);
+      console.error('Error verificando token:', error);
       throw new Error(error.message || 'Error verificando token');
     }
 

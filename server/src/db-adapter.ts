@@ -34,11 +34,11 @@ if (currentDbType === "postgres") {
 
   // Verificar conexión
   pgPool.on("connect", () => {
-    console.log("✅ Conectado a PostgreSQL");
+    console.log("Conectado a PostgreSQL");
   });
 
   pgPool.on("error", (err: Error) => {
-    console.error("❌ Error en PostgreSQL:", err);
+    console.error("Error en PostgreSQL:", err);
   });
 }
 
@@ -51,7 +51,7 @@ if (currentDbType === "sqlite") {
   const dataDir = path.join(__dirname, "../data");
   sqliteDb = new Database(path.join(dataDir, "app.db"));
   sqliteDb.pragma("journal_mode = WAL");
-  console.log("✅ Usando SQLite en:", path.join(dataDir, "app.db"));
+  console.log("Usando SQLite en:", path.join(dataDir, "app.db"));
 }
 
 /**
