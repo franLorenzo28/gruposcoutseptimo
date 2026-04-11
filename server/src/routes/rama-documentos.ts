@@ -83,28 +83,19 @@ function isRamaMember(userId: string, rama: string): boolean {
   }
 }
 
-// List documents of a rama (accessible to members)
+// List documents of a rama (public - all can access)
 ramaDocumentosRouter.get(
   "/:rama/documentos",
-  authMiddleware,
-  (req: UserRequest, res: Response) => {
+  (req: any, res: Response) => {
     try {
       const { rama } = req.params;
-      const userId = req.userId!;
 
       // Validate rama
       if (!["lobatos", "caminantes", "pioneros", "rover"].includes(rama)) {
         return res.status(400).json({ error: "Rama inválida" });
       }
 
-      // Check if user is member of rama
-      if (!isRamaMember(userId, rama)) {
-        return res
-          .status(403)
-          .json({ error: "No tienes acceso a los documentos de esta rama" });
-      }
-
-      // List documents
+      // List documents - PUBLIC endpoint, no auth required
       const documentos = db
         .prepare(
           `SELECT * FROM rama_documentos WHERE rama = ? ORDER BY created_at DESC`
@@ -247,28 +238,19 @@ ramaDocumentosRouter.delete(
   }
 );
 
-// Get signed download URL for document
+// Get signed download URL for document (public)
 ramaDocumentosRouter.get(
   "/:rama/documentos/:docId/download-url",
-  authMiddleware,
-  async (req: UserRequest, res: Response) => {
+  async (req: any, res: Response) => {
     try {
       const { rama, docId } = req.params;
-      const userId = req.userId!;
 
       // Validate rama
       if (!["lobatos", "caminantes", "pioneros", "rover"].includes(rama)) {
         return res.status(400).json({ error: "Rama inválida" });
       }
 
-      // Check if user is member of rama
-      if (!isRamaMember(userId, rama)) {
-        return res
-          .status(403)
-          .json({ error: "No tienes acceso a los documentos de esta rama" });
-      }
-
-      // Get document
+      // Get document (public endpoint)
       const documento = db
         .prepare(`SELECT * FROM rama_documentos WHERE id = ? AND rama = ?`)
         .get(docId, rama) as DocumentRow | undefined;
