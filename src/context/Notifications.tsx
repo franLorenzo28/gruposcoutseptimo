@@ -652,22 +652,32 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
 
       // Fallback: si hay solicitudes pendientes en follows sin registro en notifications,
       // mostrarlas igual en la campanita para no perder señal cuando el usuario no estaba online.
-      const { data: pendingFollows } = await supabase
-        .from("follows")
-        .select("follower_id, created_at")
-        .eq("followed_id", user.id)
-        .eq("status", "pending")
-        .order("created_at", { ascending: false })
-        .limit(50)
-        .catch(() => ({ data: null }));
+      let pendingFollows: any[] = [];
+      try {
+        const res = await supabase
+          .from("follows")
+          .select("follower_id, created_at")
+          .eq("followed_id", user.id)
+          .eq("status", "pending")
+          .order("created_at", { ascending: false })
+          .limit(50);
+        if (res.data) pendingFollows = res.data;
+      } catch {
+        // Silenciar si falla
+      }
 
       if (pendingFollows && pendingFollows.length > 0) {
-        const followerIds = pendingFollows.map((f) => f.follower_id);
-        const { data: profiles } = await supabase
-          .from("profiles")
-          .select("user_id, nombre_completo, username, avatar_url")
-          .in("user_id", followerIds)
-          .catch(() => ({ data: null }));
+        let profiles: any[] = [];
+        try {
+          const followerIds = pendingFollows.map((f) => f.follower_id);
+          const res = await supabase
+            .from("profiles")
+            .select("user_id, nombre_completo, username, avatar_url")
+            .in("user_id", followerIds);
+          if (res.data) profiles = res.data;
+        } catch {
+          // Silenciar si falla
+        }
 
         setNotifications((prev) => {
           const map = new Map(prev.map((n) => [n.id, n] as const));

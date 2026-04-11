@@ -188,6 +188,10 @@ const Auth = () => {
     // Verificar sesión actual y manejar callback de OAuth
     const checkSession = async () => {
       try {
+        // Obtener accessToken del hash si existe
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const accessToken = hashParams.get('access_token');
+
         // Obtener la sesión actual (importante para callback de OAuth)
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
