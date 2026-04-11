@@ -421,6 +421,42 @@ export type Database = {
         }
         Relationships: []
       }
+      rama_documentos: {
+        Row: {
+          created_at: string
+          id: string
+          mime_type: string | null
+          nombre: string
+          original_filename: string | null
+          rama: string
+          storage_path: string | null
+          subido_por: string
+          tamaño: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          mime_type?: string | null
+          nombre: string
+          original_filename?: string | null
+          rama: string
+          storage_path?: string | null
+          subido_por: string
+          tamaño?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          mime_type?: string | null
+          nombre?: string
+          original_filename?: string | null
+          rama?: string
+          storage_path?: string | null
+          subido_por?: string
+          tamaño?: number | null
+        }
+        Relationships: []
+      }
       thread_comments: {
         Row: {
           author_id: string
