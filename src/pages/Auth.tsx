@@ -258,17 +258,20 @@ const Auth = () => {
           return;
         }
 
-        // Si no hay sesión, verificar usuario por si acaso
-        const { data, error } = await supabase.auth.getUser();
-        if (error) {
-          console.error("Error al obtener usuario:", error);
-          return;
-        }
-        if (data?.user) {
-          console.log("Usuario autenticado detectado en getUser:", data.user.email);
-          setTimeout(() => {
-            navigate("/", { replace: true });
-          }, 100);
+        // Si no hay sesión, necesitamos acceso al token antes de llamar getUser()
+        // getUser() requiere una sesión válida, así que solo verificamos el token
+        if (accessToken && !session) {
+          try {
+            const { data, error } = await supabase.auth.getUser(accessToken);
+            if (!error && data?.user) {
+              console.log("Usuario autenticado detectado con token:", data.user.email);
+              setTimeout(() => {
+                navigate("/", { replace: true });
+              }, 100);
+            }
+          } catch (err) {
+            console.error("No se pudo verificar usuario con token:", err);
+          }
         }
       } catch (error) {
         console.error("Error inesperado al verificar sesión:", error);
