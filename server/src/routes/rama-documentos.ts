@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { db } from "../db";
-import { authMiddleware, UserRequest } from "../middleware/auth";
+import { authMiddleware, UserRequest } from "../auth";
 import multer from "multer";
 import path from "node:path";
 import fs from "node:fs";

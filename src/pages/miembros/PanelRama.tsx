@@ -1,9 +1,8 @@
 import { Link, useSearchParams } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useMemberAuth } from "@/context/MemberAuthContext";
-import { DocumentViewer } from "@/components/miembros/DocumentViewer";
 import type { MiembroRama } from "@/lib/member-auth";
 import { Calendar, FileText, Image, Info, AlertTriangle, ShieldCheck } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
@@ -55,19 +54,12 @@ export default function PanelRama({ rama }: { rama: MiembroRama }) {
   const denied = searchParams.get("acceso") === "denegado";
   const config = ramaConfig[rama];
   const isRamaAdmin = !!session?.isRamaAdmin && session?.rama === rama;
-  const [openDocumentsDialog, setOpenDocumentsDialog] = useState(false);
 
   // State for admin data
   const [ramaContent, setRamaContent] = useState(() => {
     if (typeof window === "undefined") return { lema: config.lema, reuniones: config.reuniones, info: config.info, avisos: [] };
     const stored = localStorage.getItem(`rama_${rama}_content`);
     return stored ? JSON.parse(stored) : { lema: config.lema, reuniones: config.reuniones, info: config.info, avisos: [] };
-  });
-
-  const [documentos, setDocumentos] = useState(() => {
-    if (typeof window === "undefined") return [];
-    const stored = localStorage.getItem(`rama_${rama}_documentos`);
-    return stored ? JSON.parse(stored) : [];
   });
 
   const [eventos, setEventos] = useState(() => {
@@ -193,15 +185,6 @@ export default function PanelRama({ rama }: { rama: MiembroRama }) {
                     <li key={item}>⬢ {item}</li>
                   ))}
                 </ul>
-                <Button
-                  onClick={() => setOpenDocumentsDialog(true)}
-                  variant="outline"
-                  size="sm"
-                  className="mt-3 w-full text-scout-red border-scout-red hover:bg-red-50 dark:text-red-400 dark:border-red-900 dark:hover:bg-red-950/30"
-                >
-                  <FileText className="h-4 w-4 mr-2" />
-                  Ver documentos ({documentos.length})
-                </Button>
               </CardContent>
             </Card>
 
@@ -253,7 +236,6 @@ export default function PanelRama({ rama }: { rama: MiembroRama }) {
 
               <Reveal>
                 <RamaAdminSection
-                  rama={rama}
                   ramaName={config.titulo}
                   ramaContent={ramaContent}
                   eventos={eventos}
@@ -267,12 +249,8 @@ export default function PanelRama({ rama }: { rama: MiembroRama }) {
         </div>
       </section>
 
-      <DocumentViewer
-        rama={rama}
-        open={openDocumentsDialog}
-        onOpenChange={setOpenDocumentsDialog}
-      />
     </div>
   );
 }
+
 
