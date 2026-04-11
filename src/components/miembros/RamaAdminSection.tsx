@@ -2,10 +2,13 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AdminRamaContent } from "./AdminRamaContent";
 import { AdminEvents } from "./AdminEvents";
-import { Settings, Calendar } from "lucide-react";
+import { AdminDocuments } from "./AdminDocuments";
+import { Settings, Calendar, FileText } from "lucide-react";
+import type { MiembroRama } from "@/lib/member-auth";
 
 interface RamaAdminSectionProps {
   ramaName: string;
+  rama?: MiembroRama;
   ramaContent: any;
   eventos: any[];
   onSaveContent: (data: any) => void;
@@ -15,6 +18,7 @@ interface RamaAdminSectionProps {
 
 export function RamaAdminSection({
   ramaName,
+  rama = "lobatos",
   ramaContent,
   eventos,
   onSaveContent,
@@ -26,7 +30,7 @@ export function RamaAdminSection({
   return (
     <div className="space-y-4">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 bg-red-100 dark:bg-red-950/30">
+        <TabsList className="grid w-full grid-cols-3 bg-red-100 dark:bg-red-950/30">
           <TabsTrigger value="contenido" className="gap-2">
             <Settings className="h-4 w-4" />
             <span className="hidden sm:inline">Contenido</span>
@@ -39,6 +43,10 @@ export function RamaAdminSection({
                 {eventos.length}
               </span>
             )}
+          </TabsTrigger>
+          <TabsTrigger value="documentos" className="gap-2">
+            <FileText className="h-4 w-4" />
+            <span className="hidden sm:inline">Documentos</span>
           </TabsTrigger>
         </TabsList>
 
@@ -57,6 +65,10 @@ export function RamaAdminSection({
             onAddEvent={onAddEvent}
             onDeleteEvent={onDeleteEvent}
           />
+        </TabsContent>
+
+        <TabsContent value="documentos" className="mt-4">
+          <AdminDocuments ramaName={ramaName} rama={rama} />
         </TabsContent>
       </Tabs>
     </div>

@@ -217,6 +217,7 @@ export default function PanelRama({ rama }: { rama: MiembroRama }) {
               <Reveal>
                 <RamaAdminSection
                   ramaName={config.titulo}
+                  rama={rama}
                   ramaContent={ramaContent}
                   eventos={eventos}
                   onSaveContent={handleSaveContent}
