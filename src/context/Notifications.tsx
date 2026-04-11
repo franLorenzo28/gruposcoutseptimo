@@ -652,20 +652,22 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
 
       // Fallback: si hay solicitudes pendientes en follows sin registro en notifications,
       // mostrarlas igual en la campanita para no perder señal cuando el usuario no estaba online.
-      const { data: pendingFollows, error: pendingError } = await supabase
+      const { data: pendingFollows } = await supabase
         .from("follows")
         .select("follower_id, created_at")
         .eq("followed_id", user.id)
         .eq("status", "pending")
         .order("created_at", { ascending: false })
-        .limit(50);
+        .limit(50)
+        .catch(() => ({ data: null }));
 
-      if (!pendingError && pendingFollows && pendingFollows.length > 0) {
+      if (pendingFollows && pendingFollows.length > 0) {
         const followerIds = pendingFollows.map((f) => f.follower_id);
         const { data: profiles } = await supabase
           .from("profiles")
           .select("user_id, nombre_completo, username, avatar_url")
-          .in("user_id", followerIds);
+          .in("user_id", followerIds)
+          .catch(() => ({ data: null }));
 
         setNotifications((prev) => {
           const map = new Map(prev.map((n) => [n.id, n] as const));

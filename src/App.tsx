@@ -106,10 +106,7 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     async function fetchUserAndProfile(sessionUser: any) {
-      console.log("🔍 fetchUserAndProfile llamado");
-      
       if (!sessionUser) {
-        console.log("❌ Sin usuario");
         setUser(null);
         return;
       }
@@ -120,24 +117,19 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
         .eq("user_id", sessionUser.id)
         .maybeSingle();
       
-      console.log("📊 Perfil obtenido");
-      
       if (error || !profile) {
-        console.log("⚠️  Sin perfil");
         setUser(sessionUser);
         localStorage.setItem("adminUser", JSON.stringify(sessionUser));
         return;
       }
       
       const combinedUser = { ...sessionUser, ...profile };
-      console.log("✅ Usuario guardado:", combinedUser?.email, "Rol:", (combinedUser as any)?.role);
       setUser(combinedUser);
       
       // Try to persist to localStorage with error handling
       try {
         localStorage.setItem("adminUser", JSON.stringify(combinedUser));
       } catch (e) {
-        console.error("⚠️ No se pudo guardar en localStorage:", e instanceof Error ? e.message : String(e));
         // App still works without localStorage
       }
     }
@@ -145,17 +137,15 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
     // Obtener sesión inicial
     supabase.auth.getSession().then(({ data: { session } }) => {
       const u = session?.user ?? null;
-      console.log("📍 Sesión obtenida:", u?.email);
       if (u) fetchUserAndProfile(u);
-    }).catch(err => {
-      console.error("Error getSession:", err);
+    }).catch((err) => {
+      if (import.meta.env.DEV) console.error("Error getSession:", err);
     });
 
     // Escuchar cambios de auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         const u = session?.user ?? null;
-        console.log(`Auth change: ${event}`);
         if (u) fetchUserAndProfile(u);
       },
     );

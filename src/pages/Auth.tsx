@@ -270,7 +270,7 @@ const Auth = () => {
               }, 100);
             }
           } catch (err) {
-            console.error("No se pudo verificar usuario con token:", err);
+            // Silenciar error esperado si el token no es válido en la primera carga
           }
         }
       } catch (error) {
