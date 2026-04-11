@@ -609,7 +609,7 @@ const Auth = () => {
                 alt="Grupo Scout Séptimo"
                 className="w-full h-full object-contain drop-shadow-sm"
                 loading="eager"
-                fetchPriority="high"
+                fetchpriority="high"
                 decoding="async"
               />
             </div>

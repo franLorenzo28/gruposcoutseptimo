@@ -4,6 +4,7 @@ import { useSupabaseUser } from "@/App";
 import { useToast } from "@/hooks/use-toast";
 import { listAlbums, listImages } from "@/lib/gallery";
 import { apiFetch, getAuthUser, isLocalBackend } from "@/lib/backend";
+import { querySilent } from "@/lib/supabase-logger";
 
 export type AppNotification = {
   id: string;
@@ -620,12 +621,13 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!user || isLocal) return;
     let channel: any;
     (async () => {
-      const { data, error } = await supabase
+      const { data, error } = await querySilent(() => supabase
         .from("notifications")
         .select("id, type, created_at, read_at, data")
         .eq("recipient_id", user.id)
         .order("created_at", { ascending: false })
-        .limit(50);
+        .limit(50)
+      );
       if (!error && data) {
         setNotifications(prev => {
           // Mantener existentes (mensajes, follows en memoria) y combinar con persistentes evitando duplicados por id
@@ -654,13 +656,14 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
       // mostrarlas igual en la campanita para no perder señal cuando el usuario no estaba online.
       let pendingFollows: any[] = [];
       try {
-        const res = await supabase
+        const res = await querySilent(() => supabase
           .from("follows")
           .select("follower_id, created_at")
           .eq("followed_id", user.id)
           .eq("status", "pending")
           .order("created_at", { ascending: false })
-          .limit(50);
+          .limit(50)
+        );
         if (res.data) pendingFollows = res.data;
       } catch {
         // Silenciar si falla
@@ -670,10 +673,11 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
         let profiles: any[] = [];
         try {
           const followerIds = pendingFollows.map((f) => f.follower_id);
-          const res = await supabase
+          const res = await querySilent(() => supabase
             .from("profiles")
             .select("user_id, nombre_completo, username, avatar_url")
-            .in("user_id", followerIds);
+            .in("user_id", followerIds)
+          );
           if (res.data) profiles = res.data;
         } catch {
           // Silenciar si falla

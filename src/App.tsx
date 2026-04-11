@@ -72,6 +72,7 @@ import { NotificationsProvider } from "@/context/Notifications";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { AdminGuard } from "@/components/AdminGuard";
 import SaltarAlContenido from "@/components/layout/SaltarAlContenido";
+import { querySilent } from "@/lib/supabase-logger";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -111,11 +112,12 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
       
-      const { data: profile, error } = await supabase
+      const { data: profile, error } = await querySilent(() => supabase
         .from("profiles")
         .select("*")
         .eq("user_id", sessionUser.id)
-        .maybeSingle();
+        .maybeSingle()
+      );
       
       if (error || !profile) {
         setUser(sessionUser);
@@ -166,11 +168,12 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
 async function ensureProfileExists(user: { id: string; email?: string | null; user_metadata?: any }) {
   try {
     // ¿Ya existe?
-    const { data: existing, error } = await supabase
+    const { data: existing, error } = await querySilent(() => supabase
       .from("profiles")
       .select("user_id")
       .eq("user_id", user.id)
-      .maybeSingle();
+      .maybeSingle()
+    );
     if (error) return;
     if (existing) return; // ya existe
   // ...existing code...

@@ -61,7 +61,7 @@ export function OptimizedImage({
           alt={alt}
           loading={loadingMode}
           decoding="async"
-          fetchPriority={fetchMode}
+          fetchpriority={fetchMode}
           onLoad={() => setIsLoaded(true)}
           onError={() => {
             setHasError(true);

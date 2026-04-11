@@ -17,11 +17,18 @@ if (!url || !key) {
   throw new Error("Supabase credentials missing");
 }
 
-export const supabase = createClient<Database>(url, key);
-
-if (import.meta.env.DEV) {
-  console.log("Cliente de Supabase inicializado correctamente");
-}
+// Crear cliente con logging deshabilitado para suprimir errores 403 esperados (RLS)
+export const supabase = createClient<Database>(url, key, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+  },
+  global: {
+    headers: {
+      'x-client-info': 'grupo-scout-septimo',
+    },
+  },
+});
 
 export type { Database };
 
