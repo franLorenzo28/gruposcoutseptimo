@@ -1,64 +1,28 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Download, Loader2, AlertCircle, File } from "lucide-react";
 import type { MiembroRama } from "@/lib/member-auth";
-
-interface Document {
-  id: string;
-  nombre: string;
-  tamaño: number;
-  created_at: string;
-  original_filename: string;
-}
+import { useRamaDocuments } from "@/hooks/useRamaDocuments";
 
 interface DocumentsListProps {
   rama: MiembroRama;
 }
 
 export function DocumentsList({ rama }: DocumentsListProps) {
-  const [documents, setDocuments] = useState<Document[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    loadDocuments();
-  }, [rama]);
-
-  const loadDocuments = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const response = await fetch(`/ramas/${rama}/documentos`);
-      
-      if (!response.ok) {
-        throw new Error("Error al cargar documentos");
-      }
-      
-      const data = await response.json();
-      setDocuments(data || []);
-    } catch (err) {
-      console.error("Error loading documents:", err);
-      setError("No se pudieron cargar los documentos");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { documents, isLoading, error, getDownloadUrl } = useRamaDocuments(rama);
+  const [downloading, setDownloading] = useState<string | null>(null);
 
   const handleDownload = async (docId: string, docName: string) => {
     try {
-      const response = await fetch(`/ramas/${rama}/documentos/${docId}/download-url`);
-      
-      if (!response.ok) {
-        throw new Error("Error al generar URL de descarga");
-      }
-      
-      const { url } = await response.json();
-      
+      setDownloading(docId);
+      const url = await getDownloadUrl(docId);
       // Abrir en nueva ventana o descargar
       window.open(url, "_blank");
     } catch (err) {
       console.error("Error downloading document:", err);
       alert("Error al descargar documento");
+    } finally {
+      setDownloading(null);
     }
   };
 
@@ -108,10 +72,17 @@ export function DocumentsList({ rama }: DocumentsListProps) {
             variant="outline"
             size="sm"
             onClick={() => handleDownload(doc.id, doc.nombre)}
+            disabled={downloading === doc.id}
             className="ml-2 flex-shrink-0 gap-2"
           >
-            <Download className="h-4 w-4" />
-            <span className="hidden sm:inline">Abrir</span>
+            {downloading === doc.id ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4" />
+            )}
+            <span className="hidden sm:inline">
+              {downloading === doc.id ? "Descargando" : "Abrir"}
+            </span>
           </Button>
         </div>
       ))}

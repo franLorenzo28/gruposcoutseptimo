@@ -1,13 +1,13 @@
 import express, { Router } from "express";
 import { db } from "../db";
-import { authMiddleware } from "../middleware/auth";
+import { authMiddleware } from "../auth";
 import { z } from "zod";
 import crypto from "crypto";
 
 const router = Router();
 
 // Obtener novedades activas (público)
-router.get("/", (req, res) => {
+router.get("/", (req: any, res: any) => {
   try {
     const novedades = db
       .prepare(
@@ -39,7 +39,7 @@ router.get("/", (req, res) => {
 });
 
 // Crear novedad (solo admin)
-router.post("/", authMiddleware, async (req, res) => {
+router.post("/", authMiddleware, async (req: any, res: any) => {
   try {
     // Verificar que sea admin
     const user = await db
@@ -85,7 +85,7 @@ router.post("/", authMiddleware, async (req, res) => {
 });
 
 // Actualizar novedad (solo creator o admin)
-router.put("/:id", authMiddleware, async (req, res) => {
+router.put("/:id", authMiddleware, async (req: any, res: any) => {
   try {
     const { id } = req.params;
     const novedad = db.prepare("SELECT * FROM novedades WHERE id = ?").get(id);
@@ -136,7 +136,7 @@ router.put("/:id", authMiddleware, async (req, res) => {
 });
 
 // Desactivar novedad
-router.delete("/:id", authMiddleware, async (req, res) => {
+router.delete("/:id", authMiddleware, async (req: any, res: any) => {
   try {
     const { id } = req.params;
     const novedad = db.prepare("SELECT * FROM novedades WHERE id = ?").get(id);

@@ -1,6 +1,6 @@
-import { Router, Request, Response } from "express";
+import { Router } from "express";
 import { db } from "../db";
-import { authMiddleware, UserRequest } from "../auth";
+import { authMiddleware } from "../auth";
 import multer from "multer";
 import { createClient } from "@supabase/supabase-js";
 import { v4 as uuidv4 } from "uuid";
@@ -46,7 +46,7 @@ const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: MAX_FILE_SIZE },
-  fileFilter: (req, file, cb) => {
+  fileFilter: (req: any, file: any, cb: any) => {
     if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
       cb(new Error(`Tipo de archivo no permitido: ${file.mimetype}`));
     } else {
@@ -86,7 +86,7 @@ function isRamaMember(userId: string, rama: string): boolean {
 // List documents of a rama (public - all can access)
 ramaDocumentosRouter.get(
   "/:rama/documentos",
-  (req: any, res: Response) => {
+  (req: any, res: any) => {
     try {
       const { rama } = req.params;
 
@@ -115,7 +115,7 @@ ramaDocumentosRouter.post(
   "/:rama/documentos",
   authMiddleware,
   upload.single("file"),
-  async (req: UserRequest & { file?: Express.Multer.File }, res: Response) => {
+  async (req: any, res: any) => {
     try {
       const { rama } = req.params;
       const userId = req.userId!;
@@ -153,7 +153,7 @@ ramaDocumentosRouter.post(
         return res.status(500).json({ error: "Error al subir a Supabase Storage" });
       }
 
-      // Save metadata to local database
+      // Save metadata to local database (for development)
       const stmt = db.prepare(`
         INSERT INTO rama_documentos (
           id, rama, nombre, original_filename, mime_type, tamaño, storage_path, subido_por, created_at
@@ -170,6 +170,25 @@ ramaDocumentosRouter.post(
         fileName, // Store the Supabase path
         userId
       );
+
+      // Also save metadata to Supabase PostgreSQL (for production sync)
+      if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY) {
+        try {
+          await supabase.from("rama_documentos").insert({
+            id: docId,
+            rama,
+            nombre: req.file.originalname,
+            original_filename: req.file.originalname,
+            mime_type: req.file.mimetype,
+            tamaño: req.file.size,
+            storage_path: fileName,
+            subido_por: userId,
+          });
+        } catch (supabaseError) {
+          console.error("Warning: Could not save metadata to Supabase PostgreSQL:", supabaseError);
+          // Don't fail the upload if Supabase PostgreSQL fails, as SQLite already has it
+        }
+      }
 
       // Return created document
       const documento = db
@@ -188,7 +207,7 @@ ramaDocumentosRouter.post(
 ramaDocumentosRouter.delete(
   "/:rama/documentos/:docId",
   authMiddleware,
-  async (req: UserRequest, res: Response) => {
+  async (req: any, res: any) => {
     try {
       const { rama, docId } = req.params;
       const userId = req.userId!;
@@ -222,13 +241,23 @@ ramaDocumentosRouter.delete(
           .remove([documento.storage_path]);
 
         if (deleteError) {
-          console.error("Error deleting from Supabase:", deleteError);
+          console.error("Error deleting from Supabase Storage:", deleteError);
           // Continue anyway - delete from DB
         }
       }
 
-      // Delete from database
+      // Delete from local database
       db.prepare(`DELETE FROM rama_documentos WHERE id = ?`).run(docId);
+
+      // Delete from Supabase PostgreSQL
+      if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY) {
+        try {
+          await supabase.from("rama_documentos").delete().eq("id", docId);
+        } catch (supabaseError) {
+          console.error("Warning: Could not delete from Supabase PostgreSQL:", supabaseError);
+          // Don't fail if Supabase PostgreSQL delete fails
+        }
+      }
 
       res.json({ success: true, message: "Documento eliminado" });
     } catch (error) {
@@ -241,7 +270,7 @@ ramaDocumentosRouter.delete(
 // Get signed download URL for document (public)
 ramaDocumentosRouter.get(
   "/:rama/documentos/:docId/download-url",
-  async (req: any, res: Response) => {
+  async (req: any, res: any) => {
     try {
       const { rama, docId } = req.params;
 
