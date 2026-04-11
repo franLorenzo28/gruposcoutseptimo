@@ -7,6 +7,7 @@ import type { MiembroRama } from "@/lib/member-auth";
 import { Calendar, FileText, Image, Info, AlertTriangle, ShieldCheck } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
 import { RamaAdminSection } from "@/components/miembros/RamaAdminSection";
+import { DocumentsList } from "@/components/miembros/DocumentsList";
 
 const ramaConfig: Record<
   MiembroRama,
@@ -160,11 +161,7 @@ export default function PanelRama({ rama }: { rama: MiembroRama }) {
                   <FileText className="h-5 w-5 text-primary" />
                   <h2 className="text-lg font-bold">Documentos</h2>
                 </div>
-                <ul className="text-sm text-muted-foreground space-y-2">
-                  {config.documentos.map((item) => (
-                    <li key={item}>⬢ {item}</li>
-                  ))}
-                </ul>
+                <DocumentsList rama={rama} />
               </CardContent>
             </Card>
 
