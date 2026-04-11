@@ -1,5 +1,5 @@
 import { Link, useSearchParams } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useMemberAuth } from "@/context/MemberAuthContext";
