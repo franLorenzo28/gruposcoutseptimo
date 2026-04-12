@@ -178,7 +178,7 @@ db.exec(`
 
   CREATE TABLE IF NOT EXISTS rama_documentos (
     id TEXT PRIMARY KEY,
-    rama TEXT NOT NULL CHECK (rama IN ('lobatos','caminantes','pioneros','rover')),
+    rama TEXT NOT NULL CHECK (rama IN ('lobatos','tropa','pioneros','rover')),
     nombre TEXT NOT NULL,
     original_filename TEXT NOT NULL,
     mime_type TEXT NOT NULL,
@@ -195,7 +195,7 @@ db.exec(`
 
   CREATE TABLE IF NOT EXISTS rama_broadcast_messages (
     id TEXT PRIMARY KEY,
-    rama TEXT NOT NULL CHECK (rama IN ('lobatos','caminantes','pioneros','rover')),
+    rama TEXT NOT NULL CHECK (rama IN ('lobatos','tropa','pioneros','rover')),
     author_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     content TEXT NOT NULL,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))

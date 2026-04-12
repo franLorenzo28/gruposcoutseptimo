@@ -201,7 +201,7 @@ insert into public.profiles (
   19,
   '+598 94 567 890',
   '2005-05-28',
-  'Comunidad Caminantes',
+  'Comunidad Tropa',
   true  -- PÚBLICO
 ) on conflict (user_id) do update set
   nombre_completo = excluded.nombre_completo,

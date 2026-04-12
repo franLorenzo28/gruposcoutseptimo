@@ -74,7 +74,7 @@ const TOPICS: Topic[] = [
     summary: "Unidades y pequeños grupos para acompañar cada edad y momento del crecimiento.",
     paragraphs: [
       "El escultismo estructura su sistema educativo por edades, contextos y objetivos de desarrollo.",
-      "Según cada asociación y país, existen unidades mayores como Caminantes o Rovers, y etapas menores previas a Manada.",
+      "Según cada asociación y país, existen unidades mayores como Tropa o Rovers, y etapas menores previas a Manada.",
     ],
     bullets: [
       "Lobatismo (8-11 años): ambiente de familia feliz",

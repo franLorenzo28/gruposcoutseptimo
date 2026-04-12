@@ -26,7 +26,7 @@ function calculateAge(fechaNacimiento: string | null | undefined): number | null
 
 const ramaLabel: Record<MiembroRama, string> = {
   lobatos: "Lobatos",
-  caminantes: "Caminantes",
+  tropa: "Tropa",
   pioneros: "Pioneros",
   rover: "Rover",
 };

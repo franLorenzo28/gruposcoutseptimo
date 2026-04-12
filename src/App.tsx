@@ -309,10 +309,10 @@ const App = () => (
                       }
                     />
                     <Route
-                      path="/area-miembros/unidades/caminantes"
+                      path="/area-miembros/unidades/tropa"
                       element={
-                        <RequireRamaAccess allowedRama="caminantes">
-                          <PanelRama rama="caminantes" />
+                        <RequireRamaAccess allowedRama="tropa">
+                          <PanelRama rama="tropa" />
                         </RequireRamaAccess>
                       }
                     />
@@ -350,7 +350,7 @@ const App = () => (
                     {/* Compatibilidad rutas legacy */}
                     <Route path="/area-miembros/ramas/rover" element={<Navigate to="/area-miembros/unidades/rover" replace />} />
                     <Route path="/area-miembros/ramas/pioneros" element={<Navigate to="/area-miembros/unidades/pioneros" replace />} />
-                    <Route path="/area-miembros/ramas/caminantes" element={<Navigate to="/area-miembros/unidades/caminantes" replace />} />
+                    <Route path="/area-miembros/ramas/tropa" element={<Navigate to="/area-miembros/unidades/tropa" replace />} />
                     <Route path="/area-miembros/ramas/lobatos" element={<Navigate to="/area-miembros/unidades/lobatos" replace />} />
                     <Route path="/ramas/manada" element={<Navigate to="/unidades/manada" replace />} />
                     <Route path="/ramas/tropa" element={<Navigate to="/unidades/tropa" replace />} />

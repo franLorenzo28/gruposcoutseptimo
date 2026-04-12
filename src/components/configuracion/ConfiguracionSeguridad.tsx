@@ -30,7 +30,7 @@ import {
 
 const EDUCATOR_UNIT_OPTIONS: Array<{ value: EducatorUnit; label: string }> = [
   { value: "manada", label: "Manada (Lobatos)" },
-  { value: "tropa", label: "Tropa (Caminantes)" },
+  { value: "tropa", label: "Tropa (11-14 años)" },
   { value: "pioneros", label: "Pioneros" },
   { value: "rovers", label: "Rovers" },
 ];

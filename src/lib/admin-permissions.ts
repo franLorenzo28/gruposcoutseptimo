@@ -70,7 +70,7 @@ function normalizeUnits(units: string[]): EducatorUnit[] {
     .map((unit) => String(unit || "").trim().toLowerCase())
     .map((unit) => {
       if (unit === "manada" || unit === "lobatos") return "manada" as const;
-      if (unit === "tropa" || unit === "caminantes") return "tropa" as const;
+      if (unit === "tropa") return "tropa" as const;
       if (unit === "pioneros") return "pioneros" as const;
       if (unit === "rovers" || unit === "rover") return "rovers" as const;
       return null;

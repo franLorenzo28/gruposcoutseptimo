@@ -1,4 +1,4 @@
-export type MiembroRama = "rover" | "pioneros" | "caminantes" | "lobatos";
+export type MiembroRama = "rover" | "pioneros" | "tropa" | "lobatos";
 
 export type RamaEducador = "manada" | "tropa" | "pioneros" | "rovers";
 
@@ -27,7 +27,7 @@ export function deriveRamaFromEdad(edad: number | null | undefined): MiembroRama
   if (typeof edad !== "number" || Number.isNaN(edad)) return null;
   if (edad >= 18) return "rover";
   if (edad >= 15) return "pioneros";
-  if (edad >= 11) return "caminantes";
+  if (edad >= 11) return "tropa";
   if (edad >= 7) return "lobatos";
   return null;
 }
@@ -52,7 +52,7 @@ export function mapEducatorRamasToMiembroRamas(
   const mapped: MiembroRama[] = [];
   for (const normalized of tokens) {
     if (normalized === "manada" || normalized === "lobatos") mapped.push("lobatos");
-    if (normalized === "tropa" || normalized === "caminantes") mapped.push("caminantes");
+    if (normalized === "tropa") mapped.push("tropa");
     if (normalized === "pioneros") mapped.push("pioneros");
     if (normalized === "rovers" || normalized === "rover") mapped.push("rover");
   }
@@ -184,7 +184,7 @@ export function getStoredMemberSession(): MemberSession | null {
     if (!parsed?.authUserId || !parsed?.nombre || !parsed?.rama || !parsed?.loggedAt) {
       return null;
     }
-    if (!["rover", "pioneros", "caminantes", "lobatos"].includes(parsed.rama)) {
+    if (!["rover", "pioneros", "tropa", "lobatos"].includes(parsed.rama)) {
       return null;
     }
     const rawAccessType = parsed.accessType;
@@ -194,7 +194,7 @@ export function getStoredMemberSession(): MemberSession | null {
         : "beneficiario";
     const rawAllowedRamas = Array.isArray(parsed.allowedRamas)
       ? parsed.allowedRamas.filter((rama): rama is MiembroRama =>
-          ["rover", "pioneros", "caminantes", "lobatos"].includes(String(rama)),
+          ["rover", "pioneros", "tropa", "lobatos"].includes(String(rama)),
         )
       : [];
     const allowedRamas = rawAllowedRamas.length > 0 ? rawAllowedRamas : [parsed.rama as MiembroRama];

@@ -36,7 +36,7 @@ describe("member auth access rules", () => {
       rama_que_educa: "tropa",
     });
     expect(result.allowed).toBe(true);
-    expect(result.rama).toBe("caminantes");
+    expect(result.rama).toBe("tropa");
     expect(result.isRamaAdmin).toBe(true);
     expect(result.accessType).toBe("educador");
   });
@@ -54,13 +54,13 @@ describe("member auth access rules", () => {
 
   it("mapea ramas de educador a ramas de miembros", () => {
     expect(mapEducatorRamaToMiembroRama("manada")).toBe("lobatos");
-    expect(mapEducatorRamaToMiembroRama("tropa")).toBe("caminantes");
+    expect(mapEducatorRamaToMiembroRama("tropa")).toBe("tropa");
     expect(mapEducatorRamaToMiembroRama("pioneros")).toBe("pioneros");
     expect(mapEducatorRamaToMiembroRama("rovers")).toBe("rover");
   });
 
   it("admite multiples unidades de educador", () => {
     const ramas = mapEducatorRamasToMiembroRamas("manada,tropa;rovers");
-    expect(ramas).toEqual(["lobatos", "caminantes", "rover"]);
+    expect(ramas).toEqual(["lobatos", "tropa", "rover"]);
   });
 });

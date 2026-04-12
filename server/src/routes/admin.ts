@@ -42,7 +42,7 @@ function normalizeEducatorRamaToken(raw: string): string | null {
     .replace(/[\u0300-\u036f]/g, "");
 
   if (value === "manada" || value === "lobatos") return "manada";
-  if (value === "tropa" || value === "caminantes") return "tropa";
+  if (value === "tropa") return "tropa";
   if (value === "pioneros") return "pioneros";
   if (value === "rovers" || value === "rover") return "rovers";
   return null;
@@ -50,7 +50,7 @@ function normalizeEducatorRamaToken(raw: string): string | null {
 
 function canonicalToMiembroRama(canonicalRama: string): string {
   if (canonicalRama === "manada") return "lobatos";
-  if (canonicalRama === "tropa") return "caminantes";
+  if (canonicalRama === "tropa") return "tropa";
   if (canonicalRama === "pioneros") return "pioneros";
   return "rover";
 }

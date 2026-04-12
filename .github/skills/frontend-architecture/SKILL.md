@@ -57,6 +57,9 @@ Actua como desarrollador frontend senior especializado en React y TypeScript par
 - Maintain a clear and consistent folder structure
 - Keep route composition and lazy-loading patterns consistent with `src/App.tsx`
 - Keep auth and backend switching compatible with `src/hooks/useUser.tsx` and `src/lib/backend.ts`
+- For every new or edited page-level view, use the same gradient background standard used in `src/pages/eventos/Jamboree1981.tsx` through `src/components/PageGridBackground.tsx`.
+- Do not invent alternate flat backgrounds for route pages unless the user explicitly asks for an exception.
+- Design mobile-first, then ensure equivalent quality on desktop (spacing, hierarchy, readability, and actions).
 
 ## Reglas No Negociables (ES)
 - Usar componentes reutilizables
@@ -68,6 +71,9 @@ Actua como desarrollador frontend senior especializado en React y TypeScript par
 - Aplicar siempre los estilos a modo claro y oscuro
 - Pensar siempre en mobile y responsive
 - Mantener patrones de composición de rutas y lazy-loading consistentes con `src/App.tsx`
+- En toda vista de página nueva o editada, usar el mismo estándar de fondo degradado de `src/pages/eventos/Jamboree1981.tsx` mediante `src/components/PageGridBackground.tsx`.
+- No crear fondos planos alternativos para páginas de rutas, salvo que el usuario pida una excepción explícita.
+- Diseñar mobile-first y validar calidad equivalente en desktop (espaciado, jerarquía visual, legibilidad y acciones).
 ## Workflow
 1. Analyze before writing
 - Read current implementation and identify data flow, state ownership, and coupling points.
@@ -102,6 +108,8 @@ Actua como desarrollador frontend senior especializado en React y TypeScript par
 - Reusable units extracted where justified
 - Folder placement follows this repository mapping
 - Performance and UX considerations addressed where relevant
+- Page background follows the shared gradient standard (`PageGridBackground`) when the change affects route-level UI
+- Mobile and desktop experiences were both validated for readability and interaction clarity
 - Explanations remain concise
 - No conflict introduced with dual backend and auth flows
 

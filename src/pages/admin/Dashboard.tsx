@@ -42,7 +42,7 @@ type EducatorUnit = "manada" | "tropa" | "pioneros" | "rovers";
 
 const EDUCATOR_UNIT_OPTIONS: Array<{ value: EducatorUnit; label: string }> = [
   { value: "manada", label: "Manada (Lobatos)" },
-  { value: "tropa", label: "Tropa (Caminantes)" },
+  { value: "tropa", label: "Tropa (11-14 años)" },
   { value: "pioneros", label: "Pioneros" },
   { value: "rovers", label: "Rovers" },
 ];
@@ -62,7 +62,7 @@ function parseEducatorUnits(raw: string | null | undefined): EducatorUnit[] {
     .filter(Boolean)
     .map((token) => {
       if (token === "manada" || token === "lobatos") return "manada" as const;
-      if (token === "tropa" || token === "caminantes") return "tropa" as const;
+      if (token === "tropa") return "tropa" as const;
       if (token === "pioneros") return "pioneros" as const;
       if (token === "rovers" || token === "rover") return "rovers" as const;
       return null;

@@ -992,7 +992,7 @@ const Perfil = () => {
                     name="comunidad_rovers"
                     value={formData.comunidad_rovers}
                     onChange={handleChange}
-                    placeholder="Ej: Comunidad Caminantes"
+                    placeholder="Ej: Comunidad Rover"
                     className="bg-background"
                   />
                 </div>
@@ -1100,7 +1100,7 @@ const Perfil = () => {
                         name="comunidad_rovers"
                         value={formData.comunidad_rovers}
                         onChange={handleChange}
-                        placeholder="Ej: Comunidad Caminantes, Clan Rovers..."
+                        placeholder="Ej: Comunidad Rover, Clan Rovers..."
                         className="bg-background"
                       />
                       <p className="text-xs text-muted-foreground">

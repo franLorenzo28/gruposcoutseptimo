@@ -1,6 +1,6 @@
 import { db } from "./db";
 
-export const RAMAS = ["lobatos", "caminantes", "pioneros", "rover"] as const;
+export const RAMAS = ["lobatos", "tropa", "pioneros", "rover"] as const;
 
 export type RamaKey = (typeof RAMAS)[number];
 
@@ -66,7 +66,7 @@ function deriveBeneficiaryRama(age: number | null): RamaKey | null {
   if (typeof age !== "number" || Number.isNaN(age)) return null;
   if (age >= 18) return "rover";
   if (age >= 15) return "pioneros";
-  if (age >= 11) return "caminantes";
+  if (age >= 11) return "tropa";
   if (age >= 7) return "lobatos";
   return null;
 }
@@ -76,7 +76,7 @@ function mapEducatorRama(rawRama: string | null | undefined): RamaKey | null {
   if (!normalized) return null;
 
   if (normalized === "manada" || normalized === "lobatos") return "lobatos";
-  if (normalized === "tropa" || normalized === "caminantes") return "caminantes";
+  if (normalized === "tropa") return "tropa";
   if (normalized === "pioneros") return "pioneros";
   if (normalized === "rovers" || normalized === "rover") return "rover";
 
@@ -105,7 +105,7 @@ function inferEducatorRamas(profile: ProfileRow): RamaKey[] {
   const inferred: RamaKey[] = [];
 
   if (normalizeText(profile.seisena)) inferred.push("lobatos");
-  if (normalizeText(profile.patrulla)) inferred.push("caminantes");
+  if (normalizeText(profile.patrulla)) inferred.push("tropa");
   if (normalizeText(profile.equipo_pioneros)) inferred.push("pioneros");
   if (normalizeText(profile.comunidad_rovers)) inferred.push("rover");
 

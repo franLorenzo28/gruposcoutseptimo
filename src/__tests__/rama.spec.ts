@@ -3,7 +3,7 @@ import { getRamaFromProfile, getRamaLabel } from "@/lib/rama";
 
 describe("rama helpers", () => {
   it("prioriza rama_que_educa con variantes de texto", () => {
-    expect(getRamaFromProfile({ edad: 25, rama_que_educa: "Caminantes" })).toBe("tropa");
+    expect(getRamaFromProfile({ edad: 25, rama_que_educa: "Tropa" })).toBe("tropa");
     expect(getRamaFromProfile({ edad: 25, rama_que_educa: "Lobatos" })).toBe("manada");
   });
 
