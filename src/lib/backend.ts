@@ -13,16 +13,29 @@ function getStoredToken() {
   return localStorage.getItem("local_api_token");
 }
 
+function getStoredTokenOwner() {
+  return localStorage.getItem("local_api_token_owner");
+}
+
 function setStoredToken(token: string) {
   localStorage.setItem("local_api_token", token);
+}
+
+function setStoredTokenOwner(ownerId: string) {
+  localStorage.setItem("local_api_token_owner", ownerId);
 }
 
 function clearStoredToken() {
   try {
     localStorage.removeItem("local_api_token");
+    localStorage.removeItem("local_api_token_owner");
   } catch {
     /* noop */
   }
+}
+
+export function resetLocalBackendAuth() {
+  clearStoredToken();
 }
 
 async function login(email: string, password: string) {
@@ -72,11 +85,16 @@ async function register(email: string, password: string, username: string) {
 
 export async function ensureLocalToken() {
   let token = getStoredToken();
-  if (token) return token;
-
-  // Intentamos mapear con el usuario de Supabase si existe
   const { data: userData } = await supabase.auth.getUser();
   const user = userData?.user;
+  const expectedOwner = user?.id || "guest";
+
+  if (token) {
+    const owner = getStoredTokenOwner();
+    if (owner === expectedOwner) return token;
+    clearStoredToken();
+    token = null;
+  }
 
   const DEFAULT_PASSWORD = "supabase-bridge-password";
 
@@ -104,6 +122,7 @@ export async function ensureLocalToken() {
       }
     }
     setStoredToken(token);
+    setStoredTokenOwner(user.id);
     return token;
   }
 
@@ -118,6 +137,7 @@ export async function ensureLocalToken() {
     token = await register(email, password, username);
   }
   setStoredToken(token);
+  setStoredTokenOwner("guest");
   return token;
 }
 

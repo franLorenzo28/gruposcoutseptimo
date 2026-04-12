@@ -1,5 +1,6 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { apiFetch, isLocalBackend } from "@/lib/backend";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -35,8 +36,47 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import type { AdminAccess } from "@/lib/admin-permissions";
 
-export default function Dashboard() {
+type EducatorUnit = "manada" | "tropa" | "pioneros" | "rovers";
+
+const EDUCATOR_UNIT_OPTIONS: Array<{ value: EducatorUnit; label: string }> = [
+  { value: "manada", label: "Manada (Lobatos)" },
+  { value: "tropa", label: "Tropa (Caminantes)" },
+  { value: "pioneros", label: "Pioneros" },
+  { value: "rovers", label: "Rovers" },
+];
+
+function normalizeRoleText(value: string | null | undefined): string {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function parseEducatorUnits(raw: string | null | undefined): EducatorUnit[] {
+  const values = String(raw || "")
+    .split(/[;,|]/g)
+    .map((token) => token.trim().toLowerCase())
+    .filter(Boolean)
+    .map((token) => {
+      if (token === "manada" || token === "lobatos") return "manada" as const;
+      if (token === "tropa" || token === "caminantes") return "tropa" as const;
+      if (token === "pioneros") return "pioneros" as const;
+      if (token === "rovers" || token === "rover") return "rovers" as const;
+      return null;
+    })
+    .filter((token): token is EducatorUnit => !!token);
+
+  return Array.from(new Set(values));
+}
+
+type DashboardProps = {
+  currentAccess: AdminAccess;
+};
+
+export default function Dashboard({ currentAccess }: DashboardProps) {
   const [users, setUsers] = useState<any[]>([]);
   const [stats, setStats] = useState({ total: 0, admins: 0, registradosHoy: 0 });
   const [search, setSearch] = useState("");
@@ -60,6 +100,10 @@ export default function Dashboard() {
   const [editEvent, setEditEvent] = useState<any | null>(null);
   const [editPage, setEditPage] = useState<any | null>(null);
   const { toast } = useToast();
+  const canManageRoles = currentAccess.canManageRoles;
+  const canManageEducators = currentAccess.canManageEducators;
+  const canDeleteUsers = currentAccess.canDeleteUsers;
+  const canEditIdentity = currentAccess.isSuperAdmin;
 
   function computeStats(list: any[]) {
     const admins = list?.filter((u: any) => u.role === "admin").length || 0;
@@ -282,6 +326,9 @@ export default function Dashboard() {
       nombre_completo: u.nombre_completo ?? "",
       username: u.username ?? "",
       role: u.role ?? "user",
+      rol_adulto: u.rol_adulto ?? "",
+      rama_que_educa: u.rama_que_educa ?? "",
+      educator_units: parseEducatorUnits(u.rama_que_educa),
     });
     setUsernameStatus("idle");
     setUsernameMessage("");
@@ -289,6 +336,12 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!editUser) return;
+
+    if (!canEditIdentity) {
+      setUsernameStatus("idle");
+      setUsernameMessage("");
+      return;
+    }
 
     const raw = (editData.username || "").trim();
     if (!raw) {
@@ -333,11 +386,19 @@ export default function Dashboard() {
     }, 400);
 
     return () => clearTimeout(timer);
-  }, [editData.username, editUser]);
+  }, [canEditIdentity, editData.username, editUser]);
   
   async function handleSaveEdit() {
     if (!editUser) return;
-    if (usernameStatus === "taken" || usernameStatus === "invalid") {
+    if (!canManageEducators) {
+      toast({
+        title: "Sin permisos",
+        description: "No tienes permisos para editar usuarios.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (canEditIdentity && (usernameStatus === "taken" || usernameStatus === "invalid")) {
       toast({
         title: "No se pudo guardar",
         description: usernameMessage || "El username no es válido o ya está en uso.",
@@ -347,11 +408,88 @@ export default function Dashboard() {
     }
     setSaving(true);
     try {
+      const selectedUnits = Array.isArray(editData.educator_units)
+        ? editData.educator_units.filter((unit: unknown): unit is EducatorUnit =>
+            ["manada", "tropa", "pioneros", "rovers"].includes(String(unit)),
+          )
+        : [];
+
+      const roleToSave = canManageRoles
+        ? editData.role || "user"
+        : editUser.role || "user";
+
+      const adultRoleToSave = canManageEducators
+        ? editData.rol_adulto || null
+        : editUser.rol_adulto || null;
+
+      const normalizedAdultRole = normalizeRoleText(adultRoleToSave);
+      const isEducador =
+        normalizedAdultRole === "educador/a" ||
+        normalizedAdultRole === "educador" ||
+        normalizedAdultRole === "educadora";
+
+      if (isEducador && selectedUnits.length === 0) {
+        toast({
+          title: "Faltan unidades",
+          description: "Debes seleccionar al menos una unidad para otorgar permisos de educador/a.",
+          variant: "destructive",
+        });
+        setSaving(false);
+        return;
+      }
+
+      const ramaQueEduca = canManageEducators
+        ? isEducador
+          ? selectedUnits.join(",")
+          : null
+        : editUser.rama_que_educa || null;
+
+      if (isLocalBackend()) {
+        await apiFetch(`/admin/users/${editUser.user_id}/educator-permissions`, {
+          method: "PUT",
+          body: JSON.stringify({
+            enabled: isEducador,
+            ramas: selectedUnits,
+          }),
+        });
+
+        setUsers((prev) =>
+          prev.map((u) =>
+            u.user_id === editUser.user_id
+              ? {
+                  ...u,
+                  role: roleToSave,
+                  rol_adulto: isEducador ? "Educador/a" : null,
+                  rama_que_educa: ramaQueEduca,
+                }
+              : u,
+          ),
+        );
+
+        toast({
+          title: "Permisos actualizados",
+          description: "Permisos de educador/a actualizados en backend local.",
+        });
+
+        setEditUser(null);
+        setEditData({});
+        setSaving(false);
+        return;
+      }
+
       const payload = {
-        email: editData.email || null,
-        nombre_completo: editData.nombre_completo || null,
-        username: editData.username ? String(editData.username).toLowerCase() : null,
-        role: editData.role || "user",
+        email: canEditIdentity ? editData.email || null : editUser.email || null,
+        nombre_completo: canEditIdentity
+          ? editData.nombre_completo || null
+          : editUser.nombre_completo || null,
+        username: canEditIdentity
+          ? editData.username
+            ? String(editData.username).toLowerCase()
+            : null
+          : editUser.username || null,
+        role: roleToSave,
+        rol_adulto: adultRoleToSave,
+        rama_que_educa: ramaQueEduca,
       };
       const { error } = await supabase
         .from("profiles")
@@ -394,6 +532,14 @@ export default function Dashboard() {
   }
   
   async function handleDelete(id: string) {
+    if (!canDeleteUsers) {
+      toast({
+        title: "Sin permisos",
+        description: "Solo el admin supremo puede eliminar usuarios.",
+        variant: "destructive",
+      });
+      return;
+    }
     if (!window.confirm("¿Eliminar usuario? Esta acción no se puede deshacer.")) return;
     try {
       const { error } = await supabase.from("profiles").delete().eq("user_id", id);
@@ -439,7 +585,10 @@ export default function Dashboard() {
 
   const getRoleBadge = (role: string) => {
     if (role === "admin") {
-      return <Badge className="bg-red-600 hover:bg-red-700 text-white">Admin</Badge>;
+      return <Badge className="bg-red-600 hover:bg-red-700 text-white">Admin Supremo</Badge>;
+    }
+    if (role === "mod") {
+      return <Badge className="bg-amber-500 hover:bg-amber-600 text-white">Mod</Badge>;
     }
     return <Badge variant="secondary">User</Badge>;
   };
@@ -452,7 +601,19 @@ export default function Dashboard() {
           <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent mb-1 sm:mb-2">
             Panel de Admin
           </h1>
-          <p className="text-xs sm:text-sm md:text-base text-muted-foreground">Gestiona usuarios y contenido</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-xs sm:text-sm md:text-base text-muted-foreground">Gestiona usuarios y contenido</p>
+            {currentAccess.isSuperAdmin ? (
+              <Badge className="bg-red-600 text-white">Admin Supremo</Badge>
+            ) : currentAccess.isMod ? (
+              <Badge className="bg-amber-500 text-white">Moderador</Badge>
+            ) : null}
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {currentAccess.isSuperAdmin
+              ? "Tienes control total: roles, permisos de educador y eliminación de usuarios."
+              : "Como mod puedes gestionar permisos de educador por unidad, sin control total de roles."}
+          </p>
         </div>
 
         {/* Stats */}
@@ -671,14 +832,16 @@ export default function Dashboard() {
                                     <Edit2 className="w-3 h-3" />
                                     <span className="hidden sm:inline">Editar</span>
                                   </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    onClick={() => handleDelete(u.user_id)}
-                                    className="gap-1 text-xs h-8 px-2"
-                                  >
-                                    <Trash2 className="w-3 h-3" />
-                                  </Button>
+                                  {canDeleteUsers && (
+                                    <Button
+                                      size="sm"
+                                      variant="destructive"
+                                      onClick={() => handleDelete(u.user_id)}
+                                      className="gap-1 text-xs h-8 px-2"
+                                    >
+                                      <Trash2 className="w-3 h-3" />
+                                    </Button>
+                                  )}
                                 </div>
                               </td>
                             </tr>
@@ -1090,7 +1253,7 @@ export default function Dashboard() {
                   value={editData.email || ""}
                   onChange={(e) => setEditData({ ...editData, email: e.target.value })}
                   className="mt-1"
-                  disabled={saving}
+                  disabled={saving || !canEditIdentity}
                 />
               </div>
               <div>
@@ -1100,7 +1263,7 @@ export default function Dashboard() {
                   value={editData.nombre_completo || ""}
                   onChange={(e) => setEditData({ ...editData, nombre_completo: e.target.value })}
                   className="mt-1"
-                  disabled={saving}
+                  disabled={saving || !canEditIdentity}
                 />
               </div>
               <div>
@@ -1110,7 +1273,7 @@ export default function Dashboard() {
                   value={editData.username || ""}
                   onChange={(e) => setEditData({ ...editData, username: e.target.value.toLowerCase() })}
                   className="mt-1"
-                  disabled={saving}
+                  disabled={saving || !canEditIdentity}
                 />
                 {usernameStatus !== "idle" && (
                   <p
@@ -1126,23 +1289,109 @@ export default function Dashboard() {
                     {usernameMessage}
                   </p>
                 )}
+                {!canEditIdentity && (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Solo el admin supremo puede editar email, nombre y username.
+                  </p>
+                )}
               </div>
               <div>
                 <Label htmlFor="role">Rol</Label>
                 <Select
                   value={editData.role || "user"}
                   onValueChange={(value) => setEditData({ ...editData, role: value })}
-                  disabled={saving}
+                  disabled={saving || !canManageRoles}
                 >
                   <SelectTrigger id="role" className="mt-1">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="user">Usuario Normal</SelectItem>
-                    <SelectItem value="admin">Administrador</SelectItem>
+                    <SelectItem value="mod">Moderador</SelectItem>
+                    <SelectItem value="admin">Admin Supremo</SelectItem>
+                  </SelectContent>
+                </Select>
+                {!canManageRoles && (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Solo el admin supremo puede cambiar roles globales.
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="rol-adulto">Rol adulto (área de miembros)</Label>
+                <Select
+                  value={editData.rol_adulto || "none"}
+                  onValueChange={(value) => {
+                    const nextRole = value === "none" ? "" : value;
+                    const isEducator =
+                      normalizeRoleText(nextRole) === "educador/a" ||
+                      normalizeRoleText(nextRole) === "educador" ||
+                      normalizeRoleText(nextRole) === "educadora";
+
+                    setEditData({
+                      ...editData,
+                      rol_adulto: nextRole,
+                      educator_units: isEducator ? editData.educator_units || [] : [],
+                      rama_que_educa: isEducator
+                        ? (editData.educator_units || []).join(",")
+                        : "",
+                    });
+                  }}
+                  disabled={saving || !canManageEducators}
+                >
+                  <SelectTrigger id="rol-adulto" className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Sin rol adulto</SelectItem>
+                    <SelectItem value="Educador/a">Educador/a</SelectItem>
+                    <SelectItem value="Miembro del Comite">Miembro del Comité</SelectItem>
+                    <SelectItem value="Padre/Madre">Padre/Madre</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+
+              {(normalizeRoleText(editData.rol_adulto) === "educador/a" ||
+                normalizeRoleText(editData.rol_adulto) === "educador" ||
+                normalizeRoleText(editData.rol_adulto) === "educadora") && (
+                <div>
+                  <Label>Unidades habilitadas para educador/a</Label>
+                  <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    {EDUCATOR_UNIT_OPTIONS.map((option) => {
+                      const selected: EducatorUnit[] = Array.isArray(editData.educator_units)
+                        ? editData.educator_units
+                        : [];
+                      const isSelected = selected.includes(option.value);
+
+                      return (
+                        <Button
+                          key={option.value}
+                          type="button"
+                          variant={isSelected ? "default" : "outline"}
+                          className="justify-start"
+                          onClick={() => {
+                            const nextUnits = isSelected
+                              ? selected.filter((unit) => unit !== option.value)
+                              : [...selected, option.value];
+                            setEditData({
+                              ...editData,
+                              educator_units: nextUnits,
+                              rama_que_educa: nextUnits.join(","),
+                            });
+                          }}
+                          disabled={saving || !canManageEducators}
+                        >
+                          {option.label}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    El usuario podrá gestionar y comunicarse como educador/a en las unidades seleccionadas.
+                  </p>
+                </div>
+              )}
             </div>
           )}
           <DialogFooter className="flex gap-2 flex-col-reverse sm:flex-row">

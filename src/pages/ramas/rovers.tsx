@@ -10,10 +10,10 @@ const Rovers = () => {
       ageRange="18 a 21"
       intro="Una etapa de madurez y elección vocacional donde el servicio se transforma en proyecto de vida."
       image={communityImages}
-      imageAlt="Rama Rovers del Grupo Scout Séptimo"
+      imageAlt="Unidad Rovers del Grupo Scout Séptimo"
       accentClass="bg-[#DD0303]"
       paragraphs={[
-        "La Rama Rover impulsa experiencias de alto compromiso personal y comunitario. Cada rover define metas, recorridos y desafíos.",
+        "La Unidad Rover impulsa experiencias de alto compromiso personal y comunitario. Cada rover define metas, recorridos y desafíos.",
         "El foco está en actuar con sentido: servir, construir redes y crecer como persona adulta con valores scout.",
       ]}
       bullets={[

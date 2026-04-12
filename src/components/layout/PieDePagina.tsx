@@ -108,22 +108,22 @@ const FooterNew = () => {
             <h3 className="text-foreground font-bold mb-2 text-lg">Unidades</h3>
             <ul className="grid grid-cols-2 gap-y-1.5 gap-x-4">
               <li>
-                <FooterLink to="/ramas/manada">Manada</FooterLink>
+                <FooterLink to="/unidades/manada">Manada</FooterLink>
               </li>
               <li>
-                <FooterLink to="/ramas/tropa">Tropa</FooterLink>
+                <FooterLink to="/unidades/tropa">Tropa</FooterLink>
               </li>
               <li>
-                <FooterLink to="/ramas/pioneros">Pioneros</FooterLink>
+                <FooterLink to="/unidades/pioneros">Pioneros</FooterLink>
               </li>
               <li>
-                <FooterLink to="/ramas/rovers">Rovers</FooterLink>
+                <FooterLink to="/unidades/rovers">Rovers</FooterLink>
               </li>
               <li>
-                <FooterLink to="/ramas/staff">Staff</FooterLink>
+                <FooterLink to="/unidades/staff">Staff</FooterLink>
               </li>
               <li>
-                <FooterLink to="/ramas/comite">Comité</FooterLink>
+                <FooterLink to="/unidades/comite">Comité</FooterLink>
               </li>
             </ul>
           </div>

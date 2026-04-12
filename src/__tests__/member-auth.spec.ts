@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { mapEducatorRamaToMiembroRama, resolveMemberAccessFromProfile } from "@/lib/member-auth";
+import {
+  mapEducatorRamaToMiembroRama,
+  mapEducatorRamasToMiembroRamas,
+  resolveMemberAccessFromProfile,
+} from "@/lib/member-auth";
 
 describe("member auth access rules", () => {
   it("beneficiarios menores de 21 ingresan por rama de edad sin admin", () => {
@@ -53,5 +57,10 @@ describe("member auth access rules", () => {
     expect(mapEducatorRamaToMiembroRama("tropa")).toBe("caminantes");
     expect(mapEducatorRamaToMiembroRama("pioneros")).toBe("pioneros");
     expect(mapEducatorRamaToMiembroRama("rovers")).toBe("rover");
+  });
+
+  it("admite multiples unidades de educador", () => {
+    const ramas = mapEducatorRamasToMiembroRamas("manada,tropa;rovers");
+    expect(ramas).toEqual(["lobatos", "caminantes", "rover"]);
   });
 });

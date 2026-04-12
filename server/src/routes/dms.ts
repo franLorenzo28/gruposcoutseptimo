@@ -3,6 +3,7 @@ import { z } from "zod";
 import { db } from "../db";
 import { authMiddleware } from "../auth";
 import { randomUUID } from "node:crypto";
+import { canStartConversation } from "../rama-access";
 
 export const dmsRouter = Router();
 
@@ -24,6 +25,13 @@ dmsRouter.post("/conversations", authMiddleware, (req: any, res: any) => {
     .prepare("SELECT * FROM conversations WHERE user_a = ? AND user_b = ?")
     .get(a, b);
   if (!convo) {
+    if (!canStartConversation(me, other)) {
+      return res.status(403).json({
+        error:
+          "Solo puedes iniciar chat con seguimiento mutuo o siendo educador/a de la misma unidad.",
+      });
+    }
+
     const id = randomUUID();
     db.prepare(
       "INSERT INTO conversations (id, user_a, user_b) VALUES (?, ?, ?)",

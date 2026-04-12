@@ -1,10 +1,11 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Form,
   FormControl,
@@ -21,6 +22,26 @@ import { AlertCircle, Lock, Shield, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { deleteMyAccount } from "@/lib/api";
 import { isLocalBackend } from "@/lib/backend";
+import {
+  parseEducatorUnits,
+  requestEducatorPermissions,
+  type EducatorUnit,
+} from "@/lib/admin-permissions";
+
+const EDUCATOR_UNIT_OPTIONS: Array<{ value: EducatorUnit; label: string }> = [
+  { value: "manada", label: "Manada (Lobatos)" },
+  { value: "tropa", label: "Tropa (Caminantes)" },
+  { value: "pioneros", label: "Pioneros" },
+  { value: "rovers", label: "Rovers" },
+];
+
+function normalizeRole(value: string | null | undefined): string {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
 
 const passwordSchema = z.object({
   password_actual: z.string().min(1, "Ingresa tu contraseña actual"),
@@ -49,6 +70,11 @@ export default function ConfiguracionSeguridad() {
   const [deletePhrase, setDeletePhrase] = useState("");
   const [deleteConfirmPhrase, setDeleteConfirmPhrase] = useState("");
   const [deletingAccount, setDeletingAccount] = useState(false);
+  const [requestUnits, setRequestUnits] = useState<EducatorUnit[]>([]);
+  const [requestNote, setRequestNote] = useState("");
+  const [requestingPermission, setRequestingPermission] = useState(false);
+  const [loadingRequestContext, setLoadingRequestContext] = useState(true);
+  const [canRequestEducatorPermissions, setCanRequestEducatorPermissions] = useState(false);
   const allowDeleteAccount = isLocalBackend();
 
   const form = useForm<PasswordFormValues>({
@@ -105,6 +131,104 @@ export default function ConfiguracionSeguridad() {
   const deleteReady =
     deletePhrase.trim().toUpperCase() === "BORRAR" &&
     deleteConfirmPhrase.trim().toUpperCase() === "BORRAR";
+
+  useEffect(() => {
+    let active = true;
+
+    (async () => {
+      if (isLocalBackend()) {
+        if (!active) return;
+        setCanRequestEducatorPermissions(false);
+        setLoadingRequestContext(false);
+        return;
+      }
+
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!active) return;
+        if (!user) {
+          setCanRequestEducatorPermissions(false);
+          setLoadingRequestContext(false);
+          return;
+        }
+
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("rol_adulto, rama_que_educa")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (!active) return;
+
+        const role = normalizeRole(profile?.rol_adulto);
+        const isEducador =
+          role === "educador/a" || role === "educador" || role === "educadora";
+
+        setCanRequestEducatorPermissions(isEducador);
+        setRequestUnits(parseEducatorUnits(profile?.rama_que_educa || ""));
+      } catch {
+        if (!active) return;
+        setCanRequestEducatorPermissions(false);
+      } finally {
+        if (active) setLoadingRequestContext(false);
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const toggleRequestUnit = (unit: EducatorUnit) => {
+    setRequestUnits((prev) =>
+      prev.includes(unit) ? prev.filter((value) => value !== unit) : [...prev, unit],
+    );
+  };
+
+  const handleRequestEducatorPermissions = async () => {
+    if (!canRequestEducatorPermissions) {
+      toast({
+        title: "No habilitado",
+        description: "Esta solicitud está disponible para perfiles con rol educador/a.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (requestUnits.length === 0) {
+      toast({
+        title: "Selecciona unidades",
+        description: "Debes elegir al menos una unidad para solicitar permisos.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setRequestingPermission(true);
+      const result = await requestEducatorPermissions({
+        units: requestUnits,
+        note: requestNote,
+      });
+
+      toast({
+        title: "Solicitud enviada",
+        description: `Se notificó a ${result.sentCount} administrador(es)/mod para revisión.`,
+      });
+      setRequestNote("");
+    } catch (error: any) {
+      toast({
+        title: "No se pudo enviar",
+        description: error?.message || "Intenta nuevamente en unos minutos.",
+        variant: "destructive",
+      });
+    } finally {
+      setRequestingPermission(false);
+    }
+  };
 
   const handleDeleteAccount = async () => {
     if (!deleteReady) return;
@@ -330,6 +454,76 @@ export default function ConfiguracionSeguridad() {
               </Button>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Solicitud de permisos educador */}
+      <Card className="border-border/50 hover:border-border/70 transition-colors">
+        <CardHeader>
+          <CardTitle className="text-base font-semibold flex items-center gap-2">
+            <Shield className="w-5 h-5" /> Permisos de educador por unidad
+          </CardTitle>
+          <CardDescription>
+            Si te faltan permisos para subir archivos, difusión o gestión interna, envía una solicitud a administración.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {isLocalBackend() ? (
+            <p className="text-sm text-muted-foreground">
+              Esta función está disponible en modo Supabase.
+            </p>
+          ) : loadingRequestContext ? (
+            <p className="text-sm text-muted-foreground">Verificando tu perfil...</p>
+          ) : !canRequestEducatorPermissions ? (
+            <p className="text-sm text-muted-foreground">
+              Necesitas tener rol <strong>Educador/a</strong> en tu perfil para solicitar permisos de unidad.
+            </p>
+          ) : (
+            <>
+              <div>
+                <p className="text-sm font-medium">Unidades para habilitar</p>
+                <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {EDUCATOR_UNIT_OPTIONS.map((option) => {
+                    const selected = requestUnits.includes(option.value);
+                    return (
+                      <Button
+                        key={option.value}
+                        type="button"
+                        variant={selected ? "default" : "outline"}
+                        className="justify-start"
+                        onClick={() => toggleRequestUnit(option.value)}
+                        disabled={requestingPermission}
+                      >
+                        {option.label}
+                      </Button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">Detalle opcional para admin/mod</label>
+                <Textarea
+                  value={requestNote}
+                  onChange={(event) => setRequestNote(event.target.value)}
+                  placeholder="Ej: necesito habilitación en Tropa y Pioneros para gestión de documentos y difusión."
+                  className="mt-2"
+                  maxLength={600}
+                  disabled={requestingPermission}
+                />
+                <p className="mt-1 text-xs text-muted-foreground">{requestNote.length}/600</p>
+              </div>
+
+              <Button
+                type="button"
+                onClick={handleRequestEducatorPermissions}
+                disabled={requestingPermission || requestUnits.length === 0}
+                className="w-full"
+              >
+                {requestingPermission ? "Enviando solicitud..." : "Solicitar permisos de educador"}
+              </Button>
+            </>
+          )}
         </CardContent>
       </Card>
 

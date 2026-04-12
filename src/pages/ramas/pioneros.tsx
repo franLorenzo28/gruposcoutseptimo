@@ -10,7 +10,7 @@ const Pioneros = () => {
       ageRange="15 a 17"
       intro="Etapa de acción concreta: proyectos comunitarios, autonomía y liderazgo con impacto real."
       image={communityImages}
-      imageAlt="Rama Pioneros del Grupo Scout Séptimo"
+      imageAlt="Unidad Pioneros del Grupo Scout Séptimo"
       accentClass="bg-[#134686]"
       paragraphs={[
         "Pioneros es una etapa de consolidación personal. Los y las jóvenes diseñan proyectos, toman decisiones y sostienen objetivos colectivos.",

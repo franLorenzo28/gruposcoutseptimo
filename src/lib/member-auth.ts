@@ -5,8 +5,10 @@ export type RamaEducador = "manada" | "tropa" | "pioneros" | "rovers";
 export type MemberAccessType = "beneficiario" | "educador";
 
 export interface MemberSession {
+  authUserId: string;
   nombre: string;
   rama: MiembroRama;
+  allowedRamas: MiembroRama[];
   isRamaAdmin: boolean;
   accessType: MemberAccessType;
   loggedAt: string;
@@ -15,6 +17,7 @@ export interface MemberSession {
 export interface MemberAccessDecision {
   allowed: boolean;
   rama: MiembroRama | null;
+  allowedRamas: MiembroRama[];
   isRamaAdmin: boolean;
   accessType: MemberAccessType | null;
   reason?: string;
@@ -32,16 +35,29 @@ export function deriveRamaFromEdad(edad: number | null | undefined): MiembroRama
 export function mapEducatorRamaToMiembroRama(
   ramaEducador: string | null | undefined,
 ): MiembroRama | null {
-  if (!ramaEducador) return null;
-  const normalized = String(ramaEducador).trim().toLowerCase();
-  if (normalized === "manada") return "lobatos";
-  if (normalized === "tropa") return "caminantes";
-  if (normalized === "pioneros") return "pioneros";
-  if (normalized === "rovers") return "rover";
-  if (normalized === "lobatos") return "lobatos";
-  if (normalized === "caminantes") return "caminantes";
-  if (normalized === "rover") return "rover";
-  return null;
+  const ramas = mapEducatorRamasToMiembroRamas(ramaEducador);
+  return ramas.length > 0 ? ramas[0] : null;
+}
+
+export function mapEducatorRamasToMiembroRamas(
+  ramasEducador: string | null | undefined,
+): MiembroRama[] {
+  if (!ramasEducador) return [];
+
+  const tokens = String(ramasEducador)
+    .split(/[;,|]/g)
+    .map((token) => token.trim().toLowerCase())
+    .filter(Boolean);
+
+  const mapped: MiembroRama[] = [];
+  for (const normalized of tokens) {
+    if (normalized === "manada" || normalized === "lobatos") mapped.push("lobatos");
+    if (normalized === "tropa" || normalized === "caminantes") mapped.push("caminantes");
+    if (normalized === "pioneros") mapped.push("pioneros");
+    if (normalized === "rovers" || normalized === "rover") mapped.push("rover");
+  }
+
+  return Array.from(new Set(mapped));
 }
 
 export function inferEducatorRama(profile: {
@@ -51,7 +67,10 @@ export function inferEducatorRama(profile: {
   equipo_pioneros?: string | null;
   comunidad_rovers?: string | null;
 }): RamaEducador | null {
-  const explicit = String(profile.rama_que_educa || "").trim().toLowerCase();
+  const explicit = String(profile.rama_que_educa || "")
+    .split(/[;,|]/g)[0]
+    .trim()
+    .toLowerCase();
   if (
     explicit === "manada" ||
     explicit === "tropa" ||
@@ -84,9 +103,10 @@ export function resolveMemberAccessFromProfile(profile: {
     return {
       allowed: false,
       rama: null,
+      allowedRamas: [],
       isRamaAdmin: false,
       accessType: null,
-      reason: "No se pudo determinar tu rama por edad. Revisa tu fecha de nacimiento en el perfil.",
+      reason: "No se pudo determinar tu unidad por edad. Revisa tu fecha de nacimiento en el perfil.",
     };
   }
 
@@ -94,6 +114,7 @@ export function resolveMemberAccessFromProfile(profile: {
     return {
       allowed: true,
       rama: ramaPorEdad,
+      allowedRamas: [ramaPorEdad],
       isRamaAdmin: false,
       accessType: "beneficiario",
     };
@@ -104,6 +125,7 @@ export function resolveMemberAccessFromProfile(profile: {
     return {
       allowed: false,
       rama: null,
+      allowedRamas: [],
       isRamaAdmin: false,
       accessType: null,
       reason:
@@ -115,6 +137,7 @@ export function resolveMemberAccessFromProfile(profile: {
     return {
       allowed: false,
       rama: null,
+      allowedRamas: [],
       isRamaAdmin: false,
       accessType: null,
       reason:
@@ -123,21 +146,27 @@ export function resolveMemberAccessFromProfile(profile: {
   }
 
   const ramaEducador = inferEducatorRama(profile);
-  const ramaMiembro = mapEducatorRamaToMiembroRama(ramaEducador);
-  if (!ramaMiembro) {
+  const ramasMiembro = mapEducatorRamasToMiembroRamas(
+    String(profile.rama_que_educa || ramaEducador || ""),
+  );
+  const ramaMiembro = ramasMiembro.length > 0 ? ramasMiembro[0] : null;
+
+  if (!ramaMiembro || ramasMiembro.length === 0) {
     return {
       allowed: false,
       rama: null,
+      allowedRamas: [],
       isRamaAdmin: false,
       accessType: null,
       reason:
-        "Como educador/a adulto, debes definir la rama que diriges en tu perfil para habilitar tu dashboard de rama.",
+        "Como educador/a adulto, debes definir la unidad que diriges en tu perfil para habilitar tu dashboard de unidad.",
     };
   }
 
   return {
     allowed: true,
     rama: ramaMiembro,
+    allowedRamas: ramasMiembro,
     isRamaAdmin: true,
     accessType: "educador",
   };
@@ -152,7 +181,9 @@ export function getStoredMemberSession(): MemberSession | null {
 
   try {
     const parsed = JSON.parse(raw) as Partial<MemberSession>;
-    if (!parsed?.nombre || !parsed?.rama || !parsed?.loggedAt) return null;
+    if (!parsed?.authUserId || !parsed?.nombre || !parsed?.rama || !parsed?.loggedAt) {
+      return null;
+    }
     if (!["rover", "pioneros", "caminantes", "lobatos"].includes(parsed.rama)) {
       return null;
     }
@@ -161,10 +192,18 @@ export function getStoredMemberSession(): MemberSession | null {
       rawAccessType === "educador" || rawAccessType === "beneficiario"
         ? rawAccessType
         : "beneficiario";
+    const rawAllowedRamas = Array.isArray(parsed.allowedRamas)
+      ? parsed.allowedRamas.filter((rama): rama is MiembroRama =>
+          ["rover", "pioneros", "caminantes", "lobatos"].includes(String(rama)),
+        )
+      : [];
+    const allowedRamas = rawAllowedRamas.length > 0 ? rawAllowedRamas : [parsed.rama as MiembroRama];
 
     return {
+      authUserId: parsed.authUserId,
       nombre: parsed.nombre,
       rama: parsed.rama as MiembroRama,
+      allowedRamas,
       loggedAt: parsed.loggedAt,
       isRamaAdmin: !!parsed.isRamaAdmin,
       accessType,

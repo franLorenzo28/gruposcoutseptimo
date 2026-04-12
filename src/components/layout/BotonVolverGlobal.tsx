@@ -7,6 +7,7 @@ const getFallbackPath = (pathname: string): string => {
   if (pathname.startsWith("/archivo/")) return "/archivo";
   if (pathname.startsWith("/eventos/")) return "/eventos";
   if (pathname.startsWith("/area-miembros/")) return "/area-miembros";
+  if (pathname.startsWith("/unidades/")) return "/area-miembros";
   if (pathname.startsWith("/ramas/")) return "/area-miembros";
   return "/";
 };

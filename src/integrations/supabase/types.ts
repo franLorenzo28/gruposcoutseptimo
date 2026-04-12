@@ -533,6 +533,16 @@ export type Database = {
         }
         Returns: undefined
       }
+      review_educator_permission_request: {
+        Args: {
+          p_approve: boolean
+          p_note?: string | null
+          p_notification_id: string
+          p_requester_id: string
+          p_units: string[]
+        }
+        Returns: Json
+      }
       create_or_get_conversation: {
         Args: { other_user_id: string }
         Returns: string

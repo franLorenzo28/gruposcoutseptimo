@@ -844,10 +844,10 @@ const Usuarios = () => {
 
                 {/* Filtros y ordenamiento */}
                 <div className="grid gap-2 sm:gap-3 grid-cols-1 md:grid-cols-3 mb-1">
-              {/* Filtro por rama */}
+              {/* Filtro por unidad */}
                   <div>
                 <label className="text-sm font-medium mb-2 block text-muted-foreground">
-                  Rama
+                  Unidad
                 </label>
                 <Select
                   value={ENABLE_RAMA_FILTER ? ramaFilter : "all"}
@@ -855,10 +855,10 @@ const Usuarios = () => {
                   disabled={!ENABLE_RAMA_FILTER}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Todas las ramas" />
+                    <SelectValue placeholder="Todas las unidades" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Todas las ramas</SelectItem>
+                    <SelectItem value="all">Todas las unidades</SelectItem>
                     <SelectItem value="manada">
                       🐺 Manada (7-10 años)
                     </SelectItem>
@@ -876,7 +876,7 @@ const Usuarios = () => {
                 </Select>
                 {!ENABLE_RAMA_FILTER && (
                   <p className="mt-2 text-xs text-muted-foreground">
-                    Filtro por rama temporalmente deshabilitado.
+                    Filtro por unidad temporalmente deshabilitado.
                   </p>
                 )}
                   </div>
@@ -918,7 +918,7 @@ const Usuarios = () => {
                     <SelectItem value="age-desc">
                       Edad (mayor a menor)
                     </SelectItem>
-                    <SelectItem value="rama">Rama (Manada → Adulto)</SelectItem>
+                    <SelectItem value="rama">Unidad (Manada → Adulto)</SelectItem>
                   </SelectContent>
                 </Select>
                   </div>

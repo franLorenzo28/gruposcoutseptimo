@@ -49,6 +49,7 @@ app.use("/users", usersRouter);
 app.use("/notifications", notificationsRouter);
 app.use("/presence", presenceRouter);
 app.use("/ramas", ramaDocumentosRouter);
+app.use("/unidades", ramaDocumentosRouter);
 
 // Health
 app.get("/health", (_req: any, res: any) => res.json({ ok: true }));

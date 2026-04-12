@@ -899,7 +899,7 @@ const Perfil = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="rama_actual">Rama actual</Label>
+                <Label htmlFor="rama_actual">Unidad actual</Label>
                 <Input
                   id="rama_actual"
                   type="text"
@@ -1025,12 +1025,12 @@ const Perfil = () => {
               <div className="mt-6 space-y-4 p-4 border rounded-md bg-muted/30">
                 <h4 className="font-semibold text-base">Información del Educador</h4>
                 <p className="text-xs text-muted-foreground">
-                  Selecciona la rama que diriges y proporciona información de tu unidad.
+                  Selecciona la unidad que diriges y proporciona información de tu unidad.
                 </p>
                 <div className="space-y-4">
-                  {/* Selector principal de rama */}
+                  {/* Selector principal de unidad */}
                   <div className="space-y-2">
-                    <Label htmlFor="rama_que_educa">¿Qué rama diriges?</Label>
+                    <Label htmlFor="rama_que_educa">¿Qué unidad diriges?</Label>
                     <select
                       id="rama_que_educa"
                       name="rama_que_educa"
@@ -1046,18 +1046,18 @@ const Perfil = () => {
                       }}
                       className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     >
-                      <option value="">Selecciona una rama</option>
+                      <option value="">Selecciona una unidad</option>
                       <option value="manada">🐺 Manada (7-10 años)</option>
                       <option value="tropa">⚜️ Tropa (11-14 años)</option>
                       <option value="pioneros">🏔️ Pioneros (15-17 años)</option>
                       <option value="rovers">🚶 Rovers (18-20 años)</option>
                     </select>
                     <p className="text-xs text-muted-foreground">
-                      Selecciona la rama principal en la que trabajas como educador/a
+                      Selecciona la unidad principal en la que trabajas como educador/a
                     </p>
                   </div>
 
-                  {/* Campos específicos según la rama */}
+                  {/* Campos específicos según la unidad */}
                   {ramaEducador === "tropa" && (
                     <div className="space-y-2">
                       <Label htmlFor="patrulla_educador">Patrulla de Tropa (opcional)</Label>

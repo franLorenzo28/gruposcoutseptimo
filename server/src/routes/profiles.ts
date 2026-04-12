@@ -2,6 +2,11 @@ import { Router } from "express";
 import { db } from "../db";
 import { z } from "zod";
 import { authMiddleware } from "../auth";
+import {
+  canModerateRama,
+  isValidRama,
+  listRamaContacts,
+} from "../rama-access";
 
 export const profilesRouter = Router();
 
@@ -20,6 +25,31 @@ function calculateAge(fechaNacimiento: string | null): number | null {
   } catch {
     return null;
   }
+}
+
+function normalizeRole(value: string | null | undefined): string {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function isEducatorRoleValue(normalizedRole: string): boolean {
+  return (
+    normalizedRole === "educador/a" ||
+    normalizedRole === "educador" ||
+    normalizedRole === "educadora"
+  );
+}
+
+function isAdminEmail(email: string | null | undefined): boolean {
+  if (!email) return false;
+  const list = (process.env.ADMIN_EMAILS || "")
+    .split(",")
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean);
+  return list.includes(String(email).toLowerCase());
 }
 
 profilesRouter.get("/me", authMiddleware, (req: any, res: any) => {
@@ -105,6 +135,40 @@ profilesRouter.put("/me", authMiddleware, (req: any, res: any) => {
     comunidad_rovers,
     username,
   } = parse.data;
+
+  const currentProfile = db
+    .prepare("SELECT rol_adulto FROM profiles WHERE user_id = ?")
+    .get(userId) as { rol_adulto?: string | null } | undefined;
+
+  const currentUserRow = db
+    .prepare("SELECT email FROM users WHERE id = ?")
+    .get(userId) as { email?: string | null } | undefined;
+  const isGlobalAdmin = isAdminEmail(currentUserRow?.email || null);
+
+  const currentRole = normalizeRole(currentProfile?.rol_adulto);
+  const nextRole = rol_adulto !== undefined ? normalizeRole(rol_adulto) : currentRole;
+  const currentIsEducator = isEducatorRoleValue(currentRole);
+  const nextIsEducator = isEducatorRoleValue(nextRole);
+
+  if (!isGlobalAdmin && rol_adulto !== undefined && nextIsEducator && !currentIsEducator) {
+    return res.status(403).json({
+      error:
+        "No puedes autoasignarte como educador/a. Solicita validación a administración.",
+    });
+  }
+
+  if (
+    !isGlobalAdmin &&
+    rama_que_educa !== undefined &&
+    !nextIsEducator &&
+    !currentIsEducator
+  ) {
+    return res.status(403).json({
+      error:
+        "Solo perfiles validados como educador/a pueden definir su unidad asignada.",
+    });
+  }
+
   const existing = db
     .prepare("SELECT user_id FROM profiles WHERE user_id = ?")
     .get(userId);
@@ -225,6 +289,24 @@ profilesRouter.put("/me", authMiddleware, (req: any, res: any) => {
     result.edad = calculateAge(result.fecha_nacimiento);
   }
   res.json(result);
+});
+
+profilesRouter.get("/rama-contacts/:rama", authMiddleware, (req: any, res: any) => {
+  const me = (req as any).user.id as string;
+  const ramaRaw = req.params.rama as string;
+
+  if (!isValidRama(ramaRaw)) {
+    return res.status(400).json({ error: "Unidad inválida" });
+  }
+
+  if (!canModerateRama(me, ramaRaw)) {
+    return res.status(403).json({
+      error: "Solo educadores de esta unidad pueden ver este directorio interno",
+    });
+  }
+
+  const contacts = listRamaContacts(ramaRaw).filter((contact) => contact.user_id !== me);
+  res.json(contacts);
 });
 
 // Obtener un perfil por ID (si es público o es el propio)

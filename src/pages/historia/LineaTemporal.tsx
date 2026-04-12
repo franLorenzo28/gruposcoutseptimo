@@ -26,9 +26,9 @@ const Historia = () => {
     },
     {
       year: "1990",
-      title: "Expansión de Ramas",
+      title: "Expansión de Unidades",
       description:
-        "Incorporamos todas las ramas del escultismo, desde manada hasta rovers, ofreciendo formación integral.",
+        "Incorporamos todas las unidades del escultismo, desde manada hasta rovers, ofreciendo formación integral.",
     },
     {
       year: "2014",

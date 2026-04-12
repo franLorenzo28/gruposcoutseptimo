@@ -42,7 +42,7 @@ export default function RamaLanding({
               <div className="space-y-4">
                 <p className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-card/70 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   <Compass className="h-4 w-4 text-primary" />
-                  Rama Scout
+                  Unidad Scout
                 </p>
                 <h1 className="text-4xl font-black leading-[0.95] text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent sm:text-5xl md:text-6xl">
                   {title}
@@ -54,7 +54,7 @@ export default function RamaLanding({
                 <div className="flex flex-wrap gap-3 pt-2">
                   <Button asChild>
                     <Link to="/contacto">
-                      Sumarme a la rama
+                      Sumarme a la unidad
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                   </Button>

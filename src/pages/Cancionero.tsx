@@ -88,7 +88,7 @@ const MUSIC_SECTIONS: ArchiveMusicSection[] = [
     titulo: "Danzas",
     subtitulo: "Archivo de dinamicas y rondas",
     descripcion:
-      "Espacio para danzas, rondas y movimientos tradicionales. Ideal para actividades de rama y encuentros especiales.",
+      "Espacio para danzas, rondas y movimientos tradicionales. Ideal para actividades de unidad y encuentros especiales.",
     Icon: Footprints,
     testimonio: {
       titulo: "Cheki, Cheki",

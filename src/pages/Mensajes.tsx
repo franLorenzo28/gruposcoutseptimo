@@ -6,6 +6,7 @@ import { isLocalBackend, apiFetch } from "@/lib/backend";
 import { getFollowers, getFollowing } from "@/lib/follows";
 import { createOrGetConversation, listDMs, sendDM } from "@/lib/dms";
 import { useToast } from "@/hooks/use-toast";
+import { resolveMemberAccessFromProfile } from "@/lib/member-auth";
 import { Smile } from "lucide-react";
 import {
   Popover,
@@ -58,9 +59,27 @@ const EMOJIS = [
   "🔥",
 ];
 
+function calculateAgeFromDate(fechaNacimiento: string | null | undefined): number | null {
+  if (!fechaNacimiento) return null;
+  const [y, m, d] = String(fechaNacimiento)
+    .split("-")
+    .map((part) => parseInt(part, 10));
+  if (!y || !m || !d) return null;
+
+  const birth = new Date(y, m - 1, d);
+  if (Number.isNaN(birth.getTime())) return null;
+
+  const now = new Date();
+  let years = now.getFullYear() - birth.getFullYear();
+  const monthDelta = now.getMonth() - birth.getMonth();
+  if (monthDelta < 0 || (monthDelta === 0 && now.getDate() < birth.getDate())) years--;
+  return years;
+}
+
 export default function Mensajes() {
   const [directory, setDirectory] = useState<ProfileLite[]>([]);
   const [mutualFollows, setMutualFollows] = useState<Set<string>>(new Set());
+  const [ramaContactIds, setRamaContactIds] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
   const [selectedUser, setSelectedUser] = useState<ProfileLite | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -140,14 +159,48 @@ export default function Mensajes() {
               body: JSON.stringify({ ids }),
             })
           : [];
-        setDirectory(
+        const mutualProfiles =
           (profiles as any[]).map((p) => ({
             user_id: String((p as any).user_id),
             nombre_completo: (p as any).nombre_completo ?? null,
             username: (p as any).username ?? null,
             avatar_url: (p as any).avatar_url ?? null,
-          })),
-        );
+          }));
+
+        // Si es educador, agregar contactos de su rama sin requerir seguimiento mutuo
+        const edadCalculada = calculateAgeFromDate(me.fecha_nacimiento || null);
+        const access = resolveMemberAccessFromProfile({
+          edad: edadCalculada,
+          rol_adulto: me.rol_adulto,
+          rama_que_educa: me.rama_que_educa,
+          seisena: me.seisena,
+          patrulla: me.patrulla,
+          equipo_pioneros: me.equipo_pioneros,
+          comunidad_rovers: me.comunidad_rovers,
+        });
+
+        if (access.accessType === "educador" && access.rama) {
+          const ramaContactsRaw = await apiFetch(`/profiles/rama-contacts/${access.rama}`).catch(
+            () => [],
+          );
+          const ramaContacts = (ramaContactsRaw as any[]).map((contact) => ({
+            user_id: String((contact as any).user_id),
+            nombre_completo: (contact as any).nombre_completo ?? null,
+            username: (contact as any).username ?? null,
+            avatar_url: (contact as any).avatar_url ?? null,
+          }));
+
+          const mergedById = new Map<string, ProfileLite>();
+          for (const profile of [...mutualProfiles, ...ramaContacts]) {
+            mergedById.set(profile.user_id, profile);
+          }
+
+          setDirectory(Array.from(mergedById.values()));
+          setRamaContactIds(new Set(ramaContacts.map((contact) => contact.user_id)));
+        } else {
+          setDirectory(mutualProfiles);
+          setRamaContactIds(new Set());
+        }
         return;
       }
       // Supabase path
@@ -192,9 +245,11 @@ export default function Mensajes() {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    // Filtrar: solo usuarios que se siguen mutuamente (excluyendo el usuario actual)
+    // Beneficiarios: seguimiento mutuo. Educadores: mutual + contactos de su rama.
     const users = directory.filter(
-      (u) => u.user_id !== currentUserId && mutualFollows.has(u.user_id),
+      (u) =>
+        u.user_id !== currentUserId &&
+        (mutualFollows.has(u.user_id) || ramaContactIds.has(u.user_id)),
     );
 
     if (!q) return users.slice(0, 10);
@@ -209,7 +264,7 @@ export default function Mensajes() {
         return matchesUsername || matchesName || matchesAt;
       })
       .slice(0, 10);
-  }, [search, directory, currentUserId, mutualFollows]);
+  }, [search, directory, currentUserId, mutualFollows, ramaContactIds]);
 
   const startConversationWithUser = async (user: ProfileLite) => {
     setSelectedUser(user);
@@ -432,7 +487,7 @@ export default function Mensajes() {
                 <div className="border-b border-border/60 px-4 py-4 sm:px-5">
                   <h2 className="text-lg font-bold tracking-tight">Mensajes</h2>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Estilo DM para scouts con seguimiento mutuo
+                    DM interno: seguimiento mutuo y, para educadores, contacto directo por unidad
                   </p>
                 </div>
 
@@ -448,13 +503,15 @@ export default function Mensajes() {
                 <div className="flex-1 space-y-1 overflow-auto px-3 pb-3 sm:px-4">
                   {filtered.length === 0 ? (
                     <div className="rounded-2xl border border-dashed border-border/70 p-4 text-xs text-muted-foreground">
-                      {mutualFollows.size === 0
-                        ? "Aún no hay contactos mutuos. Seguí y aceptá seguimiento para abrir chats."
+                      {mutualFollows.size === 0 && ramaContactIds.size === 0
+                        ? "No tienes contactos habilitados aún. Necesitas seguimiento mutuo o permisos de educador de unidad."
                         : "No hay resultados para esa búsqueda."}
                     </div>
                   ) : (
                     filtered.map((u) => {
                       const isActive = selectedUser?.user_id === u.user_id;
+                      const isRamaDirect =
+                        ramaContactIds.has(u.user_id) && !mutualFollows.has(u.user_id);
                       const displayName = u.nombre_completo || u.username || "Scout";
                       const initial = displayName.charAt(0).toUpperCase();
                       return (
@@ -477,6 +534,11 @@ export default function Mensajes() {
                             <p className="truncate text-xs text-muted-foreground">
                               {u.username ? `@${u.username}` : "sin usuario"}
                             </p>
+                            {isRamaDirect && (
+                              <p className="mt-1 text-[11px] font-medium text-primary">
+                                Contacto directo de unidad
+                              </p>
+                            )}
                           </div>
                         </button>
                       );

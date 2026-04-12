@@ -19,10 +19,10 @@ const Bauen = () => {
       descripcion: "En la Manada se realizan construcciones de cubiles. Esta se desarrolla en una sola jornada donde deben presentar sus construcciones dentro de un box delimitado. Cada cubil representa a un personaje del Libro de la Selva, elegido por cada seisena, y la elección no puede repetirse dentro del mismo Grupo Scout. Con esta propuesta se busca que exploren y se sumerjan en el mundo de las Tierras Vírgenes durante la actividad. Es una actividad familiar que los Lobatos disfrutan mucho, así como sus familias y amigos.",
     },
     {
-      nombre: "Rama Scout / Tropa",
+      nombre: "Unidad Scout / Tropa",
       color: "#344F1F",
       duracion: "2 días",
-      descripcion: "Es uno de los platos fuertes del evento, ya que nuclea la mayor cantidad de participantes. Actualmente participan más de 25 patrullas en competencias de construcción de rincones de patrulla y cocina con fuego. En esta rama se ve en tiempo real todo lo aprendido en su vida scout y su aplicación práctica: cabuyería, amarres, pionerismo, campismo, cocina, armado de toldos, mesas y bancos, además del cuidado y la limpieza del rincón.",
+      descripcion: "Es uno de los platos fuertes del evento, ya que nuclea la mayor cantidad de participantes. Actualmente participan más de 25 patrullas en competencias de construcción de rincones de patrulla y cocina con fuego. En esta unidad se ve en tiempo real todo lo aprendido en su vida scout y su aplicación práctica: cabuyería, amarres, pionerismo, campismo, cocina, armado de toldos, mesas y bancos, además del cuidado y la limpieza del rincón.",
     },
     {
       nombre: "Pioneros",

@@ -8,6 +8,7 @@ import { Calendar, FileText, Image, Info, AlertTriangle, ShieldCheck } from "luc
 import { Reveal } from "@/components/Reveal";
 import { RamaAdminSection } from "@/components/miembros/RamaAdminSection";
 import { DocumentsList } from "@/components/miembros/DocumentsList";
+import { RamaBroadcastChannel } from "@/components/miembros/RamaBroadcastChannel";
 
 const ramaConfig: Record<
   MiembroRama,
@@ -20,28 +21,28 @@ const ramaConfig: Record<
   }
 > = {
   rover: {
-    titulo: "Panel Rover",
+    titulo: "Rover",
     lema: "Servir",
     reuniones: ["Lunes 20:00 - 22:00", "Sábado salida de servicio (según agenda)"],
     documentos: ["Plan anual de servicio", "Bitácora de proyectos", "Lista de materiales"],
     info: ["Coordinación de acciones solidarias", "Preparación de campamentos de servicio"],
   },
   pioneros: {
-    titulo: "Panel Pioneros",
+    titulo: "Pioneros",
     lema: "Explorar",
     reuniones: ["Martes 19:00 - 21:00", "Sábado actividad al aire libre"],
     documentos: ["Cronograma de patrullas", "Guía de actividades", "Autorizaciones"],
-    info: ["Desafíos de liderazgo", "Proyectos comunitarios de rama"],
+    info: ["Desafíos de liderazgo", "Proyectos comunitarios de unidad"],
   },
   caminantes: {
-    titulo: "Panel Caminantes",
+    titulo: "Caminantes",
     lema: "Descubrir",
     reuniones: ["Miércoles 18:30 - 20:30", "Domingo encuentro mensual"],
     documentos: ["Plan de progresión", "Cuaderno de ruta", "Normas de seguridad"],
     info: ["Trabajo en equipo", "Actividades de orientación y naturaleza"],
   },
   lobatos: {
-    titulo: "Panel Lobatos",
+    titulo: "Lobatos",
     lema: "Siempre mejor",
     reuniones: ["Sábado 15:00 - 17:00", "Fogón mensual con familias"],
     documentos: ["Calendario de manada", "Ficha médica", "Reglamento de convivencia"],
@@ -54,7 +55,8 @@ export default function PanelRama({ rama }: { rama: MiembroRama }) {
   const [searchParams] = useSearchParams();
   const denied = searchParams.get("acceso") === "denegado";
   const config = ramaConfig[rama];
-  const isRamaAdmin = !!session?.isRamaAdmin && session?.rama === rama;
+  const allowedRamas = session?.allowedRamas?.length ? session.allowedRamas : session?.rama ? [session.rama] : [];
+  const isRamaAdmin = !!session?.isRamaAdmin && allowedRamas.includes(rama);
 
   // State for admin data
   const [ramaContent, setRamaContent] = useState(() => {
@@ -68,6 +70,18 @@ export default function PanelRama({ rama }: { rama: MiembroRama }) {
     const stored = localStorage.getItem(`rama_${rama}_eventos`);
     return stored ? JSON.parse(stored) : [];
   });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const storedContent = localStorage.getItem(`rama_${rama}_content`);
+    const storedEventos = localStorage.getItem(`rama_${rama}_eventos`);
+    setRamaContent(
+      storedContent
+        ? JSON.parse(storedContent)
+        : { lema: config.lema, reuniones: config.reuniones, info: config.info, avisos: [] },
+    );
+    setEventos(storedEventos ? JSON.parse(storedEventos) : []);
+  }, [rama]);
 
   // Save content to localStorage
   useEffect(() => {
@@ -105,23 +119,23 @@ export default function PanelRama({ rama }: { rama: MiembroRama }) {
           <Reveal>
             <div className="grid gap-6 rounded-3xl border border-border/70 bg-card/80 p-6 shadow-xl sm:p-8 lg:grid-cols-[1.2fr_0.8fr]">
               <div>
-                <h1 className="text-3xl font-black sm:text-4xl">{config.titulo}</h1>
+                <h1 className="text-3xl font-black sm:text-4xl">Panel de unidad {config.titulo}</h1>
                 <p className="mt-3 text-sm text-muted-foreground sm:text-base">
-                  Bienvenido, <strong>{session?.nombre}</strong>. Este es tu espacio interno para la organizacion de rama.
+                  Bienvenido, <strong>{session?.nombre}</strong>. Este es tu espacio interno para la organización de unidad.
                 </p>
                 <p className="mt-3 inline-flex rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary">
-                  Lema: {config.lema}
+                  Lema: {ramaContent.lema}
                 </p>
                 {isRamaAdmin && (
                   <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-700">
                     <ShieldCheck className="h-4 w-4" />
-                    Admin de rama habilitado
+                    Admin de unidad habilitado
                   </p>
                 )}
                 {denied && (
                   <p className="mt-4 flex items-center gap-2 text-sm text-amber-600">
                     <AlertTriangle className="h-4 w-4" />
-                    Intentaste acceder a una rama no permitida para tu perfil.
+                    Intentaste acceder a una unidad no permitida para tu perfil.
                   </p>
                 )}
               </div>
@@ -172,7 +186,7 @@ export default function PanelRama({ rama }: { rama: MiembroRama }) {
                   <h2 className="text-lg font-bold">Fotos</h2>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Próximamente: galería privada por rama con salidas, campamentos y actividades internas.
+                  Próximamente: galería privada por unidad con salidas, campamentos y actividades internas.
                 </p>
               </CardContent>
             </Card>
@@ -202,10 +216,14 @@ export default function PanelRama({ rama }: { rama: MiembroRama }) {
             </Card>
           </div>
 
+          <Reveal>
+            <RamaBroadcastChannel rama={rama} isRamaAdmin={isRamaAdmin} />
+          </Reveal>
+
           {isRamaAdmin && (
             <div className="space-y-6">
               <div className="rounded-lg border border-emerald-200 bg-emerald-50/70 p-4">
-                <h2 className="text-lg font-bold text-emerald-800">🛡️ Panel de Administración de Rama</h2>
+                <h2 className="text-lg font-bold text-emerald-800">🛡️ Panel de Administración de Unidad</h2>
                 <p className="mt-1 text-sm text-emerald-700">
                   Gestiona el contenido, documentos y eventos de {config.titulo}. Los cambios se guardan automáticamente.
                 </p>

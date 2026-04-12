@@ -94,10 +94,12 @@ type SupabaseUserWithProfile = User & {
 
 interface SupabaseUserContextType {
   user: SupabaseUserWithProfile | null;
+  isUserLoading: boolean;
 }
 
 export const SupabaseUserContext = createContext<SupabaseUserContextType>({
   user: null,
+  isUserLoading: true,
 });
 
 export const useSupabaseUser = () => useContext(SupabaseUserContext);
@@ -105,13 +107,17 @@ export const useSupabaseUser = () => useContext(SupabaseUserContext);
 // 🌐 Proveedor de usuario Supabase
 const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<SupabaseUserWithProfile | null>(null);
+  const [isUserLoading, setIsUserLoading] = useState(true);
 
   useEffect(() => {
     async function fetchUserAndProfile(sessionUser: any) {
       if (!sessionUser) {
         setUser(null);
+        setIsUserLoading(false);
         return;
       }
+
+      setIsUserLoading(true);
       
       const { data: profile, error } = await querySilent(() => supabase
         .from("profiles")
@@ -123,6 +129,7 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
       if (error || !profile) {
         setUser(sessionUser);
         localStorage.setItem("adminUser", JSON.stringify(sessionUser));
+        setIsUserLoading(false);
         return;
       }
       
@@ -135,21 +142,35 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
       } catch (e) {
         // App still works without localStorage
       }
+
+      setIsUserLoading(false);
     }
 
     // Obtener sesión inicial
     supabase.auth.getSession().then(({ data: { session } }) => {
       const u = session?.user ?? null;
-      if (u) fetchUserAndProfile(u);
+      if (u) {
+        fetchUserAndProfile(u);
+      } else {
+        setUser(null);
+        setIsUserLoading(false);
+      }
     }).catch((err) => {
       if (import.meta.env.DEV) console.error("Error getSession:", err);
+      setUser(null);
+      setIsUserLoading(false);
     });
 
     // Escuchar cambios de auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         const u = session?.user ?? null;
-        if (u) fetchUserAndProfile(u);
+        if (u) {
+          fetchUserAndProfile(u);
+        } else {
+          setUser(null);
+          setIsUserLoading(false);
+        }
       },
     );
 
@@ -159,7 +180,7 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   return (
-    <SupabaseUserContext.Provider value={{ user }}>
+    <SupabaseUserContext.Provider value={{ user, isUserLoading }}>
       {children}
     </SupabaseUserContext.Provider>
   );
@@ -198,7 +219,7 @@ async function ensureProfileExists(user: { id: string; email?: string | null; us
   }
 }
 
-// Componente que redirija automáticamente al panel de rama del usuario
+// Componente que redirige automáticamente al panel de unidad del usuario
 function Dashboard() {
   const { session } = useMemberAuth();
   
@@ -206,7 +227,7 @@ function Dashboard() {
     return <Navigate to="/login" replace />;
   }
   
-  return <Navigate to={`/area-miembros/ramas/${session.rama}`} replace />;
+  return <Navigate to={`/area-miembros/unidades/${session.rama}`} replace />;
 }
 
 const App = () => (
@@ -272,7 +293,7 @@ const App = () => (
                       }
                     />
                     <Route
-                      path="/area-miembros/ramas/rover"
+                      path="/area-miembros/unidades/rover"
                       element={
                         <RequireRamaAccess allowedRama="rover">
                           <PanelRama rama="rover" />
@@ -280,7 +301,7 @@ const App = () => (
                       }
                     />
                     <Route
-                      path="/area-miembros/ramas/pioneros"
+                      path="/area-miembros/unidades/pioneros"
                       element={
                         <RequireRamaAccess allowedRama="pioneros">
                           <PanelRama rama="pioneros" />
@@ -288,7 +309,7 @@ const App = () => (
                       }
                     />
                     <Route
-                      path="/area-miembros/ramas/caminantes"
+                      path="/area-miembros/unidades/caminantes"
                       element={
                         <RequireRamaAccess allowedRama="caminantes">
                           <PanelRama rama="caminantes" />
@@ -296,7 +317,7 @@ const App = () => (
                       }
                     />
                     <Route
-                      path="/area-miembros/ramas/lobatos"
+                      path="/area-miembros/unidades/lobatos"
                       element={
                         <RequireRamaAccess allowedRama="lobatos">
                           <PanelRama rama="lobatos" />
@@ -318,13 +339,25 @@ const App = () => (
                     <Route path="/grupos/:id" element={<GrupoDetail />} />
                     <Route path="/dashboard-coordinador" element={<DashboardCoordinador />} />
 
-                    {/* Ramas */}
-                    <Route path="/ramas/manada" element={<Manada />} />
-                    <Route path="/ramas/tropa" element={<Tropa />} />
-                    <Route path="/ramas/pioneros" element={<Pioneros />} />
-                    <Route path="/ramas/rovers" element={<Rovers />} />
-                    <Route path="/ramas/staff" element={<Staff />} />
-                    <Route path="/ramas/comite" element={<Comite />} />
+                    {/* Unidades */}
+                    <Route path="/unidades/manada" element={<Manada />} />
+                    <Route path="/unidades/tropa" element={<Tropa />} />
+                    <Route path="/unidades/pioneros" element={<Pioneros />} />
+                    <Route path="/unidades/rovers" element={<Rovers />} />
+                    <Route path="/unidades/staff" element={<Staff />} />
+                    <Route path="/unidades/comite" element={<Comite />} />
+
+                    {/* Compatibilidad rutas legacy */}
+                    <Route path="/area-miembros/ramas/rover" element={<Navigate to="/area-miembros/unidades/rover" replace />} />
+                    <Route path="/area-miembros/ramas/pioneros" element={<Navigate to="/area-miembros/unidades/pioneros" replace />} />
+                    <Route path="/area-miembros/ramas/caminantes" element={<Navigate to="/area-miembros/unidades/caminantes" replace />} />
+                    <Route path="/area-miembros/ramas/lobatos" element={<Navigate to="/area-miembros/unidades/lobatos" replace />} />
+                    <Route path="/ramas/manada" element={<Navigate to="/unidades/manada" replace />} />
+                    <Route path="/ramas/tropa" element={<Navigate to="/unidades/tropa" replace />} />
+                    <Route path="/ramas/pioneros" element={<Navigate to="/unidades/pioneros" replace />} />
+                    <Route path="/ramas/rovers" element={<Navigate to="/unidades/rovers" replace />} />
+                    <Route path="/ramas/staff" element={<Navigate to="/unidades/staff" replace />} />
+                    <Route path="/ramas/comite" element={<Navigate to="/unidades/comite" replace />} />
 
                     {/* Admin */}
                     <Route path="/admin-panel" element={<AdminPanel />} />

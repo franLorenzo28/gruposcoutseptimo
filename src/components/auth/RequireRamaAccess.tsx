@@ -9,16 +9,24 @@ export default function RequireRamaAccess({
   allowedRama: MiembroRama;
   children: React.ReactNode;
 }) {
-  const { isAuthenticated, session } = useMemberAuth();
+  const { isAuthenticated, session, isCheckingAuth } = useMemberAuth();
+
+  if (isCheckingAuth) {
+    return <div className="p-8 text-center text-muted-foreground">Validando acceso de unidad...</div>;
+  }
 
   if (!isAuthenticated || !session) {
     return <Navigate to="/login" replace />;
   }
 
-  if (session.rama !== allowedRama) {
+  const allowedRamas = session.allowedRamas?.length
+    ? session.allowedRamas
+    : [session.rama];
+
+  if (!allowedRamas.includes(allowedRama)) {
     return (
       <Navigate
-        to={`/area-miembros/ramas/${session.rama}?acceso=denegado`}
+        to={`/area-miembros/unidades/${session.rama}?acceso=denegado`}
         replace
       />
     );

@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import {
   clearMemberSession,
   getStoredMemberSession,
@@ -7,10 +7,13 @@ import {
   type MemberSession,
   type MiembroRama,
 } from "@/lib/member-auth";
+import { getAuthUser } from "@/lib/backend";
 
 interface LoginPayload {
+  authUserId: string;
   nombre: string;
   rama: MiembroRama;
+  allowedRamas: MiembroRama[];
   isRamaAdmin: boolean;
   accessType: MemberAccessType;
 }
@@ -18,6 +21,7 @@ interface LoginPayload {
 interface MemberAuthContextValue {
   session: MemberSession | null;
   isAuthenticated: boolean;
+  isCheckingAuth: boolean;
   login: (payload: LoginPayload) => void;
   logout: () => void;
 }
@@ -30,12 +34,54 @@ export function MemberAuthProvider({ children }: { children: React.ReactNode }) 
   const [session, setSession] = useState<MemberSession | null>(() =>
     getStoredMemberSession(),
   );
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
-  const login = ({ nombre, rama, isRamaAdmin, accessType }: LoginPayload) => {
+  useEffect(() => {
+    let active = true;
+
+    (async () => {
+      try {
+        const authUser = await getAuthUser();
+        if (!active) return;
+
+        if (!authUser?.id) {
+          clearMemberSession();
+          setSession(null);
+          setIsCheckingAuth(false);
+          return;
+        }
+
+        setSession((prev) => {
+          if (!prev) return prev;
+          if (prev.authUserId !== authUser.id) {
+            clearMemberSession();
+            return null;
+          }
+          return prev;
+        });
+      } catch {
+        if (!active) return;
+        clearMemberSession();
+        setSession(null);
+      } finally {
+        if (active) {
+          setIsCheckingAuth(false);
+        }
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const login = ({ authUserId, nombre, rama, allowedRamas, isRamaAdmin, accessType }: LoginPayload) => {
     const cleanName = nombre.trim();
     const nextSession: MemberSession = {
+      authUserId,
       nombre: cleanName,
       rama,
+      allowedRamas: allowedRamas.length > 0 ? allowedRamas : [rama],
       isRamaAdmin,
       accessType,
       loggedAt: new Date().toISOString(),
@@ -53,10 +99,11 @@ export function MemberAuthProvider({ children }: { children: React.ReactNode }) 
     () => ({
       session,
       isAuthenticated: !!session,
+      isCheckingAuth,
       login,
       logout,
     }),
-    [session],
+    [isCheckingAuth, session],
   );
 
   return (

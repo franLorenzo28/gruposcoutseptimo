@@ -12,7 +12,7 @@ export const RAMA_LABEL: Record<RamaKey, string> = {
   pioneros: "Pioneros",
   rovers: "Rovers",
   adulto: "Adulto",
-  "sin-rama": "Sin rama",
+  "sin-rama": "Sin unidad",
 };
 
 export type RamaProfileFields = {

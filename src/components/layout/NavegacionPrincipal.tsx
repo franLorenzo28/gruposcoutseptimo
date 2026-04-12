@@ -58,6 +58,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { isLocalBackend, apiFetch } from "@/lib/backend";
 import { cn } from "@/lib/utils";
 import { acceptFollow, rejectFollow } from "@/lib/follows";
+import {
+  getCurrentUserAdminAccess,
+  reviewEducatorPermissionRequest,
+  type EducatorUnit,
+} from "@/lib/admin-permissions";
 import logoImage from "@/assets/grupo-scout-logo.png";
 
 interface NavLink {
@@ -131,6 +136,7 @@ const Navigation = () => {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [canManageEducatorRequests, setCanManageEducatorRequests] = useState(false);
   const [needsProfileSetup, setNeedsProfileSetup] = useState(false);
 
   const location = useLocation();
@@ -179,10 +185,16 @@ const Navigation = () => {
             setUserName(me.nombre_completo || null);
             setAvatarUrl(me.avatar_url || null);
             setIsLoggedIn(true);
-            setIsAdmin((me as any)?.role === "admin");
+            const normalizedRole = String((me as any)?.role || "").trim().toLowerCase();
+            const canOpenAdmin = normalizedRole === "admin" || normalizedRole === "mod";
+            setIsAdmin(canOpenAdmin);
+            setCanManageEducatorRequests(canOpenAdmin);
             setNeedsProfileSetup(!isProfileComplete(me, me?.email || null));
           } else {
+            setIsLoggedIn(false);
+            setIsAdmin(false);
             setNeedsProfileSetup(false);
+            setCanManageEducatorRequests(false);
           }
           return;
         }
@@ -192,6 +204,7 @@ const Navigation = () => {
         if (!user) {
           setIsLoggedIn(false);
           setIsAdmin(false);
+          setCanManageEducatorRequests(false);
           setNeedsProfileSetup(false);
           return;
         }
@@ -205,14 +218,19 @@ const Navigation = () => {
           const emailFallback = user.email || null;
           setUserName(((profile as any).nombre_completo || emailFallback) ?? null);
           setAvatarUrl((profile as any).avatar_url || null);
-          setIsAdmin((profile as any)?.role === "admin");
+          const access = await getCurrentUserAdminAccess();
+          setIsAdmin(access.canOpenAdminPanel);
+          setCanManageEducatorRequests(access.canManageEducators);
           setNeedsProfileSetup(!isProfileComplete(profile, user.email));
         } else {
+          setIsAdmin(false);
           setNeedsProfileSetup(true);
+          setCanManageEducatorRequests(false);
         }
       } catch (err) {
         setIsLoggedIn(false);
         setIsAdmin(false);
+        setCanManageEducatorRequests(false);
         setNeedsProfileSetup(false);
       }
     })();
@@ -269,6 +287,24 @@ const Navigation = () => {
 
   const formatNotification = (n: any) => {
     const d = n?.data || {};
+    const kind = String(d.kind || "").toLowerCase();
+
+    if (n.type === "message" && kind === "educator_permission_request") {
+      return {
+        title: "Solicitud de permisos de educador",
+        description: `${d.requester_name || d.display || "Un educador"} solicita habilitación por unidad`,
+      };
+    }
+
+    if (n.type === "message" && kind === "educator_permission_response") {
+      return {
+        title: d.approved ? "Permisos aprobados" : "Solicitud rechazada",
+        description: d.approved
+          ? "Tu solicitud de permisos de educador fue aprobada"
+          : "Tu solicitud de permisos de educador fue rechazada",
+      };
+    }
+
     switch (n.type) {
       case "follow_request":
         return {
@@ -342,9 +378,60 @@ const Navigation = () => {
     return `${weeks}sem`;
   };
 
+  const formatUnitsList = (rawUnits: unknown): string => {
+    const labels: Record<EducatorUnit, string> = {
+      manada: "Manada",
+      tropa: "Tropa",
+      pioneros: "Pioneros",
+      rovers: "Rovers",
+    };
+
+    if (!Array.isArray(rawUnits)) return "Sin unidades";
+    const units = rawUnits
+      .map((unit) => String(unit || "").trim().toLowerCase())
+      .filter((unit): unit is EducatorUnit =>
+        ["manada", "tropa", "pioneros", "rovers"].includes(unit),
+      );
+    if (units.length === 0) return "Sin unidades";
+    return Array.from(new Set(units)).map((unit) => labels[unit]).join(", ");
+  };
+
   const renderNotificationContent = (n: any) => {
     const d = n?.data || {};
     const actor = getNotificationActor(n);
+    const kind = String(d.kind || "").toLowerCase();
+
+    if (n.type === "message" && kind === "educator_permission_request") {
+      const units = formatUnitsList(d.requested_units);
+      return (
+        <div className="space-y-1">
+          <p className="text-sm leading-snug">
+            <span className="font-semibold">{d.requester_name || actor || "Educador/a"}</span>{" "}
+            solicita permisos para: <span className="font-medium">{units}</span>
+          </p>
+          {d.note ? (
+            <p className="text-xs text-muted-foreground line-clamp-2">{String(d.note)}</p>
+          ) : null}
+        </div>
+      );
+    }
+
+    if (n.type === "message" && kind === "educator_permission_response") {
+      const approved = !!d.approved;
+      const units = formatUnitsList(d.approved_units);
+      return (
+        <p className="text-sm leading-snug">
+          <span className="font-semibold">
+            {approved ? "Permisos aprobados" : "Solicitud rechazada"}
+          </span>{" "}
+          <span className="text-muted-foreground">
+            {approved
+              ? `por ${d.reviewer_name || "administración"}. Unidades: ${units}.`
+              : `por ${d.reviewer_name || "administración"}.`}
+          </span>
+        </p>
+      );
+    }
 
     switch (n.type) {
       case "follow_request":
@@ -569,108 +656,207 @@ const Navigation = () => {
                         {notifications.length === 0 ? (
                           <li className="px-4 py-8 text-center text-sm text-muted-foreground">No hay notificaciones</li>
                         ) : (
-                          notifications.map((n) => (
-                            <li
-                              key={n.id}
-                              className={cn(
-                                "border-b px-4 py-3 transition-colors",
-                                !n.read ? "bg-primary/5" : "hover:bg-muted/30",
-                              )}
-                            >
-                              <div className="flex items-start gap-3">
-                                <UserAvatar
-                                  avatarUrl={(n.data as any)?.avatar_url || null}
-                                  userName={(n.data as any)?.display || "Scout"}
-                                  size="sm"
-                                />
-                                <div className="min-w-0 flex-1">
-                                  {renderNotificationContent(n)}
-                                  <div className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
-                                    <span>{getNotificationRelativeTime(n.created_at)}</span>
-                                    {!n.read && <Dot className="h-4 w-4 text-primary" />}
+                          notifications.map((n) => {
+                            const kind = String((n.data as any)?.kind || "").toLowerCase();
+                            const isEducatorPermissionRequest =
+                              n.type === "message" && kind === "educator_permission_request";
+                            const requestStatus = String((n.data as any)?.status || "pending").toLowerCase();
+                            const canReviewEducatorRequest =
+                              isEducatorPermissionRequest &&
+                              canManageEducatorRequests &&
+                              !n.read &&
+                              requestStatus === "pending";
+
+                            return (
+                              <li
+                                key={n.id}
+                                className={cn(
+                                  "border-b px-4 py-3 transition-colors",
+                                  !n.read ? "bg-primary/5" : "hover:bg-muted/30",
+                                )}
+                              >
+                                <div className="flex items-start gap-3">
+                                  <UserAvatar
+                                    avatarUrl={(n.data as any)?.avatar_url || null}
+                                    userName={(n.data as any)?.display || "Scout"}
+                                    size="sm"
+                                  />
+                                  <div className="min-w-0 flex-1">
+                                    {renderNotificationContent(n)}
+                                    <div className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
+                                      <span>{getNotificationRelativeTime(n.created_at)}</span>
+                                      {!n.read && <Dot className="h-4 w-4 text-primary" />}
+                                    </div>
                                   </div>
-                                </div>
-                                {n.type === "follow_request" ? (
-                                  <div className="flex items-center gap-1.5">
-                                    <Button
-                                      size="icon"
-                                      className="h-7 w-7"
-                                      aria-label="Aceptar solicitud"
-                                      title="Aceptar solicitud"
-                                      onClick={async () => {
-                                        const followerId = (n.data as any)?.follower_id as string | undefined;
-                                        if (!followerId) return;
-                                        const { error } = await acceptFollow(followerId);
-                                        if (error) {
-                                          toast({
-                                            title: "Error",
-                                            description: (error as any).message || "No se pudo aceptar",
-                                            variant: "destructive",
-                                          });
-                                          return;
-                                        }
-                                        markRead(n.id);
-                                        removeNotification(n.id);
-                                        toast({ title: "Solicitud aceptada" });
-                                      }}
-                                    >
-                                      <Check className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                      size="icon"
-                                      variant="outline"
-                                      className="h-7 w-7"
-                                      aria-label="Rechazar solicitud"
-                                      title="Rechazar solicitud"
-                                      onClick={async () => {
-                                        const followerId = (n.data as any)?.follower_id as string | undefined;
-                                        if (!followerId) return;
-                                        const { error } = await rejectFollow(followerId);
-                                        if (error) {
-                                          toast({
-                                            title: "Error",
-                                            description: (error as any).message || "No se pudo rechazar",
-                                            variant: "destructive",
-                                          });
-                                          return;
-                                        }
-                                        markRead(n.id);
-                                        removeNotification(n.id);
-                                        toast({ title: "Solicitud rechazada" });
-                                      }}
-                                    >
-                                      <X className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                ) : (
-                                  <div className="flex items-center gap-1">
-                                    {!n.read && (
+                                  {n.type === "follow_request" ? (
+                                    <div className="flex items-center gap-1.5">
+                                      <Button
+                                        size="icon"
+                                        className="h-7 w-7"
+                                        aria-label="Aceptar solicitud"
+                                        title="Aceptar solicitud"
+                                        onClick={async () => {
+                                          const followerId = (n.data as any)?.follower_id as string | undefined;
+                                          if (!followerId) return;
+                                          const { error } = await acceptFollow(followerId);
+                                          if (error) {
+                                            toast({
+                                              title: "Error",
+                                              description: (error as any).message || "No se pudo aceptar",
+                                              variant: "destructive",
+                                            });
+                                            return;
+                                          }
+                                          markRead(n.id);
+                                          removeNotification(n.id);
+                                          toast({ title: "Solicitud aceptada" });
+                                        }}
+                                      >
+                                        <Check className="h-4 w-4" />
+                                      </Button>
+                                      <Button
+                                        size="icon"
+                                        variant="outline"
+                                        className="h-7 w-7"
+                                        aria-label="Rechazar solicitud"
+                                        title="Rechazar solicitud"
+                                        onClick={async () => {
+                                          const followerId = (n.data as any)?.follower_id as string | undefined;
+                                          if (!followerId) return;
+                                          const { error } = await rejectFollow(followerId);
+                                          if (error) {
+                                            toast({
+                                              title: "Error",
+                                              description: (error as any).message || "No se pudo rechazar",
+                                              variant: "destructive",
+                                            });
+                                            return;
+                                          }
+                                          markRead(n.id);
+                                          removeNotification(n.id);
+                                          toast({ title: "Solicitud rechazada" });
+                                        }}
+                                      >
+                                        <X className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  ) : canReviewEducatorRequest ? (
+                                    <div className="flex items-center gap-1.5">
+                                      <Button
+                                        size="icon"
+                                        className="h-7 w-7"
+                                        aria-label="Aprobar permisos"
+                                        title="Aprobar permisos"
+                                        onClick={async () => {
+                                          const requesterId = String((n.data as any)?.requester_id || "").trim();
+                                          const requestedUnitsRaw = Array.isArray((n.data as any)?.requested_units)
+                                            ? (n.data as any).requested_units
+                                            : [];
+                                          const requestedUnits = requestedUnitsRaw
+                                            .map((unit: unknown) => String(unit || "").trim().toLowerCase())
+                                            .filter((unit: string): unit is EducatorUnit =>
+                                              ["manada", "tropa", "pioneros", "rovers"].includes(unit),
+                                            );
+
+                                          if (!requesterId || requestedUnits.length === 0) {
+                                            toast({
+                                              title: "Solicitud inválida",
+                                              description: "Faltan datos para aprobar la solicitud.",
+                                              variant: "destructive",
+                                            });
+                                            return;
+                                          }
+
+                                          try {
+                                            await reviewEducatorPermissionRequest({
+                                              notificationId: n.id,
+                                              requesterId,
+                                              approve: true,
+                                              units: requestedUnits,
+                                            });
+                                            markRead(n.id);
+                                            removeNotification(n.id);
+                                            toast({ title: "Permisos aprobados" });
+                                          } catch (error: any) {
+                                            toast({
+                                              title: "Error",
+                                              description: error?.message || "No se pudo aprobar la solicitud",
+                                              variant: "destructive",
+                                            });
+                                          }
+                                        }}
+                                      >
+                                        <Check className="h-4 w-4" />
+                                      </Button>
+                                      <Button
+                                        size="icon"
+                                        variant="outline"
+                                        className="h-7 w-7"
+                                        aria-label="Rechazar permisos"
+                                        title="Rechazar permisos"
+                                        onClick={async () => {
+                                          const requesterId = String((n.data as any)?.requester_id || "").trim();
+                                          if (!requesterId) {
+                                            toast({
+                                              title: "Solicitud inválida",
+                                              description: "No se pudo identificar al solicitante.",
+                                              variant: "destructive",
+                                            });
+                                            return;
+                                          }
+
+                                          try {
+                                            await reviewEducatorPermissionRequest({
+                                              notificationId: n.id,
+                                              requesterId,
+                                              approve: false,
+                                              units: [],
+                                            });
+                                            markRead(n.id);
+                                            removeNotification(n.id);
+                                            toast({ title: "Solicitud rechazada" });
+                                          } catch (error: any) {
+                                            toast({
+                                              title: "Error",
+                                              description: error?.message || "No se pudo rechazar la solicitud",
+                                              variant: "destructive",
+                                            });
+                                          }
+                                        }}
+                                      >
+                                        <X className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center gap-1">
+                                      {!n.read && (
+                                        <Button
+                                          size="icon"
+                                          variant="ghost"
+                                          className="h-7 w-7"
+                                          aria-label="Marcar como leído"
+                                          title="Marcar como leído"
+                                          onClick={() => markRead(n.id)}
+                                        >
+                                          <Check className="h-4 w-4" />
+                                        </Button>
+                                      )}
                                       <Button
                                         size="icon"
                                         variant="ghost"
                                         className="h-7 w-7"
-                                        aria-label="Marcar como leído"
-                                        title="Marcar como leído"
-                                        onClick={() => markRead(n.id)}
+                                        aria-label="Eliminar notificación"
+                                        title="Eliminar notificación"
+                                        onClick={() => removeNotification(n.id)}
                                       >
-                                        <Check className="h-4 w-4" />
+                                        <X className="h-4 w-4" />
                                       </Button>
-                                    )}
-                                    <Button
-                                      size="icon"
-                                      variant="ghost"
-                                      className="h-7 w-7"
-                                      aria-label="Eliminar notificación"
-                                      title="Eliminar notificación"
-                                      onClick={() => removeNotification(n.id)}
-                                    >
-                                      <X className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                )}
-                              </div>
-                            </li>
-                          ))
+                                    </div>
+                                  )}
+                                </div>
+                              </li>
+                            );
+                          })
                         )}
                       </ul>
                       {hasMore && (

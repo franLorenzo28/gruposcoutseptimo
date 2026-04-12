@@ -13,7 +13,7 @@ const Staff = () => {
       imageAlt="Equipo de educadores del Grupo Scout Séptimo"
       accentClass="bg-violet-700"
       paragraphs={[
-        "Los educadores planifican, coordinan y evalúan la propuesta educativa de cada rama con mirada integral.",
+        "Los educadores planifican, coordinan y evalúan la propuesta educativa de cada unidad con mirada integral.",
         "Su tarea combina formación continua, vocación de servicio y presencia cercana para que cada joven crezca con seguridad y confianza.",
       ]}
       bullets={[

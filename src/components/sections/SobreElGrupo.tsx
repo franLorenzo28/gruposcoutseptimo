@@ -104,7 +104,7 @@ const About = () => {
       icon: Users,
       title: "Educadores",
       description:
-        "Educadores scouts que guían y acompañan el desarrollo de las ramas",
+        "Educadores scouts que guían y acompañan el desarrollo de las unidades",
       route: "staff",
       hoverClass: "hover:bg-violet-700 hover:text-white dark:hover:bg-violet-700 dark:hover:text-white",
       iconHoverBgClass: "group-hover:bg-violet-700 dark:group-hover:bg-violet-700",
@@ -316,8 +316,8 @@ const About = () => {
         </div>
       </section>
 
-      {/* Ramas y Pilares */}
-      <section id="ramas" className="section-padding bg-background/60 backdrop-blur-sm">
+      {/* Unidades y Pilares */}
+      <section id="unidades" className="section-padding bg-background/60 backdrop-blur-sm">
         <div className="container mx-auto px-4">
           <div className="max-w-7xl mx-auto">
             <Reveal className="text-center mb-8 sm:mb-10">
@@ -372,7 +372,7 @@ const About = () => {
                               <div className="overflow-hidden rounded-xl border border-border/60">
                                 <img
                                   src={branch.image ?? communityImages.src}
-                                  alt={`Foto representativa de la rama ${branch.title}`}
+                                  alt={`Foto representativa de la unidad ${branch.title}`}
                                   className={`w-full bg-transparent ${
                                     branch.route === "tropa"
                                       ? "max-h-[420px] object-cover"
@@ -384,7 +384,7 @@ const About = () => {
                               </div>
                               <div className="flex gap-3 justify-end">
                                 <Button asChild size="sm">
-                                  <Link to={`/ramas/${branch.route}`}>
+                                  <Link to={`/unidades/${branch.route}`}>
                                     Más información
                                   </Link>
                                 </Button>

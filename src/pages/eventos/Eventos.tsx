@@ -105,7 +105,7 @@ const Eventos = () => {
                   <Card className="text-center card-hover">
                     <CardContent className="p-2 sm:p-4">
                       <div className="text-2xl sm:text-3xl font-bold text-primary mb-1">4</div>
-                      <p className="text-xs sm:text-sm text-muted-foreground">Ramas participantes</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground">Unidades participantes</p>
                     </CardContent>
                   </Card>
                 </div>

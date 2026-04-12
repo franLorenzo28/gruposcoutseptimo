@@ -182,7 +182,7 @@ export default function ConfiguracionNotificaciones() {
         <CardContent className="space-y-4">
           {[
             { key: "eventos_proximamente" as const, label: "Eventos próximamente", desc: "Recordatorios de eventos que estás siguiendo" },
-            { key: "notificaciones_rama" as const, label: "Notificaciones de rama", desc: "Avisos internos y comunicados de tu rama" },
+            { key: "notificaciones_rama" as const, label: "Notificaciones de unidad", desc: "Avisos internos y comunicados de tu unidad" },
             { key: "resumen_semanal" as const, label: "Resumen semanal", desc: "Resumen de actividad en el grupo" },
           ].map(({ key, label, desc }) => (
             <div key={key} className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/40 transition-colors">

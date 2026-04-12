@@ -29,25 +29,29 @@ import { useToast } from "@/hooks/use-toast";
 type ViewMode = "list" | "view" | "edit";
 
 export default function Narrativas() {
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const { toast } = useToast();
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [selectedNarrativa, setSelectedNarrativa] =
     useState<NarrativaConAutor | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [isAdmin, setIsAdmin] = useState(false);
 
   // Cargar estado de admin
   const adminQuery = useQuery({
-    queryKey: ["admin-status"],
+    queryKey: ["admin-status", user?.id ?? "anonymous"],
     queryFn: async () => {
-      const result = await isCurrentUserAdmin();
-      setIsAdmin(result);
-      return result;
+      try {
+        return await isCurrentUserAdmin();
+      } catch {
+        return false;
+      }
     },
-    enabled: !!user,
-    staleTime: 1000 * 60 * 5,
+    enabled: !isUserLoading && !!user,
+    staleTime: 0,
+    refetchOnMount: "always",
   });
+
+  const isAdmin = adminQuery.data === true;
 
   // Cargar narrativas
   const narrativasQuery = useQuery({

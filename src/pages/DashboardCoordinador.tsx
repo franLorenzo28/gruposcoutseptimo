@@ -137,14 +137,14 @@ const DashboardCoordinador = () => {
       if (!ramaEducador) {
         setScouts([]);
         toast({
-          title: "Configura tu rama",
-          description: "Ve a tu perfil y selecciona qué rama diriges",
+          title: "Configura tu unidad",
+          description: "Ve a tu perfil y selecciona qué unidad diriges",
           variant: "default",
         });
         return;
       }
 
-      // Obtener scouts según la rama que educa
+      // Obtener scouts según la unidad que educa
       let scoutsData: Profile[] = [];
 
       if (ramaEducador === "manada") {
@@ -203,13 +203,13 @@ const DashboardCoordinador = () => {
   };
 
   const getRamaActual = (edad: number | null) => {
-    if (!edad) return "Sin rama";
+    if (!edad) return "Sin unidad";
     if (edad >= 21) return "Adulto";
     if (edad >= 18) return "Rover";
     if (edad >= 15) return "Pionero";
     if (edad >= 11) return "Tropa";
     if (edad >= 7) return "Manada";
-    return "Sin rama";
+    return "Sin unidad";
   };
 
   const getRamaBadgeColor = (edad: number | null): "default" | "secondary" | "destructive" | "outline" => {
@@ -410,15 +410,15 @@ const DashboardCoordinador = () => {
           <div className="mb-6 p-4 rounded-md border bg-amber-50 text-amber-900 dark:bg-amber-950/30 dark:text-amber-200 dark:border-amber-900 flex items-start gap-3">
             <span className="text-xl">⚠️</span>
             <div className="flex-1">
-              <p className="font-medium">Configura tu rama</p>
-              <p className="text-sm">Selecciona en tu perfil qué rama diriges para ver tus scouts.</p>
+              <p className="font-medium">Configura tu unidad</p>
+              <p className="text-sm">Selecciona en tu perfil qué unidad diriges para ver tus scouts.</p>
             </div>
             <Button variant="outline" onClick={() => navigate("/perfil/editar")}>Editar perfil</Button>
           </div>
         )}
         {coordinadorProfile && getEffectiveRama(coordinadorProfile as any) && scouts.length === 0 && (
           <div className="mb-6 p-4 rounded-md border bg-blue-50 text-blue-900 dark:bg-blue-950/30 dark:text-blue-200 dark:border-blue-900">
-            No hay scouts con edades dentro de la rama seleccionada aún.
+            No hay scouts con edades dentro de la unidad seleccionada aún.
           </div>
         )}
 
@@ -431,7 +431,7 @@ const DashboardCoordinador = () => {
                 Mi sección
               </CardTitle>
               <CardDescription>
-                Rama y unidad que coordinas
+                Unidad que coordinas
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -441,7 +441,7 @@ const DashboardCoordinador = () => {
                     <span className="text-2xl">🐺</span>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">
-                        Rama Manada
+                        Unidad Manada
                       </p>
                       {coordinadorProfile.seisena && (
                         <p className="text-lg font-semibold">{coordinadorProfile.seisena}</p>
@@ -457,7 +457,7 @@ const DashboardCoordinador = () => {
                     <span className="text-2xl">⚜️</span>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">
-                        Rama Tropa
+                        Unidad Tropa
                       </p>
                       {coordinadorProfile.patrulla && (
                         <p className="text-lg font-semibold">{coordinadorProfile.patrulla}</p>
@@ -473,7 +473,7 @@ const DashboardCoordinador = () => {
                     <span className="text-2xl">🏔️</span>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">
-                        Rama Pioneros
+                        Unidad Pioneros
                       </p>
                       {coordinadorProfile.equipo_pioneros && (
                         <p className="text-lg font-semibold">{coordinadorProfile.equipo_pioneros}</p>
@@ -489,7 +489,7 @@ const DashboardCoordinador = () => {
                     <span className="text-2xl">🚶</span>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">
-                        Rama Rovers
+                        Unidad Rovers
                       </p>
                       {coordinadorProfile.comunidad_rovers && (
                         <p className="text-lg font-semibold">{coordinadorProfile.comunidad_rovers}</p>
@@ -501,7 +501,7 @@ const DashboardCoordinador = () => {
               )}
               {!getEffectiveRama(coordinadorProfile as any) && (
                 <p className="text-sm text-muted-foreground">
-                  No has asignado ninguna rama. Ve a{" "}
+                  No has asignado ninguna unidad. Ve a{" "}
                   <Button
                     variant="link"
                     className="p-0 h-auto"
@@ -509,7 +509,7 @@ const DashboardCoordinador = () => {
                   >
                     editar tu perfil
                   </Button>{" "}
-                  para seleccionar la rama que diriges.
+                  para seleccionar la unidad que diriges.
                 </p>
               )}
             </CardContent>
@@ -659,9 +659,9 @@ const DashboardCoordinador = () => {
           <TabsContent value="stats" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Distribución por Rama</CardTitle>
+                <CardTitle>Distribución por Unidad</CardTitle>
                 <CardDescription>
-                  Cantidad de scouts en cada rama
+                  Cantidad de scouts en cada unidad
                 </CardDescription>
               </CardHeader>
               <CardContent>

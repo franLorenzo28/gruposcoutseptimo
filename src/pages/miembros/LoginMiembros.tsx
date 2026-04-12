@@ -8,7 +8,7 @@ import {
   type MemberAccessType,
   type MiembroRama,
 } from "@/lib/member-auth";
-import { getAuthUser } from "@/lib/backend";
+import { getAuthUser, resetLocalBackendAuth } from "@/lib/backend";
 import { getProfile } from "@/lib/api";
 import { ShieldCheck, UserCheck, AlertCircle } from "lucide-react";
 
@@ -39,14 +39,16 @@ export default function LoginMiembros() {
   const [rolAdulto, setRolAdulto] = useState<string>("");
   const [isRamaAdmin, setIsRamaAdmin] = useState(false);
   const [accessType, setAccessType] = useState<MemberAccessType | null>(null);
+  const [allowedRamas, setAllowedRamas] = useState<MiembroRama[]>([]);
+  const [authUserId, setAuthUserId] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
-  const { login, isAuthenticated, session } = useMemberAuth();
+  const { login, logout, isAuthenticated, session } = useMemberAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   const redirectTo = useMemo(() => {
     if (isAuthenticated && session) {
-      return `/area-miembros/ramas/${session.rama}`;
+      return `/area-miembros/unidades/${session.rama}`;
     }
     const fromState = (location.state as any)?.from;
     return typeof fromState === "string" ? fromState : "/dashboard";
@@ -55,11 +57,16 @@ export default function LoginMiembros() {
   useEffect(() => {
     (async () => {
       try {
+        // Siempre forzamos reconfirmación al entrar a este flujo
+        logout();
+        resetLocalBackendAuth();
+
         const auth = await getAuthUser();
         if (!auth?.id) {
           setError("Necesitas iniciar sesión con tu cuenta principal para confirmar acceso.");
           return;
         }
+        setAuthUserId(auth.id);
 
         const profile = (await getProfile(auth.id).catch(() => null)) as any;
         if (!profile) {
@@ -73,10 +80,7 @@ export default function LoginMiembros() {
           return;
         }
 
-        const edadCalculada =
-          typeof profile.edad === "number"
-            ? profile.edad
-            : calculateAge(profile.fecha_nacimiento || null);
+        const edadCalculada = calculateAge(profile.fecha_nacimiento || null);
 
         const access = resolveMemberAccessFromProfile({
           edad: edadCalculada,
@@ -100,6 +104,7 @@ export default function LoginMiembros() {
         setEdad(edadCalculada ?? null);
         setRolAdulto(String(profile.rol_adulto || ""));
         setRama(access.rama);
+        setAllowedRamas(access.allowedRamas.length > 0 ? access.allowedRamas : [access.rama]);
         setIsRamaAdmin(access.isRamaAdmin);
         setAccessType(access.accessType);
       } catch (err) {
@@ -112,13 +117,20 @@ export default function LoginMiembros() {
   }, []);
 
   const handleConfirm = () => {
-    if (!rama || !nombre || !accessType) {
+    if (!rama || !nombre || !accessType || !authUserId) {
       setError("No fue posible confirmar tu acceso. Revisa tu perfil.");
       return;
     }
     setError(null);
-    login({ nombre, rama, isRamaAdmin, accessType });
-    navigate(`/area-miembros/ramas/${rama}`);
+    login({
+      authUserId,
+      nombre,
+      rama,
+      allowedRamas: allowedRamas.length > 0 ? allowedRamas : [rama],
+      isRamaAdmin,
+      accessType,
+    });
+    navigate(`/area-miembros/unidades/${rama}`);
   };
 
   return (
@@ -136,7 +148,7 @@ export default function LoginMiembros() {
                   <h1 className="mt-3 text-3xl font-black">Confirmacion de acceso interno</h1>
                   <p className="mt-2 text-sm text-muted-foreground">
                   Este ingreso no usa campos manuales. Validamos tu cuenta y aplicamos reglas por
-                  edad, rol y rama para habilitar el acceso correcto.
+                  edad, rol y unidad para habilitar el acceso correcto.
                   </p>
                 </div>
 
@@ -153,14 +165,14 @@ export default function LoginMiembros() {
                       <p className="mt-1 font-semibold">{edad ?? "Sin edad"}</p>
                     </div>
                     <div className="rounded-xl border border-border/60 bg-background/80 p-4 text-sm">
-                      <p className="text-xs uppercase tracking-wide text-muted-foreground">Rama asignada</p>
-                      <p className="mt-1 font-semibold">{rama ? ramaLabel[rama] : "Sin rama"}</p>
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">Unidad asignada</p>
+                      <p className="mt-1 font-semibold">{rama ? ramaLabel[rama] : "Sin unidad"}</p>
                     </div>
                     <div className="rounded-xl border border-border/60 bg-background/80 p-4 text-sm">
                       <p className="text-xs uppercase tracking-wide text-muted-foreground">Permiso interno</p>
                       <p className="mt-1 font-semibold">
                         {isRamaAdmin
-                          ? "Educador/a - Admin de rama"
+                          ? "Educador/a - Admin de unidad"
                           : accessType === "beneficiario"
                             ? "Beneficiario"
                             : rolAdulto || "Sin definir"}
@@ -193,7 +205,7 @@ export default function LoginMiembros() {
 
                 {!loading && !error && isRamaAdmin && (
                   <p className="text-sm text-emerald-700">
-                    Como educador/a de rama, tendrás permisos de administración del dashboard de tu rama.
+                    Como educador/a de unidad, tendrás permisos de administración del dashboard de tu unidad.
                   </p>
                 )}
               </div>

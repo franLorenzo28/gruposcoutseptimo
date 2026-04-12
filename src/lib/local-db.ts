@@ -137,7 +137,7 @@ class LocalDatabase {
         {
           id: "2",
           titulo: "Fogón de Integración",
-          descripcion: "Encuentro de todas las ramas",
+          descripcion: "Encuentro de todas las unidades",
           fecha_inicio: "2025-11-20T18:00:00",
           ubicacion: "Sede del grupo",
           created_at: new Date().toISOString(),

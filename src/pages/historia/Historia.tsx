@@ -43,9 +43,9 @@ const Historia = () => {
     },
     {
       year: "1990",
-      title: "Expansión de ramas",
+      title: "Expansión de unidades",
       description:
-        "Se consolida la propuesta de ramas del grupo, desde Manada hasta Rovers, para ofrecer una formación integral.",
+        "Se consolida la propuesta de unidades del grupo, desde Manada hasta Rovers, para ofrecer una formación integral.",
       place: "Comunidad y locales del grupo",
     },
     {

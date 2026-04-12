@@ -60,32 +60,35 @@ export async function getProfile(userId: string) {
 export async function updateProfile(
   profile: Partial<Profile> & { user_id: string },
 ) {
+  const sanitizedProfile: Partial<Profile> & { user_id: string } = {
+    ...profile,
+  };
+  delete sanitizedProfile.rol_adulto;
+  delete sanitizedProfile.rama_que_educa;
+
   if (isLocalBackend()) {
     // Mapea campos relevantes al backend local
     const body: any = {};
-    if (profile.nombre_completo !== undefined)
-      body.nombre_completo = profile.nombre_completo;
-    if (profile.telefono !== undefined) body.telefono = profile.telefono;
-    if ((profile as any).is_public !== undefined)
-      body.is_public = (profile as any).is_public;
-    if ((profile as any).avatar_url !== undefined)
-      body.avatar_url = (profile as any).avatar_url;
-    if ((profile as any).fecha_nacimiento !== undefined)
-      body.fecha_nacimiento = (profile as any).fecha_nacimiento;
-    if ((profile as any).rol_adulto !== undefined)
-      body.rol_adulto = (profile as any).rol_adulto;
-    if ((profile as any).rama_que_educa !== undefined)
-      body.rama_que_educa = (profile as any).rama_que_educa;
-    if ((profile as any).seisena !== undefined)
-      body.seisena = (profile as any).seisena;
-    if ((profile as any).patrulla !== undefined)
-      body.patrulla = (profile as any).patrulla;
-    if ((profile as any).equipo_pioneros !== undefined)
-      body.equipo_pioneros = (profile as any).equipo_pioneros;
-    if ((profile as any).comunidad_rovers !== undefined)
-      body.comunidad_rovers = (profile as any).comunidad_rovers;
-    if ((profile as any).username !== undefined)
-      body.username = (profile as any).username;
+    if (sanitizedProfile.nombre_completo !== undefined)
+      body.nombre_completo = sanitizedProfile.nombre_completo;
+    if (sanitizedProfile.telefono !== undefined)
+      body.telefono = sanitizedProfile.telefono;
+    if (sanitizedProfile.is_public !== undefined)
+      body.is_public = sanitizedProfile.is_public;
+    if (sanitizedProfile.avatar_url !== undefined)
+      body.avatar_url = sanitizedProfile.avatar_url;
+    if (sanitizedProfile.fecha_nacimiento !== undefined)
+      body.fecha_nacimiento = sanitizedProfile.fecha_nacimiento;
+    if (sanitizedProfile.seisena !== undefined)
+      body.seisena = sanitizedProfile.seisena;
+    if (sanitizedProfile.patrulla !== undefined)
+      body.patrulla = sanitizedProfile.patrulla;
+    if (sanitizedProfile.equipo_pioneros !== undefined)
+      body.equipo_pioneros = sanitizedProfile.equipo_pioneros;
+    if (sanitizedProfile.comunidad_rovers !== undefined)
+      body.comunidad_rovers = sanitizedProfile.comunidad_rovers;
+    if (sanitizedProfile.username !== undefined)
+      body.username = sanitizedProfile.username;
     const updated = (await apiFetch("/profiles/me", {
       method: "PUT",
       body: JSON.stringify(body),
@@ -95,15 +98,15 @@ export async function updateProfile(
   // Evitar duplicados por unique(user_id): usar update basado en filtro
   const { error } = await supabase
     .from("profiles")
-    .update(profile)
-    .eq("user_id", profile.user_id);
+    .update(sanitizedProfile)
+    .eq("user_id", sanitizedProfile.user_id);
 
   if (error) throw error;
   // En modo Supabase, devolver el perfil actualizado
   const { data } = await supabase
     .from("profiles")
     .select()
-    .eq("user_id", profile.user_id)
+    .eq("user_id", sanitizedProfile.user_id)
     .single();
   return data as Profile;
 }

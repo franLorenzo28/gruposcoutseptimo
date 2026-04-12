@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertCircle, Save, X } from "lucide-react";
@@ -26,6 +26,10 @@ export function AdminRamaContent({
   const [newReunion, setNewReunion] = useState("");
   const [newInfo, setNewInfo] = useState("");
   const [newAviso, setNewAviso] = useState("");
+
+  useEffect(() => {
+    setData(initialData);
+  }, [initialData]);
 
   const handleAddReunion = () => {
     if (newReunion.trim()) {
@@ -90,7 +94,7 @@ export function AdminRamaContent({
         className="border-scout-red text-white bg-scout-red hover:bg-red-700 dark:hover:bg-red-600"
         onClick={() => setIsEditing(true)}
       >
-        Editar información de rama
+        Editar información de unidad
       </Button>
     );
   }
@@ -194,7 +198,7 @@ export function AdminRamaContent({
               type="text"
               value={newInfo}
               onChange={(e) => setNewInfo(e.target.value)}
-              placeholder="Ej: Trabajar en progresiones de rama"
+              placeholder="Ej: Trabajar en progresiones de unidad"
               className="flex-1 rounded-lg border border-scout-red bg-white dark:bg-slate-950 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-scout-red"
             />
             <Button

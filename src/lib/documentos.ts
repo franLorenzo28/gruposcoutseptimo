@@ -15,12 +15,12 @@ export type Documento = {
 };
 
 /**
- * List all documents of a rama
- * Only accessible to members of that rama
+ * List all documents of a unidad
+ * Only accessible to members of that unidad
  */
 export async function listDocumentos(rama: string): Promise<Documento[]> {
   if (isLocalBackend()) {
-    const response = await apiFetch(`/ramas/${rama}/documentos`);
+    const response = await apiFetch(`/unidades/${rama}/documentos`);
     if (!response.ok) {
       throw new Error("Error loading documents");
     }
@@ -39,8 +39,8 @@ export async function listDocumentos(rama: string): Promise<Documento[]> {
 }
 
 /**
- * Upload a new document to a rama
- * Only rama admins can upload
+ * Upload a new document to a unidad
+ * Only unidad admins can upload
  */
 export async function uploadDocumento(
   rama: string,
@@ -50,7 +50,7 @@ export async function uploadDocumento(
     const formData = new FormData();
     formData.append("file", file);
 
-    const response = await fetch(`/api/ramas/${rama}/documentos`, {
+    const response = await fetch(`/api/unidades/${rama}/documentos`, {
       method: "POST",
       body: formData,
       headers: {
@@ -98,12 +98,12 @@ export async function uploadDocumento(
 }
 
 /**
- * Delete a document from a rama
- * Only rama admin or document uploader can delete
+ * Delete a document from a unidad
+ * Only unidad admin or document uploader can delete
  */
 export async function deleteDocumento(rama: string, docId: string): Promise<void> {
   if (isLocalBackend()) {
-    const response = await apiFetch(`/ramas/${rama}/documentos/${docId}`, {
+    const response = await apiFetch(`/unidades/${rama}/documentos/${docId}`, {
       method: "DELETE",
     });
 
@@ -136,16 +136,16 @@ export async function deleteDocumento(rama: string, docId: string): Promise<void
 
 /**
  * Get download URL for a document
- * Accessible to rama members
+ * Accessible to unidad members
  */
 export async function getDocumentoDownloadUrl(
   rama: string,
   docId: string
 ): Promise<string> {
   if (isLocalBackend()) {
-    // Local backend serves via /ramas/:rama/documentos/:docId/download
+    // Local backend serves via /unidades/:rama/documentos/:docId/download
     const token = localStorage.getItem("auth_token") || "";
-    return `/api/ramas/${rama}/documentos/${docId}/download?token=${encodeURIComponent(token)}`;
+    return `/api/unidades/${rama}/documentos/${docId}/download?token=${encodeURIComponent(token)}`;
   } else {
     // Supabase: get signed URL from Storage
     const documento = await supabase
@@ -169,16 +169,16 @@ export async function getDocumentoDownloadUrl(
 
 /**
  * Get view URL for a document (inline viewing)
- * Accessible to rama members
+ * Accessible to unidad members
  */
 export async function getDocumentoViewUrl(
   rama: string,
   docId: string
 ): Promise<string> {
   if (isLocalBackend()) {
-    // Local backend serves via /ramas/:rama/documentos/:docId/view
+    // Local backend serves via /unidades/:rama/documentos/:docId/view
     const token = localStorage.getItem("auth_token") || "";
-    return `/api/ramas/${rama}/documentos/${docId}/view?token=${encodeURIComponent(token)}`;
+    return `/api/unidades/${rama}/documentos/${docId}/view?token=${encodeURIComponent(token)}`;
   } else {
     // Supabase: same as download but serves inline
     const documento = await supabase

@@ -192,6 +192,17 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_rama_documentos_rama ON rama_documentos(rama, created_at DESC);
   CREATE INDEX IF NOT EXISTS idx_rama_documentos_subido_por ON rama_documentos(subido_por);
   CREATE INDEX IF NOT EXISTS idx_rama_documentos_created ON rama_documentos(created_at DESC);
+
+  CREATE TABLE IF NOT EXISTS rama_broadcast_messages (
+    id TEXT PRIMARY KEY,
+    rama TEXT NOT NULL CHECK (rama IN ('lobatos','caminantes','pioneros','rover')),
+    author_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_rama_broadcast_rama_created
+  ON rama_broadcast_messages(rama, created_at DESC);
 `);
 
 

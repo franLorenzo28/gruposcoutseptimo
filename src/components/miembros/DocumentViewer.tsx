@@ -153,7 +153,7 @@ export function DocumentViewer({
         <DialogHeader>
           <DialogTitle>Documentos de {rama}</DialogTitle>
           <DialogDescription>
-            Archivos compartidos por los educadores de la rama
+            Archivos compartidos por los educadores de la unidad
           </DialogDescription>
         </DialogHeader>
 

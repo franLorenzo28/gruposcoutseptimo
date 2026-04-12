@@ -71,7 +71,7 @@ const TOPICS: Topic[] = [
     category: "sistema",
     icon: Users,
     eyebrow: "Progresión por etapas",
-    summary: "Ramas y pequeños grupos para acompañar cada edad y momento del crecimiento.",
+    summary: "Unidades y pequeños grupos para acompañar cada edad y momento del crecimiento.",
     paragraphs: [
       "El escultismo estructura su sistema educativo por edades, contextos y objetivos de desarrollo.",
       "Según cada asociación y país, existen unidades mayores como Caminantes o Rovers, y etapas menores previas a Manada.",

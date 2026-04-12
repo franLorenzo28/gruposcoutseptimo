@@ -26,7 +26,7 @@ export function useRamaDocuments(rama: string) {
 
       if (isLocalBackend()) {
         // Use Express backend for local development
-        const data = await apiFetch(`/ramas/${rama}/documentos`);
+        const data = await apiFetch(`/unidades/${rama}/documentos`);
         setDocuments(data || []);
       } else {
         // Use Supabase for production
@@ -50,7 +50,7 @@ export function useRamaDocuments(rama: string) {
   const getDownloadUrl = async (docId: string): Promise<string> => {
     if (isLocalBackend()) {
       // Express backend generates signed URL
-      const response = await apiFetch(`/ramas/${rama}/documentos/${docId}/download-url`);
+      const response = await apiFetch(`/unidades/${rama}/documentos/${docId}/download-url`);
       return response.url;
     } else {
       // Use Supabase Storage for production

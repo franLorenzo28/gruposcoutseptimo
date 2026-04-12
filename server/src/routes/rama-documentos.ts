@@ -4,6 +4,13 @@ import { authMiddleware } from "../auth";
 import multer from "multer";
 import { createClient } from "@supabase/supabase-js";
 import { v4 as uuidv4 } from "uuid";
+import { z } from "zod";
+import {
+  canModerateRama,
+  canReadRama,
+  isValidRama,
+  type RamaKey,
+} from "../rama-access";
 
 const supabase = createClient(
   process.env.SUPABASE_URL || "",
@@ -25,6 +32,17 @@ interface DocumentRow {
   created_at: string;
 }
 
+interface BroadcastRow {
+  id: string;
+  rama: string;
+  author_id: string;
+  content: string;
+  created_at: string;
+  nombre_completo: string | null;
+  username: string | null;
+  avatar_url: string | null;
+}
+
 // Validation schemas
 const ALLOWED_MIME_TYPES = [
   "application/pdf",
@@ -41,6 +59,17 @@ const ALLOWED_MIME_TYPES = [
 ];
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
+const broadcastSchema = z.object({
+  content: z.string().trim().min(1).max(2000),
+});
+
+function getRamaOrFail(rawRama: string, res: any): RamaKey | null {
+  if (!isValidRama(rawRama)) {
+    res.status(400).json({ error: "Unidad inválida" });
+    return null;
+  }
+  return rawRama;
+}
 
 // Configure multer for memory storage (we'll upload to Supabase)
 const upload = multer({
@@ -55,47 +84,22 @@ const upload = multer({
   },
 });
 
-// Helper: Check if user is rama educator
-function isRamaEducator(userId: string, rama: string): boolean {
-  try {
-    const result = db
-      .prepare(
-        `SELECT id FROM profiles WHERE user_id = ? AND (rama_que_educa = ? OR rol_adulto = 1)`
-      )
-      .get(userId, rama);
-    return !!result;
-  } catch {
-    return false;
-  }
-}
-
-// Helper: Check if user is rama member
-function isRamaMember(userId: string, rama: string): boolean {
-  try {
-    const result = db
-      .prepare(
-        `SELECT id FROM profiles WHERE user_id = ? AND (seisena = ? OR patrulla = ? OR equipo_pioneros = ? OR comunidad_rovers = ?)`
-      )
-      .get(userId, rama, rama, rama, rama);
-    return !!result;
-  } catch {
-    return false;
-  }
-}
-
-// List documents of a rama (public - all can access)
+// List documents of a unidad (solo miembros/educadores de la unidad)
 ramaDocumentosRouter.get(
   "/:rama/documentos",
+  authMiddleware,
   (req: any, res: any) => {
     try {
-      const { rama } = req.params;
+      const userId = (req as any).user.id as string;
+      const rama = getRamaOrFail(req.params.rama, res);
+      if (!rama) return;
 
-      // Validate rama
-      if (!["lobatos", "caminantes", "pioneros", "rover"].includes(rama)) {
-        return res.status(400).json({ error: "Rama inválida" });
+      if (!canReadRama(userId, rama)) {
+        return res.status(403).json({
+          error: "No tienes permiso para ver documentos de esta unidad",
+        });
       }
 
-      // List documents - PUBLIC endpoint, no auth required
       const documentos = db
         .prepare(
           `SELECT * FROM rama_documentos WHERE rama = ? ORDER BY created_at DESC`
@@ -110,29 +114,23 @@ ramaDocumentosRouter.get(
   }
 );
 
-// Upload document (only rama educators)
+// Upload document (only unidad educators)
 ramaDocumentosRouter.post(
   "/:rama/documentos",
   authMiddleware,
   upload.single("file"),
   async (req: any, res: any) => {
     try {
-      const { rama } = req.params;
-      const userId = req.userId!;
+      const userId = (req as any).user.id as string;
+      const rama = getRamaOrFail(req.params.rama, res);
+      if (!rama) return;
 
-      // Validate rama
-      if (!["lobatos", "caminantes", "pioneros", "rover"].includes(rama)) {
-        return res.status(400).json({ error: "Rama inválida" });
-      }
-
-      // Check if user is rama educator
-      if (!isRamaEducator(userId, rama)) {
+      if (!canModerateRama(userId, rama)) {
         return res
           .status(403)
-          .json({ error: "Solo educadores pueden subir archivos" });
+          .json({ error: "Solo educadores de esta unidad pueden subir archivos" });
       }
 
-      // Check if file was uploaded
       if (!req.file) {
         return res.status(400).json({ error: "No se seleccionó archivo" });
       }
@@ -203,21 +201,17 @@ ramaDocumentosRouter.post(
   }
 );
 
-// Delete document (only rama educator or admin)
+// Delete document (only unidad educator or admin)
 ramaDocumentosRouter.delete(
   "/:rama/documentos/:docId",
   authMiddleware,
   async (req: any, res: any) => {
     try {
-      const { rama, docId } = req.params;
-      const userId = req.userId!;
+      const userId = (req as any).user.id as string;
+      const rama = getRamaOrFail(req.params.rama, res);
+      if (!rama) return;
+      const { docId } = req.params;
 
-      // Validate rama
-      if (!["lobatos", "caminantes", "pioneros", "rover"].includes(rama)) {
-        return res.status(400).json({ error: "Rama inválida" });
-      }
-
-      // Get document
       const documento = db
         .prepare(`SELECT * FROM rama_documentos WHERE id = ? AND rama = ?`)
         .get(docId, rama) as DocumentRow | undefined;
@@ -226,9 +220,7 @@ ramaDocumentosRouter.delete(
         return res.status(404).json({ error: "Documento no encontrado" });
       }
 
-      // Check permissions (educator or admin)
-      const isEducator = isRamaEducator(userId, rama);
-      if (!isEducator) {
+      if (!canModerateRama(userId, rama)) {
         return res
           .status(403)
           .json({ error: "No tienes permiso para eliminar documentos" });
@@ -267,19 +259,23 @@ ramaDocumentosRouter.delete(
   }
 );
 
-// Get signed download URL for document (public)
+// Get signed download URL for document (solo unidad habilitada)
 ramaDocumentosRouter.get(
   "/:rama/documentos/:docId/download-url",
+  authMiddleware,
   async (req: any, res: any) => {
     try {
-      const { rama, docId } = req.params;
+      const userId = (req as any).user.id as string;
+      const rama = getRamaOrFail(req.params.rama, res);
+      if (!rama) return;
+      const { docId } = req.params;
 
-      // Validate rama
-      if (!["lobatos", "caminantes", "pioneros", "rover"].includes(rama)) {
-        return res.status(400).json({ error: "Rama inválida" });
+      if (!canReadRama(userId, rama)) {
+        return res.status(403).json({
+          error: "No tienes permiso para abrir documentos de esta unidad",
+        });
       }
 
-      // Get document (public endpoint)
       const documento = db
         .prepare(`SELECT * FROM rama_documentos WHERE id = ? AND rama = ?`)
         .get(docId, rama) as DocumentRow | undefined;
@@ -305,3 +301,92 @@ ramaDocumentosRouter.get(
     }
   }
 );
+
+// Listar mensajes del canal de difusión de una unidad
+ramaDocumentosRouter.get("/:rama/difusion", authMiddleware, (req: any, res: any) => {
+  try {
+    const userId = (req as any).user.id as string;
+    const rama = getRamaOrFail(req.params.rama, res);
+    if (!rama) return;
+
+    if (!canReadRama(userId, rama)) {
+      return res.status(403).json({
+        error: "No tienes permiso para ver difusión de esta unidad",
+      });
+    }
+
+    const rows = db
+      .prepare(
+        `
+        SELECT m.id, m.rama, m.author_id, m.content, m.created_at,
+               p.nombre_completo, p.avatar_url, u.username
+        FROM rama_broadcast_messages m
+        LEFT JOIN profiles p ON p.user_id = m.author_id
+        LEFT JOIN users u ON u.id = m.author_id
+        WHERE m.rama = ?
+        ORDER BY datetime(m.created_at) ASC
+        `,
+      )
+      .all(rama) as BroadcastRow[];
+
+    res.json(rows);
+  } catch (error) {
+    console.error("Error listing rama broadcast messages:", error);
+    res.status(500).json({ error: "Error al cargar mensajes de difusión" });
+  }
+});
+
+// Publicar mensaje en canal de difusión (solo educador de la unidad)
+ramaDocumentosRouter.post("/:rama/difusion", authMiddleware, (req: any, res: any) => {
+  try {
+    const userId = (req as any).user.id as string;
+    const rama = getRamaOrFail(req.params.rama, res);
+    if (!rama) return;
+
+    if (!canModerateRama(userId, rama)) {
+      return res.status(403).json({
+        error: "Solo educadores de la unidad pueden publicar difusión",
+      });
+    }
+
+    const parsed = broadcastSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Mensaje inválido" });
+    }
+
+    const id = uuidv4();
+    db.prepare(
+      `
+      INSERT INTO rama_broadcast_messages (id, rama, author_id, content)
+      VALUES (?, ?, ?, ?)
+      `,
+    ).run(id, rama, userId, parsed.data.content);
+
+    const created = db
+      .prepare(
+        `
+        SELECT m.id, m.rama, m.author_id, m.content, m.created_at,
+               p.nombre_completo, p.avatar_url, u.username
+        FROM rama_broadcast_messages m
+        LEFT JOIN profiles p ON p.user_id = m.author_id
+        LEFT JOIN users u ON u.id = m.author_id
+        WHERE m.id = ?
+        `,
+      )
+      .get(id) as BroadcastRow | undefined;
+
+    if (!created) {
+      return res.status(500).json({ error: "No se pudo crear el mensaje" });
+    }
+
+    const io = req.app.get("io") as {
+      to: (room: string) => { emit: (eventName: string, payload: BroadcastRow) => void };
+    };
+    io?.to(`rama:${rama}`).emit("rama:broadcast:new", created);
+
+    res.status(201).json(created);
+  } catch (error) {
+    console.error("Error creating rama broadcast message:", error);
+    res.status(500).json({ error: "Error al publicar mensaje de difusión" });
+  }
+});

@@ -126,7 +126,7 @@ const Hero = () => {
                   className="border-white/40 text-white bg-transparent hover:bg-transparent hover:text-white"
                   onClick={() =>
                     document
-                      .getElementById("ramas")
+                      .getElementById("unidades")
                       ?.scrollIntoView({ behavior: "smooth" })
                   }
                 >

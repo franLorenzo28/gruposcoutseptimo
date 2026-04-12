@@ -10,7 +10,7 @@ const Tropa = () => {
       ageRange="11 a 14"
       intro="Patrullas, campamentos y desafío constante para construir liderazgo real en equipo."
       image={tropaImages}
-      imageAlt="Rama Tropa del Grupo Scout Séptimo"
+      imageAlt="Unidad Tropa del Grupo Scout Séptimo"
       accentClass="bg-[#344F1F]"
       paragraphs={[
         "La Tropa reúne adolescentes que están en plena etapa de descubrimiento e independencia. El sistema de patrullas les da identidad, responsabilidad y pertenencia.",

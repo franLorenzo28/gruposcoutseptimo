@@ -22,12 +22,12 @@ const routes = [
   { path: '/contacto', priority: 0.7, changefreq: 'monthly' },
   { path: '/galeria', priority: 0.6, changefreq: 'weekly' },
   { path: '/linea-temporal', priority: 0.6, changefreq: 'monthly' },
-  { path: '/ramas/manada', priority: 0.7, changefreq: 'monthly' },
-  { path: '/ramas/tropa', priority: 0.7, changefreq: 'monthly' },
-  { path: '/ramas/pioneros', priority: 0.7, changefreq: 'monthly' },
-  { path: '/ramas/rovers', priority: 0.7, changefreq: 'monthly' },
-  { path: '/ramas/comite', priority: 0.6, changefreq: 'monthly' },
-  { path: '/ramas/staff', priority: 0.6, changefreq: 'monthly' },
+  { path: '/unidades/manada', priority: 0.7, changefreq: 'monthly' },
+  { path: '/unidades/tropa', priority: 0.7, changefreq: 'monthly' },
+  { path: '/unidades/pioneros', priority: 0.7, changefreq: 'monthly' },
+  { path: '/unidades/rovers', priority: 0.7, changefreq: 'monthly' },
+  { path: '/unidades/comite', priority: 0.6, changefreq: 'monthly' },
+  { path: '/unidades/staff', priority: 0.6, changefreq: 'monthly' },
 ];
 
 function generateSitemap() {
