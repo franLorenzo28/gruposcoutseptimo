@@ -1,7 +1,6 @@
 ﻿// --- Validación y sanitización ---
 type ProfileFormData = {
   nombre_completo: string;
-  telefono: string;
   edad: number;
   fecha_nacimiento: string;
   seisena: string;
@@ -33,7 +32,6 @@ function validateProfile(data: ProfileFormData) {
   const sanitized = {
     ...data,
     nombre_completo: data.nombre_completo.replace(/[<>"']/g, ""),
-    telefono: data.telefono.replace(/[^\d+]/g, ""),
     username: data.username.replace(/[^a-zA-Z0-9._-]/g, ""),
   };
   return { valid: errors.length === 0, errors, sanitized };
@@ -84,7 +82,6 @@ const Perfil = () => {
 
   const [formData, setFormData] = useState<{
     nombre_completo: string;
-    telefono: string;
     edad: number;
     fecha_nacimiento: string;
     seisena: string;
@@ -99,7 +96,6 @@ const Perfil = () => {
     username_updated_at: string | null;
   }>({
     nombre_completo: "",
-    telefono: "",
     edad: 0,
     fecha_nacimiento: "",
     seisena: "",
@@ -209,7 +205,6 @@ const Perfil = () => {
         const profileData = {
           ...formData,
           nombre_completo: p?.nombre_completo || "",
-          telefono: p?.telefono || "",
           edad: p?.edad || 0,
           fecha_nacimiento: p?.fecha_nacimiento
             ? p.fecha_nacimiento.split("T")[0]
@@ -244,14 +239,11 @@ const Perfil = () => {
       const userMetadata = user?.user_metadata || {};
       const userNombre =
         (userMetadata as any).nombre || profile?.nombre_completo || "";
-      const userTelefono =
-        (userMetadata as any).telefono || profile?.telefono || "";
       if (profile) {
         setProfile(profile as Profile);
         const profileData = {
           ...formData,
           nombre_completo: userNombre,
-          telefono: userTelefono,
           edad: (profile as any).edad || 0,
           fecha_nacimiento: (profile as any).fecha_nacimiento
             ? (profile as any).fecha_nacimiento.split("T")[0]
@@ -273,7 +265,6 @@ const Perfil = () => {
         const { error: insertError } = await supabase.from("profiles").insert({
           user_id: auth.id,
           nombre_completo: userNombre,
-          telefono: userTelefono,
         });
         if (insertError) throw insertError;
         await getProfile();
@@ -295,13 +286,6 @@ const Perfil = () => {
     const { name, value } = e.target;
 
     // Validación especáfica por campo
-    if (name === "telefono") {
-      // Solo números y guiones/espacios
-      const cleaned = value.replace(/[^\d\s\-+()]/g, "");
-      setFormData((prev) => ({ ...prev, [name]: cleaned }));
-      return;
-    }
-
     if (name === "edad") {
       const edad = parseInt(value) || 0;
       if (edad < 0 || edad > 120) {
@@ -342,7 +326,7 @@ const Perfil = () => {
     // Comparar campos editables
     return (
       formData.nombre_completo !== originalData.nombre_completo ||
-      formData.telefono !== originalData.telefono ||
+
       formData.edad !== originalData.edad ||
       formData.fecha_nacimiento !== originalData.fecha_nacimiento ||
       formData.seisena !== originalData.seisena ||
@@ -499,7 +483,6 @@ const Perfil = () => {
       const profileData: any = {
         user_id: auth.id,
         nombre_completo: sanitized.nombre_completo,
-        telefono: sanitized.telefono,
         edad: sanitized.edad,
         avatar_url: avatarUrl,
         updated_at: new Date().toISOString(),
@@ -551,7 +534,6 @@ const Perfil = () => {
           const refreshed = {
             ...formData,
             nombre_completo: updated?.nombre_completo || formData.nombre_completo,
-            telefono: updated?.telefono ?? formData.telefono,
             fecha_nacimiento: updated?.fecha_nacimiento
               ? String(updated.fecha_nacimiento).split("T")[0]
               : formData.fecha_nacimiento,

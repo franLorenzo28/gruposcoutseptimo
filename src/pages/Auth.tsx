@@ -1,5 +1,5 @@
 ﻿// --- Validación y sanitización ---
-function validateAuth({ email, password, nombreCompleto, telefono }: { email: string; password: string; nombreCompleto?: string; telefono?: string }) {
+function validateAuth({ email, password, nombreCompleto }: { email: string; password: string; nombreCompleto?: string }) {
   const errors: string[] = [];
   // Email obligatorio y formato válido
   if (!email.trim()) errors.push("El email es obligatorio.");
@@ -10,8 +10,6 @@ function validateAuth({ email, password, nombreCompleto, telefono }: { email: st
   // Nombre: opcional pero si existe, mánimo 3 caracteres y sin caracteres peligrosos
   if (nombreCompleto && nombreCompleto.length < 3) errors.push("El nombre debe tener al menos 3 caracteres.");
   if (nombreCompleto && /[<>"']/.test(nombreCompleto)) errors.push("El nombre contiene caracteres inválidos.");
-  // Teléfono: opcional pero si existe debe ser numérico
-  if (telefono && !/^\+?\d{7,15}$/.test(telefono)) errors.push("El teléfono debe ser válido (solo números, puede incluir +).");
   // Sanitización básica
   return {
     valid: errors.length === 0,
@@ -20,7 +18,6 @@ function validateAuth({ email, password, nombreCompleto, telefono }: { email: st
       email: email.trim().toLowerCase(),
       password: password.trim(),
       nombreCompleto: nombreCompleto ? nombreCompleto.replace(/[<>"']/g, "") : "",
-      telefono: telefono ? telefono.replace(/[^\d+]/g, "") : "",
     },
   };
 }
@@ -131,7 +128,6 @@ function buildAuthRedirect(path: string): string {
 const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [telefono, setTelefono] = useState("");
   const [nombreCompleto, setNombreCompleto] = useState("");
   const [showPasswordLogin, setShowPasswordLogin] = useState(false);
   const [showPasswordSignup, setShowPasswordSignup] = useState(false);
@@ -369,19 +365,11 @@ const Auth = () => {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     // Validar y sanear datos antes de registrar
-    const { valid, errors, sanitized } = validateAuth({ email, password, nombreCompleto, telefono });
+    const { valid, errors, sanitized } = validateAuth({ email, password, nombreCompleto });
     if (!valid) {
       toast({
         title: "Error en el formulario",
         description: errors.length > 1 ? errors.join(" • ") : errors[0],
-        variant: "destructive",
-      });
-      return;
-    }
-    if (!sanitized.telefono) {
-      toast({
-        title: "Error en el formulario",
-        description: "El teléfono es obligatorio para registrarse.",
         variant: "destructive",
       });
       return;
@@ -394,7 +382,7 @@ const Auth = () => {
         email: sanitized.email,
         password: sanitized.password,
         options: {
-          data: { nombre: sanitized.nombreCompleto || "", telefono: sanitized.telefono },
+          data: { nombre: sanitized.nombreCompleto || "" },
           emailRedirectTo: redirectUrl,
         },
       });
@@ -433,7 +421,6 @@ const Auth = () => {
         }
         setEmail("");
         setPassword("");
-        setTelefono("");
         setNombreCompleto("");
       }
     } catch (error) {
@@ -761,19 +748,7 @@ const Auth = () => {
                     required
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-telefono">Teléfono</Label>
-                  <Input
-                    id="signup-telefono"
-                    type="tel"
-                    inputMode="tel"
-                    autoComplete="tel"
-                    placeholder="+598 123 456 789"
-                    value={telefono}
-                    onChange={(e) => setTelefono(e.target.value)}
-                    required
-                  />
-                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="signup-email">Correo electrónico</Label>
                   <Input
