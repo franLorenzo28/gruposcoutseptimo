@@ -182,4 +182,82 @@ adminRouter.put("/users/:userId/educator-permissions", adminGate, (req: any, res
   return res.json({ ok: true, ...updated });
 });
 
+const requestPermissionSchema = z.object({
+  units: z.array(z.string()).min(1),
+  note: z.string().optional(),
+});
+
+adminRouter.post("/request-educator-permissions", authMiddleware, (req: any, res: any) => {
+  const userId = (req as any).user.id as string;
+  const parse = requestPermissionSchema.safeParse(req.body);
+  if (!parse.success) {
+    return res.status(400).json({ error: parse.error.flatten() });
+  }
+
+  const { units, note } = parse.data;
+
+  const userProfile = db
+    .prepare("SELECT rol_adulto, nombre_completo, username FROM profiles WHERE user_id = ?")
+    .get(userId) as { rol_adulto: string | null; nombre_completo?: string | null; username?: string | null } | undefined;
+
+  if (!userProfile?.rol_adulto?.includes("Educador")) {
+    return res.status(403).json({
+      error: "Solo usuarios con rol educador/a pueden solicitar permisos de unidad.",
+    });
+  }
+
+  const adminEmails = (process.env.ADMIN_EMAILS || "")
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+
+  if (adminEmails.length === 0) {
+    return res.status(500).json({ error: "No hay administradores disponibles" });
+  }
+
+  const adminUsers = db
+    .prepare("SELECT id FROM users WHERE LOWER(email) IN (" + adminEmails.map(() => "?").join(",") + ")")
+    .all(...adminEmails) as Array<{ id: string }>;
+
+  if (adminUsers.length === 0) {
+    return res.status(500).json({ error: "No hay administradores registrados" });
+  }
+
+  const requesterName = userProfile.nombre_completo || userProfile.username || userId.slice(0, 8);
+  const notificationData = {
+    kind: "educator_permission_request",
+    requester_id: userId,
+    requester_name: requesterName,
+    requested_units: units,
+    note: note || null,
+    requested_at: new Date().toISOString(),
+  };
+
+  let notificationCount = 0;
+  for (const admin of adminUsers) {
+    db.prepare(
+      `
+      INSERT INTO notifications (id, recipient_id, actor_id, type, entity_type, entity_id, data, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `,
+    ).run(
+      randomUUID(),
+      admin.id,
+      userId,
+      "educator_permission_request",
+      "admin_request",
+      userId,
+      JSON.stringify(notificationData),
+      new Date().toISOString(),
+    );
+    notificationCount++;
+  }
+
+  res.json({
+    ok: true,
+    message: `Solicitud enviada a ${notificationCount} administrador(es)`,
+    notificationsCreated: notificationCount,
+  });
+});
+
 export default adminRouter;

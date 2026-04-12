@@ -51,7 +51,7 @@ followsRouter.post("/follow", authMiddleware, (req: any, res: any) => {
   );
   const result = stmt.run(me, targetId, status);
 
-  if (result.changes > 0 && status === "pending") {
+  if (result.changes > 0) {
     const actorProfile = db
       .prepare(
         "SELECT nombre_completo, username, avatar_url FROM profiles WHERE user_id = ?",
@@ -63,6 +63,7 @@ followsRouter.post("/follow", authMiddleware, (req: any, res: any) => {
     const display =
       actorProfile?.nombre_completo || actorProfile?.username || me.slice(0, 8);
 
+    const notificationType = status === "pending" ? "follow_request" : "new_follower";
     db.prepare(
       `
       INSERT INTO notifications (id, recipient_id, actor_id, type, entity_type, entity_id, data, created_at)
@@ -72,7 +73,7 @@ followsRouter.post("/follow", authMiddleware, (req: any, res: any) => {
       randomUUID(),
       targetId,
       me,
-      "follow_request",
+      notificationType,
       "follow",
       `${me}:${targetId}`,
       JSON.stringify({ follower_id: me, display, avatar_url: actorProfile?.avatar_url || null }),

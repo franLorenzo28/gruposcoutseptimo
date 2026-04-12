@@ -208,21 +208,42 @@ export async function requestEducatorPermissions(args: {
   units: EducatorUnit[];
   note?: string;
 }): Promise<{ sentCount: number }> {
-  if (isLocalBackend()) {
-    throw new Error("Esta solicitud está disponible solo en Supabase.");
+  const normalizedUnits = normalizeUnits(args.units);
+  if (normalizedUnits.length === 0) {
+    throw new Error("Selecciona al menos una unidad para solicitar permisos.");
   }
 
+  // Para backend local, usar endpoint Express
+  if (isLocalBackend()) {
+    const token = await ensureLocalToken();
+    const response = await fetch("/admin/request-educator-permissions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        units: normalizedUnits,
+        note: args.note || "",
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Error al solicitar permisos");
+    }
+
+    const result = await response.json();
+    return { sentCount: result.notificationsCreated || 0 };
+  }
+
+  // Para Supabase, usar RPC
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
     throw new Error("Necesitas iniciar sesión para solicitar permisos.");
-  }
-
-  const normalizedUnits = normalizeUnits(args.units);
-  if (normalizedUnits.length === 0) {
-    throw new Error("Selecciona al menos una unidad para solicitar permisos.");
   }
 
   const { data: myProfile, error: myProfileError } = await supabase

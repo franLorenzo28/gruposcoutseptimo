@@ -61,6 +61,7 @@ const Rovers = lazy(() => import("./pages/ramas/rovers"));
 const Staff = lazy(() => import("./pages/ramas/staff"));
 const Comite = lazy(() => import("./pages/ramas/comite"));
 const Narrativas = lazy(() => import("./pages/narrativas"));
+const TestDiagnostic = lazy(() => import("./pages/TestDiagnostic"));
 import { MemberAuthProvider, useMemberAuth } from "@/context/MemberAuthContext";
 import RequireMemberAuth from "@/components/auth/RequireMemberAuth";
 import RequireRamaAccess from "@/components/auth/RequireRamaAccess";
@@ -95,11 +96,13 @@ type SupabaseUserWithProfile = User & {
 interface SupabaseUserContextType {
   user: SupabaseUserWithProfile | null;
   isUserLoading: boolean;
+  refreshUser: () => Promise<void>;
 }
 
 export const SupabaseUserContext = createContext<SupabaseUserContextType>({
   user: null,
   isUserLoading: true,
+  refreshUser: async () => {},
 });
 
 export const useSupabaseUser = () => useContext(SupabaseUserContext);
@@ -109,43 +112,72 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<SupabaseUserWithProfile | null>(null);
   const [isUserLoading, setIsUserLoading] = useState(true);
 
-  useEffect(() => {
-    async function fetchUserAndProfile(sessionUser: any) {
+  const refreshUser = async () => {
+    try {
+      const { data: { user: sessionUser } } = await supabase.auth.getUser();
       if (!sessionUser) {
         setUser(null);
-        setIsUserLoading(false);
         return;
       }
 
-      setIsUserLoading(true);
-      
-      const { data: profile, error } = await querySilent(() => supabase
+      const { data: profile } = await querySilent(() => supabase
         .from("profiles")
         .select("*")
         .eq("user_id", sessionUser.id)
         .maybeSingle()
       );
-      
-      if (error || !profile) {
-        setUser(sessionUser);
-        localStorage.setItem("adminUser", JSON.stringify(sessionUser));
-        setIsUserLoading(false);
-        return;
-      }
-      
-      const combinedUser = { ...sessionUser, ...profile };
-      setUser(combinedUser);
-      
-      // Try to persist to localStorage with error handling
-      try {
-        localStorage.setItem("adminUser", JSON.stringify(combinedUser));
-      } catch (e) {
-        // App still works without localStorage
-      }
 
+      if (profile) {
+        const combinedUser = { ...sessionUser, ...profile };
+        setUser(combinedUser);
+        try {
+          localStorage.setItem("adminUser", JSON.stringify(combinedUser));
+        } catch (e) {
+          // noop
+        }
+      }
+    } catch (error) {
+      if (import.meta.env.DEV) console.error("Error refreshing user:", error);
+    }
+  };
+
+  async function fetchUserAndProfile(sessionUser: any) {
+    if (!sessionUser) {
+      setUser(null);
       setIsUserLoading(false);
+      return;
     }
 
+    setIsUserLoading(true);
+    
+    const { data: profile, error } = await querySilent(() => supabase
+      .from("profiles")
+      .select("*")
+      .eq("user_id", sessionUser.id)
+      .maybeSingle()
+    );
+    
+    if (error || !profile) {
+      setUser(sessionUser);
+      localStorage.setItem("adminUser", JSON.stringify(sessionUser));
+      setIsUserLoading(false);
+      return;
+    }
+    
+    const combinedUser = { ...sessionUser, ...profile };
+    setUser(combinedUser);
+    
+    // Try to persist to localStorage with error handling
+    try {
+      localStorage.setItem("adminUser", JSON.stringify(combinedUser));
+    } catch (e) {
+      // App still works without localStorage
+    }
+
+    setIsUserLoading(false);
+  }
+
+  useEffect(() => {
     // Obtener sesión inicial
     supabase.auth.getSession().then(({ data: { session } }) => {
       const u = session?.user ?? null;
@@ -180,7 +212,7 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   return (
-    <SupabaseUserContext.Provider value={{ user, isUserLoading }}>
+    <SupabaseUserContext.Provider value={{ user, isUserLoading, refreshUser }}>
       {children}
     </SupabaseUserContext.Provider>
   );
@@ -362,6 +394,8 @@ const App = () => (
                     {/* Admin */}
                     <Route path="/admin-panel" element={<AdminPanel />} />
                     <Route path="/admin" element={<AdminGuard><AdminPanel /></AdminGuard>} />
+                    {/* Diagnostic */}
+                    <Route path="/test-diagnostic" element={<TestDiagnostic />} />
                     {/* Ruta por defecto */}
                     <Route path="*" element={<NotFound />} />
                     </Routes>

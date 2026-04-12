@@ -17,7 +17,6 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/hooks/useUser";
-import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { isLocalBackend, apiFetch } from "@/lib/backend";
 
@@ -30,7 +29,7 @@ const profileSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileSchema>;
 
 export default function ConfiguracionPerfil() {
-  const { user } = useUser();
+  const { user, refreshUser } = useUser();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
@@ -117,6 +116,7 @@ export default function ConfiguracionPerfil() {
       });
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 2000);
+      await refreshUser();
     } catch (error) {
       toast({
         title: "Error",
@@ -127,12 +127,6 @@ export default function ConfiguracionPerfil() {
       setIsLoading(false);
     }
   };
-
-  const completionPercentage = Math.round((
-    (form.watch("nombre_completo") ? 33 : 0) +
-    (form.watch("profesion_ocupacion") ? 33 : 0) +
-    (form.watch("descripcion_personal") ? 34 : 0)
-  ));
 
   return (
     <div className="space-y-6">
@@ -145,20 +139,7 @@ export default function ConfiguracionPerfil() {
         </div>
       )}
 
-      {/* Indicador de completitud */}
-      <Card className="border-border/50">
-        <CardHeader>
-          <CardTitle className="text-base font-semibold">Completitud del perfil</CardTitle>
-          <CardDescription>Completa tu perfil para una mejor experiencia</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium">{completionPercentage}%</span>
-            <span className="text-xs text-muted-foreground">completado</span>
-          </div>
-          <Progress value={completionPercentage} className="h-2" />
-        </CardContent>
-      </Card>
+
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">

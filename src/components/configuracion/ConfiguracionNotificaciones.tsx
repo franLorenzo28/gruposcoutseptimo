@@ -23,7 +23,7 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 }
 
 export default function ConfiguracionNotificaciones() {
-  const { user } = useUser();
+  const { user, refreshUser } = useUser();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
@@ -91,6 +91,7 @@ export default function ConfiguracionNotificaciones() {
       
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 2000);
+      await refreshUser();
     } catch (error) {
       console.error("Error saving notification preferences:", error);
       // Revertir cambio si falla
@@ -126,6 +127,7 @@ export default function ConfiguracionNotificaciones() {
       });
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 2000);
+      await refreshUser();
     } catch (error) {
       toast({
         title: "Error",

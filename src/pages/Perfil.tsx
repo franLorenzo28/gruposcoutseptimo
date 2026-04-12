@@ -265,6 +265,7 @@ const Perfil = () => {
         const { error: insertError } = await supabase.from("profiles").insert({
           user_id: auth.id,
           nombre_completo: userNombre,
+          telefono: null,
         });
         if (insertError) throw insertError;
         await getProfile();

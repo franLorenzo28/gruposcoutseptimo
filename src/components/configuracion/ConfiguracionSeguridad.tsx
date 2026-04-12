@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { useUser } from "@/hooks/useUser";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Lock, Shield, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -63,6 +64,7 @@ const passwordSchema = z.object({
 type PasswordFormValues = z.infer<typeof passwordSchema>;
 
 export default function ConfiguracionSeguridad() {
+  const { refreshUser } = useUser();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
@@ -112,6 +114,7 @@ export default function ConfiguracionSeguridad() {
       form.reset();
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 2000);
+      await refreshUser();
     } catch (error: any) {
       toast({
         title: "Error",
