@@ -17,6 +17,10 @@ const DEFAULT_SETTINGS = {
   permitir_mensajes: true,
 };
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 export default function ConfiguracionPrivacidad() {
   const { user } = useUser();
   const { toast } = useToast();
@@ -31,9 +35,12 @@ export default function ConfiguracionPrivacidad() {
     const loadSettings = async () => {
       try {
         if (isLocalBackend()) {
-          const data = await apiFetch(`/profiles/${user.id}`);
-          if (data?.privacy_preferences) {
-            setSettings({ ...DEFAULT_SETTINGS, ...data.privacy_preferences });
+          const data = await apiFetch("/profiles/me");
+          if (isPlainObject(data?.privacy_preferences)) {
+            setSettings({
+              ...DEFAULT_SETTINGS,
+              ...(data.privacy_preferences as Partial<typeof DEFAULT_SETTINGS>),
+            });
           }
         } else {
           const { data, error } = await supabase
@@ -43,8 +50,11 @@ export default function ConfiguracionPrivacidad() {
             .single();
 
           if (error) throw error;
-          if (data?.privacy_preferences) {
-            setSettings({ ...DEFAULT_SETTINGS, ...data.privacy_preferences });
+          if (isPlainObject(data?.privacy_preferences)) {
+            setSettings({
+              ...DEFAULT_SETTINGS,
+              ...(data.privacy_preferences as Partial<typeof DEFAULT_SETTINGS>),
+            });
           }
         }
       } catch (error) {
@@ -66,9 +76,9 @@ export default function ConfiguracionPrivacidad() {
     // Guardar automáticamente en Supabase
     try {
       if (isLocalBackend()) {
-        await apiFetch(`/profiles/${user?.id}`, {
+        await apiFetch("/profiles/me", {
           method: "PUT",
-          body: { privacy_preferences: newSettings },
+          body: JSON.stringify({ privacy_preferences: newSettings }),
         });
       } else {
         const { error } = await supabase
@@ -97,9 +107,9 @@ export default function ConfiguracionPrivacidad() {
       setIsLoading(true);
       
       if (isLocalBackend()) {
-        await apiFetch(`/profiles/${user?.id}`, {
+        await apiFetch("/profiles/me", {
           method: "PUT",
-          body: { privacy_preferences: settings },
+          body: JSON.stringify({ privacy_preferences: settings }),
         });
       } else {
         const { error } = await supabase

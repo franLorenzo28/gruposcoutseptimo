@@ -18,6 +18,10 @@ const DEFAULT_SETTINGS = {
   push_notificaciones: true,
 };
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 export default function ConfiguracionNotificaciones() {
   const { user } = useUser();
   const { toast } = useToast();
@@ -32,9 +36,12 @@ export default function ConfiguracionNotificaciones() {
     const loadSettings = async () => {
       try {
         if (isLocalBackend()) {
-          const data = await apiFetch(`/profiles/${user.id}`);
-          if (data?.notification_preferences) {
-            setSettings({ ...DEFAULT_SETTINGS, ...data.notification_preferences });
+          const data = await apiFetch("/profiles/me");
+          if (isPlainObject(data?.notification_preferences)) {
+            setSettings({
+              ...DEFAULT_SETTINGS,
+              ...(data.notification_preferences as Partial<typeof DEFAULT_SETTINGS>),
+            });
           }
         } else {
           const { data, error } = await supabase
@@ -44,8 +51,11 @@ export default function ConfiguracionNotificaciones() {
             .single();
 
           if (error) throw error;
-          if (data?.notification_preferences) {
-            setSettings({ ...DEFAULT_SETTINGS, ...data.notification_preferences });
+          if (isPlainObject(data?.notification_preferences)) {
+            setSettings({
+              ...DEFAULT_SETTINGS,
+              ...(data.notification_preferences as Partial<typeof DEFAULT_SETTINGS>),
+            });
           }
         }
       } catch (error) {
@@ -67,9 +77,9 @@ export default function ConfiguracionNotificaciones() {
     // Guardar automáticamente en Supabase
     try {
       if (isLocalBackend()) {
-        await apiFetch(`/profiles/${user?.id}`, {
+        await apiFetch("/profiles/me", {
           method: "PUT",
-          body: { notification_preferences: newSettings },
+          body: JSON.stringify({ notification_preferences: newSettings }),
         });
       } else {
         const { error } = await supabase
@@ -98,9 +108,9 @@ export default function ConfiguracionNotificaciones() {
       setIsLoading(true);
       
       if (isLocalBackend()) {
-        await apiFetch(`/profiles/${user?.id}`, {
+        await apiFetch("/profiles/me", {
           method: "PUT",
-          body: { notification_preferences: settings },
+          body: JSON.stringify({ notification_preferences: settings }),
         });
       } else {
         const { error } = await supabase

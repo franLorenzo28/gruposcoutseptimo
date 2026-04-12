@@ -354,6 +354,7 @@ export type Database = {
           avatar_url: string | null
           comunidad_rovers: string | null
           created_at: string
+          descripcion_personal: string | null
           edad: number | null
           email: string | null
           email_verified: boolean | null
@@ -362,7 +363,10 @@ export type Database = {
           id: string
           is_public: boolean | null
           nombre_completo: string
+          notification_preferences: Json | null
           patrulla: string | null
+          privacy_preferences: Json | null
+          profesion_ocupacion: string | null
           rama_que_educa: string | null
           rol_adulto: string | null
           role: string | null
@@ -377,6 +381,7 @@ export type Database = {
           avatar_url?: string | null
           comunidad_rovers?: string | null
           created_at?: string
+          descripcion_personal?: string | null
           edad?: number | null
           email?: string | null
           email_verified?: boolean | null
@@ -385,7 +390,10 @@ export type Database = {
           id?: string
           is_public?: boolean | null
           nombre_completo: string
+          notification_preferences?: Json | null
           patrulla?: string | null
+          privacy_preferences?: Json | null
+          profesion_ocupacion?: string | null
           rama_que_educa?: string | null
           rol_adulto?: string | null
           role?: string | null
@@ -400,6 +408,7 @@ export type Database = {
           avatar_url?: string | null
           comunidad_rovers?: string | null
           created_at?: string
+          descripcion_personal?: string | null
           edad?: number | null
           email?: string | null
           email_verified?: boolean | null
@@ -408,7 +417,10 @@ export type Database = {
           id?: string
           is_public?: boolean | null
           nombre_completo?: string
+          notification_preferences?: Json | null
           patrulla?: string | null
+          privacy_preferences?: Json | null
+          profesion_ocupacion?: string | null
           rama_que_educa?: string | null
           rol_adulto?: string | null
           role?: string | null

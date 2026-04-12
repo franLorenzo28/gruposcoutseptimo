@@ -52,7 +52,7 @@ export default function ConfiguracionPerfil() {
     const loadProfile = async () => {
       try {
         if (isLocalBackend()) {
-          const data = await apiFetch(`/profiles/${user.id}`);
+          const data = await apiFetch("/profiles/me");
           if (data) {
             form.reset({
               nombre_completo: data.nombre_completo || "",
@@ -91,13 +91,13 @@ export default function ConfiguracionPerfil() {
       setIsLoading(true);
 
       if (isLocalBackend()) {
-        await apiFetch(`/profiles/${user?.id}`, {
+        await apiFetch("/profiles/me", {
           method: "PUT",
-          body: {
+          body: JSON.stringify({
             nombre_completo: data.nombre_completo,
             profesion_ocupacion: data.profesion_ocupacion || null,
             descripcion_personal: data.descripcion_personal || null,
-          },
+          }),
         });
       } else {
         const { error } = await supabase

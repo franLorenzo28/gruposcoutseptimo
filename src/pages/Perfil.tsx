@@ -46,7 +46,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import UserAvatar from "@/components/UserAvatar";
 import AvatarCropDialog from "@/components/AvatarCropDialog";
-import { ArrowLeft, Save, Upload, X, Mail, AlertCircle } from "lucide-react";
+import { ArrowLeft, Save, Upload, X, Mail, AlertCircle, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   AlertDialog,
@@ -922,17 +922,23 @@ const Perfil = () => {
                 />
               </div>
 
-              <div className="md:col-span-2 rounded-md border border-border/60 bg-muted/25 p-3">
-                <p className="text-sm text-muted-foreground">
-                  No encontrás la configuración que estás buscando?{" "}
-                  <button
+              <div className="md:col-span-2 rounded-xl border border-primary/30 bg-primary/10 p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">¿Necesitas más opciones avanzadas?</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Abre Configuración para privacidad, notificaciones y seguridad de cuenta.
+                    </p>
+                  </div>
+                  <Button
                     type="button"
                     onClick={() => navigate("/configuracion")}
-                    className="font-medium text-primary underline-offset-4 hover:underline"
+                    className="sm:w-auto w-full"
                   >
-                    Ir a Configuración
-                  </button>
-                </p>
+                    <Settings className="w-4 h-4 mr-2" />
+                    Abrir Configuración
+                  </Button>
+                </div>
               </div>
             </div>
           </div>

@@ -496,6 +496,16 @@ const PerfilView = () => {
                       </Button>
                     )}
                     <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => navigate("/configuracion")}
+                      className="gap-1 flex-1 sm:flex-none text-xs sm:text-sm"
+                    >
+                      <Settings className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <span className="hidden xs:inline">Configuración</span>
+                      <span className="xs:hidden">Config</span>
+                    </Button>
+                    <Button
                       variant="outline"
                       size="sm"
                       onClick={() => navigate("/perfil/editar")}

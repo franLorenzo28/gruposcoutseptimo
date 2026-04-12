@@ -11,6 +11,7 @@ import {
   Shield,
 } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
+import { PageGridBackground } from "@/components/PageGridBackground";
 import ConfiguracionPerfil from "@/components/configuracion/ConfiguracionPerfil";
 import ConfiguracionPrivacidad from "@/components/configuracion/ConfiguracionPrivacidad";
 import ConfiguracionNotificaciones from "@/components/configuracion/ConfiguracionNotificaciones";
@@ -70,8 +71,8 @@ export default function Configuracion() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25">
-      <div className="max-w-6xl mx-auto px-4 py-8 sm:py-12">
+    <PageGridBackground>
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:py-12">
         {/* Header */}
         <Reveal>
           <div className="flex items-center gap-4 mb-8">
@@ -86,17 +87,21 @@ export default function Configuracion() {
             <div>
               <h1 className="text-3xl font-black">Configuración</h1>
               <p className="text-sm text-muted-foreground mt-1">
-                Gestiona tu cuenta, privacidad y preferencias
+                Gestiona tu cuenta, privacidad y preferencias con guardado persistente
               </p>
             </div>
           </div>
         </Reveal>
 
-        <div className="grid gap-6 grid-cols-1 lg:grid-cols-[300px_1fr]">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[320px_1fr]">
           {/* Sidebar con opciones */}
           <Reveal>
             <div className="lg:sticky lg:top-24 lg:h-fit">
-              <div className="space-y-2">
+              <div className="rounded-2xl border border-border/70 bg-card/70 p-3 shadow-sm">
+                <p className="mb-3 px-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Secciones
+                </p>
+                <div className="space-y-2">
                 {CONFIG_TABS.map((tab) => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
@@ -104,10 +109,10 @@ export default function Configuracion() {
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`w-full text-left px-4 py-3 rounded-lg transition-all flex items-center gap-3 ${
+                      className={`w-full rounded-xl px-4 py-3 text-left transition-all flex items-center gap-3 border ${
                         isActive
-                          ? "bg-primary text-primary-foreground shadow-md"
-                          : "bg-muted/40 hover:bg-muted/60 text-foreground hover:scale-[1.02] active:scale-[0.98]"
+                          ? "border-primary/40 bg-primary text-primary-foreground shadow-md"
+                          : "border-transparent bg-muted/40 text-foreground hover:border-border/70 hover:bg-muted/60"
                       }`}
                     >
                       <Icon className="w-5 h-5 shrink-0" />
@@ -120,6 +125,7 @@ export default function Configuracion() {
                     </button>
                   );
                 })}
+                </div>
               </div>
             </div>
           </Reveal>
@@ -142,6 +148,6 @@ export default function Configuracion() {
           </Reveal>
         </div>
       </div>
-    </div>
+    </PageGridBackground>
   );
 }

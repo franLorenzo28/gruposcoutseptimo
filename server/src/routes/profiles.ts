@@ -27,6 +27,30 @@ function calculateAge(fechaNacimiento: string | null): number | null {
   }
 }
 
+function safeParseJsonObject(value: unknown): Record<string, boolean> | null {
+  if (typeof value !== "string" || !value.trim()) return null;
+  try {
+    const parsed = JSON.parse(value);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null;
+    const output: Record<string, boolean> = {};
+    for (const [key, val] of Object.entries(parsed)) {
+      if (typeof val === "boolean") output[key] = val;
+    }
+    return output;
+  } catch {
+    return null;
+  }
+}
+
+function normalizeProfileResponse(profile: any) {
+  if (!profile) return profile;
+  return {
+    ...profile,
+    privacy_preferences: safeParseJsonObject(profile.privacy_preferences),
+    notification_preferences: safeParseJsonObject(profile.notification_preferences),
+  };
+}
+
 function normalizeRole(value: string | null | undefined): string {
   return String(value || "")
     .trim()
@@ -74,10 +98,10 @@ profilesRouter.get("/me", authMiddleware, (req: any, res: any) => {
       .prepare("SELECT * FROM profiles WHERE user_id = ?")
       .get(userId) as any;
   }
-  const result = { 
-    ...profile, 
+  const result = {
+    ...normalizeProfileResponse(profile),
     ...user,
-    email_verified: !!user.email_verified_at 
+    email_verified: !!user.email_verified_at,
   };
   if (result.fecha_nacimiento) {
     result.edad = calculateAge(result.fecha_nacimiento);
@@ -91,6 +115,10 @@ const avatarUrlSchema = z.string().url().or(z.string().startsWith("/uploads/"));
 
 const updateSchema = z.object({
   nombre_completo: z.string().nullable().optional(),
+  profesion_ocupacion: z.string().nullable().optional(),
+  descripcion_personal: z.string().nullable().optional(),
+  privacy_preferences: z.record(z.boolean()).nullable().optional(),
+  notification_preferences: z.record(z.boolean()).nullable().optional(),
   telefono: z.string().nullable().optional(),
   is_public: z.boolean().optional(),
   avatar_url: avatarUrlSchema.nullable().optional(),
@@ -123,6 +151,10 @@ profilesRouter.put("/me", authMiddleware, (req: any, res: any) => {
     return res.status(400).json({ error: parse.error.flatten() });
   const {
     nombre_completo,
+    profesion_ocupacion,
+    descripcion_personal,
+    privacy_preferences,
+    notification_preferences,
     telefono,
     is_public,
     avatar_url,
@@ -174,11 +206,15 @@ profilesRouter.put("/me", authMiddleware, (req: any, res: any) => {
     .get(userId);
   if (!existing) {
     db.prepare(
-      `INSERT INTO profiles (user_id, nombre_completo, telefono, is_public, avatar_url, fecha_nacimiento, rol_adulto, rama_que_educa, seisena, patrulla, equipo_pioneros, comunidad_rovers) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO profiles (user_id, nombre_completo, profesion_ocupacion, descripcion_personal, privacy_preferences, notification_preferences, telefono, is_public, avatar_url, fecha_nacimiento, rol_adulto, rama_que_educa, seisena, patrulla, equipo_pioneros, comunidad_rovers) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(
       userId,
       nombre_completo ?? null,
+      profesion_ocupacion ?? null,
+      descripcion_personal ?? null,
+      privacy_preferences ? JSON.stringify(privacy_preferences) : null,
+      notification_preferences ? JSON.stringify(notification_preferences) : null,
       telefono ?? null,
       is_public ? 1 : 0,
       avatar_url ?? null,
@@ -230,6 +266,22 @@ profilesRouter.put("/me", authMiddleware, (req: any, res: any) => {
     if (nombre_completo !== undefined) {
       sets.push("nombre_completo = ?");
       values.push(nombre_completo ?? null);
+    }
+    if (profesion_ocupacion !== undefined) {
+      sets.push("profesion_ocupacion = ?");
+      values.push(profesion_ocupacion ?? null);
+    }
+    if (descripcion_personal !== undefined) {
+      sets.push("descripcion_personal = ?");
+      values.push(descripcion_personal ?? null);
+    }
+    if (privacy_preferences !== undefined) {
+      sets.push("privacy_preferences = ?");
+      values.push(privacy_preferences ? JSON.stringify(privacy_preferences) : null);
+    }
+    if (notification_preferences !== undefined) {
+      sets.push("notification_preferences = ?");
+      values.push(notification_preferences ? JSON.stringify(notification_preferences) : null);
     }
     if (telefono !== undefined) {
       sets.push("telefono = ?");
@@ -283,7 +335,7 @@ profilesRouter.put("/me", authMiddleware, (req: any, res: any) => {
   const user = db
     .prepare("SELECT id, email, username, created_at FROM users WHERE id = ?")
     .get(userId) as any;
-  const result = { ...profile, ...user };
+  const result = { ...normalizeProfileResponse(profile), ...user };
   // Calcular edad si hay fecha de nacimiento
   if (result.fecha_nacimiento) {
     result.edad = calculateAge(result.fecha_nacimiento);

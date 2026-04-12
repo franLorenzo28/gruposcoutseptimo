@@ -33,6 +33,10 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS profiles (
     user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
     nombre_completo TEXT,
+    profesion_ocupacion TEXT,
+    descripcion_personal TEXT,
+    privacy_preferences TEXT,
+    notification_preferences TEXT,
     telefono TEXT,
     fecha_nacimiento TEXT,
     rol_adulto TEXT,
@@ -222,6 +226,22 @@ function ensureProfileColumns() {
     }>;
     const names = new Set(cols.map((c) => c.name));
     const missing: Array<{ sql: string }> = [];
+    if (!names.has("profesion_ocupacion"))
+      missing.push({
+        sql: `ALTER TABLE profiles ADD COLUMN profesion_ocupacion TEXT`,
+      });
+    if (!names.has("descripcion_personal"))
+      missing.push({
+        sql: `ALTER TABLE profiles ADD COLUMN descripcion_personal TEXT`,
+      });
+    if (!names.has("privacy_preferences"))
+      missing.push({
+        sql: `ALTER TABLE profiles ADD COLUMN privacy_preferences TEXT`,
+      });
+    if (!names.has("notification_preferences"))
+      missing.push({
+        sql: `ALTER TABLE profiles ADD COLUMN notification_preferences TEXT`,
+      });
     if (!names.has("fecha_nacimiento"))
       missing.push({
         sql: `ALTER TABLE profiles ADD COLUMN fecha_nacimiento TEXT`,
