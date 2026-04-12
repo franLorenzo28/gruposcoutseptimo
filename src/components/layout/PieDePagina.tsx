@@ -66,58 +66,18 @@ const FooterNew = () => {
     <footer role="contentinfo" aria-label="Pie de página Grupo Scout Séptimo" className="bg-background/80 backdrop-blur-sm text-foreground/80 border-t border-border/60">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-16">
         {/* Main Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-12 mb-8">
-          {/* Logo & Description - Larger on desktop */}
-          <div className="lg:col-span-5 rounded-2xl border border-border/40 bg-background/30 p-5 shadow-md">
-            <div className="flex items-center space-x-3 mb-4">
-              <img
-                src={logoImage}
-                alt="Grupo Scout Séptimo"
-                className="w-12 h-12 object-contain transition-transform duration-300 hover:scale-110"
-                loading="lazy"
-                decoding="async"
-              />
-              <div>
-                <div className="text-xl font-bold text-foreground">
-                  Grupo Scout Séptimo
-                </div>
-                <div className="text-sm text-muted-foreground">de Montevideo</div>
-              </div>
-            </div>
-
-            <p className="text-base text-muted-foreground mb-6 leading-relaxed max-w-md">
-              Formando personas comprometidas con nuestra sociedad desde 1964. Una comunidad de
-              aventura, valores y crecimiento personal.
-            </p>
-
-            {/* Social Links */}
-            <div className="flex space-x-3 mb-6">
-              <SocialLink
-                href="https://instagram.com/grupo_scout_septimo"
-                icon={<Instagram className="w-5 h-5" />}
-                label="Instagram"
-              />
-              <SocialLink
-                href="https://www.youtube.com/@linceastuto"
-                icon={<Youtube className="w-5 h-5" />}
-                label="YouTube"
-              />
-              <SocialLink
-                href="https://facebook.com/gruposcoutseptimomontevideo"
-                icon={<Facebook className="w-5 h-5" />}
-                label="Facebook"
-              />
-            </div>
-          </div>
-
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-8 lg:gap-12 mb-8">
           {/* Quick Links */}
-          <div className="lg:col-span-3 rounded-2xl border border-border/40 bg-background/30 p-5 shadow-md">
-            <h3 className="text-foreground font-bold mb-4 text-lg">
+          <div className="border-r border-border/40 pr-4">
+            <h3 className="text-foreground font-bold mb-2 text-lg">
               Enlaces Rápidos
             </h3>
-            <ul className="space-y-2.5">
+            <ul className="grid grid-cols-2 gap-y-1.5 gap-x-4">
               <li>
                 <FooterLink to="/">Inicio</FooterLink>
+              </li>
+              <li>
+                <FooterLink to="/narrativas">Narrativas</FooterLink>
               </li>
               <li>
                 <FooterLink to="/usuarios">Comuni 7</FooterLink>
@@ -132,7 +92,10 @@ const FooterNew = () => {
                 <FooterLink to="/eventos">Eventos</FooterLink>
               </li>
               <li>
-                <FooterLink to="/bauen">BAUEN</FooterLink>
+                <FooterLink to="/cancionero">Cancionero</FooterLink>
+              </li>
+              <li>
+                <FooterLink to="/galeria">Galería</FooterLink>
               </li>
               <li>
                 <FooterLink to="/contacto">Contacto</FooterLink>
@@ -140,10 +103,10 @@ const FooterNew = () => {
             </ul>
           </div>
 
-          {/* Ramas */}
-          <div className="lg:col-span-2 rounded-2xl border border-border/40 bg-background/30 p-5 shadow-md">
-            <h3 className="text-foreground font-bold mb-4 text-lg">Ramas</h3>
-            <ul className="space-y-2.5">
+          {/* Unidades */}
+          <div className="border-r border-border/40 pr-4">
+            <h3 className="text-foreground font-bold mb-2 text-lg">Unidades</h3>
+            <ul className="grid grid-cols-2 gap-y-1.5 gap-x-4">
               <li>
                 <FooterLink to="/ramas/manada">Manada</FooterLink>
               </li>
@@ -166,9 +129,9 @@ const FooterNew = () => {
           </div>
 
           {/* Contact */}
-          <div className="lg:col-span-2 rounded-2xl border border-border/40 bg-background/30 p-5 shadow-md">
-            <h3 className="text-foreground font-bold mb-4 text-lg">Contacto</h3>
-            <ul className="space-y-3">
+          <div>
+            <h3 className="text-foreground font-bold mb-2 text-lg">Contacto</h3>
+            <ul className="space-y-2">
               <li className="flex items-start group">
                 <MapPin className="w-5 h-5 mr-2 mt-0.5 text-primary flex-shrink-0 transition-transform duration-300 group-hover:scale-110" />
                 <span className="text-sm leading-relaxed">
@@ -200,12 +163,56 @@ const FooterNew = () => {
         {/* Divider */}
         <div className="border-t border-border/70 mb-8"></div>
 
+        {/* Logo & Description */}
+        <div className="mb-8">
+          <div className="flex items-center space-x-3 mb-4">
+            <img
+              src={logoImage}
+              alt="Grupo Scout Séptimo"
+              className="w-12 h-12 object-contain transition-transform duration-300 hover:scale-110"
+              loading="lazy"
+              decoding="async"
+            />
+            <div>
+              <div className="text-xl font-bold text-foreground">
+                Grupo Scout Séptimo
+              </div>
+              <div className="text-sm text-muted-foreground">de Montevideo</div>
+            </div>
+          </div>
+
+          <p className="text-base text-muted-foreground mb-6 leading-relaxed max-w-md">
+            Formando personas comprometidas con nuestra sociedad desde 1964. Una comunidad de
+            aventura, valores y crecimiento personal.
+          </p>
+
+          {/* Social Links */}
+          <div className="flex space-x-3">
+            <SocialLink
+              href="https://instagram.com/grupo_scout_septimo"
+              icon={<Instagram className="w-5 h-5" />}
+              label="Instagram"
+            />
+            <SocialLink
+              href="https://www.youtube.com/@linceastuto"
+              icon={<Youtube className="w-5 h-5" />}
+              label="YouTube"
+            />
+            <SocialLink
+              href="https://facebook.com/gruposcoutseptimomontevideo"
+              icon={<Facebook className="w-5 h-5" />}
+              label="Facebook"
+            />
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div className="border-t border-border/70 mb-4"></div>
+
         {/* Bottom Bar */}
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-sm text-muted-foreground text-center md:text-left flex items-center gap-1.5">
             © {currentYear} Grupo Scout Séptimo de Montevideo.
-            <span className="hidden sm:inline">Hecho con</span>
-            <Heart className="w-4 h-4 text-primary inline-block fill-current animate-pulse" />
           </p>
 
           <div className="flex flex-wrap justify-center gap-6 text-sm">

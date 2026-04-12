@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,12 +9,12 @@ import { OptimizedImage } from "@/components/OptimizedImage";
 import { getOptimizedImageProps } from "@/lib/optimized-images";
 import {
   Archive,
+  ArrowLeft,
   ArrowRight,
   BookOpen,
   Calendar,
   FileText,
   Image,
-  Layers,
   Search,
   Sparkles,
 } from "lucide-react";
@@ -73,7 +73,7 @@ const secciones: ArchiveSection[] = [
     description:
       "Definiciones, términos y contenidos enciclopédicos del historial scout.",
     to: "/archivo/scoutpedia",
-    tag: "Historia y método",
+    tag: "Historia y metodo",
     group: "Conocimiento",
     entries: "20+ entradas",
     Icon: BookOpen,
@@ -86,7 +86,7 @@ const secciones: ArchiveSection[] = [
     tag: "Unidad",
     group: "Memoria",
     entries: "En crecimiento",
-    Icon: Layers,
+    Icon: FileText,
   },
   {
     title: "Galería",
@@ -95,18 +95,28 @@ const secciones: ArchiveSection[] = [
     to: "/galeria",
     tag: "Multimedia",
     group: "Visual",
-    entries: "Colección visual",
+    entries: "Coleccion visual",
     Icon: Image,
   },
   {
     title: "Cancionero",
     description:
-      "Canciones scouts organizadas por tipo: fogón, marcha y campamento.",
+      "Canciones scouts organizadas por tipo: fogon, marcha y campamento.",
     to: "/cancionero",
     tag: "Cultura",
     group: "Conocimiento",
     entries: "En crecimiento",
     Icon: BookOpen,
+  },
+  {
+    title: "Am Lagerfeuer",
+    description:
+      "Repositorio de PDFs de Am Lagerfeuer: registros, cantos e historia de cada edicion.",
+    to: "/archivo/am-lagerfeuer",
+    tag: "Repositorio PDF",
+    group: "Conocimiento",
+    entries: "Archivo histórico",
+    Icon: FileText,
   },
 ];
 
@@ -117,27 +127,62 @@ const actividadReciente = [
   "Nuevas fotos incorporadas en Galería",
 ];
 
+const FILTERS: Array<{ key: "all" | ArchiveSection["group"]; label: string }> = [
+  { key: "all", label: "Explorar todo" },
+  { key: "Memoria", label: "Memoria" },
+  { key: "Conocimiento", label: "Conocimiento" },
+  { key: "Comunidad", label: "Comunidad" },
+  { key: "Visual", label: "Visual" },
+];
+
 const Archivo = () => {
   const communityImages = getOptimizedImageProps("community");
   const [query, setQuery] = useState("");
+  const [activeFilter, setActiveFilter] = useState<"all" | ArchiveSection["group"]>("all");
+  const [activeSectionTo, setActiveSectionTo] = useState<string>(secciones[0].to);
 
   const seccionesFiltradas = useMemo(() => {
     const term = query.trim().toLowerCase();
-    if (!term) return secciones;
     return secciones.filter((section) => {
+      if (activeFilter !== "all" && section.group !== activeFilter) return false;
+      if (!term) return true;
       const text = `${section.title} ${section.description} ${section.tag}`.toLowerCase();
       return text.includes(term);
     });
-  }, [query]);
+  }, [activeFilter, query]);
 
-  const seccionesAgrupadas = useMemo(() => {
-    return sectionGroupMeta
-      .map((group) => ({
-        ...group,
-        items: seccionesFiltradas.filter((section) => section.group === group.key),
-      }))
-      .filter((group) => group.items.length > 0);
-  }, [seccionesFiltradas]);
+  useEffect(() => {
+    if (seccionesFiltradas.length === 0) return;
+    const activeVisible = seccionesFiltradas.some((section) => section.to === activeSectionTo);
+    if (!activeVisible) {
+      setActiveSectionTo(seccionesFiltradas[0].to);
+    }
+  }, [activeSectionTo, seccionesFiltradas]);
+
+  const activeSection =
+    seccionesFiltradas.find((section) => section.to === activeSectionTo) ??
+    seccionesFiltradas[0] ??
+    secciones[0];
+
+  const activeGroupMeta =
+    sectionGroupMeta.find((group) => group.key === activeSection.group) ?? sectionGroupMeta[0];
+
+  const activeIndex = Math.max(
+    0,
+    seccionesFiltradas.findIndex((section) => section.to === activeSection.to),
+  );
+
+  const goPrev = () => {
+    if (seccionesFiltradas.length < 2) return;
+    const prev = (activeIndex - 1 + seccionesFiltradas.length) % seccionesFiltradas.length;
+    setActiveSectionTo(seccionesFiltradas[prev].to);
+  };
+
+  const goNext = () => {
+    if (seccionesFiltradas.length < 2) return;
+    const next = (activeIndex + 1) % seccionesFiltradas.length;
+    setActiveSectionTo(seccionesFiltradas[next].to);
+  };
 
   return (
     <div className="min-h-screen">
@@ -167,27 +212,6 @@ const Archivo = () => {
                 Un archivo activo, navegable y en crecimiento: historia, documentos,
                 términos scout y registros históricos del grupo.
               </p>
-
-              <div className="grid grid-cols-3 gap-3 max-w-lg">
-                <Card className="bg-card/80 border-border/60 shadow-sm">
-                  <CardContent className="p-3 sm:p-4 text-center">
-                    <p className="text-2xl sm:text-3xl font-black text-primary">{secciones.length}</p>
-                    <p className="text-xs text-muted-foreground">Secciones</p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-card/80 border-border/60 shadow-sm">
-                  <CardContent className="p-3 sm:p-4 text-center">
-                    <p className="text-2xl sm:text-3xl font-black text-primary">20+</p>
-                    <p className="text-xs text-muted-foreground">Entradas</p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-card/80 border-border/60 shadow-sm">
-                  <CardContent className="p-3 sm:p-4 text-center">
-                    <p className="text-2xl sm:text-3xl font-black text-primary">Vivo</p>
-                    <p className="text-xs text-muted-foreground">Estado</p>
-                  </CardContent>
-                </Card>
-              </div>
             </div>
 
             <div className="overflow-hidden rounded-3xl border border-border/60 shadow-xl">
@@ -206,10 +230,10 @@ const Archivo = () => {
         </div>
       </section>
 
-      <section id="secciones" className="py-14 sm:py-20 bg-gradient-to-b from-background via-background/95 to-muted/25">
+      <section id="secciones" className="py-10 sm:py-12 bg-gradient-to-b from-background via-background/95 to-muted/25">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-6xl mx-auto">
-            <Reveal className="mb-8 sm:mb-10">
+            <Reveal className="mb-6 sm:mb-7">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <h2 className="text-3xl sm:text-4xl font-bold">Explorar secciones</h2>
@@ -230,64 +254,27 @@ const Archivo = () => {
               </div>
             </Reveal>
 
-            <div className="space-y-10">
-              {seccionesAgrupadas.map((group, groupIndex) => (
-                <Reveal key={group.key} delay={groupIndex * 0.05}>
-                  <div>
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-                      <div>
-                        <h3 className="text-xl sm:text-2xl font-bold">{group.title}</h3>
-                        <p className="text-sm text-muted-foreground">{group.description}</p>
-                      </div>
-                      <Badge variant="secondary" className="w-fit">
-                        {group.items.length} sección{group.items.length > 1 ? "es" : ""}
-                      </Badge>
-                    </div>
-
-                    <div
-                      className="grid gap-5"
-                      style={{ gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))" }}
+            <Reveal>
+              <div className="mb-6 rounded-2xl border border-border/70 bg-card/75 p-4 sm:p-5">
+                <div className="flex flex-wrap items-center gap-2">
+                  {FILTERS.map((filter) => (
+                    <button
+                      key={filter.key}
+                      onClick={() => setActiveFilter(filter.key)}
+                      className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+                        activeFilter === filter.key
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted/40 text-muted-foreground hover:bg-muted/70 hover:text-foreground"
+                      }`}
                     >
-                      {group.items.map((section, index) => (
-                        <Reveal key={section.to} delay={index * 0.08}>
-                          <Card className="group card-hover border border-border/70 shadow-lg bg-card/85 backdrop-blur-sm h-full transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-                            <CardContent className="p-6 min-h-[245px] flex flex-col">
-                              <div className="flex items-start justify-between gap-3 mb-4">
-                                <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center">
-                                  <section.Icon className="w-5 h-5 text-primary" />
-                                </div>
-                                <Badge variant="outline" className="border-primary/30 text-primary bg-primary/5">
-                                  {section.tag}
-                                </Badge>
-                              </div>
+                      {filter.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </Reveal>
 
-                              <h3 className="text-xl font-bold mb-2">{section.title}</h3>
-                              <p className="text-sm text-muted-foreground/90 mb-4 flex-1">
-                                {section.description}
-                              </p>
-
-                              <div className="flex items-center justify-between pt-2 border-t border-border/60">
-                                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                                  {section.entries}
-                                </p>
-                                <Link to={section.to}>
-                                  <Button size="sm" className="gap-1.5">
-                                    Abrir
-                                    <ArrowRight className="w-4 h-4" />
-                                  </Button>
-                                </Link>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        </Reveal>
-                      ))}
-                    </div>
-                  </div>
-                </Reveal>
-              ))}
-            </div>
-
-            {seccionesFiltradas.length === 0 && (
+            {seccionesFiltradas.length === 0 ? (
               <Reveal>
                 <Card className="mt-6 border-dashed border-border/70 bg-card/70">
                   <CardContent className="p-8 text-center">
@@ -297,64 +284,194 @@ const Archivo = () => {
                   </CardContent>
                 </Card>
               </Reveal>
-            )}
-          </div>
-        </div>
-      </section>
-
-      <section className="py-12 sm:py-16 bg-muted/35">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-6xl mx-auto grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
-            <Reveal>
-              <Card className="h-full border-border/70 bg-card/85 shadow-lg">
-                <CardContent className="p-6 sm:p-7">
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-wide mb-4">
-                    <Sparkles className="w-4 h-4" />
-                    Actividad reciente
-                  </div>
-                  <ul className="space-y-4">
-                    {actividadReciente.map((item) => (
-                      <li key={item} className="flex items-start gap-3">
-                        <span className="mt-1.5 block h-2 w-2 rounded-full bg-primary" />
-                        <p className="text-sm text-muted-foreground">{item}</p>
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
-            </Reveal>
-
-            <Reveal>
-              <Card id="cta-material" className="h-full border-2 border-primary/20 shadow-xl bg-card/85 backdrop-blur-sm">
-                <CardContent className="p-6 sm:p-8 md:p-10 h-full flex flex-col justify-between">
-                  <div>
-                    <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-muted/60 text-muted-foreground rounded-full mb-3">
-                      <Layers className="w-4 h-4" />
-                      <span className="font-medium text-[11px] sm:text-xs">Material</span>
+            ) : (
+              <>
+                <div className="lg:hidden space-y-4 mb-6">
+                  <Reveal>
+                    <div className="rounded-2xl border border-border/70 bg-card/75 p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-sm font-semibold text-primary uppercase tracking-wide">
+                          Sección activa
+                        </p>
+                        <Badge variant="outline" className="border-primary/30 text-primary bg-background/70">
+                          {`${activeIndex + 1}/${seccionesFiltradas.length}`}
+                        </Badge>
+                      </div>
+                      <div className="mt-4 flex gap-2">
+                        <Button variant="outline" size="sm" className="flex-1" onClick={goPrev}>
+                          <ArrowLeft className="h-4 w-4 mr-1" />
+                          Anterior
+                        </Button>
+                        <Button variant="outline" size="sm" className="flex-1" onClick={goNext}>
+                          Siguiente
+                          <ArrowRight className="h-4 w-4 ml-1" />
+                        </Button>
+                      </div>
                     </div>
-                    <h3 className="text-2xl sm:text-3xl font-bold mb-2">¿Tenés material para sumar?</h3>
-                    <p className="text-sm sm:text-base text-muted-foreground/90 mb-5">
-                      Si querés aportar documentos, fotos o registros, escribinos y lo incorporamos al archivo del grupo.
-                    </p>
+                  </Reveal>
+
+                  <Reveal>
+                    <div className="flex gap-3 overflow-x-auto pb-1 snap-x snap-mandatory">
+                      {seccionesFiltradas.map((section) => {
+                        const Icon = section.Icon;
+                        const isActive = section.to === activeSection.to;
+                        return (
+                          <button
+                            key={section.to}
+                            onClick={() => setActiveSectionTo(section.to)}
+                            className={`snap-start min-w-[220px] rounded-xl border p-3 text-left transition-all ${
+                              isActive
+                                ? "border-primary/60 bg-primary/10"
+                                : "border-border/70 bg-card/70"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <Icon className="h-4 w-4 text-primary" />
+                              <p className="text-xs font-semibold uppercase tracking-wide text-primary/90">
+                                {section.tag}
+                              </p>
+                            </div>
+                            <p className="mt-2 text-sm font-semibold leading-snug">{section.title}</p>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </Reveal>
+
+                  <Reveal>
+                    <section className="rounded-3xl border border-primary/20 bg-gradient-to-br from-background via-background to-primary/5 p-6 shadow-xl">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted/40">
+                          <activeSection.Icon className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+                            {activeGroupMeta.title}
+                          </p>
+                          <h3 className="text-2xl font-black leading-tight">{activeSection.title}</h3>
+                        </div>
+                      </div>
+
+                      <p className="mt-4 text-sm text-muted-foreground/90 leading-relaxed">
+                        {activeSection.description}
+                      </p>
+
+                      <div className="mt-5 flex items-center gap-2 flex-wrap">
+                        <Badge variant="outline" className="border-primary/30 text-primary bg-primary/5">
+                          {activeSection.tag}
+                        </Badge>
+                        <Badge variant="secondary">{activeSection.entries}</Badge>
+                      </div>
+
+                      <div className="mt-5">
+                        <Link to={activeSection.to}>
+                          <Button className="gap-2" size="sm">
+                            Abrir sección
+                            <ArrowRight className="w-4 h-4" />
+                          </Button>
+                        </Link>
+                      </div>
+                    </section>
+                  </Reveal>
+                </div>
+
+                <div className="hidden lg:grid gap-5 lg:grid-cols-12 mb-6 sm:mb-8">
+                  <div className="lg:col-span-4">
+                    <div className="space-y-2 max-h-[calc(100vh-9rem)] overflow-y-auto pr-2">
+                      {seccionesFiltradas.map((section) => {
+                        const Icon = section.Icon;
+                        const isActive = section.to === activeSection.to;
+
+                        return (
+                          <Reveal key={section.to}>
+                            <button
+                              onClick={() => setActiveSectionTo(section.to)}
+                              className={`h-full w-full text-left rounded-2xl border p-4 transition-all ${
+                                isActive
+                                  ? "border-primary/60 bg-primary/5 shadow-lg"
+                                  : "border-border/70 bg-card/75 hover:-translate-y-0.5 hover:border-primary/40"
+                              }`}
+                            >
+                              <div className="flex items-start gap-3">
+                                <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted/40">
+                                  <Icon className="h-5 w-5 text-primary" />
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-xs font-semibold uppercase tracking-wide text-primary/90">
+                                    {section.tag}
+                                  </p>
+                                  <h3 className="mt-1 text-base xl:text-lg font-bold leading-snug">{section.title}</h3>
+                                  <p className="mt-2 text-xs text-muted-foreground uppercase tracking-wide">{section.entries}</p>
+                                </div>
+                              </div>
+                            </button>
+                          </Reveal>
+                        );
+                      })}
+                    </div>
                   </div>
 
-                  <div className="flex flex-wrap gap-3">
-                    <Link to="/contacto">
-                      <Button size="lg" className="gap-2">
-                        <FileText className="w-4 h-4" />
-                        Enviar material
-                      </Button>
-                    </Link>
-                    <Link to="/archivo/scoutpedia">
-                      <Button size="lg" variant="outline" className="gap-2">
-                        <BookOpen className="w-4 h-4" />
-                        Ver Scoutpedia
-                      </Button>
-                    </Link>
+                  <div className="lg:col-span-8">
+                    <Reveal>
+                      <section className="lg:sticky lg:top-24 rounded-3xl border border-primary/20 bg-gradient-to-br from-background via-background to-primary/5 p-7 sm:p-8 shadow-xl">
+                        <div className="flex items-center gap-4">
+                          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted/40">
+                            <activeSection.Icon className="h-6 w-6 text-primary" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                              {activeGroupMeta.title}
+                            </p>
+                            <h3 className="text-3xl font-black leading-tight">{activeSection.title}</h3>
+                          </div>
+                        </div>
+
+                        <p className="mt-5 text-base text-muted-foreground leading-relaxed border-l-2 border-primary/25 pl-4">
+                          {activeSection.description}
+                        </p>
+
+                        <div className="mt-6 flex items-center gap-2 flex-wrap">
+                          <Badge variant="outline" className="border-primary/30 text-primary bg-primary/5">
+                            {activeSection.tag}
+                          </Badge>
+                          <Badge variant="secondary">{activeSection.entries}</Badge>
+                        </div>
+
+                        <div className="mt-6 flex flex-wrap gap-3">
+                          <Link to={activeSection.to}>
+                            <Button className="gap-2">
+                              Abrir sección
+                              <ArrowRight className="w-4 h-4" />
+                            </Button>
+                          </Link>
+                          <Link to="/contacto">
+                            <Button variant="outline" className="gap-2">
+                              <FileText className="w-4 h-4" />
+                              Enviar material
+                            </Button>
+                          </Link>
+                        </div>
+
+                        <div className="mt-7 border-t border-border/60 pt-5">
+                          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-wide mb-3">
+                            <Sparkles className="w-4 h-4" />
+                            Actividad reciente
+                          </div>
+                          <ul className="space-y-3">
+                            {actividadReciente.map((item) => (
+                              <li key={item} className="flex items-start gap-3">
+                                <span className="mt-1.5 block h-2 w-2 rounded-full bg-primary" />
+                                <p className="text-sm text-muted-foreground">{item}</p>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </section>
+                    </Reveal>
                   </div>
-                </CardContent>
-              </Card>
-            </Reveal>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </section>
@@ -365,4 +482,3 @@ const Archivo = () => {
 };
 
 export default Archivo;
-

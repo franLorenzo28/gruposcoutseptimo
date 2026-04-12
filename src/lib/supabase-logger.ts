@@ -58,9 +58,13 @@ export async function silenceSupabaseErrors<T>(
 
 /**
  * Wrapper para queries de Supabase que pueden fallar sin ser críticas
+ * Acepta cualquier cosa awaitable (Promise, PostgrestFilterBuilder, etc)
  */
 export async function querySilent<T extends { data: any; error: any }>(
-  queryFn: () => Promise<T>
+  queryFn: () => Promise<T> | PromiseLike<T>
 ): Promise<T> {
-  return silenceSupabaseErrors(queryFn, { suppressConsoleError: true });
+  return silenceSupabaseErrors(
+    async () => queryFn() as Promise<T>,
+    { suppressConsoleError: true }
+  );
 }

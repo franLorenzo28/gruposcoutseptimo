@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import UserAvatar from "@/components/UserAvatar";
 import { ArrowLeft, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { OptimizedImage } from "@/components/OptimizedImage";
+import { Link } from "react-router-dom";
 import {
   Dialog,
   DialogContent,
@@ -20,6 +21,7 @@ export function NarrativaViewer({
 }: NarrativaViewerProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const isAmLagerfeuerNarrativa = /am\s+lagerfeuer/i.test(narrativa.titulo);
 
   // Obtener solo los bloques de imagen para la galería
   const imageBloques = narrativa.bloques.filter((b) => b.tipo === "imagen");
@@ -89,6 +91,14 @@ export function NarrativaViewer({
             </p>
           </div>
         </div>
+
+        {isAmLagerfeuerNarrativa && (
+          <div className="mt-5">
+            <Button asChild variant="outline" size="sm">
+              <Link to="/archivo/am-lagerfeuer">Ir al repositorio de Am Lagerfeuer (PDFs)</Link>
+            </Button>
+          </div>
+        )}
       </header>
 
       {/* Contenido: bloques */}

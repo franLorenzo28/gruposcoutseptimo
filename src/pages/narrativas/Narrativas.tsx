@@ -138,24 +138,34 @@ export default function Narrativas() {
       grouped[n.year_section].push(n);
     });
 
-    // Ordenar años ascendentemente (más antiguo primero)
+    // Ordenar años descendentemente (más reciente primero)
     return Object.keys(grouped)
       .sort((a, b) => {
         // Extraer año numérico
         const yearA = parseInt(a.match(/\d{4}/)?.[0] || "0");
         const yearB = parseInt(b.match(/\d{4}/)?.[0] || "0");
-        return yearA - yearB;
+        return yearB - yearA;
       })
       .reduce((acc, key) => {
-        // Ordenar narrativas dentro del año por fecha de publicación ascendente
+        // Ordenar narrativas dentro del año por fecha de publicación descendente (más reciente primero)
         acc[key] = grouped[key].sort((a, b) => {
           const dateA = new Date(a.fecha_publicacion || a.created_at).getTime();
           const dateB = new Date(b.fecha_publicacion || b.created_at).getTime();
-          return dateA - dateB;
+          return dateB - dateA;
         });
         return acc;
       }, {} as { [key: string]: NarrativaConAutor[] });
   }, [narrativasQuery.data, searchTerm]);
+
+  // Las claves numéricas en objetos pueden renderizarse en orden ascendente;
+  // por eso forzamos el orden de secciones al pintar el acordeón.
+  const sortedYearSections = useMemo(() => {
+    return Object.keys(groupedNarrativas).sort((a, b) => {
+      const yearA = parseInt(a.match(/\d{4}/)?.[0] || "0");
+      const yearB = parseInt(b.match(/\d{4}/)?.[0] || "0");
+      return yearB - yearA;
+    });
+  }, [groupedNarrativas]);
 
   // Manejo de eventos
   const handleAddNarrativa = () => {
@@ -224,7 +234,7 @@ export default function Narrativas() {
       <div>
         <h1 className="text-4xl font-bold text-foreground mb-2">Narrativas</h1>
         <p className="text-muted-foreground">
-          Relatos históricos del movimiento scout. Cada narrativa cuenta un momento
+          Relatos históricos del séptimo. Cada narrativa cuenta un momento
           importante del año.
         </p>
       </div>
@@ -256,7 +266,7 @@ export default function Narrativas() {
         <Card className="p-8 text-center text-muted-foreground">
           Cargando narrativas...
         </Card>
-      ) : Object.keys(groupedNarrativas).length === 0 ? (
+      ) : sortedYearSections.length === 0 ? (
         <Card className="p-8 text-center text-muted-foreground">
           No hay narrativas disponibles
         </Card>
@@ -264,10 +274,12 @@ export default function Narrativas() {
         <div className="space-y-4">
           <Accordion
             type="multiple"
-            defaultValue={Object.keys(groupedNarrativas).slice(0, 3)}
+            defaultValue={sortedYearSections.slice(0, 3)}
             className="space-y-2"
           >
-            {Object.entries(groupedNarrativas).map(([yearSection, narrativas]) => (
+            {sortedYearSections.map((yearSection) => {
+              const narrativas = groupedNarrativas[yearSection] || [];
+              return (
               <AccordionItem
                 key={yearSection}
                 value={yearSection}
@@ -298,7 +310,8 @@ export default function Narrativas() {
                   ))}
                 </AccordionContent>
               </AccordionItem>
-            ))}
+              );
+            })}
           </Accordion>
         </div>
       )}

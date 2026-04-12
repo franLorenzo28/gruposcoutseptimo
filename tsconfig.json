@@ -15,7 +15,6 @@
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": false,
     "ignoreDeprecations": "5.0",
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     },

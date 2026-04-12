@@ -22,7 +22,7 @@ import BotonVolverGlobal from "@/components/layout/BotonVolverGlobal";
 const Inicio = lazy(() => import("./pages/inicio/Inicio"));
 const Historia = lazy(() => import("./pages/historia/Historia.tsx"));
 const Bauen = lazy(() => import("./pages/eventos/Bauen"));
-const AmLagerfeuer = lazy(() => import("./pages/eventos/AmLagerfeuer"));
+const AmLagerfeuer = lazy(() => import("./pages/archivo/AmLagerfeuer"));
 const MovimientoScout = lazy(() => import("./pages/MovimientoScout"));
 const Archivo = lazy(() => import("./pages/Archivo.tsx"));
 const ArchivoScoutpedia = lazy(() => import("./pages/archivo/Scoutpedia"));
@@ -73,6 +73,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import { AdminGuard } from "@/components/AdminGuard";
 import SaltarAlContenido from "@/components/layout/SaltarAlContenido";
 import { querySilent } from "@/lib/supabase-logger";
+import { PageGridBackground } from "@/components/PageGridBackground";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -225,22 +226,24 @@ const App = () => (
               <ScrollAlInicio />
               <SaltarAlContenido />
               <BotonVolverGlobal />
-              <main id="main-content" tabIndex={-1} className="min-h-screen">
-                <Suspense
-                  fallback={
-                    <div className="flex min-h-screen items-center justify-center">
-                      <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                    </div>
-                  }
-                >
-                  <TransicionRuta>
-                    <Routes>
+              <PageGridBackground>
+                <main id="main-content" tabIndex={-1} className="min-h-screen">
+                  <Suspense
+                    fallback={
+                      <div className="flex min-h-screen items-center justify-center">
+                        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                      </div>
+                    }
+                  >
+                    <TransicionRuta>
+                      <Routes>
                     <Route path="/" element={<Inicio />} />
                     <Route path="/linea-temporal" element={<Navigate to="/historia" replace />} />
                     <Route path="/historia" element={<Historia />} />
                     <Route path="/narrativas" element={<Narrativas />} />
                     <Route path="/bauen" element={<Bauen />} />
-                    <Route path="/am-lagerfeuer" element={<AmLagerfeuer />} />
+                    <Route path="/archivo/am-lagerfeuer" element={<AmLagerfeuer />} />
+                    <Route path="/am-lagerfeuer" element={<Navigate to="/archivo/am-lagerfeuer" replace />} />
                     <Route path="/movimiento-scout" element={<MovimientoScout />} />
                     <Route path="/archivo" element={<Archivo />} />
                     <Route path="/archivo/scoutpedia" element={<ArchivoScoutpedia />} />
@@ -331,7 +334,8 @@ const App = () => (
                     </Routes>
                   </TransicionRuta>
                 </Suspense>
-              </main>
+                </main>
+              </PageGridBackground>
               <PieDePagina />
               </NotificationsProvider>
               </MemberAuthProvider>

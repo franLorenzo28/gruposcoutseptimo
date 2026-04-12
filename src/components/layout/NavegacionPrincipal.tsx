@@ -84,18 +84,20 @@ const navSections: NavSection[] = [
     ],
   },
   {
-    label: "Archivo e Historia",
+    label: "Archivo",
     links: [
       { name: "Historia", path: "/historia", icon: History, type: "link" },
       {
-        name: "Archivo General",
+        name: "Archivo",
         path: "/archivo",
         icon: FileText,
         type: "link",
         subitems: [
+          { name: "Archivo", path: "/archivo", icon: Archive, type: "link" },
           { name: "Scoutpedia", path: "/archivo/scoutpedia", icon: Compass, type: "link" },
           { name: "Cápsula del Tiempo", path: "/archivo/capsula-del-tiempo", icon: Clock, type: "link" },
           { name: "Locales", path: "/archivo/locales", icon: Building, type: "link" },
+          { name: "Am Lagerfeuer", path: "/archivo/am-lagerfeuer", icon: FileText, type: "link" },
         ],
       },
       { name: "Compañía", path: "/archivo/compania", icon: MessageSquare, type: "link" },
@@ -150,7 +152,7 @@ const Navigation = () => {
   const profileMainPath = needsProfileSetup ? "/perfil/editar" : "/perfil";
   const profileMainLabel = needsProfileSetup ? "Crear perfil" : "Perfil";
   const mobileProfileMainLabel = needsProfileSetup ? "Crear perfil" : "Ver mi perfil";
-  const hiddenWhenLoggedOut = new Set(["/usuarios", "/area-miembros", "/archivo"]);
+  const hiddenWhenLoggedOut = new Set(["/usuarios", "/area-miembros"]);
   const visibleNavSections = navSections
     .map((section) => ({
       ...section,
