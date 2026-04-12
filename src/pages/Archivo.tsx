@@ -375,9 +375,9 @@ const Archivo = () => {
                   </Reveal>
                 </div>
 
-                <div className="hidden lg:grid gap-5 lg:grid-cols-12 mb-6 sm:mb-8">
-                  <div className="lg:col-span-4">
-                    <div className="space-y-2 max-h-[calc(100vh-9rem)] overflow-y-auto pr-2">
+                <div className="hidden lg:grid gap-6 xl:grid-cols-12 mb-6 sm:mb-8">
+                  <div className="xl:col-span-5">
+                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-1">
                       {seccionesFiltradas.map((section) => {
                         const Icon = section.Icon;
                         const isActive = section.to === activeSection.to;
@@ -386,7 +386,7 @@ const Archivo = () => {
                           <Reveal key={section.to}>
                             <button
                               onClick={() => setActiveSectionTo(section.to)}
-                              className={`h-full w-full text-left rounded-2xl border p-4 transition-all ${
+                              className={`h-full w-full text-left rounded-2xl border p-5 transition-all ${
                                 isActive
                                   ? "border-primary/60 bg-primary/5 shadow-lg"
                                   : "border-border/70 bg-card/75 hover:-translate-y-0.5 hover:border-primary/40"
@@ -400,8 +400,8 @@ const Archivo = () => {
                                   <p className="text-xs font-semibold uppercase tracking-wide text-primary/90">
                                     {section.tag}
                                   </p>
-                                  <h3 className="mt-1 text-base xl:text-lg font-bold leading-snug">{section.title}</h3>
-                                  <p className="mt-2 text-xs text-muted-foreground uppercase tracking-wide">{section.entries}</p>
+                                  <h3 className="mt-1 text-xl font-bold">{section.title}</h3>
+                                  <p className="mt-2 text-sm text-muted-foreground">{section.description}</p>
                                 </div>
                               </div>
                             </button>
@@ -411,9 +411,9 @@ const Archivo = () => {
                     </div>
                   </div>
 
-                  <div className="lg:col-span-8">
+                  <div className="xl:col-span-7">
                     <Reveal>
-                      <section className="lg:sticky lg:top-24 rounded-3xl border border-primary/20 bg-gradient-to-br from-background via-background to-primary/5 p-7 sm:p-8 shadow-xl">
+                      <section className="xl:sticky xl:top-24 rounded-3xl border border-primary/20 bg-gradient-to-br from-background via-background to-primary/5 p-7 sm:p-8 shadow-xl">
                         <div className="flex items-center gap-4">
                           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted/40">
                             <activeSection.Icon className="h-6 w-6 text-primary" />
