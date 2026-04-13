@@ -941,6 +941,85 @@ const Navigation = () => {
 
             {/* Mobile Menu Button */}
             <div className="ml-auto flex items-center gap-2 xl:hidden">
+              {isLoggedIn && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="ghost" size="icon" className="relative h-9 w-9">
+                      <Bell className="h-5 w-5" />
+                      {unreadCount > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] leading-none rounded-full px-1.5 py-1">
+                          {unreadCount}
+                        </span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[min(100vw-2rem,340px)] p-0 max-h-[75vh]" align="end">
+                    <div className="p-0">
+                      <div className="flex items-center justify-between border-b px-4 py-3">
+                        <span className="text-sm font-semibold">Notificaciones</span>
+                        {unreadCount > 0 && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 px-2 text-xs"
+                            onClick={markAllRead}
+                          >
+                            Marcar todo como leído
+                          </Button>
+                        )}
+                      </div>
+                      <ul className="max-h-80 overflow-y-auto">
+                        {notifications.length === 0 ? (
+                          <li className="px-4 py-8 text-center text-sm text-muted-foreground">
+                            No hay notificaciones
+                          </li>
+                        ) : (
+                          notifications.map((n) => (
+                            <li
+                              key={`mobile-${n.id}`}
+                              className={cn(
+                                "border-b px-4 py-3 transition-colors",
+                                !n.read ? "bg-primary/5" : "hover:bg-muted/30",
+                              )}
+                              onClick={async () => {
+                                if (!n.read) await markRead(n.id);
+                              }}
+                            >
+                              <div className="flex items-start gap-3">
+                                <UserAvatar
+                                  avatarUrl={(n.data as any)?.avatar_url || null}
+                                  userName={(n.data as any)?.display || "Scout"}
+                                  size="sm"
+                                />
+                                <div className="min-w-0 flex-1">
+                                  {renderNotificationContent(n)}
+                                  <div className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
+                                    <span>{getNotificationRelativeTime(n.created_at)}</span>
+                                    {!n.read && <Dot className="h-4 w-4 text-primary" />}
+                                  </div>
+                                </div>
+                              </div>
+                            </li>
+                          ))
+                        )}
+                        {hasMore && (
+                          <li className="p-3 text-center">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="w-full"
+                              onClick={loadMore}
+                              disabled={loadingMore}
+                            >
+                              {loadingMore ? "Cargando..." : "Cargar más"}
+                            </Button>
+                          </li>
+                        )}
+                      </ul>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              )}
               <ThemeToggle />
               <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                 <SheetTrigger asChild>

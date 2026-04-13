@@ -187,6 +187,71 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
     setNotifications(prev => prev.filter(n => n.id !== id));
   }, []);
 
+  const syncPendingFollowRequests = useCallback(async (currentUserId: string) => {
+    const followsResult = await querySilent(() =>
+      supabase
+        .from("follows")
+        .select("follower_id, created_at")
+        .eq("followed_id", currentUserId)
+        .eq("status", "pending")
+        .order("created_at", { ascending: false })
+        .limit(50),
+    );
+
+    const pendingFollows =
+      ((followsResult.data as Array<{ follower_id: string; created_at: string }> | null) || []);
+    if (pendingFollows.length === 0) return;
+
+    const followerIds = pendingFollows.map((f) => f.follower_id);
+    const profilesResult = await querySilent(() =>
+      supabase
+        .from("profiles")
+        .select("user_id, nombre_completo, username, avatar_url")
+        .in("user_id", followerIds),
+    );
+
+    const profiles =
+      ((profilesResult.data as Array<{
+        user_id: string;
+        nombre_completo: string | null;
+        username: string | null;
+        avatar_url: string | null;
+      }> | null) || []);
+
+    setNotifications((prev) => {
+      const map = new Map(prev.map((n) => [n.id, n] as const));
+
+      for (const f of pendingFollows) {
+        const alreadyExists = Array.from(map.values()).some((n) => {
+          if (n.type !== "follow_request") return false;
+          return (n.data as any)?.follower_id === f.follower_id;
+        });
+        if (alreadyExists) continue;
+
+        const prof = profiles.find((p) => p.user_id === f.follower_id);
+        const display = prof?.nombre_completo || prof?.username || f.follower_id.slice(0, 8);
+
+        map.set(`follow-pending-${f.follower_id}-${f.created_at}`, {
+          id: `follow-pending-${f.follower_id}-${f.created_at}`,
+          type: "follow_request",
+          created_at: f.created_at,
+          read: false,
+          data: {
+            follower_id: f.follower_id,
+            display,
+            username: prof?.username || null,
+            avatar_url: prof?.avatar_url || null,
+            _fallback_from_follows: true,
+          },
+        });
+      }
+
+      return Array.from(map.values()).sort((a, b) =>
+        a.created_at < b.created_at ? 1 : -1,
+      );
+    });
+  }, []);
+
   useEffect(() => {
     if (!isLocal || !effectiveUserId) return;
     let cancelled = false;
@@ -652,70 +717,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
         }
       }
 
-      // Fallback: si hay solicitudes pendientes en follows sin registro en notifications,
-      // mostrarlas igual en la campanita para no perder señal cuando el usuario no estaba online.
-      let pendingFollows: any[] = [];
-      try {
-        const res = await querySilent(() => supabase
-          .from("follows")
-          .select("follower_id, created_at")
-          .eq("followed_id", user.id)
-          .eq("status", "pending")
-          .order("created_at", { ascending: false })
-          .limit(50)
-        );
-        if (res.data) pendingFollows = res.data;
-      } catch {
-        // Silenciar si falla
-      }
-
-      if (pendingFollows && pendingFollows.length > 0) {
-        let profiles: any[] = [];
-        try {
-          const followerIds = pendingFollows.map((f) => f.follower_id);
-          const res = await querySilent(() => supabase
-            .from("profiles")
-            .select("user_id, nombre_completo, username, avatar_url")
-            .in("user_id", followerIds)
-          );
-          if (res.data) profiles = res.data;
-        } catch {
-          // Silenciar si falla
-        }
-
-        setNotifications((prev) => {
-          const map = new Map(prev.map((n) => [n.id, n] as const));
-
-          for (const f of pendingFollows) {
-            const alreadyExists = Array.from(map.values()).some((n) => {
-              if (n.type !== "follow_request") return false;
-              return (n.data as any)?.follower_id === f.follower_id;
-            });
-            if (alreadyExists) continue;
-
-            const prof = profiles?.find((p) => p.user_id === f.follower_id);
-            const display = prof?.nombre_completo || prof?.username || f.follower_id.slice(0, 8);
-
-            map.set(`follow-pending-${f.follower_id}-${f.created_at}`, {
-              id: `follow-pending-${f.follower_id}-${f.created_at}`,
-              type: "follow_request",
-              created_at: f.created_at,
-              read: false,
-              data: {
-                follower_id: f.follower_id,
-                display,
-                username: prof?.username || null,
-                avatar_url: prof?.avatar_url || null,
-                _fallback_from_follows: true,
-              },
-            });
-          }
-
-          return Array.from(map.values()).sort((a, b) =>
-            a.created_at < b.created_at ? 1 : -1,
-          );
-        });
-      }
+      await syncPendingFollowRequests(user.id);
 
       channel = supabase
         .channel(`notifications:ins:${user.id}`)
@@ -743,7 +745,20 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
         .subscribe();
     })();
     return () => { if (channel) supabase.removeChannel(channel); };
-  }, [user, addNotification, toast, normalizePersistentNotification, isLocal]);
+  }, [user, addNotification, toast, normalizePersistentNotification, isLocal, syncPendingFollowRequests]);
+
+  useEffect(() => {
+    if (!user || isLocal) return;
+
+    void syncPendingFollowRequests(user.id);
+    const timer = setInterval(() => {
+      void syncPendingFollowRequests(user.id);
+    }, 15000);
+
+    return () => {
+      clearInterval(timer);
+    };
+  }, [user, isLocal, syncPendingFollowRequests]);
 
   const loadMore = useCallback(async () => {
     if (isLocal) return;
