@@ -3,6 +3,13 @@ import { isLocalBackend, apiFetch } from "@/lib/backend";
 
 export type FollowStatus = "pending" | "accepted" | "blocked";
 
+export type FollowActionResult = {
+  error: Error | null;
+  followStatus?: FollowStatus;
+  notificationPersisted?: boolean;
+  notificationErrorMessage?: string;
+};
+
 export async function getMyUserId() {
   if (isLocalBackend()) {
     try {
@@ -27,49 +34,120 @@ export async function getFollowRelation(withUserId: string) {
   }
   const me = await getMyUserId();
   if (!me) return { data: null, error: new Error("No autenticado") } as const;
-  return supabase
+  const result = await supabase
     .from("follows")
     .select("follower_id, followed_id, status, created_at, accepted_at")
     .eq("follower_id", me)
     .eq("followed_id", withUserId)
     .maybeSingle();
+
+  // Some RLS setups evaluate policies against tables the current role cannot read.
+  // In that case, degrade gracefully and let UI continue with unknown relation state.
+  if (
+    result.error &&
+    String(result.error.message || "").toLowerCase().includes("permission denied for table users")
+  ) {
+    return { data: null, error: null } as const;
+  }
+
+  return result;
 }
 
-export async function followUser(targetUserId: string) {
+export async function followUser(targetUserId: string): Promise<FollowActionResult> {
   if (isLocalBackend()) {
     try {
       await apiFetch("/follows/follow", {
         method: "POST",
         body: JSON.stringify({ targetId: targetUserId }),
       });
-      return { error: null } as const;
+      return { error: null };
     } catch (e: any) {
-      return { error: e } as const;
+      return { error: e };
     }
   }
   const me = await getMyUserId();
-  if (!me) return { error: new Error("No autenticado") } as const;
+  if (!me) return { error: new Error("No autenticado") };
   if (me === targetUserId)
-    return { error: new Error("No puedes seguirte a ti mismo") } as const;
-  // Check if relationship already exists
-  const { data: existing } = await supabase
-    .from("follows")
-    .select("status")
-    .eq("follower_id", me)
-    .eq("followed_id", targetUserId)
+    return { error: new Error("No puedes seguirte a ti mismo") };
+
+  const { data: targetProfile } = await supabase
+    .from("profiles")
+    .select("is_public")
+    .eq("user_id", targetUserId)
     .maybeSingle();
-  if (existing) {
-    if (existing.status === "pending")
-      return { error: new Error("Ya tienes una solicitud pendiente") } as const;
-    if (existing.status === "accepted")
-      return { error: new Error("Ya sigues a este usuario") } as const;
-    if (existing.status === "blocked")
-      return { error: new Error("No puedes seguir a este usuario") } as const;
-  }
+
+  const status: FollowStatus = targetProfile?.is_public ? "accepted" : "pending";
+
   const { error } = await supabase
     .from("follows")
-    .insert({ follower_id: me, followed_id: targetUserId });
-  return { error } as const;
+    .insert({ follower_id: me, followed_id: targetUserId, status });
+
+  if (error) {
+    const message = String(error.message || "").toLowerCase();
+    if (message.includes("duplicate key")) {
+      return {
+        error: new Error("Ya tienes una solicitud pendiente o ya sigues a este usuario"),
+      };
+    }
+    return { error: error as unknown as Error };
+  }
+
+  const { data: actorProfile } = await supabase
+    .from("profiles")
+    .select("nombre_completo, username, avatar_url")
+    .eq("user_id", me)
+    .maybeSingle();
+
+  const display =
+    actorProfile?.nombre_completo || actorProfile?.username || me.slice(0, 8);
+  const notificationType = status === "pending" ? "follow_request" : "follow_accepted";
+  const notificationData = {
+    follower_id: me,
+    display,
+    username: actorProfile?.username || null,
+    avatar_url: actorProfile?.avatar_url || null,
+  };
+
+  const { error: rpcError } = await supabase.rpc("create_notification", {
+    p_recipient: targetUserId,
+    p_actor: me,
+    p_type: notificationType,
+    p_entity_type: "follow",
+    p_entity_id: `${me}:${targetUserId}`,
+    p_data: notificationData,
+  });
+
+  if (rpcError) {
+    const { error: insertError } = await supabase.from("notifications").insert({
+      recipient_id: targetUserId,
+      actor_id: me,
+      type: notificationType,
+      entity_type: "follow",
+      entity_id: `${me}:${targetUserId}`,
+      data: notificationData,
+    });
+
+    if (insertError) {
+      return {
+        error: null,
+        followStatus: status,
+        notificationPersisted: false,
+        notificationErrorMessage: String(insertError.message || rpcError.message || "Error de persistencia de notificación"),
+      };
+    }
+
+    return {
+      error: null,
+      followStatus: status,
+      notificationPersisted: true,
+    };
+  }
+
+  return {
+    error: null,
+    followStatus: status,
+    notificationPersisted: true,
+  };
 }
 
 export async function unfollowUser(targetUserId: string) {

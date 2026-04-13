@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useUser } from '@/hooks/useUser';
 import { isLocalBackend } from '@/lib/backend';
 import { supabase } from '@/integrations/supabase/client';
-import { followUser, getFollowRelation, unfollowUser } from '@/lib/follows';
+import { followUser } from '@/lib/follows';
 
 type NotificationRow = {
   id: string;
@@ -12,6 +12,14 @@ type NotificationRow = {
   entity_type: string | null;
   created_at: string;
 };
+
+type ProfileCandidate = {
+  user_id: string;
+  nombre_completo: string | null;
+  is_public: boolean;
+};
+
+type FollowAttemptResult = Awaited<ReturnType<typeof followUser>>;
 
 export default function TestDiagnostic() {
   const { user } = useUser();
@@ -27,6 +35,17 @@ export default function TestDiagnostic() {
     setLogs([]);
   };
 
+  const addPreventiveHint = (message: string) => {
+    const text = String(message || '').toLowerCase();
+    if (text.includes('permission denied for table users')) {
+      addLog('Sugerencia preventiva: hay una política RLS que depende de users. Evita usar esa consulta para verificar este flujo.');
+    } else if (text.includes('duplicate key')) {
+      addLog('Sugerencia preventiva: relación ya existente; se salta candidato y se intenta otro automáticamente.');
+    } else if (text.includes('no puedes seguirte a ti mismo')) {
+      addLog('Sugerencia preventiva: se excluye siempre el usuario autenticado de candidatos.');
+    }
+  };
+
   const testFollowNotification = async () => {
     try {
       setIsRunning(true);
@@ -37,16 +56,22 @@ export default function TestDiagnostic() {
         return;
       }
 
+      const {
+        data: { user: authUser },
+      } = await supabase.auth.getUser();
+      const currentUserId = authUser?.id || user.id;
+
       // Get a list of users to follow
       addLog('Fetching users list...');
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('user_id, nombre_completo, is_public')
-        .neq('user_id', user.id)
-        .limit(5);
+        .neq('user_id', currentUserId)
+        .limit(100);
 
       if (profilesError) {
         addLog(`ERROR fetching profiles: ${profilesError.message}`);
+        addPreventiveHint(profilesError.message);
         return;
       }
 
@@ -55,53 +80,73 @@ export default function TestDiagnostic() {
         return;
       }
 
-      const targetUser = profiles[0];
-      addLog(`Found target user: ${targetUser.nombre_completo || targetUser.user_id}`);
-      addLog(`Target profile is_public: ${targetUser.is_public}`);
+      const candidates = [...(profiles as ProfileCandidate[])]
+        .filter((candidate) => candidate.user_id !== currentUserId)
+        .sort(() => Math.random() - 0.5);
 
-      // Ensure a clean test state: if relationship already exists, remove it first.
-      const existingRelation = await getFollowRelation(targetUser.user_id);
-      if (existingRelation.error) {
-        addLog(`ERROR checking existing relation: ${existingRelation.error.message}`);
+      if (candidates.length === 0) {
+        addLog('No hay candidatos válidos después de excluir al usuario actual.');
         return;
       }
-      if (existingRelation.data) {
-        addLog(`Existing follow relation detected (${existingRelation.data.status}). Removing it first...`);
-        const unfollowResult = await unfollowUser(targetUser.user_id);
-        if (unfollowResult.error) {
-          addLog(`ERROR removing existing relation: ${unfollowResult.error.message}`);
-          return;
+
+      addLog(`Candidates available: ${candidates.length}`);
+
+      let targetUser: ProfileCandidate | null = null;
+      let selectedFollowResult: FollowAttemptResult | null = null;
+      let notificationsBeforeCount = 0;
+
+      for (const candidate of candidates) {
+        if (candidate.user_id === currentUserId) {
+          continue;
         }
-        addLog('Previous relation removed');
-      }
 
-      // Check notifications BEFORE
-      const { data: notificationsBefore } = await supabase
-        .from('notifications')
-        .select('id, type, created_at')
-        .eq('recipient_id', targetUser.user_id)
-        .order('created_at', { ascending: false })
-        .limit(1);
+        addLog(`Trying candidate: ${candidate.nombre_completo || candidate.user_id}`);
 
-      addLog(`Notifications for target BEFORE: ${notificationsBefore?.length || 0}`);
+        const { data: beforeRows, error: beforeRowsError } = await supabase
+          .from('notifications')
+          .select('id, type, created_at')
+          .eq('recipient_id', candidate.user_id)
+          .order('created_at', { ascending: false })
+          .limit(1);
 
-      // Create follow using the library function
-      addLog('Creating follow...');
-      let followError = (await followUser(targetUser.user_id)).error;
-
-      // Fallback for stale relation visibility under RLS/cache: remove and retry once.
-      if (followError && followError.message.toLowerCase().includes('duplicate key')) {
-        addLog('Duplicate relation detected. Trying cleanup + retry...');
-        const retryUnfollow = await unfollowUser(targetUser.user_id);
-        if (retryUnfollow.error) {
-          addLog(`ERROR during duplicate cleanup: ${retryUnfollow.error.message}`);
-          return;
+        if (beforeRowsError) {
+          addLog(`Warning reading notifications BEFORE: ${beforeRowsError.message}`);
+          addPreventiveHint(beforeRowsError.message);
         }
-        followError = (await followUser(targetUser.user_id)).error;
-      }
 
-      if (followError) {
+        const beforeCount = beforeRows?.length || 0;
+        const followResult = await followUser(candidate.user_id);
+        const followError = followResult.error;
+
+        if (!followError) {
+          targetUser = candidate;
+          selectedFollowResult = followResult;
+          notificationsBeforeCount = beforeCount;
+          addLog(`Selected target: ${candidate.nombre_completo || candidate.user_id}`);
+          addLog(`Target profile is_public: ${candidate.is_public}`);
+          addLog(`Notifications for target BEFORE: ${notificationsBeforeCount}`);
+          break;
+        }
+
+        const message = followError.message.toLowerCase();
+        const isExistingRelationError =
+          message.includes('ya tienes una solicitud pendiente') ||
+          message.includes('ya sigues a este usuario') ||
+          message.includes('duplicate key');
+
+        if (isExistingRelationError) {
+          addLog(`Skipping candidate (existing relation): ${followError.message}`);
+          continue;
+        }
+
         addLog(`ERROR creating follow: ${followError.message}`);
+        addPreventiveHint(followError.message);
+        return;
+      }
+
+      if (!targetUser) {
+        addLog('ERROR: No se encontró un usuario disponible para crear un follow nuevo.');
+        addLog('Sugerencia: usa otra cuenta de prueba o deja de seguir al menos un usuario para re-ejecutar esta prueba.');
         return;
       }
 
@@ -111,19 +156,32 @@ export default function TestDiagnostic() {
       addLog('Waiting for notification processing...');
       await new Promise(r => setTimeout(r, 1000));
 
-      // Check notifications AFTER
-      const { data: notificationsAfter } = await supabase
+      // Check notifications AFTER (generic latest view)
+      const { data: notificationsAfter, error: notificationsAfterError } = await supabase
         .from('notifications')
         .select('id, type, entity_type, created_at')
         .eq('recipient_id', targetUser.user_id)
         .order('created_at', { ascending: false })
         .limit(5);
 
-      addLog(`Notifications for target AFTER: ${notificationsAfter?.length || 0}`);
-      if (notificationsAfter && notificationsAfter.length > 0) {
-        (notificationsAfter as NotificationRow[]).forEach((n) => {
-          addLog(`  - Type: ${n.type}, Entity: ${n.entity_type}, Created: ${new Date(n.created_at).toLocaleTimeString()}`);
-        });
+      if (notificationsAfterError) {
+        addLog(`Warning reading notifications AFTER: ${notificationsAfterError.message}`);
+        addPreventiveHint(notificationsAfterError.message);
+      } else {
+        addLog(`Notifications for target AFTER: ${notificationsAfter?.length || 0}`);
+        if (notificationsAfter && notificationsAfter.length > 0) {
+          (notificationsAfter as NotificationRow[]).forEach((n) => {
+            addLog(`  - Type: ${n.type}, Entity: ${n.entity_type}, Created: ${new Date(n.created_at).toLocaleTimeString()}`);
+          });
+        }
+      }
+
+      if (selectedFollowResult?.notificationPersisted === true) {
+        addLog('Notification persistence report: OK');
+      } else if (selectedFollowResult?.notificationPersisted === false) {
+        addLog(`Warning: no se pudo confirmar persistencia de notificación en el flujo de follow (${selectedFollowResult.notificationErrorMessage || 'sin detalle'}).`);
+        addPreventiveHint(selectedFollowResult.notificationErrorMessage || '');
+        addLog('Sugerencia preventiva: revisar políticas RLS de notifications/create_notification para permitir inserción al crear follow.');
       }
 
       addLog('✓ Follow notification test complete');
