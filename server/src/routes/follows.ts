@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { db } from "../db";
 import { authMiddleware } from "../auth";
+import { maybeSendNotificationEmail } from "../notification-email";
 
 export const followsRouter = Router();
 
@@ -79,6 +80,16 @@ followsRouter.post("/follow", authMiddleware, (req: any, res: any) => {
       JSON.stringify({ follower_id: me, display, avatar_url: actorProfile?.avatar_url || null }),
       new Date().toISOString(),
     );
+
+    const emailTitle = status === "pending" ? "Nueva solicitud de seguimiento" : "Nuevo seguidor";
+    const emailDescription =
+      status === "pending"
+        ? `${display} quiere seguirte.`
+        : `${display} ahora te sigue.`;
+
+    void maybeSendNotificationEmail(targetId, emailTitle, emailDescription).catch(() => {
+      // Silencioso para no romper el flujo de follow por errores de correo.
+    });
   }
 
   res.json({ ok: true });
@@ -134,6 +145,14 @@ followsRouter.post(
         JSON.stringify({ followed_id: me, display, avatar_url: actorProfile?.avatar_url || null }),
         new Date().toISOString(),
       );
+
+      void maybeSendNotificationEmail(
+        followerId,
+        "Solicitud aceptada",
+        `${display} acepto tu solicitud de seguimiento.`,
+      ).catch(() => {
+        // Silencioso para no romper el flujo de aceptacion por errores de correo.
+      });
     }
 
     res.json({ ok: true });

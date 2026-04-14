@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { db } from "../db";
 import { authMiddleware } from "../auth";
+import { maybeSendNotificationEmail } from "../notification-email";
 
 export const notificationsRouter = Router();
 
@@ -41,6 +42,60 @@ function safeParseData(raw: string | null) {
   } catch {
     return {};
   }
+}
+
+function notificationMessageFromPayload(payload: {
+  type: string;
+  data?: Record<string, unknown>;
+}) {
+  const data = payload.data || {};
+
+  if (payload.type === "follow_request") {
+    return {
+      title: "Nueva solicitud de seguimiento",
+      description: `${String(data.display || "Alguien")} quiere seguirte.`,
+    };
+  }
+
+  if (payload.type === "follow_accepted") {
+    return {
+      title: "Solicitud aceptada",
+      description: `${String(data.display || "Un miembro")} acepto tu solicitud.`,
+    };
+  }
+
+  if (payload.type === "message") {
+    return {
+      title: "Nuevo mensaje",
+      description: String(data.content || "Recibiste un nuevo mensaje."),
+    };
+  }
+
+  if (payload.type === "thread_new") {
+    return {
+      title: "Nuevo hilo",
+      description: `${String(data.display || "Un miembro")} publico un hilo nuevo.`,
+    };
+  }
+
+  if (payload.type === "group_invite") {
+    return {
+      title: "Nuevo grupo",
+      description: `Ahora formas parte de ${String(data.group_name || "un grupo")}.`,
+    };
+  }
+
+  if (payload.type === "gallery_upload") {
+    return {
+      title: "Nuevas fotos",
+      description: `Hay novedades en ${String(data.album || "la galeria")}.`,
+    };
+  }
+
+  return {
+    title: "Nueva notificacion",
+    description: "Tienes una nueva actividad en Grupo Scout Septimo.",
+  };
 }
 
 notificationsRouter.get("/", authMiddleware, (req: any, res: any) => {
@@ -129,6 +184,18 @@ notificationsRouter.post("/", authMiddleware, (req: any, res: any) => {
     JSON.stringify(payload.data || {}),
     payload.createdAt || new Date().toISOString(),
   );
+
+  const emailCopy = notificationMessageFromPayload({
+    type: payload.type,
+    data: payload.data,
+  });
+  void maybeSendNotificationEmail(
+    payload.recipientId,
+    emailCopy.title,
+    emailCopy.description,
+  ).catch(() => {
+    // Silencioso para no romper la creacion de notificaciones.
+  });
 
   return res.status(201).json({ ok: true, id });
 });

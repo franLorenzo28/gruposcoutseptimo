@@ -56,7 +56,12 @@ serve(async (req) => {
 
     console.log('✅ Token generado correctamente')
 
-    const { token, email } = tokenData
+    const token = tokenData?.token
+    const email = tokenData?.user_email || tokenData?.email
+
+    if (!token || !email) {
+      throw new Error('No se pudo obtener token o email del RPC resend_verification_email')
+    }
   const appUrl = Deno.env.get('APP_URL') || 'http://localhost:5173'
   const verificationUrl = `${appUrl}/verificar-email?token=${token}`
 

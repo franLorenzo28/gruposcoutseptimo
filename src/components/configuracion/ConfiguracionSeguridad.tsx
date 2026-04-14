@@ -19,15 +19,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/hooks/useUser";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Lock, Shield, Trash2 } from "lucide-react";
+import { Activity, AlertCircle, Lock, MailCheck, Shield, Smartphone, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { deleteMyAccount } from "@/lib/api";
-import { isLocalBackend } from "@/lib/backend";
+import { apiFetch, getAuthUser, isLocalBackend } from "@/lib/backend";
 import {
   parseEducatorUnits,
   requestEducatorPermissions,
   type EducatorUnit,
 } from "@/lib/admin-permissions";
+import { checkEmailVerified, sendVerificationEmail } from "@/lib/email-verification";
 
 const EDUCATOR_UNIT_OPTIONS: Array<{ value: EducatorUnit; label: string }> = [
   { value: "manada", label: "Manada (Lobatos)" },
@@ -77,6 +78,11 @@ export default function ConfiguracionSeguridad() {
   const [requestingPermission, setRequestingPermission] = useState(false);
   const [loadingRequestContext, setLoadingRequestContext] = useState(true);
   const [canRequestEducatorPermissions, setCanRequestEducatorPermissions] = useState(false);
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [emailAddress, setEmailAddress] = useState<string | null>(null);
+  const [loadingEmailVerification, setLoadingEmailVerification] = useState(true);
+  const [sendingVerificationEmail, setSendingVerificationEmail] = useState(false);
+  const [lastVerificationLink, setLastVerificationLink] = useState<string | null>(null);
   const allowDeleteAccount = isLocalBackend();
 
   const form = useForm<PasswordFormValues>({
@@ -191,6 +197,92 @@ export default function ConfiguracionSeguridad() {
     );
   };
 
+  const refreshEmailVerificationStatus = async (notifyIfPending = false) => {
+    try {
+      setLoadingEmailVerification(true);
+      const authUser = await getAuthUser();
+
+      if (!authUser) {
+        setEmailVerified(false);
+        setEmailAddress(null);
+        return;
+      }
+
+      setEmailAddress(authUser.email || null);
+
+      if (authUser.isLocal) {
+        const verified = !!authUser.email_verified;
+        setEmailVerified(verified);
+        if (notifyIfPending && !verified) {
+          toast({
+            title: "Correo pendiente",
+            description: "Tu correo todavía no figura como verificado.",
+          });
+        }
+        return;
+      }
+
+      const verified = !!authUser.email_verified || (await checkEmailVerified());
+      setEmailVerified(verified);
+      if (notifyIfPending && !verified) {
+        toast({
+          title: "Correo pendiente",
+          description: "Tu correo todavía no figura como verificado.",
+        });
+      }
+    } catch {
+      toast({
+        title: "Error",
+        description: "No pudimos comprobar el estado de verificación del correo.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingEmailVerification(false);
+    }
+  };
+
+  const handleResendVerificationEmail = async () => {
+    if (emailVerified) {
+      toast({
+        title: "Correo ya verificado",
+        description: "Tu cuenta ya tiene el correo verificado.",
+      });
+      return;
+    }
+
+    try {
+      setSendingVerificationEmail(true);
+
+      if (isLocalBackend()) {
+        await apiFetch("/auth/resend-verification", { method: "POST" });
+        setLastVerificationLink(null);
+        toast({
+          title: "Email enviado",
+          description: "Revisa tu bandeja para verificar tu cuenta.",
+        });
+      } else {
+        const result = await sendVerificationEmail();
+        setLastVerificationLink(result.verificationUrl || null);
+        toast({
+          title: "Email enviado",
+          description: result.message || "Revisa tu bandeja para verificar tu cuenta.",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error?.message || "No se pudo enviar el email de verificación.",
+        variant: "destructive",
+      });
+    } finally {
+      setSendingVerificationEmail(false);
+    }
+  };
+
+  useEffect(() => {
+    void refreshEmailVerificationStatus(false);
+  }, []);
+
   const handleRequestEducatorPermissions = async () => {
     if (!canRequestEducatorPermissions) {
       toast({
@@ -265,17 +357,8 @@ export default function ConfiguracionSeguridad() {
 
   return (
     <div className="space-y-6">
-      {isSaved && (
-        <div className="bg-red-50 dark:bg-red-950/30 border border-scout-red dark:border-red-900 rounded-lg p-3 flex items-center gap-2 text-scout-red dark:text-red-400 text-sm animate-in slide-in-from-top">
-          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-          </svg>
-          <span>Contraseña cambiada correctamente</span>
-        </div>
-      )}
-
       {/* Cambiar contraseña */}
-      <Card className="border-border/50 hover:border-border/70 transition-colors">
+      <Card className="border-border/60 bg-background/40 shadow-none">
         <CardHeader>
           <CardTitle className="text-base font-semibold flex items-center gap-2">
             <Lock className="w-5 h-5" /> Cambiar contraseña
@@ -392,10 +475,10 @@ export default function ConfiguracionSeguridad() {
                 )}
               />
 
-              <Button 
+              <Button
                 type="submit" 
                 disabled={isLoading || !hasUpperCase || !hasLowerCase || !hasNumber || !hasMinLength}
-                className="w-full bg-primary transition-transform duration-300 hover:scale-105 hover:bg-primary/90 active:scale-95"
+                className="h-10 w-full rounded-full"
               >
                 {isLoading ? (
                   <>
@@ -419,7 +502,7 @@ export default function ConfiguracionSeguridad() {
       </Card>
 
       {/* Seguridad de la cuenta */}
-      <Card className="border-border/50 hover:border-border/70 transition-colors">
+      <Card className="border-border/60 bg-background/40 shadow-none">
         <CardHeader>
           <CardTitle className="text-base font-semibold flex items-center gap-2">
             <Shield className="w-5 h-5" /> Seguridad de la cuenta
@@ -429,6 +512,60 @@ export default function ConfiguracionSeguridad() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="rounded-lg border border-border/60 bg-muted/15 p-3">
+            <h4 className="text-sm font-semibold mb-1.5 flex items-center gap-2">
+              <MailCheck className="h-4 w-4" /> Verificación de correo
+            </h4>
+            {loadingEmailVerification ? (
+              <p className="text-xs text-muted-foreground">Comprobando estado del correo...</p>
+            ) : emailVerified ? (
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">
+                  Correo verificado{emailAddress ? `: ${emailAddress}` : ""}.
+                </p>
+                <Button type="button" variant="outline" className="w-full sm:w-auto" disabled>
+                  Correo verificado
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">
+                  Tu correo aún no está verificado{emailAddress ? ` (${emailAddress})` : ""}.
+                </p>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full sm:w-auto"
+                    onClick={handleResendVerificationEmail}
+                    disabled={sendingVerificationEmail}
+                  >
+                    {sendingVerificationEmail ? "Enviando..." : "Verificar email"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="w-full sm:w-auto"
+                    onClick={() => refreshEmailVerificationStatus(true)}
+                    disabled={loadingEmailVerification}
+                  >
+                    Ya verifique, actualizar estado
+                  </Button>
+                </div>
+                {lastVerificationLink && (
+                  <a
+                    href={lastVerificationLink}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block truncate text-xs text-primary underline"
+                  >
+                    Abrir enlace de verificación
+                  </a>
+                )}
+              </div>
+            )}
+          </div>
+
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
@@ -437,9 +574,9 @@ export default function ConfiguracionSeguridad() {
           </Alert>
 
           <div className="space-y-3 pt-2">
-            <div className="p-3 rounded-lg bg-muted/20">
+            <div className="rounded-xl border border-border/50 bg-background/60 p-3">
               <h4 className="text-sm font-semibold mb-1.5 flex items-center gap-2">
-                <span className="text-lg">📱</span> Sesiones activas
+                <Smartphone className="h-4 w-4" /> Sesiones activas
               </h4>
               <p className="text-xs text-muted-foreground mb-3">Gestiona los dispositivos con acceso a tu cuenta</p>
               <Button variant="outline" disabled className="w-full text-xs">
@@ -447,9 +584,9 @@ export default function ConfiguracionSeguridad() {
               </Button>
             </div>
 
-            <div className="p-3 rounded-lg bg-muted/20">
+            <div className="rounded-xl border border-border/50 bg-background/60 p-3">
               <h4 className="text-sm font-semibold mb-1.5 flex items-center gap-2">
-                <span className="text-lg">📊</span> Actividad de cuenta
+                <Activity className="h-4 w-4" /> Actividad de cuenta
               </h4>
               <p className="text-xs text-muted-foreground mb-3">Revisa el historial de inicios de sesión y cambios</p>
               <Button variant="outline" disabled className="w-full text-xs">
@@ -461,7 +598,7 @@ export default function ConfiguracionSeguridad() {
       </Card>
 
       {/* Solicitud de permisos educador */}
-      <Card className="border-border/50 hover:border-border/70 transition-colors">
+      <Card className="border-border/60 bg-background/40 shadow-none">
         <CardHeader>
           <CardTitle className="text-base font-semibold flex items-center gap-2">
             <Shield className="w-5 h-5" /> Permisos de educador por unidad
@@ -531,7 +668,7 @@ export default function ConfiguracionSeguridad() {
       </Card>
 
       {/* ATENCION */}
-      <Card className="border-destructive/50 bg-destructive/5 hover:border-destructive/70 transition-colors">
+      <Card className="border-destructive/40 bg-destructive/5 shadow-none">
         <CardHeader>
           <CardTitle className="text-base text-destructive font-semibold flex items-center gap-2">
             <Trash2 className="w-5 h-5" /> ATENCION

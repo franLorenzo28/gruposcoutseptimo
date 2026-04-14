@@ -1,149 +1,157 @@
-# 🐛 Debugging - Verificación de Email
+# Debug - Verificacion de Email (Manual)
 
-## Paso 1: Aplicar la migración SQL ⚠️ IMPORTANTE
+Esta guia corresponde al flujo actual del proyecto:
 
-**PRIMERO debes aplicar la migración antes de que funcione:**
+- La verificacion es manual por boton.
+- No depende de activar la confirmacion automatica de Supabase Auth.
+- En desarrollo podes probar con mails no reales usando fallback con link.
 
-1. Ve a: https://supabase.com/dashboard/project/lndqeaspuwwgdwbggayd
-2. Click en "SQL Editor" en el menú lateral
-3. Click en "New Query"
-4. Copia y pega TODO el contenido de:
-   `supabase/migrations/20251111_email_verification_system.sql`
-5. Click en "RUN" ✅
+## Flujo actual
 
-## Paso 2: Verificar que se aplicó correctamente
+1. El usuario inicia sesion normalmente.
+2. El usuario presiona el boton de verificacion (en pantallas protegidas o en Configuracion > Seguridad).
+3. Se genera un token con RPC `resend_verification_email`.
+4. El usuario abre `/verificar-email?token=...`.
+5. RPC `verify_email_token` marca `profiles.email_verified = true`.
+6. Se desbloquean features especiales (Comuni 7, Mensajes, Galeria).
 
-Ejecutá esto en SQL Editor:
+## Paso 1: Aplicar migracion SQL
+
+Archivo vigente:
+
+`supabase/migrations/20260602_manual_email_verification_refresh.sql`
+
+Como aplicarla en Dashboard:
+
+1. Ir a SQL Editor.
+2. New Query.
+3. Pegar todo el contenido del archivo.
+4. Ejecutar RUN.
+
+## Paso 2: Validar que quedo aplicado
+
+Ejecuta estas consultas en SQL Editor:
 
 ```sql
--- Debe mostrar el campo email_verified
-SELECT column_name, data_type 
-FROM information_schema.columns 
-WHERE table_name = 'profiles';
+-- Columna de desbloqueo de features
+select column_name, data_type, is_nullable
+from information_schema.columns
+where table_schema = 'public'
+  and table_name = 'profiles'
+  and column_name = 'email_verified';
 
--- Debe mostrar la tabla
-SELECT * FROM email_verification_tokens LIMIT 1;
+-- Tabla de tokens
+select to_regclass('public.email_verification_tokens');
+
+-- RPCs requeridas por frontend/edge
+select proname
+from pg_proc
+where proname in (
+  'generate_verification_token',
+  'resend_verification_email',
+  'verify_email_token',
+  'is_email_verified',
+  'cleanup_expired_tokens'
+)
+order by proname;
 ```
 
-## Paso 3: Probar en Desarrollo (Sin enviar emails)
+## Paso 3: Probar sin emails reales (recomendado en desarrollo)
 
-1. Abrí la consola del navegador (F12)
-2. Intentá acceder a Comuni 7, Mensajes o Galería
-3. Click en "Enviar email de verificación"
-4. **Mirá la consola** - va a aparecer el link de verificación
-5. El link se copia automáticamente al portapapeles
-6. Pegá el link en la barra de direcciones
-7. ¡Listo! Email verificado
+No necesitas Resend ni SMTP real para este test.
 
-## 🔍 Ver qué pasa cuando clickeás "Enviar email"
+1. Iniciar app con backend Supabase.
+2. Ir a una feature protegida o a Configuracion > Seguridad.
+3. Presionar Reenviar correo / Generar enlace.
+4. Revisar consola del navegador (F12).
+5. Abrir el link `/verificar-email?token=...`.
 
-Abrí la consola (F12) y vas a ver:
+Logs esperados en fallback:
 
-```
-📧 Generando token de verificación para: tu@email.com
-✅ Token generado: { token: "abc123...", email: "tu@email.com" }
-🔗 Link de verificación (desarrollo):
-http://localhost:5173/verificar-email?token=abc123...
-
-📋 Copia este link y ábrelo en tu navegador para verificar tu email
-✅ Link copiado al portapapeles!
+```text
+Generando token de verificacion para: ...
+Token generado: { token: "...", expires_at: "...", user_email: "..." }
+Link de verificacion (desarrollo):
+http://localhost:5173/verificar-email?token=...
 ```
 
-## ❌ Si ves errores
+## Paso 4: Produccion con email real (opcional)
 
-### Error: "function resend_verification_email() does not exist"
-→ No aplicaste la migración SQL. Ve al Paso 1.
+Solo si queres envio real:
 
-### Error: "column email_verified does not exist"
-→ No aplicaste la migración SQL. Ve al Paso 1.
+1. Desplegar Edge Function:
 
-### Error: "relation email_verification_tokens does not exist"
-→ No aplicaste la migración SQL. Ve al Paso 1.
-
-
-### Error CORS / preflight bloqueado
-Si ves en la consola mensajes como:
+```bash
+supabase functions deploy send-verification-email
 ```
-Access to fetch at 'https://<project>.supabase.co/functions/v1/send-verification-email' from origin 'http://localhost:5173' has been blocked by CORS policy: Response to preflight request doesn't pass access control check.
-```
-Razones y soluciones:
-1. La Edge Function no está desplegada todavía → despliega con:
-    ```bash
-    supabase functions deploy send-verification-email
-    ```
-2. Falta alguna cabecera CORS → ya añadimos: `Access-Control-Allow-Origin`, `Allow-Headers`, `Allow-Methods`, `Max-Age`.
-3. Estás usando la función antes de configurar secrets → agrega `RESEND_API_KEY` o deja que el sistema use el fallback.
 
-Mientras tanto el sistema hace fallback automático: genera el token y muestra/copía el link en la consola.
+2. Configurar secrets en Supabase:
 
-### ¿Quiero forzar uso de email real y ver error si falla?
-Agrega en tu `.env` del frontend:
-```
+- `RESEND_API_KEY`
+- `APP_URL`
+- `FROM_EMAIL`
+
+3. En frontend, habilitar uso de Edge Function:
+
+```env
 VITE_ENABLE_EDGE_EMAIL=true
 ```
-Eso intentará llamar siempre la Edge Function; si falla verás el warning y podrás revisar logs:
-```bash
-supabase functions logs send-verification-email
-```
-## ✅ Modo Producción (con emails reales)
 
-Una vez que la migración funcione, para enviar emails reales:
+Sin eso, el frontend sigue usando fallback (token + link local).
 
-1. Registrate en Resend: https://resend.com/
-2. Verificá tu dominio
-3. Obtené tu API Key
-4. Desplegá la Edge Function:
-   ```bash
-   supabase functions deploy send-verification-email
-   ```
-5. Configurá secrets en Supabase:
-   - `RESEND_API_KEY`: tu_api_key
-   - `APP_URL`: https://tu-dominio.com
-   - `FROM_EMAIL`: Grupo Scout <noreply@tudominio.com>
+## Errores comunes
 
-## 🧪 Testing Manual
+### `function resend_verification_email() does not exist`
 
-### Generar token manualmente:
+No se aplico la migracion actual.
+
+### `column email_verified does not exist`
+
+No se aplico la migracion actual.
+
+### `relation email_verification_tokens does not exist`
+
+No se aplico la migracion actual.
+
+### Error CORS en `send-verification-email`
+
+Verificar:
+
+1. Funcion desplegada.
+2. Secrets cargadas.
+3. `VITE_ENABLE_EDGE_EMAIL=true` solo cuando realmente queres forzar Edge Function.
+
+## Testing manual SQL
+
 ```sql
--- Reemplaza TU_USER_ID con tu user_id de auth.users
-SELECT * FROM generate_verification_token('TU_USER_ID');
+-- Generar token para usuario especifico
+select * from generate_verification_token('TU_USER_ID');
+
+-- Verificar token
+select * from verify_email_token('TOKEN');
+
+-- Ver tokens activos
+select *
+from email_verification_tokens
+where verified_at is null
+order by created_at desc;
+
+-- Marcar verificado manualmente (solo pruebas)
+update profiles
+set email_verified = true
+where user_id = 'TU_USER_ID';
 ```
 
-### Verificar token manualmente:
-```sql
--- Reemplaza EL_TOKEN con el token que generaste
-SELECT * FROM verify_email_token('EL_TOKEN');
-```
+## Checklist rapido
 
-### Ver tokens activos:
-```sql
-SELECT * FROM email_verification_tokens 
-WHERE verified_at IS NULL 
-ORDER BY created_at DESC;
-```
+- [ ] Migracion `20260602_manual_email_verification_refresh.sql` aplicada.
+- [ ] Existe `profiles.email_verified`.
+- [ ] Existe `email_verification_tokens`.
+- [ ] Existen RPCs `resend_verification_email` y `verify_email_token`.
+- [ ] Boton de verificacion genera token.
+- [ ] Link de verificacion funciona.
+- [ ] Features protegidas se desbloquean tras verificar.
 
-### Marcar como verificado manualmente (para testing):
-```sql
--- Reemplaza TU_USER_ID
-UPDATE profiles 
-SET email_verified = TRUE 
-WHERE user_id = 'TU_USER_ID';
-```
+## Nota importante
 
-## 📝 Checklist
-
-- [ ] Aplicaste la migración SQL en Supabase
-- [ ] Verificaste que la tabla `email_verification_tokens` existe
-- [ ] Verificaste que `profiles.email_verified` existe
-- [ ] Abriste la consola del navegador (F12)
-- [ ] Intentaste enviar email de verificación
-- [ ] Copiaste el link de la consola
-- [ ] Verificaste el email usando el link
-
-## 💡 Tips
-
-- En desarrollo, NO necesitás configurar Resend
-- El link se muestra en la consola y se copia al portapapeles
-- Si no ves el link en consola, revisá que aplicaste la migración
-- Los tokens expiran en 24 horas
-- Podés reenviar emails cuantas veces quieras
+Este sistema esta pensado para pruebas y control manual. No requiere activar confirmacion automatica de email en Supabase Auth.

@@ -14,7 +14,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/hooks/useUser";
 import { supabase } from "@/integrations/supabase/client";
@@ -149,17 +148,6 @@ export default function ConfiguracionPerfil() {
 
   return (
     <div className="space-y-6">
-      {isSaved && (
-        <div className="bg-red-50 dark:bg-red-950/30 border border-scout-red dark:border-red-900 rounded-lg p-3 flex items-center gap-2 text-scout-red dark:text-red-400 text-sm animate-in slide-in-from-top">
-          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-          </svg>
-          <span>Cambios guardados correctamente</span>
-        </div>
-      )}
-
-
-
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
           <FormField
@@ -167,15 +155,13 @@ export default function ConfiguracionPerfil() {
             name="nombre_completo"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="flex items-center gap-2">
-                  <span className="text-lg">👤</span> Nombre completo
-                </FormLabel>
+                <FormLabel>Nombre completo</FormLabel>
                 <FormControl>
                   <Input
                     placeholder="Tu nombre completo"
                     {...field}
                     disabled={isLoading}
-                    className="focus:ring-2 focus:shadow-[0_0_0_3px_hsla(0,100%,50%,0.1)]"
+                    className="h-11 rounded-xl border-border/70 bg-background/70"
                   />
                 </FormControl>
                 <FormDescription>
@@ -191,15 +177,13 @@ export default function ConfiguracionPerfil() {
             name="profesion_ocupacion"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="flex items-center gap-2">
-                  <span className="text-lg">💼</span> Profesión u ocupación
-                </FormLabel>
+                <FormLabel>Profesión u ocupación</FormLabel>
                 <FormControl>
                   <Input
                     placeholder="Ej: Ingeniero, Docente, Estudiante..."
                     {...field}
                     disabled={isLoading}
-                    className="focus:ring-2 focus:shadow-[0_0_0_3px_hsla(0,100%,50%,0.1)]"
+                    className="h-11 rounded-xl border-border/70 bg-background/70"
                   />
                 </FormControl>
                 <FormDescription>
@@ -215,13 +199,11 @@ export default function ConfiguracionPerfil() {
             name="descripcion_personal"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="flex items-center gap-2">
-                  <span className="text-lg">📝</span> Sobre mí
-                </FormLabel>
+                <FormLabel>Sobre mí</FormLabel>
                 <FormControl>
                   <Textarea
                     placeholder="Cuéntanos un poco sobre ti, tus intereses, experiencias en scouts..."
-                    className="resize-none focus:ring-2 focus:shadow-[0_0_0_3px_hsla(0,100%,50%,0.1)]"
+                    className="resize-none rounded-xl border-border/70 bg-background/70"
                     rows={4}
                     {...field}
                     disabled={isLoading}
@@ -246,7 +228,12 @@ export default function ConfiguracionPerfil() {
             )}
           />
 
-          <Button type="submit" disabled={isLoading} className="w-full bg-primary transition-all duration-300 hover:bg-primary/90 active:scale-95">
+          <div className="flex justify-end">
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="h-10 min-w-[170px] rounded-full px-6"
+            >
             {isLoading ? (
               <>
                 <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
@@ -262,7 +249,8 @@ export default function ConfiguracionPerfil() {
             ) : (
               "Guardar cambios"
             )}
-          </Button>
+            </Button>
+          </div>
         </form>
       </Form>
     </div>

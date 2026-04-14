@@ -122,6 +122,33 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
     [notificationPreferences],
   );
 
+  const notifyViaPush = useCallback(
+    (title: string, description?: string) => {
+      if (!notificationPreferences.push_notificaciones) return;
+
+      toast({
+        title,
+        ...(description ? { description } : {}),
+      });
+
+      if (
+        typeof window !== "undefined" &&
+        "Notification" in window &&
+        Notification.permission === "granted"
+      ) {
+        try {
+          void new Notification(title, {
+            body: description,
+            icon: "/site.webmanifest",
+          });
+        } catch {
+          // Ignorar si el navegador bloquea la API en este contexto.
+        }
+      }
+    },
+    [notificationPreferences.push_notificaciones, toast],
+  );
+
   useEffect(() => {
     if (!isLocal) return;
     let mounted = true;
@@ -405,10 +432,10 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
               localSeenIdsRef.current.add(n.id);
               if (n.type === "follow_request") {
                 const display = (n.data as any)?.display || "Alguien";
-                toast({
-                  title: "Nueva solicitud de seguimiento",
-                  description: `${display} quiere seguirte`,
-                });
+                notifyViaPush(
+                  "Nueva solicitud de seguimiento",
+                  `${display} quiere seguirte`,
+                );
               }
             }
           });
@@ -432,7 +459,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
       cancelled = true;
       clearInterval(timer);
     };
-  }, [isLocal, effectiveUserId, toast]);
+  }, [isLocal, effectiveUserId, notifyViaPush]);
 
   // Suscripción a solicitudes de seguimiento nuevas
   useEffect(() => {
@@ -466,7 +493,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
               }
             };
             addNotification(notif);
-            toast({ title: "Nueva solicitud de seguimiento", description: `${display} quiere seguirte` });
+            notifyViaPush("Nueva solicitud de seguimiento", `${display} quiere seguirte`);
             await persistNotification({
               persistKey: `follow-pending-${row.follower_id}-${row.created_at}`,
               recipientId: user.id,
@@ -501,7 +528,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
               }
             };
             addNotification(notif);
-            toast({ title: "Nuevo seguidor", description: `${display} ahora te sigue` });
+            notifyViaPush("Nuevo seguidor", `${display} ahora te sigue`);
             await persistNotification({
               persistKey: `follow-accepted-${row.follower_id}-${row.created_at}`,
               recipientId: user.id,
@@ -544,7 +571,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
             }
           };
           addNotification(notif);
-          toast({ title: "Nuevo seguidor", description: `${display} ahora te sigue` });
+          notifyViaPush("Nuevo seguidor", `${display} ahora te sigue`);
           await persistNotification({
             persistKey: `follow-accepted-update-${row.follower_id}-${row.created_at}`,
             recipientId: user.id,
@@ -590,7 +617,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
             },
           };
           addNotification(notif);
-          toast({ title: "Nuevo hilo", description: `${display} publicó un hilo` });
+          notifyViaPush("Nuevo hilo", `${display} publicó un hilo`);
           await persistNotification({
             persistKey: `thread-new-${row.id}-${user.id}`,
             recipientId: user.id,
@@ -633,7 +660,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
             },
           };
           addNotification(notif);
-          toast({ title: "Nuevo grupo", description: `Ahora formas parte de ${group?.name || "un grupo"}` });
+          notifyViaPush("Nuevo grupo", `Ahora formas parte de ${group?.name || "un grupo"}`);
           await persistNotification({
             persistKey: `group-invite-${row.group_id}-${row.user_id}-${row.joined_at || ""}`,
             recipientId: user.id,
@@ -653,7 +680,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
       supabase.removeChannel(channelThreads);
       supabase.removeChannel(channelGroupInvites);
     };
-  }, [user, addNotification, toast, persistNotification, isLocal, isNotificationEnabled]);
+  }, [user, addNotification, notifyViaPush, persistNotification, isLocal, isNotificationEnabled]);
 
   // Notificación de nuevas fotos en galería (sondeo liviano)
   useEffect(() => {
@@ -695,13 +722,12 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
             },
           };
           addNotification(notif);
-          toast({
-            title: "Nuevas fotos en galería",
-            description:
-              newPaths.length === 1
-                ? `Se subió una foto nueva en ${albumName}`
-                : `Se subieron ${newPaths.length} fotos nuevas en ${albumName}`,
-          });
+          notifyViaPush(
+            "Nuevas fotos en galería",
+            newPaths.length === 1
+              ? `Se subió una foto nueva en ${albumName}`
+              : `Se subieron ${newPaths.length} fotos nuevas en ${albumName}`,
+          );
           await persistNotification({
             persistKey: `gallery-upload-${albumName}-${newPaths.length}-${Math.floor(Date.now() / 120000)}`,
             recipientId: user.id,
@@ -727,7 +753,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
       cancelled = true;
       clearInterval(timer);
     };
-  }, [user, addNotification, toast, persistNotification, isLocal, isNotificationEnabled]);
+  }, [user, addNotification, notifyViaPush, persistNotification, isLocal, isNotificationEnabled]);
 
   // Suscripción a mensajes nuevos en cualquier conversación del usuario
   useEffect(() => {
@@ -751,12 +777,12 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
             data: { conversation_id: row.conversation_id, sender_id: row.sender_id, content: row.content }
           };
           addNotification(notif);
-          toast({ title: "Nuevo mensaje", description: row.content?.slice(0, 80) || "Mensaje recibido" });
+          notifyViaPush("Nuevo mensaje", row.content?.slice(0, 80) || "Mensaje recibido");
         }
       )
       .subscribe();
     return () => { supabase.removeChannel(channelMessages); };
-  }, [user, addNotification, toast, isLocal, isNotificationEnabled]);
+  }, [user, addNotification, notifyViaPush, isLocal, isNotificationEnabled]);
 
   // Cargar notificaciones persistentes (thread_comment, mention) y suscribirse a nuevas
   useEffect(() => {
@@ -809,17 +835,17 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
             if (!isNotificationEnabled(notif.type)) return;
             addNotification(notif);
             if (row.type === "thread_comment") {
-              toast({ title: "Nuevo comentario en tu hilo", description: (row.data?.content || "").slice(0,80) });
+              notifyViaPush("Nuevo comentario en tu hilo", (row.data?.content || "").slice(0,80));
             } else if (row.type === "mention") {
               const uname = row.data?.username ? `@${row.data.username}` : "";
-              toast({ title: "Te mencionaron", description: `${uname} ${(row.data?.content || "").slice(0,70)}`.trim() });
+              notifyViaPush("Te mencionaron", `${uname} ${(row.data?.content || "").slice(0,70)}`.trim());
             }
           }
         )
         .subscribe();
     })();
     return () => { if (channel) supabase.removeChannel(channel); };
-  }, [user, addNotification, toast, normalizePersistentNotification, isLocal, syncPendingFollowRequests, isNotificationEnabled]);
+  }, [user, addNotification, notifyViaPush, normalizePersistentNotification, isLocal, syncPendingFollowRequests, isNotificationEnabled]);
 
   useEffect(() => {
     if (!user || isLocal) return;

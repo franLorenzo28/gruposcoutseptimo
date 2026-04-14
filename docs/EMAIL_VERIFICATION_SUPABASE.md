@@ -20,7 +20,7 @@ https://supabase.com/dashboard/project/lndqeaspuwwgdwbggayd
 1. Ve a `SQL Editor` en el menú lateral
 2. Click en "New Query"
 3. Copia y pega TODO el contenido de:
-   `supabase/migrations/20251111_email_verification_system.sql`
+   `supabase/migrations/20260602_manual_email_verification_refresh.sql`
 4. Click en "RUN" para ejecutar
 
 **Opción B: Supabase CLI (Si tenés instalado)**
@@ -76,8 +76,8 @@ Si no querés configurar emails todavía, la Edge Function devuelve la URL de ve
 
 ### Flujo de Registro
 1. Usuario se registra normalmente (NO se bloquea el registro)
-2. Se crea automáticamente un token de verificación (trigger)
-3. Usuario puede navegar por la app
+2. Usuario puede navegar por la app
+3. El token se genera cuando el usuario presiona el boton de verificacion
 4. Al intentar acceder a Comuni 7, Mensajes o Galería:
    - Si NO tiene email verificado: ve pantalla de bloqueo
    - Puede enviar/reenviar email de verificación
@@ -123,6 +123,7 @@ SELECT * FROM verify_email_token('TOKEN_AQUI');
 
 - **Desarrollo**: Edge Function devuelve URL en respuesta si no hay RESEND_API_KEY
 - **Producción**: Envía email real con Resend/SendGrid/etc.
+- **Auth de Supabase**: No hace falta activar confirmacion automatica de email para este flujo custom.
 
 ## 🔒 Seguridad
 

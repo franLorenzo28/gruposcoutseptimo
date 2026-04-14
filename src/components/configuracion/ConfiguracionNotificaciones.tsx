@@ -81,11 +81,25 @@ export default function ConfiguracionNotificaciones() {
 
   const handleToggle = async (key: keyof typeof settings) => {
     const previousSettings = settings;
+    const enablingPush = key === "push_notificaciones" && !settings.push_notificaciones;
     const newSettings = {
       ...settings,
       [key]: !settings[key],
     };
     setSettings(newSettings);
+
+    if (
+      enablingPush &&
+      typeof window !== "undefined" &&
+      "Notification" in window &&
+      Notification.permission === "default"
+    ) {
+      try {
+        await Notification.requestPermission();
+      } catch {
+        // Ignorar si el navegador no permite pedir permiso en este contexto.
+      }
+    }
     
     // Guardar automáticamente en Supabase
     try {
@@ -227,11 +241,9 @@ export default function ConfiguracionNotificaciones() {
   return (
     <div className="space-y-6">
       {/* Notificaciones de actividad */}
-      <Card className="border-border/50 hover:border-border/70 transition-colors">
+      <Card className="border-border/60 bg-background/40 shadow-none">
         <CardHeader>
-          <CardTitle className="text-base font-semibold flex items-center gap-2">
-            <span className="text-lg">👥</span> Actividad
-          </CardTitle>
+          <CardTitle className="text-base font-semibold">Actividad</CardTitle>
           <CardDescription>
             Recibe notificaciones sobre la actividad de otros miembros
           </CardDescription>
@@ -242,7 +254,7 @@ export default function ConfiguracionNotificaciones() {
             { key: "nuevos_seguidores" as const, label: "Nuevos seguidores", desc: "Cuando alguien empieza a seguirte" },
             { key: "comentarios_fotos" as const, label: "Comentarios en fotos", desc: "Cuando dejan comentarios en tus fotos" },
           ].map(({ key, label, desc }) => (
-            <div key={key} className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/40 transition-colors">
+            <div key={key} className="flex items-center justify-between rounded-xl border border-border/50 bg-background/60 px-3 py-3">
               <div className="flex-1">
                 <p className="text-sm font-medium">{label}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
@@ -258,11 +270,9 @@ export default function ConfiguracionNotificaciones() {
       </Card>
 
       {/* Notificaciones de Scouts */}
-      <Card className="border-border/50 hover:border-border/70 transition-colors">
+      <Card className="border-border/60 bg-background/40 shadow-none">
         <CardHeader>
-          <CardTitle className="text-base font-semibold flex items-center gap-2">
-            <span className="text-lg">⚜️</span> Scouts
-          </CardTitle>
+          <CardTitle className="text-base font-semibold">Scouts</CardTitle>
           <CardDescription>
             Notificaciones sobre eventos y actividades scouts
           </CardDescription>
@@ -273,7 +283,7 @@ export default function ConfiguracionNotificaciones() {
             { key: "notificaciones_rama" as const, label: "Notificaciones de unidad", desc: "Avisos internos y comunicados de tu unidad" },
             { key: "resumen_semanal" as const, label: "Resumen semanal", desc: "Resumen de actividad en el grupo" },
           ].map(({ key, label, desc }) => (
-            <div key={key} className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/40 transition-colors">
+            <div key={key} className="flex items-center justify-between rounded-xl border border-border/50 bg-background/60 px-3 py-3">
               <div className="flex-1">
                 <p className="text-sm font-medium">{label}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
@@ -289,11 +299,9 @@ export default function ConfiguracionNotificaciones() {
       </Card>
 
       {/* Canales de notificación */}
-      <Card className="border-border/50 hover:border-border/70 transition-colors">
+      <Card className="border-border/60 bg-background/40 shadow-none">
         <CardHeader>
-          <CardTitle className="text-base font-semibold flex items-center gap-2">
-            <span className="text-lg">📬</span> Canales
-          </CardTitle>
+          <CardTitle className="text-base font-semibold">Canales</CardTitle>
           <CardDescription>
             Elige cómo deseas recibir notificaciones
           </CardDescription>
@@ -303,7 +311,7 @@ export default function ConfiguracionNotificaciones() {
             { key: "email_notificaciones" as const, label: "Notificaciones por email", desc: "Recibe notificaciones en tu correo electrónico" },
             { key: "push_notificaciones" as const, label: "Notificaciones push", desc: "Notificaciones en tiempo real en tu navegador" },
           ].map(({ key, label, desc }) => (
-            <div key={key} className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/40 transition-colors">
+            <div key={key} className="flex items-center justify-between rounded-xl border border-border/50 bg-background/60 px-3 py-3">
               <div className="flex-1">
                 <p className="text-sm font-medium">{label}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
@@ -318,11 +326,12 @@ export default function ConfiguracionNotificaciones() {
         </CardContent>
       </Card>
 
-      <Button 
-        onClick={handleSave} 
-        disabled={isLoading} 
-        className="w-full bg-primary transition-transform duration-300 hover:scale-105 hover:bg-primary/90 active:scale-95"
-      >
+      <div className="flex justify-end">
+        <Button 
+          onClick={handleSave} 
+          disabled={isLoading} 
+          className="h-10 min-w-[210px] rounded-full px-6"
+        >
         {isLoading ? (
           <>
             <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
@@ -338,7 +347,8 @@ export default function ConfiguracionNotificaciones() {
         ) : (
           "Guardar preferencias"
         )}
-      </Button>
+        </Button>
+      </div>
     </div>
   );
 }

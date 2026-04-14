@@ -234,17 +234,15 @@ export default function ConfiguracionPrivacidad() {
       </Alert>
 
       {/* Visibilidad del perfil */}
-      <Card className="border-border/50 hover:border-border/70 transition-colors">
+      <Card className="border-border/60 bg-background/40 shadow-none">
         <CardHeader>
-          <CardTitle className="text-base font-semibold flex items-center gap-2">
-            <span className="text-lg">👁️</span> Visibilidad del perfil
-          </CardTitle>
+          <CardTitle className="text-base font-semibold">Visibilidad del perfil</CardTitle>
           <CardDescription>
             Controla quién puede ver tu perfil e información
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/40 transition-colors">
+          <div className="flex items-center justify-between rounded-xl border border-border/50 bg-background/60 px-3 py-3">
             <div className="flex-1">
               <p className="text-sm font-medium">Perfil público</p>
               <p className="text-xs text-muted-foreground mt-0.5">Otros miembros pueden ver tu perfil y contactarte</p>
@@ -258,7 +256,7 @@ export default function ConfiguracionPrivacidad() {
 
           {settings.perfil_publico && (
             <>
-              <div className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/40 transition-colors opacity-100">
+              <div className="flex items-center justify-between rounded-xl border border-border/50 bg-background/60 px-3 py-3">
                 <div className="flex-1">
                   <p className="text-sm font-medium">Mostrar email</p>
                   <p className="text-xs text-muted-foreground mt-0.5">Tu correo será visible en tu perfil</p>
@@ -270,7 +268,7 @@ export default function ConfiguracionPrivacidad() {
                 />
               </div>
 
-              <div className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/40 transition-colors opacity-100">
+              <div className="flex items-center justify-between rounded-xl border border-border/50 bg-background/60 px-3 py-3">
                 <div className="flex-1">
                   <p className="text-sm font-medium">Mostrar teléfono</p>
                   <p className="text-xs text-muted-foreground mt-0.5">Tu teléfono será visible en tu perfil</p>
@@ -287,17 +285,15 @@ export default function ConfiguracionPrivacidad() {
       </Card>
 
       {/* Interacciones */}
-      <Card className="border-border/50 hover:border-border/70 transition-colors">
+      <Card className="border-border/60 bg-background/40 shadow-none">
         <CardHeader>
-          <CardTitle className="text-base font-semibold flex items-center gap-2">
-            <span className="text-lg">💬</span> Interacciones
-          </CardTitle>
+          <CardTitle className="text-base font-semibold">Interacciones</CardTitle>
           <CardDescription>
             Controla cómo otros miembros pueden interactuar contigo
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/40 transition-colors">
+          <div className="flex items-center justify-between rounded-xl border border-border/50 bg-background/60 px-3 py-3">
             <div className="flex-1">
               <p className="text-sm font-medium">Permitir seguimiento</p>
               <p className="text-xs text-muted-foreground mt-0.5">Otros miembros pueden seguir tu actividad</p>
@@ -309,7 +305,7 @@ export default function ConfiguracionPrivacidad() {
             />
           </div>
 
-          <div className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/40 transition-colors">
+          <div className="flex items-center justify-between rounded-xl border border-border/50 bg-background/60 px-3 py-3">
             <div className="flex-1">
               <p className="text-sm font-medium">Permitir mensajes directos</p>
               <p className="text-xs text-muted-foreground mt-0.5">Otros miembros pueden contactarte por mensaje privado</p>
@@ -323,11 +319,12 @@ export default function ConfiguracionPrivacidad() {
         </CardContent>
       </Card>
 
-      <Button 
-        onClick={handleSave} 
-        disabled={isLoading} 
-        className="w-full bg-primary transition-transform duration-300 hover:scale-105 hover:bg-primary/90 active:scale-95"
-      >
+      <div className="flex justify-end">
+        <Button 
+          onClick={handleSave} 
+          disabled={isLoading} 
+          className="h-10 min-w-[220px] rounded-full px-6"
+        >
         {isLoading ? (
           <>
             <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
@@ -343,7 +340,8 @@ export default function ConfiguracionPrivacidad() {
         ) : (
           "Guardar cambios de privacidad"
         )}
-      </Button>
+        </Button>
+      </div>
     </div>
   );
 }

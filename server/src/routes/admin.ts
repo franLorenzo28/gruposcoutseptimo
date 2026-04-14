@@ -1,8 +1,10 @@
 import { Router } from "express";
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { db } from "../db";
 import { authMiddleware } from "../auth";
 import { isValidRama } from "../rama-access";
+import { maybeSendNotificationEmail } from "../notification-email";
 
 export const adminRouter = Router();
 
@@ -250,6 +252,14 @@ adminRouter.post("/request-educator-permissions", authMiddleware, (req: any, res
       JSON.stringify(notificationData),
       new Date().toISOString(),
     );
+
+      void maybeSendNotificationEmail(
+        admin.id,
+        "Nueva solicitud de permisos",
+        `${requesterName} solicito permisos para: ${units.join(", ")}.`,
+      ).catch(() => {
+        // Silencioso para no bloquear la solicitud por errores de correo.
+      });
     notificationCount++;
   }
 
