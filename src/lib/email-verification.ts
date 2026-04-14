@@ -128,12 +128,6 @@ export async function checkEmailVerified(): Promise<boolean> {
       return false;
     }
 
-    // Fuente principal de verdad en Supabase Auth.
-    const confirmedAt = (user as any)?.email_confirmed_at || (user as any)?.confirmed_at;
-    if (confirmedAt) {
-      return true;
-    }
-
     const { data: profile } = await supabase
       .from('profiles')
       .select('email_verified')

@@ -4,4 +4,3 @@
 - Levantar el proyecto en modo Supabase.
 - Validar login y flujo base de navegación.
 - Revisar y ajustar fondo/grillas en desktop y mobile.
-- Confirmar que el pre-commit funcione antes de commitear.

@@ -222,7 +222,7 @@ export default function ConfiguracionSeguridad() {
         return;
       }
 
-      const verified = !!authUser.email_verified || (await checkEmailVerified());
+      const verified = await checkEmailVerified();
       setEmailVerified(verified);
       if (notifyIfPending && !verified) {
         toast({
@@ -357,6 +357,172 @@ export default function ConfiguracionSeguridad() {
 
   return (
     <div className="space-y-6">
+      {/* Seguridad de la cuenta */}
+      <Card className="border-border/60 bg-background/40 shadow-none">
+        <CardHeader>
+          <CardTitle className="text-base font-semibold flex items-center gap-2">
+            <Shield className="w-5 h-5" /> Seguridad de la cuenta
+          </CardTitle>
+          <CardDescription>
+            Opciones avanzadas para proteger tu cuenta
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="rounded-lg border border-border/60 bg-muted/15 p-3">
+            <h4 className="text-sm font-semibold mb-1.5 flex items-center gap-2">
+              <MailCheck className="h-4 w-4" /> Verificación de correo
+            </h4>
+            {loadingEmailVerification ? (
+              <p className="text-xs text-muted-foreground">Comprobando estado del correo...</p>
+            ) : emailVerified ? (
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">
+                  Correo verificado{emailAddress ? `: ${emailAddress}` : ""}.
+                </p>
+                <Button type="button" variant="outline" className="w-full sm:w-auto" disabled>
+                  Correo verificado
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">
+                  Tu correo aún no está verificado{emailAddress ? ` (${emailAddress})` : ""}.
+                </p>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full sm:w-auto"
+                    onClick={handleResendVerificationEmail}
+                    disabled={sendingVerificationEmail}
+                  >
+                    {sendingVerificationEmail ? "Enviando..." : "Verificar email"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="w-full sm:w-auto"
+                    onClick={() => refreshEmailVerificationStatus(true)}
+                    disabled={loadingEmailVerification}
+                  >
+                    Ya verifiqué, actualizar estado
+                  </Button>
+                </div>
+                {lastVerificationLink && (
+                  <a
+                    href={lastVerificationLink}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block truncate text-xs text-primary underline"
+                  >
+                    Abrir enlace de verificación
+                  </a>
+                )}
+              </div>
+            )}
+          </div>
+
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Autenticación de dos factores (2FA) está disponible próximamente
+            </AlertDescription>
+          </Alert>
+
+          <div className="space-y-3 pt-2">
+            <div className="rounded-xl border border-border/50 bg-background/60 p-3">
+              <h4 className="text-sm font-semibold mb-1.5 flex items-center gap-2">
+                <Smartphone className="h-4 w-4" /> Sesiones activas
+              </h4>
+              <p className="text-xs text-muted-foreground mb-3">Gestiona los dispositivos con acceso a tu cuenta</p>
+              <Button variant="outline" disabled className="w-full text-xs">
+                Ver sesiones activas
+              </Button>
+            </div>
+
+            <div className="rounded-xl border border-border/50 bg-background/60 p-3">
+              <h4 className="text-sm font-semibold mb-1.5 flex items-center gap-2">
+                <Activity className="h-4 w-4" /> Actividad de cuenta
+              </h4>
+              <p className="text-xs text-muted-foreground mb-3">Revisa el historial de inicios de sesión y cambios</p>
+              <Button variant="outline" disabled className="w-full text-xs">
+                Ver actividad
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Solicitud de permisos educador */}
+      <Card className="border-border/60 bg-background/40 shadow-none">
+        <CardHeader>
+          <CardTitle className="text-base font-semibold flex items-center gap-2">
+            <Shield className="w-5 h-5" /> Permisos de educador por unidad
+          </CardTitle>
+          <CardDescription>
+            Si te faltan permisos para subir archivos, difusión o gestión interna, envía una solicitud a administración.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {isLocalBackend() ? (
+            <p className="text-sm text-muted-foreground">
+              Esta función está disponible en modo Supabase.
+            </p>
+          ) : loadingRequestContext ? (
+            <p className="text-sm text-muted-foreground">Verificando tu perfil...</p>
+          ) : !canRequestEducatorPermissions ? (
+            <p className="text-sm text-muted-foreground">
+              Necesitas tener rol <strong>Educador/a</strong> en tu perfil para solicitar permisos de unidad.
+            </p>
+          ) : (
+            <>
+              <div>
+                <p className="text-sm font-medium">Unidades para habilitar</p>
+                <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {EDUCATOR_UNIT_OPTIONS.map((option) => {
+                    const selected = requestUnits.includes(option.value);
+                    return (
+                      <Button
+                        key={option.value}
+                        type="button"
+                        variant={selected ? "default" : "outline"}
+                        className="justify-start"
+                        onClick={() => toggleRequestUnit(option.value)}
+                        disabled={requestingPermission}
+                      >
+                        {option.label}
+                      </Button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">Detalle opcional para admin/mod</label>
+                <Textarea
+                  value={requestNote}
+                  onChange={(event) => setRequestNote(event.target.value)}
+                  placeholder="Ej: necesito habilitación en Tropa y Pioneros para gestión de documentos y difusión."
+                  className="mt-2"
+                  maxLength={600}
+                  disabled={requestingPermission}
+                />
+                <p className="mt-1 text-xs text-muted-foreground">{requestNote.length}/600</p>
+              </div>
+
+              <Button
+                type="button"
+                onClick={handleRequestEducatorPermissions}
+                disabled={requestingPermission || requestUnits.length === 0}
+                className="w-full"
+              >
+                {requestingPermission ? "Enviando solicitud..." : "Solicitar permisos de educador"}
+              </Button>
+            </>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Cambiar contraseña */}
       <Card className="border-border/60 bg-background/40 shadow-none">
         <CardHeader>
@@ -498,172 +664,6 @@ export default function ConfiguracionSeguridad() {
               </Button>
             </form>
           </Form>
-        </CardContent>
-      </Card>
-
-      {/* Seguridad de la cuenta */}
-      <Card className="border-border/60 bg-background/40 shadow-none">
-        <CardHeader>
-          <CardTitle className="text-base font-semibold flex items-center gap-2">
-            <Shield className="w-5 h-5" /> Seguridad de la cuenta
-          </CardTitle>
-          <CardDescription>
-            Opciones avanzadas para proteger tu cuenta
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="rounded-lg border border-border/60 bg-muted/15 p-3">
-            <h4 className="text-sm font-semibold mb-1.5 flex items-center gap-2">
-              <MailCheck className="h-4 w-4" /> Verificación de correo
-            </h4>
-            {loadingEmailVerification ? (
-              <p className="text-xs text-muted-foreground">Comprobando estado del correo...</p>
-            ) : emailVerified ? (
-              <div className="space-y-2">
-                <p className="text-xs text-muted-foreground">
-                  Correo verificado{emailAddress ? `: ${emailAddress}` : ""}.
-                </p>
-                <Button type="button" variant="outline" className="w-full sm:w-auto" disabled>
-                  Correo verificado
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <p className="text-xs text-muted-foreground">
-                  Tu correo aún no está verificado{emailAddress ? ` (${emailAddress})` : ""}.
-                </p>
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full sm:w-auto"
-                    onClick={handleResendVerificationEmail}
-                    disabled={sendingVerificationEmail}
-                  >
-                    {sendingVerificationEmail ? "Enviando..." : "Verificar email"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="w-full sm:w-auto"
-                    onClick={() => refreshEmailVerificationStatus(true)}
-                    disabled={loadingEmailVerification}
-                  >
-                    Ya verifique, actualizar estado
-                  </Button>
-                </div>
-                {lastVerificationLink && (
-                  <a
-                    href={lastVerificationLink}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="block truncate text-xs text-primary underline"
-                  >
-                    Abrir enlace de verificación
-                  </a>
-                )}
-              </div>
-            )}
-          </div>
-
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              Autenticación de dos factores (2FA) está disponible próximamente
-            </AlertDescription>
-          </Alert>
-
-          <div className="space-y-3 pt-2">
-            <div className="rounded-xl border border-border/50 bg-background/60 p-3">
-              <h4 className="text-sm font-semibold mb-1.5 flex items-center gap-2">
-                <Smartphone className="h-4 w-4" /> Sesiones activas
-              </h4>
-              <p className="text-xs text-muted-foreground mb-3">Gestiona los dispositivos con acceso a tu cuenta</p>
-              <Button variant="outline" disabled className="w-full text-xs">
-                Ver sesiones activas
-              </Button>
-            </div>
-
-            <div className="rounded-xl border border-border/50 bg-background/60 p-3">
-              <h4 className="text-sm font-semibold mb-1.5 flex items-center gap-2">
-                <Activity className="h-4 w-4" /> Actividad de cuenta
-              </h4>
-              <p className="text-xs text-muted-foreground mb-3">Revisa el historial de inicios de sesión y cambios</p>
-              <Button variant="outline" disabled className="w-full text-xs">
-                Ver actividad
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Solicitud de permisos educador */}
-      <Card className="border-border/60 bg-background/40 shadow-none">
-        <CardHeader>
-          <CardTitle className="text-base font-semibold flex items-center gap-2">
-            <Shield className="w-5 h-5" /> Permisos de educador por unidad
-          </CardTitle>
-          <CardDescription>
-            Si te faltan permisos para subir archivos, difusión o gestión interna, envía una solicitud a administración.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {isLocalBackend() ? (
-            <p className="text-sm text-muted-foreground">
-              Esta función está disponible en modo Supabase.
-            </p>
-          ) : loadingRequestContext ? (
-            <p className="text-sm text-muted-foreground">Verificando tu perfil...</p>
-          ) : !canRequestEducatorPermissions ? (
-            <p className="text-sm text-muted-foreground">
-              Necesitas tener rol <strong>Educador/a</strong> en tu perfil para solicitar permisos de unidad.
-            </p>
-          ) : (
-            <>
-              <div>
-                <p className="text-sm font-medium">Unidades para habilitar</p>
-                <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  {EDUCATOR_UNIT_OPTIONS.map((option) => {
-                    const selected = requestUnits.includes(option.value);
-                    return (
-                      <Button
-                        key={option.value}
-                        type="button"
-                        variant={selected ? "default" : "outline"}
-                        className="justify-start"
-                        onClick={() => toggleRequestUnit(option.value)}
-                        disabled={requestingPermission}
-                      >
-                        {option.label}
-                      </Button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium">Detalle opcional para admin/mod</label>
-                <Textarea
-                  value={requestNote}
-                  onChange={(event) => setRequestNote(event.target.value)}
-                  placeholder="Ej: necesito habilitación en Tropa y Pioneros para gestión de documentos y difusión."
-                  className="mt-2"
-                  maxLength={600}
-                  disabled={requestingPermission}
-                />
-                <p className="mt-1 text-xs text-muted-foreground">{requestNote.length}/600</p>
-              </div>
-
-              <Button
-                type="button"
-                onClick={handleRequestEducatorPermissions}
-                disabled={requestingPermission || requestUnits.length === 0}
-                className="w-full"
-              >
-                {requestingPermission ? "Enviando solicitud..." : "Solicitar permisos de educador"}
-              </Button>
-            </>
-          )}
         </CardContent>
       </Card>
 
