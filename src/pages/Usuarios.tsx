@@ -747,106 +747,109 @@ const Usuarios = () => {
     ) : (
     <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25">
       <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
-        <Card className="mb-4 sm:mb-6 overflow-hidden border-border/70 bg-card/85 shadow-xl backdrop-blur-sm">
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex flex-col gap-4 sm:gap-5">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-start gap-3">
-                  <div className="mt-0.5 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                    <UsersIcon className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Comuni 7</h1>
-                    <p className="mt-1 text-sm sm:text-base text-muted-foreground">
-                      Personas, hilos y grupos de la comunidad scout.
-                    </p>
-                  </div>
-                </div>
-
-                <Badge variant="outline" className="border-primary/30 bg-primary/5 text-primary">
-                  Comunidad activa
-                </Badge>
+        {/* Header moderno */}
+        <div className="mb-6 sm:mb-8 space-y-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 text-primary">
+                <UsersIcon className="h-6 w-6" />
               </div>
+              <div>
+                <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">Comuni 7</h1>
+                <p className="mt-2 text-sm sm:text-base text-muted-foreground">
+                  Personas, hilos y grupos de la comunidad scout.
+                </p>
+              </div>
+            </div>
 
-              <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                <div className="rounded-lg border border-border/70 bg-background/70 px-3 py-2">
-                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Personas</p>
-                  <p className="text-lg font-bold">{profiles.length}</p>
+            <Badge className="bg-gradient-to-r from-primary/80 to-primary text-primary-foreground border-0 px-3 py-1">
+              Comunidad activa
+            </Badge>
+          </div>
+
+          <div className="grid grid-cols-3 gap-3 sm:gap-4">
+            <div className="group relative overflow-hidden rounded-xl border border-border/40 bg-gradient-to-br from-primary/5 to-background p-4 backdrop-blur-xs hover:border-primary/40 transition-all">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              <p className="relative text-xs font-semibold uppercase tracking-wider text-muted-foreground">Personas</p>
+              <p className="relative text-2xl font-bold text-primary mt-2">{profiles.length}</p>
+            </div>
+            <div className="group relative overflow-hidden rounded-xl border border-border/40 bg-gradient-to-br from-blue-500/5 to-background p-4 backdrop-blur-xs hover:border-blue-500/40 transition-all">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              <p className="relative text-xs font-semibold uppercase tracking-wider text-muted-foreground">Hilos</p>
+              <p className="relative text-2xl font-bold text-blue-500 mt-2">{shouldLoadThreads ? threads.length : "-"}</p>
+            </div>
+            <div className="group relative overflow-hidden rounded-xl border border-border/40 bg-gradient-to-br from-green-500/5 to-background p-4 backdrop-blur-xs hover:border-green-500/40 transition-all">
+              <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              <p className="relative text-xs font-semibold uppercase tracking-wider text-muted-foreground">Grupos</p>
+              <p className="relative text-2xl font-bold text-green-500 mt-2">{shouldLoadGroups ? groups.length : "-"}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Tarjetas de navegación */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 sm:mb-8">
+          <Link to="/mensajes">
+            <div className="group relative overflow-hidden rounded-2xl border border-border/50 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm hover:border-primary/40 transition-all hover:shadow-lg cursor-pointer">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="relative p-5 sm:p-6 flex items-center gap-4">
+                <div className="flex-shrink-0 inline-flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 text-primary group-hover:shadow-lg transition-all">
+                  <MessageCircle className="w-6 h-6" />
                 </div>
-                <div className="rounded-lg border border-border/70 bg-background/70 px-3 py-2">
-                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Hilos</p>
-                  <p className="text-lg font-bold">{shouldLoadThreads ? threads.length : "-"}</p>
-                </div>
-                <div className="rounded-lg border border-border/70 bg-background/70 px-3 py-2">
-                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Grupos</p>
-                  <p className="text-lg font-bold">{shouldLoadGroups ? groups.length : "-"}</p>
+                <div>
+                  <h3 className="font-bold text-base sm:text-lg">Mensajes</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                    Conectá con otros scouts
+                  </p>
                 </div>
               </div>
             </div>
-          </CardContent>
-        </Card>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 mb-4 sm:mb-6">
-          <Link to="/mensajes">
-            <Card className="card-hover cursor-pointer h-full border-border/70 bg-card/80 backdrop-blur-sm">
-              <CardContent className="p-3 sm:p-4 flex items-center gap-3">
-                <div className="w-9 h-9 sm:w-10 sm:h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                  <MessageCircle className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-sm sm:text-base">Mensajes</h3>
-                  <p className="text-xs text-muted-foreground">
-                    Conversá con otros scouts
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
           </Link>
 
           <Link to="/archivo">
-            <Card className="card-hover cursor-pointer h-full border-border/70 bg-card/80 backdrop-blur-sm">
-              <CardContent className="p-3 sm:p-4 flex items-center gap-3">
-                <div className="w-9 h-9 sm:w-10 sm:h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                  <ArchiveIcon className="w-5 h-5 text-primary" />
+            <div className="group relative overflow-hidden rounded-2xl border border-border/50 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm hover:border-primary/40 transition-all hover:shadow-lg cursor-pointer">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="relative p-5 sm:p-6 flex items-center gap-4">
+                <div className="flex-shrink-0 inline-flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 text-primary group-hover:shadow-lg transition-all">
+                  <ArchiveIcon className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-sm sm:text-base">Archivo y Galería</h3>
-                  <p className="text-xs text-muted-foreground">
-                    Explorá fotos e historia del grupo
+                  <h3 className="font-bold text-base sm:text-lg">Archivo y Galería</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                    Explorá fotos e historia
                   </p>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </Link>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="mb-4 sm:mb-5 h-auto w-full justify-start gap-1 rounded-xl border border-border/70 bg-card/75 p-1">
-            <TabsTrigger value="personas" className="text-xs sm:text-sm rounded-lg px-3 py-2 data-[state=active]:shadow-sm">Personas</TabsTrigger>
-            <TabsTrigger value="hilos" className="text-xs sm:text-sm rounded-lg px-3 py-2 data-[state=active]:shadow-sm">Hilos</TabsTrigger>
-            <TabsTrigger value="grupos" className="text-xs sm:text-sm rounded-lg px-3 py-2 data-[state=active]:shadow-sm">Grupos</TabsTrigger>
+          <TabsList className="mb-5 sm:mb-6 h-auto w-full justify-start gap-1.5 rounded-lg border border-border/50 bg-card/60 p-1.5 backdrop-blur-xs">
+            <TabsTrigger value="personas" className="text-xs sm:text-sm rounded-md px-3 sm:px-4 py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">Personas</TabsTrigger>
+            <TabsTrigger value="hilos" className="text-xs sm:text-sm rounded-md px-3 sm:px-4 py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">Hilos</TabsTrigger>
+            <TabsTrigger value="grupos" className="text-xs sm:text-sm rounded-md px-3 sm:px-4 py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">Grupos</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="personas">
+          <TabsContent value="personas" className="mt-0 space-y-3 sm:space-y-4">
             {/* Búsqueda */}
-            <Card className="mb-4 border-border/70 bg-card/80 backdrop-blur-sm shadow-sm">
-              <CardContent className="p-3 sm:p-4">
-                <div className="relative mb-3">
-                  <Search className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
+            <Card className="border-border/50 bg-card/60 backdrop-blur-xs shadow-sm">
+              <CardContent className="p-3 sm:p-4 space-y-3">
+                <div className="relative">
+                  <Search className="absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
                     type="text"
                     placeholder="Buscar por nombre..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-8 sm:pl-10 h-9 sm:h-10 text-sm"
+                    className="pl-8 sm:pl-9 h-9 sm:h-10 text-sm"
                   />
                 </div>
 
                 {/* Filtros y ordenamiento */}
-                <div className="grid gap-2 sm:gap-3 grid-cols-1 md:grid-cols-3 mb-1">
+                <div className="grid gap-2 sm:gap-3 grid-cols-1 md:grid-cols-3">
               {/* Filtro por unidad */}
                   <div>
-                <label className="text-sm font-medium mb-2 block text-muted-foreground">
+                <label className="text-xs sm:text-sm font-semibold mb-2 block text-muted-foreground uppercase tracking-wider">
                   Unidad
                 </label>
                 <Select
@@ -1005,7 +1008,7 @@ const Usuarios = () => {
               )}
             </div>
 
-            {/* Grid de usuarios */}
+            {/* Grid de usuarios - Balance: Info visible + Diseño Instagram */}
             {filteredProfiles.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-muted-foreground">
@@ -1013,7 +1016,7 @@ const Usuarios = () => {
                 </p>
               </div>
             ) : (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {filteredProfiles.map((profile) => {
                   const isCurrentUser = profile.user_id === currentUserId;
                   const localStatus = presenceById.get(profile.user_id);
@@ -1029,74 +1032,100 @@ const Usuarios = () => {
                   return (
                     <Card
                       key={profile.user_id}
-                      className="border-border/70 bg-card/85 backdrop-blur-sm shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+                      className="border-border/50 bg-card/70 backdrop-blur-xs shadow-sm hover:shadow-md hover:border-border/70 transition-all duration-200"
                     >
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-4">
-                          <UserAvatar
-                            avatarUrl={profile.avatar_url}
-                            userName={profile.nombre_completo}
-                            size="lg"
-                            className="w-16 h-16 text-xl flex-shrink-0"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h3 className="text-base sm:text-[1.05rem] font-semibold leading-snug truncate">
-                                {profile.nombre_completo || "Scout"}
-                              </h3>
+                      <CardContent className="p-3">
+                        <div className="space-y-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="relative group">
+                              {profile.avatar_url ? (
+                                <a
+                                  href={profile.avatar_url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  aria-label={`Ver imagen de ${profile.nombre_completo || "Scout"}`}
+                                  className="block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                                >
+                                  <UserAvatar
+                                    avatarUrl={profile.avatar_url}
+                                    userName={profile.nombre_completo}
+                                    size="lg"
+                                    className="w-12 h-12 text-sm flex-shrink-0"
+                                  />
+                                </a>
+                              ) : (
+                                <UserAvatar
+                                  avatarUrl={profile.avatar_url}
+                                  userName={profile.nombre_completo}
+                                  size="lg"
+                                  className="w-12 h-12 text-sm flex-shrink-0"
+                                />
+                              )}
+
+                              {profile.avatar_url && (
+                                <span className="pointer-events-none absolute left-full top-1/2 ml-1.5 -translate-y-1/2 whitespace-nowrap rounded-md border border-border/60 bg-background/95 px-1.5 py-0.5 text-[10px] font-medium text-foreground opacity-0 shadow-sm transition-all duration-150 group-hover:opacity-100 group-hover:translate-x-0">
+                                  Ver imagen
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex flex-col items-end gap-1">
+                              <div className="flex items-center gap-1.5">
+                                <span
+                                  className={`inline-flex h-2 w-2 rounded-full ${presence.dotClass}`}
+                                  aria-hidden="true"
+                                />
+                                <span className={`text-[11px] font-medium ${presence.textClass}`}>
+                                  {presence.label}
+                                </span>
+                              </div>
                               {isCurrentUser && (
-                                <span className="text-xs px-2 py-0.5 rounded-full bg-primary text-primary-foreground">
+                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary text-primary-foreground font-semibold">
                                   Tú
                                 </span>
                               )}
                             </div>
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
-                              <span>{getRamaLabel(profile)}</span>
-                              {profile.edad && (
-                                <span>• {profile.edad} años</span>
-                              )}
-                            </div>
-                            <div className="mb-2 flex items-center gap-2">
-                              <span
-                                className={`inline-flex h-2.5 w-2.5 rounded-full ${presence.dotClass}`}
-                                aria-hidden="true"
-                              />
-                              <span className={`text-xs font-medium ${presence.textClass}`}>
-                                {presence.label}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2 mb-3">
-                              {profile.is_public ? (
-                                <span className="text-xs px-2 py-1 rounded-md bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
-                                  🌍 Público
-                                </span>
-                              ) : (
-                                <span className="text-xs px-2 py-1 rounded-md bg-muted text-muted-foreground">
-                                  🔒 Privado
-                                </span>
-                              )}
-                            </div>
-                            {isCurrentUser ? (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="w-full"
-                                onClick={() => navigate("/perfil")}
-                              >
-                                Ver mi perfil
-                              </Button>
-                            ) : (
-                              <Button
-                                size="sm"
-                                className="w-full"
-                                onClick={() =>
-                                  navigate(`/perfil?userId=${profile.user_id}`)
-                                }
-                              >
-                                Ver perfil
-                              </Button>
-                            )}
                           </div>
+                          
+                          <div className="min-w-0 space-y-1.5">
+                            <h3 className="text-base font-semibold leading-snug truncate">
+                              {profile.nombre_completo || "Scout"}
+                            </h3>
+                            <div className="space-y-0.5">
+                              <p className="text-xs text-muted-foreground truncate">
+                                {getRamaLabel(profile)}{profile.edad && ` • ${profile.edad} años`}
+                              </p>
+                              <div className="flex items-center gap-1.5">
+                                <span className={`text-[11px] px-2 py-0.5 rounded-sm font-medium ${
+                                  profile.is_public 
+                                    ? "text-green-700 dark:text-green-300 bg-green-100/60 dark:bg-green-900/20" 
+                                    : "text-muted-foreground bg-muted/40"
+                                }`}>
+                                  {profile.is_public ? "🌍 Público" : "🔒 Privado"}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {isCurrentUser ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-6 text-xs font-medium px-3 py-0"
+                              onClick={() => navigate("/perfil")}
+                            >
+                              Mi perfil
+                            </Button>
+                          ) : (
+                            <Button
+                              size="sm"
+                              className="h-6 text-xs font-medium px-3 py-0"
+                              onClick={() =>
+                                navigate(`/perfil?userId=${profile.user_id}`)
+                              }
+                            >
+                              Ver perfil
+                            </Button>
+                          )}
                         </div>
                       </CardContent>
                     </Card>

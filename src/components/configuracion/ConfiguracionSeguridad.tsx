@@ -16,6 +16,14 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  CleanCard,
+  CleanCardHeader,
+  CleanCardTitle,
+  CleanCardDescription,
+  CleanCardContent,
+} from "@/components/ui/clean-card";
+import { SectionBlock, SectionBlockTitle, SectionBlockDescription } from "@/components/ui/section-block";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/hooks/useUser";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -356,43 +364,43 @@ export default function ConfiguracionSeguridad() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-5">
       {/* Seguridad de la cuenta */}
-      <Card className="border-border/60 bg-background/40 shadow-none">
-        <CardHeader>
-          <CardTitle className="text-base font-semibold flex items-center gap-2">
+      <CleanCard>
+        <CleanCardHeader>
+          <CleanCardTitle className="flex items-center gap-2">
             <Shield className="w-5 h-5" /> Seguridad de la cuenta
-          </CardTitle>
-          <CardDescription>
+          </CleanCardTitle>
+          <CleanCardDescription>
             Opciones avanzadas para proteger tu cuenta
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="rounded-lg border border-border/60 bg-muted/15 p-3">
-            <h4 className="text-sm font-semibold mb-1.5 flex items-center gap-2">
+          </CleanCardDescription>
+        </CleanCardHeader>
+        <CleanCardContent className="space-y-3 sm:space-y-4">
+          <SectionBlock>
+            <SectionBlockTitle>
               <MailCheck className="h-4 w-4" /> Verificación de correo
-            </h4>
+            </SectionBlockTitle>
             {loadingEmailVerification ? (
-              <p className="text-xs text-muted-foreground">Comprobando estado del correo...</p>
+              <SectionBlockDescription>Comprobando estado del correo...</SectionBlockDescription>
             ) : emailVerified ? (
               <div className="space-y-2">
-                <p className="text-xs text-muted-foreground">
+                <SectionBlockDescription>
                   Correo verificado{emailAddress ? `: ${emailAddress}` : ""}.
-                </p>
-                <Button type="button" variant="outline" className="w-full sm:w-auto" disabled>
+                </SectionBlockDescription>
+                <Button type="button" variant="outline" size="sm" disabled>
                   Correo verificado
                 </Button>
               </div>
             ) : (
               <div className="space-y-2">
-                <p className="text-xs text-muted-foreground">
+                <SectionBlockDescription>
                   Tu correo aún no está verificado{emailAddress ? ` (${emailAddress})` : ""}.
-                </p>
+                </SectionBlockDescription>
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <Button
                     type="button"
                     variant="outline"
-                    className="w-full sm:w-auto"
+                    size="sm"
                     onClick={handleResendVerificationEmail}
                     disabled={sendingVerificationEmail}
                   >
@@ -401,11 +409,11 @@ export default function ConfiguracionSeguridad() {
                   <Button
                     type="button"
                     variant="ghost"
-                    className="w-full sm:w-auto"
+                    size="sm"
                     onClick={() => refreshEmailVerificationStatus(true)}
                     disabled={loadingEmailVerification}
                   >
-                    Ya verifiqué, actualizar estado
+                    Ya verifiqué, actualizar
                   </Button>
                 </div>
                 {lastVerificationLink && (
@@ -420,50 +428,50 @@ export default function ConfiguracionSeguridad() {
                 )}
               </div>
             )}
-          </div>
+          </SectionBlock>
 
-          <Alert>
+          <Alert className="border-border/40">
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
+            <AlertDescription className="text-xs sm:text-sm">
               Autenticación de dos factores (2FA) está disponible próximamente
             </AlertDescription>
           </Alert>
 
-          <div className="space-y-3 pt-2">
-            <div className="rounded-xl border border-border/50 bg-background/60 p-3">
-              <h4 className="text-sm font-semibold mb-1.5 flex items-center gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <SectionBlock variant="compact">
+              <SectionBlockTitle>
                 <Smartphone className="h-4 w-4" /> Sesiones activas
-              </h4>
-              <p className="text-xs text-muted-foreground mb-3">Gestiona los dispositivos con acceso a tu cuenta</p>
-              <Button variant="outline" disabled className="w-full text-xs">
-                Ver sesiones activas
+              </SectionBlockTitle>
+              <SectionBlockDescription>Gestiona dispositivos con acceso</SectionBlockDescription>
+              <Button variant="outline" disabled size="sm" className="w-full mt-2">
+                Ver sesiones
               </Button>
-            </div>
+            </SectionBlock>
 
-            <div className="rounded-xl border border-border/50 bg-background/60 p-3">
-              <h4 className="text-sm font-semibold mb-1.5 flex items-center gap-2">
+            <SectionBlock variant="compact">
+              <SectionBlockTitle>
                 <Activity className="h-4 w-4" /> Actividad de cuenta
-              </h4>
-              <p className="text-xs text-muted-foreground mb-3">Revisa el historial de inicios de sesión y cambios</p>
-              <Button variant="outline" disabled className="w-full text-xs">
+              </SectionBlockTitle>
+              <SectionBlockDescription>Historial de inicios de sesión</SectionBlockDescription>
+              <Button variant="outline" disabled size="sm" className="w-full mt-2">
                 Ver actividad
               </Button>
-            </div>
+            </SectionBlock>
           </div>
-        </CardContent>
-      </Card>
+        </CleanCardContent>
+      </CleanCard>
 
       {/* Solicitud de permisos educador */}
-      <Card className="border-border/60 bg-background/40 shadow-none">
-        <CardHeader>
-          <CardTitle className="text-base font-semibold flex items-center gap-2">
+      <CleanCard>
+        <CleanCardHeader>
+          <CleanCardTitle className="flex items-center gap-2">
             <Shield className="w-5 h-5" /> Permisos de educador por unidad
-          </CardTitle>
-          <CardDescription>
-            Si te faltan permisos para subir archivos, difusión o gestión interna, envía una solicitud a administración.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+          </CleanCardTitle>
+          <CleanCardDescription>
+            Si te faltan permisos para subir archivos, difusión o gestión
+          </CleanCardDescription>
+        </CleanCardHeader>
+        <CleanCardContent className="space-y-3 sm:space-y-4">
           {isLocalBackend() ? (
             <p className="text-sm text-muted-foreground">
               Esta función está disponible en modo Supabase.
@@ -520,22 +528,22 @@ export default function ConfiguracionSeguridad() {
               </Button>
             </>
           )}
-        </CardContent>
-      </Card>
+        </CleanCardContent>
+      </CleanCard>
 
       {/* Cambiar contraseña */}
-      <Card className="border-border/60 bg-background/40 shadow-none">
-        <CardHeader>
-          <CardTitle className="text-base font-semibold flex items-center gap-2">
+      <CleanCard>
+        <CleanCardHeader>
+          <CleanCardTitle className="flex items-center gap-2">
             <Lock className="w-5 h-5" /> Cambiar contraseña
-          </CardTitle>
-          <CardDescription>
-            Actualiza tu contraseña de forma regular para mantener tu cuenta segura
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+          </CleanCardTitle>
+          <CleanCardDescription>
+            Actualiza tu contraseña de forma regular
+          </CleanCardDescription>
+        </CleanCardHeader>
+        <CleanCardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3 sm:space-y-4">
               <FormField
                 control={form.control}
                 name="password_actual"
@@ -664,49 +672,47 @@ export default function ConfiguracionSeguridad() {
               </Button>
             </form>
           </Form>
-        </CardContent>
-      </Card>
+        </CleanCardContent>
+      </CleanCard>
 
-      {/* ATENCION */}
-      <Card className="border-destructive/40 bg-destructive/5 shadow-none">
-        <CardHeader>
-          <CardTitle className="text-base text-destructive font-semibold flex items-center gap-2">
-            <Trash2 className="w-5 h-5" /> ATENCION
-          </CardTitle>
-          <CardDescription>
-            Eliminar tu cuenta es irreversible y borrará todos tus datos
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      {/* ATENCION - Eliminar cuenta */}
+      <CleanCard className="border-destructive/40 bg-destructive/5">
+        <CleanCardHeader>
+          <CleanCardTitle className="text-destructive flex items-center gap-2">
+            <Trash2 className="w-5 h-5" /> Zona de peligro
+          </CleanCardTitle>
+          <CleanCardDescription>
+            Eliminar tu cuenta es irreversible
+          </CleanCardDescription>
+        </CleanCardHeader>
+        <CleanCardContent className="space-y-3 sm:space-y-4">
           <p className="text-sm text-muted-foreground">
-            Esta acción eliminará perfil, seguidores, solicitudes, mensajes y demás contenido asociado a tu usuario.
+            Esta acción eliminará tu perfil, seguidores, mensajes y demás contenido.
           </p>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Escribe BORRAR para continuar</label>
-            <Input
-              value={deletePhrase}
-              onChange={(e) => setDeletePhrase(e.target.value)}
-              placeholder="BORRAR"
-              className="bg-background"
-              autoComplete="off"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Vuelve a escribir BORRAR para confirmar</label>
-            <Input
-              value={deleteConfirmPhrase}
-              onChange={(e) => setDeleteConfirmPhrase(e.target.value)}
-              placeholder="BORRAR"
-              className="bg-background"
-              autoComplete="off"
-            />
-          </div>
+          <SectionBlock variant="compact">
+            <SectionBlockTitle>Confirmar eliminación</SectionBlockTitle>
+            <div className="space-y-2">
+              <Input
+                value={deletePhrase}
+                onChange={(e) => setDeletePhrase(e.target.value)}
+                placeholder="Escribe BORRAR"
+                className="bg-background text-xs sm:text-sm"
+                autoComplete="off"
+              />
+              <Input
+                value={deleteConfirmPhrase}
+                onChange={(e) => setDeleteConfirmPhrase(e.target.value)}
+                placeholder="Vuelve a escribir BORRAR"
+                className="bg-background text-xs sm:text-sm"
+                autoComplete="off"
+              />
+            </div>
+          </SectionBlock>
 
           {!allowDeleteAccount && (
-            <p className="text-xs text-muted-foreground">
-              La eliminación de cuenta está disponible actualmente en modo local.
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              Disponible en modo local.
             </p>
           )}
 
@@ -716,10 +722,10 @@ export default function ConfiguracionSeguridad() {
             className="w-full"
             onClick={handleDeleteAccount}
           >
-            {deletingAccount ? "Eliminando..." : "Eliminar mi cuenta"}
+            {deletingAccount ? "Eliminando..." : "Eliminar cuenta"}
           </Button>
-        </CardContent>
-      </Card>
+        </CleanCardContent>
+      </CleanCard>
     </div>
   );
 }
