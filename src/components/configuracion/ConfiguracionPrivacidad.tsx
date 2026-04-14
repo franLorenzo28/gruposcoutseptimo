@@ -28,10 +28,19 @@ export default function ConfiguracionPrivacidad() {
   const [isSaved, setIsSaved] = useState(false);
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
 
+  const getEffectiveUserId = async () => {
+    if (isLocalBackend()) {
+      return user?.user_id || user?.id || null;
+    }
+
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.getUser();
+    return authUser?.id || user?.user_id || user?.id || null;
+  };
+
   // Cargar preferencias desde Supabase
   useEffect(() => {
-    if (!user?.id) return;
-
     const loadSettings = async () => {
       try {
         if (isLocalBackend()) {
@@ -43,10 +52,13 @@ export default function ConfiguracionPrivacidad() {
             });
           }
         } else {
+          const userId = await getEffectiveUserId();
+          if (!userId) return;
+
           const { data, error } = await supabase
             .from("profiles")
             .select("privacy_preferences")
-            .eq("user_id", user.id)
+            .eq("user_id", userId)
             .single();
 
           if (error) throw error;
@@ -64,9 +76,10 @@ export default function ConfiguracionPrivacidad() {
     };
 
     loadSettings();
-  }, [user?.id]);
+  }, [user?.id, user?.user_id]);
 
   const handleToggle = async (key: keyof typeof settings) => {
+    const previousSettings = settings;
     const newSettings = {
       ...settings,
       [key]: !settings[key],
@@ -80,12 +93,52 @@ export default function ConfiguracionPrivacidad() {
           method: "PUT",
           body: JSON.stringify({ privacy_preferences: newSettings }),
         });
+
+        const verifiedData = await apiFetch("/profiles/me");
+        if (isPlainObject(verifiedData?.privacy_preferences)) {
+          const verifiedSettings = {
+            ...DEFAULT_SETTINGS,
+            ...(verifiedData.privacy_preferences as Partial<typeof DEFAULT_SETTINGS>),
+          };
+          setSettings(verifiedSettings);
+          if (JSON.stringify(verifiedSettings) !== JSON.stringify(newSettings)) {
+            throw new Error("No se pudo verificar el guardado de privacidad");
+          }
+        }
       } else {
-        const { error } = await supabase
+        const userId = await getEffectiveUserId();
+        if (!userId) {
+          throw new Error("No se pudo identificar el usuario autenticado");
+        }
+
+        const { data: updatedRows, error } = await supabase
           .from("profiles")
           .update({ privacy_preferences: newSettings })
-          .eq("user_id", user?.id);
+          .eq("user_id", userId)
+          .select("user_id")
+          .limit(1);
         if (error) throw error;
+        if (!updatedRows || updatedRows.length === 0) {
+          throw new Error("No se encontró un perfil para actualizar");
+        }
+
+        const { data: verifiedData, error: verifyError } = await supabase
+          .from("profiles")
+          .select("privacy_preferences")
+          .eq("user_id", userId)
+          .single();
+        if (verifyError) throw verifyError;
+
+        if (isPlainObject(verifiedData?.privacy_preferences)) {
+          const verifiedSettings = {
+            ...DEFAULT_SETTINGS,
+            ...(verifiedData.privacy_preferences as Partial<typeof DEFAULT_SETTINGS>),
+          };
+          setSettings(verifiedSettings);
+          if (JSON.stringify(verifiedSettings) !== JSON.stringify(newSettings)) {
+            throw new Error("No se pudo verificar el guardado de privacidad");
+          }
+        }
       }
       
       setIsSaved(true);
@@ -94,7 +147,7 @@ export default function ConfiguracionPrivacidad() {
     } catch (error) {
       console.error("Error saving privacy preferences:", error);
       // Revertir cambio si falla
-      setSettings(settings);
+      setSettings(previousSettings);
       toast({
         title: "Error",
         description: "No pudimos guardar tus preferencias. Intenta de nuevo.",
@@ -112,12 +165,44 @@ export default function ConfiguracionPrivacidad() {
           method: "PUT",
           body: JSON.stringify({ privacy_preferences: settings }),
         });
+
+        const verifiedData = await apiFetch("/profiles/me");
+        if (isPlainObject(verifiedData?.privacy_preferences)) {
+          setSettings({
+            ...DEFAULT_SETTINGS,
+            ...(verifiedData.privacy_preferences as Partial<typeof DEFAULT_SETTINGS>),
+          });
+        }
       } else {
-        const { error } = await supabase
+        const userId = await getEffectiveUserId();
+        if (!userId) {
+          throw new Error("No se pudo identificar el usuario autenticado");
+        }
+
+        const { data: updatedRows, error } = await supabase
           .from("profiles")
           .update({ privacy_preferences: settings })
-          .eq("user_id", user?.id);
+          .eq("user_id", userId)
+          .select("user_id")
+          .limit(1);
         if (error) throw error;
+        if (!updatedRows || updatedRows.length === 0) {
+          throw new Error("No se encontró un perfil para actualizar");
+        }
+
+        const { data: verifiedData, error: verifyError } = await supabase
+          .from("profiles")
+          .select("privacy_preferences")
+          .eq("user_id", userId)
+          .single();
+        if (verifyError) throw verifyError;
+
+        if (isPlainObject(verifiedData?.privacy_preferences)) {
+          setSettings({
+            ...DEFAULT_SETTINGS,
+            ...(verifiedData.privacy_preferences as Partial<typeof DEFAULT_SETTINGS>),
+          });
+        }
       }
 
       toast({
@@ -140,15 +225,6 @@ export default function ConfiguracionPrivacidad() {
 
   return (
     <div className="space-y-6">
-      {isSaved && (
-        <div className="bg-red-50 dark:bg-red-950/30 border border-scout-red dark:border-red-900 rounded-lg p-3 flex items-center gap-2 text-scout-red dark:text-red-400 text-sm animate-in slide-in-from-top">
-          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-          </svg>
-          <span>Cambios guardados automáticamente</span>
-        </div>
-      )}
-
       {/* Alert informativo */}
       <Alert>
         <Info className="h-4 w-4" />

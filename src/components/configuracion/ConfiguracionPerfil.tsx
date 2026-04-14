@@ -38,16 +38,15 @@ export default function ConfiguracionPerfil() {
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      nombre_completo: user?.profile?.nombre_completo || "",
-      profesion_ocupacion: user?.profile?.profesion_ocupacion || "",
-      descripcion_personal: user?.profile?.descripcion_personal || "",
+      nombre_completo: user?.profile?.nombre_completo || user?.nombre_completo || "",
+      profesion_ocupacion: user?.profile?.profesion_ocupacion || user?.profesion_ocupacion || "",
+      descripcion_personal:
+        user?.profile?.descripcion_personal || user?.descripcion_personal || "",
     },
   });
 
   // Cargar datos del perfil desde Supabase
   useEffect(() => {
-    if (!user?.id) return;
-
     const loadProfile = async () => {
       try {
         if (isLocalBackend()) {
@@ -61,10 +60,16 @@ export default function ConfiguracionPerfil() {
             setCharCount(data.descripcion_personal?.length || 0);
           }
         } else {
+          const {
+            data: { user: authUser },
+          } = await supabase.auth.getUser();
+          const userId = authUser?.id || user?.user_id || user?.id;
+          if (!userId) return;
+
           const { data, error } = await supabase
             .from("profiles")
             .select("nombre_completo, profesion_ocupacion, descripcion_personal")
-            .eq("user_id", user.id)
+            .eq("user_id", userId)
             .single();
 
           if (error) throw error;
@@ -83,7 +88,7 @@ export default function ConfiguracionPerfil() {
     };
 
     loadProfile();
-  }, [user?.id, form]);
+  }, [user?.id, user?.user_id, form]);
 
   const onSubmit = async (data: ProfileFormValues) => {
     try {
@@ -99,15 +104,29 @@ export default function ConfiguracionPerfil() {
           }),
         });
       } else {
-        const { error } = await supabase
+        const {
+          data: { user: authUser },
+        } = await supabase.auth.getUser();
+        const userId = authUser?.id || user?.user_id || user?.id;
+        if (!userId) {
+          throw new Error("No se pudo identificar el usuario autenticado");
+        }
+
+        const { data: updatedRows, error } = await supabase
           .from("profiles")
           .update({
             nombre_completo: data.nombre_completo,
             profesion_ocupacion: data.profesion_ocupacion || null,
             descripcion_personal: data.descripcion_personal || null,
           })
-          .eq("user_id", user?.id);
+          .eq("user_id", userId)
+          .select("user_id")
+          .limit(1);
+
         if (error) throw error;
+        if (!updatedRows || updatedRows.length === 0) {
+          throw new Error("No se encontró un perfil para actualizar");
+        }
       }
 
       toast({

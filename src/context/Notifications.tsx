@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSupabaseUser } from "@/App";
 import { useToast } from "@/hooks/use-toast";
@@ -56,6 +56,71 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
   const { toast } = useToast();
   const isLocal = isLocalBackend();
   const effectiveUserId = isLocal ? localUserId : user?.id || null;
+  const notificationPreferences = useMemo(() => {
+    const defaults = {
+      nuevos_mensajes: true,
+      nuevos_seguidores: true,
+      comentarios_fotos: true,
+      eventos_proximamente: true,
+      notificaciones_rama: true,
+      resumen_semanal: false,
+      email_notificaciones: true,
+      push_notificaciones: true,
+    };
+
+    const raw = (user as any)?.notification_preferences;
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+      return defaults;
+    }
+
+    const parsed = raw as Record<string, unknown>;
+    return {
+      nuevos_mensajes:
+        typeof parsed.nuevos_mensajes === "boolean"
+          ? parsed.nuevos_mensajes
+          : defaults.nuevos_mensajes,
+      nuevos_seguidores:
+        typeof parsed.nuevos_seguidores === "boolean"
+          ? parsed.nuevos_seguidores
+          : defaults.nuevos_seguidores,
+      comentarios_fotos:
+        typeof parsed.comentarios_fotos === "boolean"
+          ? parsed.comentarios_fotos
+          : defaults.comentarios_fotos,
+      eventos_proximamente:
+        typeof parsed.eventos_proximamente === "boolean"
+          ? parsed.eventos_proximamente
+          : defaults.eventos_proximamente,
+      notificaciones_rama:
+        typeof parsed.notificaciones_rama === "boolean"
+          ? parsed.notificaciones_rama
+          : defaults.notificaciones_rama,
+      resumen_semanal:
+        typeof parsed.resumen_semanal === "boolean"
+          ? parsed.resumen_semanal
+          : defaults.resumen_semanal,
+      email_notificaciones:
+        typeof parsed.email_notificaciones === "boolean"
+          ? parsed.email_notificaciones
+          : defaults.email_notificaciones,
+      push_notificaciones:
+        typeof parsed.push_notificaciones === "boolean"
+          ? parsed.push_notificaciones
+          : defaults.push_notificaciones,
+    };
+  }, [user]);
+
+  const isNotificationEnabled = useCallback(
+    (type: AppNotification["type"]) => {
+      if (type === "message") return notificationPreferences.nuevos_mensajes;
+      if (type === "follow_request" || type === "follow_accepted") {
+        return notificationPreferences.nuevos_seguidores;
+      }
+      if (type === "gallery_upload") return notificationPreferences.comentarios_fotos;
+      return true;
+    },
+    [notificationPreferences],
+  );
 
   useEffect(() => {
     if (!isLocal) return;
@@ -142,11 +207,12 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 
   const addNotification = useCallback((n: AppNotification) => {
+    if (!isNotificationEnabled(n.type)) return;
     setNotifications(prev => {
       if (prev.some((x) => x.id === n.id)) return prev;
       return [n, ...prev].sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
     });
-  }, []);
+  }, [isNotificationEnabled]);
 
   const markAllRead = useCallback(async () => {
     if (!effectiveUserId) return;
@@ -188,6 +254,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   const syncPendingFollowRequests = useCallback(async (currentUserId: string) => {
+    if (!isNotificationEnabled("follow_request")) return;
     const followsResult = await querySilent(() =>
       supabase
         .from("follows")
@@ -250,7 +317,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
         a.created_at < b.created_at ? 1 : -1,
       );
     });
-  }, []);
+  }, [isNotificationEnabled]);
 
   useEffect(() => {
     if (!isLocal || !effectiveUserId) return;
@@ -377,6 +444,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
         { event: "INSERT", schema: "public", table: "follows", filter: `followed_id=eq.${user.id}` },
         async payload => {
           const row: any = payload.new;
+          if (!isNotificationEnabled("follow_request")) return;
           if (row.status === "pending") {
             // Obtener perfil del seguidor
             const { data: prof } = await supabase
@@ -413,6 +481,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
           }
 
           if (row.status === "accepted") {
+            if (!isNotificationEnabled("follow_accepted")) return;
             const { data: prof } = await supabase
               .from("profiles")
               .select("nombre_completo, username, avatar_url")
@@ -454,6 +523,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
           const oldRow: any = payload.old;
           if (!oldRow || oldRow.status === row.status) return;
           if (row.status !== "accepted") return;
+          if (!isNotificationEnabled("follow_accepted")) return;
 
           const { data: prof } = await supabase
             .from("profiles")
@@ -497,6 +567,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
         async (payload) => {
           const row: any = payload.new;
           if (!row || row.author_id === user.id) return;
+          if (!isNotificationEnabled("thread_new")) return;
 
           const { data: prof } = await supabase
             .from("profiles")
@@ -542,6 +613,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
         async (payload) => {
           const row: any = payload.new;
           if (!row?.group_id) return;
+          if (!isNotificationEnabled("group_invite")) return;
 
           const { data: group } = await supabase
             .from("groups")
@@ -581,7 +653,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
       supabase.removeChannel(channelThreads);
       supabase.removeChannel(channelGroupInvites);
     };
-  }, [user, addNotification, toast, persistNotification, isLocal]);
+  }, [user, addNotification, toast, persistNotification, isLocal, isNotificationEnabled]);
 
   // Notificación de nuevas fotos en galería (sondeo liviano)
   useEffect(() => {
@@ -606,6 +678,10 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
 
         const newPaths = Array.from(current).filter((p) => !knownGalleryPathsRef.current.has(p));
         if (newPaths.length > 0) {
+          if (!isNotificationEnabled("gallery_upload")) {
+            if (!cancelled) knownGalleryPathsRef.current = current;
+            return;
+          }
           const first = newPaths[0];
           const albumName = first.split("/")[0] || "Galería";
           const notif: AppNotification = {
@@ -651,7 +727,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
       cancelled = true;
       clearInterval(timer);
     };
-  }, [user, addNotification, toast, persistNotification, isLocal]);
+  }, [user, addNotification, toast, persistNotification, isLocal, isNotificationEnabled]);
 
   // Suscripción a mensajes nuevos en cualquier conversación del usuario
   useEffect(() => {
@@ -665,6 +741,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
         payload => {
           const row: any = payload.new;
           if (row.sender_id === user.id) return; // ignorar propios
+          if (!isNotificationEnabled("message")) return;
           // Crear notificación optimista sin validar conversación
           const notif: AppNotification = {
             id: `msg-${row.id}`,
@@ -679,7 +756,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
       )
       .subscribe();
     return () => { supabase.removeChannel(channelMessages); };
-  }, [user, addNotification, toast, isLocal]);
+  }, [user, addNotification, toast, isLocal, isNotificationEnabled]);
 
   // Cargar notificaciones persistentes (thread_comment, mention) y suscribirse a nuevas
   useEffect(() => {
@@ -698,13 +775,9 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
           // Mantener existentes (mensajes, follows en memoria) y combinar con persistentes evitando duplicados por id
           const map = new Map(prev.map(n => [n.id, n] as const));
           for (const r of data as any[]) {
-            map.set(r.id, {
-              id: r.id,
-              type: r.type,
-              created_at: r.created_at,
-              read: !!r.read_at,
-              data: r.data || {}
-            });
+            const normalized = normalizePersistentNotification(r);
+            if (!isNotificationEnabled(normalized.type)) continue;
+            map.set(r.id, normalized);
           }
           return Array.from(map.values()).sort((a,b) => (a.created_at < b.created_at ? 1 : -1));
         });
@@ -733,6 +806,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
               read: false,
               data: { ...(row.data || {}), _persistent: true }
             };
+            if (!isNotificationEnabled(notif.type)) return;
             addNotification(notif);
             if (row.type === "thread_comment") {
               toast({ title: "Nuevo comentario en tu hilo", description: (row.data?.content || "").slice(0,80) });
@@ -745,7 +819,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
         .subscribe();
     })();
     return () => { if (channel) supabase.removeChannel(channel); };
-  }, [user, addNotification, toast, normalizePersistentNotification, isLocal, syncPendingFollowRequests]);
+  }, [user, addNotification, toast, normalizePersistentNotification, isLocal, syncPendingFollowRequests, isNotificationEnabled]);
 
   useEffect(() => {
     if (!user || isLocal) return;
@@ -776,7 +850,9 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
         setNotifications(prev => {
           const map = new Map(prev.map(n => [n.id, n] as const));
           for (const r of data as any[]) {
-            map.set(r.id, normalizePersistentNotification(r));
+            const normalized = normalizePersistentNotification(r);
+            if (!isNotificationEnabled(normalized.type)) continue;
+            map.set(r.id, normalized);
           }
           return Array.from(map.values()).sort((a,b) => (a.created_at < b.created_at ? 1 : -1));
         });
@@ -793,7 +869,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
     } finally {
       setLoadingMore(false);
     }
-  }, [user, hasMore, loadingMore, oldestPersistedTimestamp, normalizePersistentNotification, isLocal]);
+  }, [user, hasMore, loadingMore, oldestPersistedTimestamp, normalizePersistentNotification, isLocal, isNotificationEnabled]);
 
   const unreadCount = notifications.filter(n => !n.read).length;
 

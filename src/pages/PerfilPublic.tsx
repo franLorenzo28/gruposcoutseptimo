@@ -189,6 +189,25 @@ const PerfilPublic = () => {
 
   const displayName = (profile?.nombre_completo ?? minimalProfile?.nombre_completo) || "Usuario Scout";
   const displayUsername = sanitizeText((profile as any)?.username || minimalProfile?.username || null);
+  const displayDescription = sanitizeText((profile as any)?.descripcion_personal || "");
+  const privacyPrefs = (() => {
+    const raw = (profile as any)?.privacy_preferences;
+    const defaults = {
+      mostrar_telefono: false,
+    };
+
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+      return defaults;
+    }
+
+    const parsed = raw as Record<string, unknown>;
+    return {
+      mostrar_telefono:
+        typeof parsed.mostrar_telefono === "boolean"
+          ? parsed.mostrar_telefono
+          : defaults.mostrar_telefono,
+    };
+  })();
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25 py-12 px-4">
@@ -226,11 +245,16 @@ const PerfilPublic = () => {
                   </span>
                 )}
               </div>
+              {displayDescription && (
+                <p className="mt-2 text-sm whitespace-pre-line text-muted-foreground">
+                  {displayDescription}
+                </p>
+              )}
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="mb-4 flex gap-2">
+          <div className={isAccessible ? "mb-4 flex gap-2" : "mb-6"}>
             {status === "accepted" ? (
               <AlertDialog
                 open={showUnfollowDialog}
@@ -272,10 +296,10 @@ const PerfilPublic = () => {
             ) : status === "pending" ? (
               <Button
                 variant="outline"
-                size="sm"
+                size={isAccessible ? "sm" : "default"}
                 onClick={handleCancelOrUnfollow}
                 disabled={actionLoading}
-                className="gap-2"
+                className={isAccessible ? "gap-2" : "w-full h-12 text-base font-semibold rounded-xl gap-2"}
               >
                 {actionLoading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -288,10 +312,10 @@ const PerfilPublic = () => {
               </Button>
             ) : (
               <Button
-                size="sm"
+                size={isAccessible ? "sm" : "default"}
                 onClick={handleFollow}
                 disabled={actionLoading}
-                className="gap-2"
+                className={isAccessible ? "gap-2" : "w-full h-12 text-base font-semibold rounded-xl gap-2"}
               >
                 {actionLoading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -307,7 +331,10 @@ const PerfilPublic = () => {
           {isAccessible ? (
             <div className="space-y-3">
               <p>
-                <strong>Teléfono:</strong> {sanitizeText(profile?.telefono) || "-"}
+                <strong>Teléfono:</strong>{" "}
+                {privacyPrefs.mostrar_telefono
+                  ? sanitizeText(profile?.telefono) || "-"
+                  : "Oculto"}
               </p>
               <p>
                 <strong>Edad:</strong> {profile?.edad ?? "-"}
@@ -321,7 +348,7 @@ const PerfilPublic = () => {
             </div>
           ) : (
             <div className="text-sm text-muted-foreground">
-              Solo puedes ver el nombre y el usuario. Enváa una solicitud para ver más información.
+              Este perfil es privado. Sigue esta cuenta para ver más información.
             </div>
           )}
         </CardContent>

@@ -1,6 +1,7 @@
 ﻿// --- Validación y sanitización ---
 type ProfileFormData = {
   nombre_completo: string;
+  descripcion_personal: string;
   edad: number;
   fecha_nacimiento: string;
   seisena: string;
@@ -32,6 +33,7 @@ function validateProfile(data: ProfileFormData) {
   const sanitized = {
     ...data,
     nombre_completo: data.nombre_completo.replace(/[<>"']/g, ""),
+    descripcion_personal: data.descripcion_personal.replace(/[<>"']/g, "").trim(),
     username: data.username.replace(/[^a-zA-Z0-9._-]/g, ""),
   };
   return { valid: errors.length === 0, errors, sanitized };
@@ -42,6 +44,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import UserAvatar from "@/components/UserAvatar";
 import AvatarCropDialog from "@/components/AvatarCropDialog";
 import { ArrowLeft, Save, Upload, X, Mail, AlertCircle, Settings } from "lucide-react";
@@ -82,6 +85,7 @@ const Perfil = () => {
 
   const [formData, setFormData] = useState<{
     nombre_completo: string;
+    descripcion_personal: string;
     edad: number;
     fecha_nacimiento: string;
     seisena: string;
@@ -96,6 +100,7 @@ const Perfil = () => {
     username_updated_at: string | null;
   }>({
     nombre_completo: "",
+    descripcion_personal: "",
     edad: 0,
     fecha_nacimiento: "",
     seisena: "",
@@ -205,6 +210,7 @@ const Perfil = () => {
         const profileData = {
           ...formData,
           nombre_completo: p?.nombre_completo || "",
+          descripcion_personal: p?.descripcion_personal || "",
           edad: p?.edad || 0,
           fecha_nacimiento: p?.fecha_nacimiento
             ? p.fecha_nacimiento.split("T")[0]
@@ -244,6 +250,7 @@ const Perfil = () => {
         const profileData = {
           ...formData,
           nombre_completo: userNombre,
+          descripcion_personal: (profile as any).descripcion_personal || "",
           edad: (profile as any).edad || 0,
           fecha_nacimiento: (profile as any).fecha_nacimiento
             ? (profile as any).fecha_nacimiento.split("T")[0]
@@ -327,6 +334,7 @@ const Perfil = () => {
     // Comparar campos editables
     return (
       formData.nombre_completo !== originalData.nombre_completo ||
+      formData.descripcion_personal !== originalData.descripcion_personal ||
 
       formData.edad !== originalData.edad ||
       formData.fecha_nacimiento !== originalData.fecha_nacimiento ||
@@ -484,6 +492,7 @@ const Perfil = () => {
       const profileData: any = {
         user_id: auth.id,
         nombre_completo: sanitized.nombre_completo,
+        descripcion_personal: sanitized.descripcion_personal || null,
         edad: sanitized.edad,
         avatar_url: avatarUrl,
         updated_at: new Date().toISOString(),
@@ -535,6 +544,7 @@ const Perfil = () => {
           const refreshed = {
             ...formData,
             nombre_completo: updated?.nombre_completo || formData.nombre_completo,
+            descripcion_personal: updated?.descripcion_personal || formData.descripcion_personal,
             fecha_nacimiento: updated?.fecha_nacimiento
               ? String(updated.fecha_nacimiento).split("T")[0]
               : formData.fecha_nacimiento,
@@ -903,6 +913,32 @@ const Perfil = () => {
                   disabled
                   className="bg-muted"
                 />
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="descripcion_personal">Descripción (tipo Instagram)</Label>
+                <Textarea
+                  id="descripcion_personal"
+                  name="descripcion_personal"
+                  value={formData.descripcion_personal}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value.length <= 500) {
+                      setFormData((prev) => ({
+                        ...prev,
+                        descripcion_personal: value,
+                      }));
+                    }
+                  }}
+                  placeholder="Contá algo sobre vos..."
+                  maxLength={500}
+                  rows={4}
+                  className="bg-background resize-none"
+                />
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>Se muestra en tu perfil.</span>
+                  <span>{formData.descripcion_personal.length}/500</span>
+                </div>
               </div>
 
               <div className="md:col-span-2 rounded-xl border border-primary/30 bg-primary/10 p-4">

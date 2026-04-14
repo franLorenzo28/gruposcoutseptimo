@@ -392,54 +392,91 @@ const PerfilView = () => {
     !profile || !(profile as any).is_public
   ) && followStatus !== "following";
 
+  const privateDisplayName =
+    sanitizeText(profile?.nombre_completo ?? minimalProfile?.nombre_completo) ||
+    "Usuario Scout";
+  const privateUsername = sanitizeText(
+    ((profile as any)?.username || minimalProfile?.username || "") as string,
+  );
+  const privateDescription = sanitizeText(
+    ((profile as any)?.descripcion_personal || "") as string,
+  );
+  const rawPrivacyPrefs = (profile as any)?.privacy_preferences;
+  const privacyPrefs = {
+    mostrar_email:
+      !!rawPrivacyPrefs &&
+      typeof rawPrivacyPrefs === "object" &&
+      !Array.isArray(rawPrivacyPrefs) &&
+      typeof (rawPrivacyPrefs as Record<string, unknown>).mostrar_email === "boolean"
+        ? ((rawPrivacyPrefs as Record<string, unknown>).mostrar_email as boolean)
+        : false,
+    mostrar_telefono:
+      !!rawPrivacyPrefs &&
+      typeof rawPrivacyPrefs === "object" &&
+      !Array.isArray(rawPrivacyPrefs) &&
+      typeof (rawPrivacyPrefs as Record<string, unknown>).mostrar_telefono === "boolean"
+        ? ((rawPrivacyPrefs as Record<string, unknown>).mostrar_telefono as boolean)
+        : false,
+  };
+
   // Vista restringida temprana: solo nombre/usuario y botón de seguir
   if (!loading && isRestrictedView) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25">
-        <div className="max-w-4xl mx-auto px-4 py-6 sm:py-8">
-          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 sm:gap-8 mb-6 sm:mb-8 pb-6 sm:pb-8 border-b">
-            <UserAvatar
-              avatarUrl={profile?.avatar_url}
-              userName={profile?.nombre_completo || minimalProfile?.nombre_completo || null}
-              size="xl"
-              className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 text-3xl sm:text-4xl"
-            />
-            <div className="flex-1 min-w-0 w-full">
-              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3 sm:gap-4 mb-4 flex-wrap">
-                <div className="flex flex-col items-center sm:items-start">
-                  <h1 className="text-xl sm:text-2xl font-normal">
-                    {sanitizeText(profile?.nombre_completo ?? minimalProfile?.nombre_completo) || "Usuario Scout"}
+        <div className="max-w-3xl mx-auto px-4 py-8 sm:py-12">
+          <div className="rounded-2xl border bg-card/80 backdrop-blur-sm p-5 sm:p-8 shadow-sm">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 sm:gap-8 pb-6 border-b">
+              <UserAvatar
+                avatarUrl={profile?.avatar_url}
+                userName={privateDisplayName}
+                size="xl"
+                className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 text-3xl sm:text-4xl"
+              />
+              <div className="flex-1 min-w-0 w-full">
+                <div className="flex flex-col items-center sm:items-start gap-2">
+                  <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-center sm:text-left">
+                    {privateDisplayName}
                   </h1>
-                  {((profile as any)?.username || minimalProfile?.username) && (
-                    <p className="text-sm text-muted-foreground">
-                      @{(profile as any)?.username || minimalProfile?.username}
+                  {privateUsername && (
+                    <p className="text-sm sm:text-base text-muted-foreground text-center sm:text-left">
+                      @{privateUsername}
+                    </p>
+                  )}
+                  {privateDescription ? (
+                    <p className="text-sm sm:text-base whitespace-pre-line text-center sm:text-left mt-1">
+                      {privateDescription}
+                    </p>
+                  ) : (
+                    <p className="text-sm text-muted-foreground text-center sm:text-left mt-1">
+                      Este usuario aún no agregó una descripción.
                     </p>
                   )}
                 </div>
-                <div className="flex gap-2 w-full sm:w-auto">
-                  {!isOwnProfile && (
-                    <Button
-                      variant={followStatus === "pending" ? "outline" : "default"}
-                      size="sm"
-                      onClick={handleFollowToggle}
-                      disabled={followLoading}
-                      className="gap-1 flex-1 sm:flex-none text-xs sm:text-sm"
-                    >
-                      {followLoading
-                        ? "Cargando..."
-                        : followStatus === "pending"
+              </div>
+            </div>
+            <div className="mt-6">
+              <div className="w-full sm:max-w-md sm:mx-auto">
+                {!isOwnProfile && (
+                  <Button
+                    variant={followStatus === "pending" ? "outline" : "default"}
+                    onClick={handleFollowToggle}
+                    disabled={followLoading}
+                    className="w-full h-12 text-base sm:text-lg font-semibold rounded-xl"
+                  >
+                    {followLoading
+                      ? "Cargando..."
+                      : followStatus === "pending"
                         ? "Solicitud enviada"
                         : "Seguir"}
-                    </Button>
-                  )}
-                </div>
+                  </Button>
+                )}
               </div>
-              <div className="rounded-lg border bg-muted/30 p-4 text-center sm:text-left">
-                <p className="text-sm sm:text-base">
-                  🔒 Este perfil es privado. Solo puedes ver el nombre y el usuario.
+              <div className="mt-5 rounded-xl border bg-muted/30 p-4 text-center sm:text-left">
+                <p className="text-sm sm:text-base font-medium">
+                  🔒 Este perfil es privado
                 </p>
                 <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-                  Enváa una solicitud de seguimiento para ver más información.
+                  Sigue esta cuenta para ver más información y contenido.
                 </p>
               </div>
             </div>
@@ -629,14 +666,24 @@ const PerfilView = () => {
               <p className="font-semibold text-sm sm:text-base">
                 {profile.nombre_completo}
               </p>
-              {viewedUserEmail && isOwnProfile && (
+              {viewedUserEmail && isOwnProfile && privacyPrefs.mostrar_email && (
                 <p className="text-xs sm:text-sm text-muted-foreground">
                   {viewedUserEmail}
                 </p>
               )}
-              {profile.telefono && (
+              {profile.telefono && privacyPrefs.mostrar_telefono && (
                 <p className="text-xs sm:text-sm text-muted-foreground">
                   📞 {sanitizeText(profile.telefono)}
+                </p>
+              )}
+              {isOwnProfile && profile.telefono && !privacyPrefs.mostrar_telefono && (
+                <p className="text-xs sm:text-sm text-muted-foreground/80">
+                  Teléfono oculto por privacidad.
+                </p>
+              )}
+              {!!(profile as any)?.descripcion_personal && (
+                <p className="text-sm sm:text-base whitespace-pre-line mt-2">
+                  {sanitizeText((profile as any).descripcion_personal)}
                 </p>
               )}
               {/* Para adultos ya mostramos Rol y Rama que educa arriba; no repetir aquá */}
