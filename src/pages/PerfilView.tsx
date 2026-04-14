@@ -308,7 +308,15 @@ const PerfilView = () => {
       
       if (followStatus === "following") {
         // Dejar de seguir
-        await unfollowUser(viewingUserId);
+        const { error } = await unfollowUser(viewingUserId);
+        if (error) {
+          toast({
+            title: "Error",
+            description: error.message || "No se pudo dejar de seguir",
+            variant: "destructive",
+          });
+          return;
+        }
         setFollowStatus("none");
         setFollowersCount(prev => Math.max(0, prev - 1));
         toast({
@@ -323,12 +331,39 @@ const PerfilView = () => {
         });
       } else {
         // Enviar solicitud de seguimiento
-        await followUser(viewingUserId);
-        setFollowStatus("pending");
-        toast({
-          title: "Solicitud enviada",
-          description: `Se envió la solicitud de seguimiento a ${profile?.nombre_completo || "este usuario"}`,
-        });
+        const result = await followUser(viewingUserId);
+        if (result.error) {
+          toast({
+            title: "Error",
+            description: result.error.message || "No se pudo enviar la solicitud",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        const nextStatus = result.followStatus === "accepted" ? "following" : "pending";
+        setFollowStatus(nextStatus);
+
+        if (nextStatus === "following") {
+          setFollowersCount((prev) => prev + 1);
+          toast({
+            title: "Ahora sigues a este usuario",
+            description: `${profile?.nombre_completo || "Este usuario"} tiene perfil público.`,
+          });
+        } else {
+          toast({
+            title: "Solicitud enviada",
+            description: `Se envió la solicitud de seguimiento a ${profile?.nombre_completo || "este usuario"}`,
+          });
+        }
+
+        if (result.notificationPersisted === false) {
+          toast({
+            title: "Aviso",
+            description: "La notificación puede tardar en aparecer en el destinatario.",
+            variant: "destructive",
+          });
+        }
       }
     } catch (error: any) {
       toast({

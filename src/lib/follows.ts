@@ -10,6 +10,58 @@ export type FollowActionResult = {
   notificationErrorMessage?: string;
 };
 
+const FOLLOW_RELATION_CACHE_KEY = "follow_relation_cache_v1";
+
+function canUseStorage() {
+  return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+}
+
+function getFollowCacheKey(followerId: string, followedId: string) {
+  return `${followerId}:${followedId}`;
+}
+
+function readFollowRelationCache(followerId: string, followedId: string): FollowStatus | null {
+  if (!canUseStorage()) return null;
+  try {
+    const raw = window.localStorage.getItem(FOLLOW_RELATION_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Record<string, FollowStatus>;
+    return parsed[getFollowCacheKey(followerId, followedId)] || null;
+  } catch {
+    return null;
+  }
+}
+
+function writeFollowRelationCache(followerId: string, followedId: string, status: FollowStatus) {
+  if (!canUseStorage()) return;
+  try {
+    const raw = window.localStorage.getItem(FOLLOW_RELATION_CACHE_KEY);
+    const parsed = raw ? (JSON.parse(raw) as Record<string, FollowStatus>) : {};
+    parsed[getFollowCacheKey(followerId, followedId)] = status;
+    window.localStorage.setItem(FOLLOW_RELATION_CACHE_KEY, JSON.stringify(parsed));
+  } catch {
+    // Silencioso para no romper UX
+  }
+}
+
+function clearFollowRelationCache(followerId: string, followedId: string) {
+  if (!canUseStorage()) return;
+  try {
+    const raw = window.localStorage.getItem(FOLLOW_RELATION_CACHE_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw) as Record<string, FollowStatus>;
+    delete parsed[getFollowCacheKey(followerId, followedId)];
+    window.localStorage.setItem(FOLLOW_RELATION_CACHE_KEY, JSON.stringify(parsed));
+  } catch {
+    // Silencioso para no romper UX
+  }
+}
+
+function isUsersPermissionError(message: string) {
+  const lower = message.toLowerCase();
+  return lower.includes("permission denied for table users") || lower.includes("permission denied for table auth.users");
+}
+
 export async function getMyUserId() {
   if (isLocalBackend()) {
     try {
@@ -34,6 +86,8 @@ export async function getFollowRelation(withUserId: string) {
   }
   const me = await getMyUserId();
   if (!me) return { data: null, error: new Error("No autenticado") } as const;
+  const cachedStatus = readFollowRelationCache(me, withUserId);
+
   const result = await supabase
     .from("follows")
     .select("follower_id, followed_id, status, created_at, accepted_at")
@@ -41,12 +95,29 @@ export async function getFollowRelation(withUserId: string) {
     .eq("followed_id", withUserId)
     .maybeSingle();
 
+  if (!result.error && result.data?.status) {
+    writeFollowRelationCache(me, withUserId, result.data.status as FollowStatus);
+  }
+
+  if (!result.error && !result.data) {
+    clearFollowRelationCache(me, withUserId);
+  }
+
   // Some RLS setups evaluate policies against tables the current role cannot read.
   // In that case, degrade gracefully and let UI continue with unknown relation state.
-  if (
-    result.error &&
-    String(result.error.message || "").toLowerCase().includes("permission denied for table users")
-  ) {
+  if (result.error && isUsersPermissionError(String(result.error.message || ""))) {
+    if (cachedStatus) {
+      return {
+        data: {
+          follower_id: me,
+          followed_id: withUserId,
+          status: cachedStatus,
+          created_at: new Date().toISOString(),
+          accepted_at: cachedStatus === "accepted" ? new Date().toISOString() : null,
+        },
+        error: null,
+      } as const;
+    }
     return { data: null, error: null } as const;
   }
 
@@ -85,12 +156,21 @@ export async function followUser(targetUserId: string): Promise<FollowActionResu
   if (error) {
     const message = String(error.message || "").toLowerCase();
     if (message.includes("duplicate key")) {
+      const relationResult = await getFollowRelation(targetUserId);
+      const resolvedStatus =
+        (relationResult.data?.status as FollowStatus | undefined) ||
+        readFollowRelationCache(me, targetUserId) ||
+        "pending";
+      writeFollowRelationCache(me, targetUserId, resolvedStatus);
       return {
-        error: new Error("Ya tienes una solicitud pendiente o ya sigues a este usuario"),
+        error: null,
+        followStatus: resolvedStatus,
       };
     }
     return { error: error as unknown as Error };
   }
+
+  writeFollowRelationCache(me, targetUserId, status);
 
   const { data: actorProfile } = await supabase
     .from("profiles")
@@ -161,11 +241,17 @@ export async function unfollowUser(targetUserId: string) {
   }
   const me = await getMyUserId();
   if (!me) return { error: new Error("No autenticado") } as const;
-  return supabase
+  const result = await supabase
     .from("follows")
     .delete()
     .eq("follower_id", me)
     .eq("followed_id", targetUserId);
+
+  if (!result.error) {
+    clearFollowRelationCache(me, targetUserId);
+  }
+
+  return result;
 }
 
 export async function cancelRequest(targetUserId: string) {

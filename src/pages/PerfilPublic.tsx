@@ -101,23 +101,40 @@ const PerfilPublic = () => {
 
     setActionLoading(true);
     try {
-      const { error } = await followUser(id);
-      if (error) {
+      const result = await followUser(id);
+      if (result.error) {
         toast({
           title: "Error",
-          description: error.message,
+          description: result.error.message,
           variant: "destructive",
         });
         return;
       }
 
+      const nextStatus = result.followStatus || "pending";
+      setRelation((prev: any) => ({
+        ...(prev || {}),
+        status: nextStatus,
+      }));
+
       toast({
-        title: "Solicitud enviada",
-        description: "Te avisaremos cuando sea aceptada (si es privado).",
+        title: nextStatus === "accepted" ? "Ahora lo sigues" : "Solicitud enviada",
+        description:
+          nextStatus === "accepted"
+            ? "Este perfil es público, el seguimiento se aprobó automáticamente."
+            : "Te avisaremos cuando sea aceptada (si es privado).",
       });
 
+      if (result.notificationPersisted === false) {
+        toast({
+          title: "Aviso",
+          description: "La notificación puede tardar en aparecer en el destinatario.",
+          variant: "destructive",
+        });
+      }
+
       const rel = await getFollowRelation(id);
-      if (!rel.error) setRelation(rel.data);
+      if (!rel.error && rel.data) setRelation(rel.data);
     } finally {
       setActionLoading(false);
     }
