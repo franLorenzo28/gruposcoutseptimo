@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Info } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { isLocalBackend, apiFetch } from "@/lib/backend";
+import { useQueryClient } from "@tanstack/react-query";
 
 const DEFAULT_SETTINGS = {
   perfil_publico: true,
@@ -21,9 +22,31 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+function normalizeSettings(
+  profileData: { privacy_preferences?: unknown; is_public?: boolean | null } | null | undefined,
+) {
+  const preferences = isPlainObject(profileData?.privacy_preferences)
+    ? (profileData.privacy_preferences as Partial<typeof DEFAULT_SETTINGS>)
+    : {};
+
+  const hasIsPublic = typeof profileData?.is_public === "boolean";
+  const normalizedProfilePublic = hasIsPublic
+    ? Boolean(profileData?.is_public)
+    : typeof preferences.perfil_publico === "boolean"
+      ? preferences.perfil_publico
+      : DEFAULT_SETTINGS.perfil_publico;
+
+  return {
+    ...DEFAULT_SETTINGS,
+    ...preferences,
+    perfil_publico: normalizedProfilePublic,
+  };
+}
+
 export default function ConfiguracionPrivacidad() {
   const { user, refreshUser } = useUser();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
@@ -45,29 +68,19 @@ export default function ConfiguracionPrivacidad() {
       try {
         if (isLocalBackend()) {
           const data = await apiFetch("/profiles/me");
-          if (isPlainObject(data?.privacy_preferences)) {
-            setSettings({
-              ...DEFAULT_SETTINGS,
-              ...(data.privacy_preferences as Partial<typeof DEFAULT_SETTINGS>),
-            });
-          }
+          setSettings(normalizeSettings(data));
         } else {
           const userId = await getEffectiveUserId();
           if (!userId) return;
 
           const { data, error } = await supabase
             .from("profiles")
-            .select("privacy_preferences")
+            .select("privacy_preferences, is_public")
             .eq("user_id", userId)
             .single();
 
           if (error) throw error;
-          if (isPlainObject(data?.privacy_preferences)) {
-            setSettings({
-              ...DEFAULT_SETTINGS,
-              ...(data.privacy_preferences as Partial<typeof DEFAULT_SETTINGS>),
-            });
-          }
+          setSettings(normalizeSettings(data));
         }
       } catch (error) {
         console.error("Error loading privacy preferences:", error);
@@ -91,19 +104,17 @@ export default function ConfiguracionPrivacidad() {
       if (isLocalBackend()) {
         await apiFetch("/profiles/me", {
           method: "PUT",
-          body: JSON.stringify({ privacy_preferences: newSettings }),
+          body: JSON.stringify({
+            privacy_preferences: newSettings,
+            is_public: newSettings.perfil_publico,
+          }),
         });
 
         const verifiedData = await apiFetch("/profiles/me");
-        if (isPlainObject(verifiedData?.privacy_preferences)) {
-          const verifiedSettings = {
-            ...DEFAULT_SETTINGS,
-            ...(verifiedData.privacy_preferences as Partial<typeof DEFAULT_SETTINGS>),
-          };
-          setSettings(verifiedSettings);
-          if (JSON.stringify(verifiedSettings) !== JSON.stringify(newSettings)) {
-            throw new Error("No se pudo verificar el guardado de privacidad");
-          }
+        const verifiedSettings = normalizeSettings(verifiedData);
+        setSettings(verifiedSettings);
+        if (JSON.stringify(verifiedSettings) !== JSON.stringify(newSettings)) {
+          throw new Error("No se pudo verificar el guardado de privacidad");
         }
       } else {
         const userId = await getEffectiveUserId();
@@ -113,7 +124,10 @@ export default function ConfiguracionPrivacidad() {
 
         const { data: updatedRows, error } = await supabase
           .from("profiles")
-          .update({ privacy_preferences: newSettings })
+          .update({
+            privacy_preferences: newSettings,
+            is_public: newSettings.perfil_publico,
+          })
           .eq("user_id", userId)
           .select("user_id")
           .limit(1);
@@ -124,26 +138,26 @@ export default function ConfiguracionPrivacidad() {
 
         const { data: verifiedData, error: verifyError } = await supabase
           .from("profiles")
-          .select("privacy_preferences")
+          .select("privacy_preferences, is_public")
           .eq("user_id", userId)
           .single();
         if (verifyError) throw verifyError;
 
-        if (isPlainObject(verifiedData?.privacy_preferences)) {
-          const verifiedSettings = {
-            ...DEFAULT_SETTINGS,
-            ...(verifiedData.privacy_preferences as Partial<typeof DEFAULT_SETTINGS>),
-          };
-          setSettings(verifiedSettings);
-          if (JSON.stringify(verifiedSettings) !== JSON.stringify(newSettings)) {
-            throw new Error("No se pudo verificar el guardado de privacidad");
-          }
+        const verifiedSettings = normalizeSettings(verifiedData);
+        setSettings(verifiedSettings);
+        if (JSON.stringify(verifiedSettings) !== JSON.stringify(newSettings)) {
+          throw new Error("No se pudo verificar el guardado de privacidad");
         }
       }
       
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 2000);
       await refreshUser();
+      const effectiveUserId = await getEffectiveUserId();
+      await queryClient.invalidateQueries({ queryKey: ["profiles"] });
+      if (effectiveUserId) {
+        await queryClient.invalidateQueries({ queryKey: ["profile", effectiveUserId] });
+      }
     } catch (error) {
       console.error("Error saving privacy preferences:", error);
       // Revertir cambio si falla
@@ -163,16 +177,14 @@ export default function ConfiguracionPrivacidad() {
       if (isLocalBackend()) {
         await apiFetch("/profiles/me", {
           method: "PUT",
-          body: JSON.stringify({ privacy_preferences: settings }),
+          body: JSON.stringify({
+            privacy_preferences: settings,
+            is_public: settings.perfil_publico,
+          }),
         });
 
         const verifiedData = await apiFetch("/profiles/me");
-        if (isPlainObject(verifiedData?.privacy_preferences)) {
-          setSettings({
-            ...DEFAULT_SETTINGS,
-            ...(verifiedData.privacy_preferences as Partial<typeof DEFAULT_SETTINGS>),
-          });
-        }
+        setSettings(normalizeSettings(verifiedData));
       } else {
         const userId = await getEffectiveUserId();
         if (!userId) {
@@ -181,7 +193,10 @@ export default function ConfiguracionPrivacidad() {
 
         const { data: updatedRows, error } = await supabase
           .from("profiles")
-          .update({ privacy_preferences: settings })
+          .update({
+            privacy_preferences: settings,
+            is_public: settings.perfil_publico,
+          })
           .eq("user_id", userId)
           .select("user_id")
           .limit(1);
@@ -192,17 +207,12 @@ export default function ConfiguracionPrivacidad() {
 
         const { data: verifiedData, error: verifyError } = await supabase
           .from("profiles")
-          .select("privacy_preferences")
+          .select("privacy_preferences, is_public")
           .eq("user_id", userId)
           .single();
         if (verifyError) throw verifyError;
 
-        if (isPlainObject(verifiedData?.privacy_preferences)) {
-          setSettings({
-            ...DEFAULT_SETTINGS,
-            ...(verifiedData.privacy_preferences as Partial<typeof DEFAULT_SETTINGS>),
-          });
-        }
+        setSettings(normalizeSettings(verifiedData));
       }
 
       toast({
@@ -212,6 +222,11 @@ export default function ConfiguracionPrivacidad() {
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 2000);
       await refreshUser();
+      const effectiveUserId = await getEffectiveUserId();
+      await queryClient.invalidateQueries({ queryKey: ["profiles"] });
+      if (effectiveUserId) {
+        await queryClient.invalidateQueries({ queryKey: ["profile", effectiveUserId] });
+      }
     } catch (error) {
       toast({
         title: "Error",

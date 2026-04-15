@@ -4,6 +4,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { isLocalBackend, apiFetch } from "@/lib/backend";
 import { listGroups } from "@/lib/groups";
@@ -22,7 +23,9 @@ export type PresenceEntry = {
 // ============================================================================
 
 export function useProfiles() {
-  return useQuery({
+  const queryClient = useQueryClient();
+
+  const query = useQuery({
     queryKey: ["profiles"],
     queryFn: async () => {
       if (isLocalBackend()) {
@@ -35,6 +38,27 @@ export function useProfiles() {
     staleTime: 5 * 60 * 1000, // 5 minutos
     gcTime: 10 * 60 * 1000, // 10 minutos
   });
+
+  useEffect(() => {
+    if (isLocalBackend()) return;
+
+    const channel = supabase
+      .channel("profiles-directory-sync")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "profiles" },
+        () => {
+          void queryClient.invalidateQueries({ queryKey: ["profiles"] });
+        },
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
+  return query;
 }
 
 export function useProfile(userId: string | null) {
