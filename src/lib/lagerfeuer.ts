@@ -2,6 +2,18 @@ import { supabase } from "@/integrations/supabase/client";
 
 const BUCKET_NAME = "lagerfeuer-files";
 
+async function requireLagerfeuerSession() {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("Debes iniciar sesion para acceder a Am Lagerfeuer");
+  }
+
+  return user;
+}
+
 export type LagerfeuerFile = {
   año: number;
   fecha: string;
@@ -13,6 +25,8 @@ export type LagerfeuerFile = {
 };
 
 export async function listLagerfeuerFiles(): Promise<LagerfeuerFile[]> {
+  await requireLagerfeuerSession();
+
   const { data: files, error } = await supabase.storage
     .from(BUCKET_NAME)
     .list("", {
@@ -27,9 +41,13 @@ export async function listLagerfeuerFiles(): Promise<LagerfeuerFile[]> {
   for (const file of files) {
     if (file.name === ".emptyFolderPlaceholder") continue;
 
-    const { data } = supabase.storage
+    const { data, error: signedError } = await supabase.storage
       .from(BUCKET_NAME)
-      .getPublicUrl(file.name);
+      .createSignedUrl(file.name, 60 * 60);
+
+    if (signedError || !data?.signedUrl) {
+      continue;
+    }
 
     // Extraer año del nombre del archivo (ej: "1967-01.pdf" -> 1967)
     const match = file.name.match(/^(\d{4})/);
@@ -44,7 +62,7 @@ export async function listLagerfeuerFiles(): Promise<LagerfeuerFile[]> {
       fecha: `${año}`,
       tema: parts.slice(2).join(" ") || "Am Lagerfeuer",
       editores: "", // Se puede agregar metadata después
-      url: data.publicUrl,
+      url: data.signedUrl,
       path: file.name,
       fileName: file.name,
     });

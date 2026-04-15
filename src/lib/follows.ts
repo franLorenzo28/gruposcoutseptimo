@@ -62,6 +62,89 @@ function isUsersPermissionError(message: string) {
   return lower.includes("permission denied for table users") || lower.includes("permission denied for table auth.users");
 }
 
+type FollowCountsRpcRow = {
+  followers_count: number | string | null;
+  following_count: number | string | null;
+};
+
+type PendingFollowRpcRow = {
+  follower_id: string;
+  created_at: string;
+  nombre_completo: string | null;
+  username: string | null;
+  avatar_url: string | null;
+};
+
+async function getFollowCountsViaRpc(userId: string): Promise<{
+  followers: number;
+  following: number;
+} | null> {
+  const rpcClient = supabase as unknown as {
+    rpc: (
+      fn: string,
+      args?: Record<string, unknown>,
+    ) => Promise<{ data: unknown; error: { message?: string } | null }>;
+  };
+
+  const { data, error } = await rpcClient.rpc("get_follow_counts", {
+    p_user_id: userId,
+  });
+
+  if (error || !data) return null;
+
+  const row = data as FollowCountsRpcRow;
+  const followers = Number(row.followers_count ?? 0);
+  const following = Number(row.following_count ?? 0);
+
+  return {
+    followers: Number.isFinite(followers) ? followers : 0,
+    following: Number.isFinite(following) ? following : 0,
+  };
+}
+
+async function getPendingRequestsViaRpc(
+  userId: string,
+): Promise<
+  Array<{
+    follower_id: string;
+    created_at: string;
+    follower: {
+      user_id: string;
+      nombre_completo: string | null;
+      avatar_url: string | null;
+      username: string | null;
+    };
+  }> | null
+> {
+  const rpcClient = supabase as unknown as {
+    rpc: (
+      fn: string,
+      args?: Record<string, unknown>,
+    ) => Promise<{ data: unknown; error: { message?: string } | null }>;
+  };
+
+  const { data, error } = await rpcClient.rpc(
+    "list_pending_follow_requests",
+    {
+      p_user_id: userId,
+      p_limit: 50,
+    },
+  );
+
+  if (error || !Array.isArray(data)) return null;
+
+  return (data as PendingFollowRpcRow[]).map((row) => ({
+    follower_id: row.follower_id,
+    created_at: row.created_at,
+    follower: {
+      user_id: row.follower_id,
+      nombre_completo: row.nombre_completo,
+      avatar_url: row.avatar_url,
+      username: row.username,
+    },
+  }));
+}
+
 export async function getMyUserId() {
   if (isLocalBackend()) {
     try {
@@ -363,6 +446,12 @@ export async function getPendingRequestsForMe() {
   }
   const me = await getMyUserId();
   if (!me) return { data: [], error: new Error("No autenticado") } as const;
+
+  const pendingFromRpc = await getPendingRequestsViaRpc(me);
+  if (pendingFromRpc) {
+    return { data: pendingFromRpc, error: null } as const;
+  }
+
   const { data: follows, error: followsError } = await supabase
     .from("follows")
     .select("follower_id, created_at")
@@ -398,6 +487,12 @@ export async function getFollowersCount(userId: string) {
       return { count: 0 } as any;
     }
   }
+
+  const countsFromRpc = await getFollowCountsViaRpc(userId);
+  if (countsFromRpc) {
+    return { count: countsFromRpc.followers, error: null } as const;
+  }
+
   return supabase
     .from("follows")
     .select("follower_id", { count: "exact", head: true })
@@ -416,6 +511,12 @@ export async function getFollowingCount(userId: string) {
       return { count: 0 } as any;
     }
   }
+
+  const countsFromRpc = await getFollowCountsViaRpc(userId);
+  if (countsFromRpc) {
+    return { count: countsFromRpc.following, error: null } as const;
+  }
+
   return supabase
     .from("follows")
     .select("followed_id", { count: "exact", head: true })

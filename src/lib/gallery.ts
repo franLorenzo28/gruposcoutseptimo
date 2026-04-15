@@ -6,6 +6,18 @@ export type GalleryAlbum = { name: string; coverUrl?: string };
 
 const BUCKET = "gallery"; // Asegúrate de crear este bucket en Supabase Storage
 
+async function requireGallerySession() {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("Debes iniciar sesion para acceder a la galeria");
+  }
+
+  return user;
+}
+
 export async function listAlbums(): Promise<GalleryAlbum[]> {
   try {
     if (isLocalBackend()) {
@@ -14,6 +26,8 @@ export async function listAlbums(): Promise<GalleryAlbum[]> {
       }>;
       return rows.map((r) => ({ name: r.name }));
     }
+    await requireGallerySession();
+
     // En Supabase Storage, necesitamos listar archivos para detectar carpetas
     // Usamos list() sin path para obtener el contenido de la raíz
     const { data, error } = await supabase.storage.from(BUCKET).list();
@@ -23,12 +37,7 @@ export async function listAlbums(): Promise<GalleryAlbum[]> {
       throw error;
     }
 
-    if (!data || data.length === 0) {
-      console.log("No se encontraron archivos o carpetas en el bucket");
-      return [];
-    }
-
-    console.log("Archivos/carpetas en raíz:", data);
+    if (!data || data.length === 0) return [];
 
     // En Supabase, las carpetas aparecen como items con id null o metadata específico
     // Filtramos solo las carpetas (que no tienen extensión y pueden tener id null)
@@ -37,8 +46,6 @@ export async function listAlbums(): Promise<GalleryAlbum[]> {
       const hasNoExtension = !item.name.includes(".");
       return hasNoExtension && item.name !== ".emptyFolderPlaceholder";
     });
-
-    console.log("Carpetas detectadas:", folders);
 
     return folders.map((folder: any) => ({
       name: folder.name.replace(/\/$/, ""), // Remover slash final si existe
@@ -58,6 +65,9 @@ export async function listImages(
     )) as Array<{ url: string; path: string }>;
     return rows;
   }
+
+  await requireGallerySession();
+
   const { data, error } = await supabase.storage
     .from(BUCKET)
     .list(album, { limit: 1000 });
@@ -79,12 +89,25 @@ export async function listImages(
     );
   });
 
-  const images = files.map((f: any) => ({
-    url: supabase.storage.from(BUCKET).getPublicUrl(`${album}/${f.name}`).data
-      .publicUrl,
-    path: `${album}/${f.name}`,
-  }));
-  return images;
+  const images = await Promise.all(
+    files.map(async (f: any) => {
+      const path = `${album}/${f.name}`;
+      const { data: signed, error: signedError } = await supabase.storage
+        .from(BUCKET)
+        .createSignedUrl(path, 60 * 60);
+
+      if (signedError || !signed?.signedUrl) return null;
+
+      return {
+        url: signed.signedUrl,
+        path,
+      };
+    }),
+  );
+
+  return images.filter(
+    (image): image is { url: string; path: string } => image !== null,
+  );
 }
 
 export async function createAlbum(name: string): Promise<void> {

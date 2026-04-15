@@ -3,6 +3,18 @@ import { ensureAdminForMediaUpload } from "@/lib/admin-permissions";
 
 const BUCKET_NAME = "cancionero-audios";
 
+async function requireCancioneroSession() {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("Debes iniciar sesion para acceder al cancionero");
+  }
+
+  return user;
+}
+
 function toDisplayAudioName(storagePath: string): string {
   const fileName = storagePath.split("/").pop() ?? storagePath;
   // Los uploads se guardan como "timestamp-nombre.ext"; limpiamos solo el prefijo tecnico.
@@ -17,6 +29,8 @@ export type CancioneroAudio = {
 };
 
 export async function listCancioneroAudios(): Promise<CancioneroAudio[]> {
+  await requireCancioneroSession();
+
   const { data: files, error } = await supabase.storage
     .from(BUCKET_NAME)
     .list("", {
@@ -26,17 +40,28 @@ export async function listCancioneroAudios(): Promise<CancioneroAudio[]> {
   if (error) throw error;
   if (!files || files.length === 0) return [];
 
-  return files
-    .filter((file) => file.name !== ".emptyFolderPlaceholder")
-    .map((file) => {
-      const { data } = supabase.storage.from(BUCKET_NAME).getPublicUrl(file.name);
-      return {
-        name: toDisplayAudioName(file.name),
-        path: file.name,
-        url: data.publicUrl,
-        createdAt: file.created_at ?? null,
-      };
-    });
+  const signedFiles = await Promise.all(
+    files
+      .filter((file) => file.name !== ".emptyFolderPlaceholder")
+      .map(async (file) => {
+        const { data, error: signedError } = await supabase.storage
+          .from(BUCKET_NAME)
+          .createSignedUrl(file.name, 60 * 60);
+
+        if (signedError || !data?.signedUrl) return null;
+
+        return {
+          name: toDisplayAudioName(file.name),
+          path: file.name,
+          url: data.signedUrl,
+          createdAt: file.created_at ?? null,
+        };
+      }),
+  );
+
+  return signedFiles.filter(
+    (file): file is CancioneroAudio => file !== null,
+  );
 }
 
 export async function uploadCancioneroAudio(file: File): Promise<void> {

@@ -57,6 +57,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { isLocalBackend, apiFetch } from "@/lib/backend";
 import { cn } from "@/lib/utils";
+import { isRestrictedForGuest } from "@/lib/access-control";
 import { acceptFollow, rejectFollow } from "@/lib/follows";
 import {
   getCurrentUserAdminAccess,
@@ -76,6 +77,35 @@ interface NavLink {
 interface NavSection {
   label: string;
   links: NavLink[];
+}
+
+function filterNavLinksForGuest(links: NavLink[], isLoggedIn: boolean): NavLink[] {
+  if (isLoggedIn) return links;
+
+  const hiddenWhenLoggedOut = new Set(["/usuarios", "/area-miembros"]);
+
+  return links
+    .map((link) => {
+      const filteredSubitems = link.subitems
+        ? filterNavLinksForGuest(link.subitems, isLoggedIn)
+        : undefined;
+
+      const pathHidden =
+        !!link.path &&
+        (hiddenWhenLoggedOut.has(link.path) || isRestrictedForGuest(link.path));
+
+      if (pathHidden) return null;
+
+      if (link.subitems && (!filteredSubitems || filteredSubitems.length === 0)) {
+        return null;
+      }
+
+      return {
+        ...link,
+        subitems: filteredSubitems,
+      };
+    })
+    .filter((link): link is NavLink => link !== null);
 }
 
 const navSections: NavSection[] = [
@@ -158,11 +188,10 @@ const Navigation = () => {
   const profileMainPath = needsProfileSetup ? "/perfil/editar" : "/perfil";
   const profileMainLabel = needsProfileSetup ? "Crear perfil" : "Perfil";
   const mobileProfileMainLabel = needsProfileSetup ? "Crear perfil" : "Ver mi perfil";
-  const hiddenWhenLoggedOut = new Set(["/usuarios", "/area-miembros"]);
   const visibleNavSections = navSections
     .map((section) => ({
       ...section,
-      links: section.links.filter((link) => isLoggedIn || !hiddenWhenLoggedOut.has(link.path)),
+      links: filterNavLinksForGuest(section.links, isLoggedIn),
     }))
     .filter((section) => section.links.length > 0);
 

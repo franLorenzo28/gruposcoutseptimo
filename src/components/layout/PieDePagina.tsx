@@ -2,6 +2,8 @@
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import logoImage from "@/assets/grupo-scout-logo.png";
+import { useUser } from "@/hooks/useUser";
+import { isRestrictedForGuest } from "@/lib/access-control";
 
 interface FooterLinkProps {
   to: string;
@@ -62,6 +64,26 @@ const SocialLink = ({ href, icon, label }: SocialLinkProps) => (
 
 const FooterNew = () => {
   const currentYear = new Date().getFullYear();
+  const { user } = useUser();
+  const isLoggedIn = !!user;
+
+  const quickLinks = [
+    { to: "/", label: "Inicio" },
+    { to: "/narrativas", label: "Narrativas" },
+    { to: "/usuarios", label: "Comuni 7" },
+    { to: "/historia", label: "Historia" },
+    { to: "/archivo", label: "Archivo" },
+    { to: "/eventos", label: "Eventos" },
+    { to: "/cancionero", label: "Cancionero" },
+    { to: "/galeria", label: "Galeria" },
+    { to: "/contacto", label: "Contacto" },
+  ].filter((link) => {
+    if (link.to === "/usuarios") {
+      return isLoggedIn;
+    }
+    return isLoggedIn || !isRestrictedForGuest(link.to);
+  });
+
   return (
     <footer role="contentinfo" aria-label="Pie de página Grupo Scout Séptimo" className="bg-background/80 backdrop-blur-sm text-foreground/80 border-t border-border/60">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-16">
@@ -73,33 +95,11 @@ const FooterNew = () => {
               Enlaces Rápidos
             </h3>
             <ul className="grid grid-cols-2 gap-y-1.5 gap-x-4">
-              <li>
-                <FooterLink to="/">Inicio</FooterLink>
-              </li>
-              <li>
-                <FooterLink to="/narrativas">Narrativas</FooterLink>
-              </li>
-              <li>
-                <FooterLink to="/usuarios">Comuni 7</FooterLink>
-              </li>
-              <li>
-                <FooterLink to="/historia">Historia</FooterLink>
-              </li>
-              <li>
-                <FooterLink to="/archivo">Archivo</FooterLink>
-              </li>
-              <li>
-                <FooterLink to="/eventos">Eventos</FooterLink>
-              </li>
-              <li>
-                <FooterLink to="/cancionero">Cancionero</FooterLink>
-              </li>
-              <li>
-                <FooterLink to="/galeria">Galería</FooterLink>
-              </li>
-              <li>
-                <FooterLink to="/contacto">Contacto</FooterLink>
-              </li>
+              {quickLinks.map((link) => (
+                <li key={link.to}>
+                  <FooterLink to={link.to}>{link.label}</FooterLink>
+                </li>
+              ))}
             </ul>
           </div>
 

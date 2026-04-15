@@ -65,6 +65,7 @@ const TestDiagnostic = lazy(() => import("./pages/TestDiagnostic"));
 import { MemberAuthProvider, useMemberAuth } from "@/context/MemberAuthContext";
 import RequireMemberAuth from "@/components/auth/RequireMemberAuth";
 import RequireRamaAccess from "@/components/auth/RequireRamaAccess";
+import RequireAuthenticatedUser from "@/components/auth/RequireAuthenticatedUser";
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import type { Profile } from "@/types/profile";
@@ -295,25 +296,116 @@ const App = () => (
                     <Route path="/historia" element={<Historia />} />
                     <Route path="/narrativas" element={<Narrativas />} />
                     <Route path="/bauen" element={<Bauen />} />
-                    <Route path="/archivo/am-lagerfeuer" element={<AmLagerfeuer />} />
+                    <Route
+                      path="/archivo/am-lagerfeuer"
+                      element={
+                        <RequireAuthenticatedUser featureName="Am Lagerfeuer">
+                          <AmLagerfeuer />
+                        </RequireAuthenticatedUser>
+                      }
+                    />
                     <Route path="/am-lagerfeuer" element={<Navigate to="/archivo/am-lagerfeuer" replace />} />
                     <Route path="/movimiento-scout" element={<MovimientoScout />} />
-                    <Route path="/archivo" element={<Archivo />} />
-                    <Route path="/archivo/scoutpedia" element={<ArchivoScoutpedia />} />
-                    <Route path="/archivo/compania" element={<ArchivoCompania />} />
-                    <Route path="/archivo/capsula-del-tiempo" element={<ArchivoCapsulaTiempo />} />
-                    <Route path="/cancionero" element={<Cancionero />} />
+                    <Route
+                      path="/archivo"
+                      element={
+                        <RequireAuthenticatedUser featureName="Archivo">
+                          <Archivo />
+                        </RequireAuthenticatedUser>
+                      }
+                    />
+                    <Route
+                      path="/archivo/scoutpedia"
+                      element={
+                        <RequireAuthenticatedUser featureName="Archivo">
+                          <ArchivoScoutpedia />
+                        </RequireAuthenticatedUser>
+                      }
+                    />
+                    <Route
+                      path="/archivo/compania"
+                      element={
+                        <RequireAuthenticatedUser featureName="Archivo">
+                          <ArchivoCompania />
+                        </RequireAuthenticatedUser>
+                      }
+                    />
+                    <Route
+                      path="/archivo/capsula-del-tiempo"
+                      element={
+                        <RequireAuthenticatedUser featureName="Capsula del Tiempo">
+                          <ArchivoCapsulaTiempo />
+                        </RequireAuthenticatedUser>
+                      }
+                    />
+                    <Route
+                      path="/cancionero"
+                      element={
+                        <RequireAuthenticatedUser featureName="Cancionero">
+                          <Cancionero />
+                        </RequireAuthenticatedUser>
+                      }
+                    />
                     <Route path="/veteranos" element={<AdminGuard><Veteranos /></AdminGuard>} />
                     <Route path="/dirigentes" element={<AdminGuard><Dirigentes /></AdminGuard>} />
-                    <Route path="/archivo/locales" element={<Locales />} />
+                    <Route
+                      path="/archivo/locales"
+                      element={
+                        <RequireAuthenticatedUser featureName="Archivo">
+                          <Locales />
+                        </RequireAuthenticatedUser>
+                      }
+                    />
                     <Route path="/locales" element={<Navigate to="/archivo/locales" replace />} />
-                    <Route path="/galeria" element={<Galeria />} />
+                    <Route
+                      path="/galeria"
+                      element={
+                        <RequireAuthenticatedUser featureName="Galeria">
+                          <Galeria />
+                        </RequireAuthenticatedUser>
+                      }
+                    />
                     <Route path="/contacto" element={<Contacto />} />
-                    <Route path="/eventos" element={<Eventos />} />
-                    <Route path="/eventos/jamborees" element={<Jamborees />} />
-                    <Route path="/eventos/jamboree-1981" element={<Jamboree1981 />} />
-                    <Route path="/eventos/jamboree-2014" element={<Jamboree2014 />} />
-                    <Route path="/eventos/jamboree-2023" element={<Jamboree2023 />} />
+                    <Route
+                      path="/eventos"
+                      element={
+                        <RequireAuthenticatedUser featureName="Eventos">
+                          <Eventos />
+                        </RequireAuthenticatedUser>
+                      }
+                    />
+                    <Route
+                      path="/eventos/jamborees"
+                      element={
+                        <RequireAuthenticatedUser featureName="Jamborees">
+                          <Jamborees />
+                        </RequireAuthenticatedUser>
+                      }
+                    />
+                    <Route
+                      path="/eventos/jamboree-1981"
+                      element={
+                        <RequireAuthenticatedUser featureName="Eventos">
+                          <Jamboree1981 />
+                        </RequireAuthenticatedUser>
+                      }
+                    />
+                    <Route
+                      path="/eventos/jamboree-2014"
+                      element={
+                        <RequireAuthenticatedUser featureName="Eventos">
+                          <Jamboree2014 />
+                        </RequireAuthenticatedUser>
+                      }
+                    />
+                    <Route
+                      path="/eventos/jamboree-2023"
+                      element={
+                        <RequireAuthenticatedUser featureName="Eventos">
+                          <Jamboree2023 />
+                        </RequireAuthenticatedUser>
+                      }
+                    />
                     <Route path="/area-miembros" element={<AreaMiembros />} />
                     <Route path="/login" element={<LoginMiembros />} />
                     <Route

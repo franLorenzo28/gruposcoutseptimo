@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { listAlbums, listImages } from "@/lib/gallery";
 import { apiFetch, getAuthUser, isLocalBackend } from "@/lib/backend";
 import { querySilent } from "@/lib/supabase-logger";
+import { getPendingRequestsForMe } from "@/lib/follows";
 
 export type AppNotification = {
   id: string;
@@ -282,35 +283,45 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const syncPendingFollowRequests = useCallback(async (currentUserId: string) => {
     if (!isNotificationEnabled("follow_request")) return;
-    const followsResult = await querySilent(() =>
-      supabase
-        .from("follows")
-        .select("follower_id, created_at")
-        .eq("followed_id", currentUserId)
-        .eq("status", "pending")
-        .order("created_at", { ascending: false })
-        .limit(50),
-    );
+    const pendingResult = await getPendingRequestsForMe();
+    if (pendingResult.error) return;
 
-    const pendingFollows =
-      ((followsResult.data as Array<{ follower_id: string; created_at: string }> | null) || []);
+    const pendingRows =
+      (pendingResult.data as Array<{
+        follower_id: string;
+        created_at: string;
+        follower?: {
+          user_id: string;
+          nombre_completo: string | null;
+          username?: string | null;
+          avatar_url?: string | null;
+        } | null;
+      }> | null) || [];
+
+    const pendingFollows = pendingRows.map((row) => ({
+      follower_id: row.follower_id,
+      created_at: row.created_at,
+    }));
     if (pendingFollows.length === 0) return;
 
-    const followerIds = pendingFollows.map((f) => f.follower_id);
-    const profilesResult = await querySilent(() =>
-      supabase
-        .from("profiles")
-        .select("user_id, nombre_completo, username, avatar_url")
-        .in("user_id", followerIds),
-    );
-
-    const profiles =
-      ((profilesResult.data as Array<{
-        user_id: string;
-        nombre_completo: string | null;
-        username: string | null;
-        avatar_url: string | null;
-      }> | null) || []);
+    const profiles = pendingRows
+      .map((row) => row.follower)
+      .filter(
+        (
+          prof,
+        ): prof is {
+          user_id: string;
+          nombre_completo: string | null;
+          username?: string | null;
+          avatar_url?: string | null;
+        } => !!prof,
+      )
+      .map((prof) => ({
+        user_id: prof.user_id,
+        nombre_completo: prof.nombre_completo,
+        username: prof.username ?? null,
+        avatar_url: prof.avatar_url ?? null,
+      }));
 
     setNotifications((prev) => {
       const map = new Map(prev.map((n) => [n.id, n] as const));
