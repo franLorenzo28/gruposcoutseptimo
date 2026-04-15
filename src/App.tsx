@@ -76,6 +76,7 @@ import { AdminGuard } from "@/components/AdminGuard";
 import SaltarAlContenido from "@/components/layout/SaltarAlContenido";
 import { querySilent } from "@/lib/supabase-logger";
 import { PageGridBackground } from "@/components/PageGridBackground";
+import { useGlobalPresenceHeartbeat } from "@/hooks/useGlobalPresenceHeartbeat";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -263,6 +264,12 @@ function Dashboard() {
   return <Navigate to={`/area-miembros/unidades/${session.rama}`} replace />;
 }
 
+function GlobalPresenceHeartbeat() {
+  const { user } = useSupabaseUser();
+  useGlobalPresenceHeartbeat(user?.id);
+  return null;
+}
+
 const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
@@ -272,6 +279,7 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <SupabaseUserProvider>
+              <GlobalPresenceHeartbeat />
               <MemberAuthProvider>
               <NotificationsProvider>
               <FondoAnimado />

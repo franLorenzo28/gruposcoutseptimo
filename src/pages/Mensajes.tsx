@@ -14,6 +14,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import EmailVerificationGuard from "@/components/EmailVerificationGuard";
+import UserAvatar from "@/components/UserAvatar";
 
 interface ProfileLite {
   user_id: string;
@@ -513,7 +514,6 @@ export default function Mensajes() {
                       const isRamaDirect =
                         ramaContactIds.has(u.user_id) && !mutualFollows.has(u.user_id);
                       const displayName = u.nombre_completo || u.username || "Scout";
-                      const initial = displayName.charAt(0).toUpperCase();
                       return (
                         <button
                           key={u.user_id}
@@ -526,9 +526,13 @@ export default function Mensajes() {
                             void startConversationWithUser(u);
                           }}
                         >
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary/85 to-primary/45 text-sm font-bold text-primary-foreground">
-                            {initial}
-                          </div>
+                          <UserAvatar
+                            avatarUrl={u.avatar_url || null}
+                            userName={displayName}
+                            size="md"
+                            clickable={false}
+                            className="shrink-0"
+                          />
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-semibold">{displayName}</p>
                             <p className="truncate text-xs text-muted-foreground">
@@ -563,11 +567,13 @@ export default function Mensajes() {
                       Volver
                     </Button>
                   )}
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary/85 to-primary/45 text-sm font-bold text-primary-foreground">
-                    {(selectedUser?.nombre_completo || selectedUser?.username || "S")
-                      .charAt(0)
-                      .toUpperCase()}
-                  </div>
+                  <UserAvatar
+                    avatarUrl={selectedUser?.avatar_url || null}
+                    userName={selectedUser?.nombre_completo || selectedUser?.username || "Scout"}
+                    size="md"
+                    clickable={false}
+                    className="shrink-0"
+                  />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold sm:text-base">
                       {selectedUser

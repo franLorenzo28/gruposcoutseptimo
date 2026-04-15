@@ -1,7 +1,7 @@
 ﻿import { useEffect, useState, useMemo, useCallback, ReactNode } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { isLocalBackend, apiFetch, getAuthUser } from "@/lib/backend";
+import { isLocalBackend, getAuthUser } from "@/lib/backend";
 import { useDebounce } from "@/hooks/use-debounce";
 import UserAvatar from "@/components/UserAvatar";
 import EmailVerificationGuard from "@/components/EmailVerificationGuard";
@@ -162,83 +162,10 @@ const Usuarios = () => {
   }, [presenceRows]);
 
   useEffect(() => {
-    if (!isLocalBackend() || !currentUserId) return;
-
-    const AWAY_AFTER_MS = 90_000;
-    let lastActivityAt = Date.now();
-    let currentStatus: "active" | "away" = "active";
-
-    const sendHeartbeat = async (status: "active" | "away") => {
-      await apiFetch("/presence/heartbeat", {
-        method: "POST",
-        body: JSON.stringify({ status }),
-      }).catch(() => {
-        // Silencioso para no interrumpir UX.
-      });
-    };
-
-    const setActive = () => {
-      lastActivityAt = Date.now();
-      if (currentStatus !== "active") {
-        currentStatus = "active";
-        void sendHeartbeat("active");
-      }
-    };
-
-    const onVisibility = () => {
-      if (document.hidden) {
-        if (currentStatus !== "away") {
-          currentStatus = "away";
-          void sendHeartbeat("away");
-        }
-        return;
-      }
-      setActive();
-    };
-
-    const onActivity = () => setActive();
-
-    void sendHeartbeat("active");
-
-    const interval = window.setInterval(() => {
-      const idleFor = Date.now() - lastActivityAt;
-      const nextStatus: "active" | "away" =
-        document.hidden || idleFor > AWAY_AFTER_MS ? "away" : "active";
-
-      if (nextStatus !== currentStatus) {
-        currentStatus = nextStatus;
-      }
-
-      void sendHeartbeat(currentStatus);
-    }, 30_000);
-
-    window.addEventListener("mousemove", onActivity);
-    window.addEventListener("keydown", onActivity);
-    window.addEventListener("click", onActivity);
-    window.addEventListener("scroll", onActivity, { passive: true });
-    window.addEventListener("touchstart", onActivity, { passive: true });
-    document.addEventListener("visibilitychange", onVisibility);
-
-    return () => {
-      window.clearInterval(interval);
-      window.removeEventListener("mousemove", onActivity);
-      window.removeEventListener("keydown", onActivity);
-      window.removeEventListener("click", onActivity);
-      window.removeEventListener("scroll", onActivity);
-      window.removeEventListener("touchstart", onActivity);
-      document.removeEventListener("visibilitychange", onVisibility);
-    };
-  }, [currentUserId]);
-
-  useEffect(() => {
     if (isLocalBackend() || !currentUserId) return;
 
-    const AWAY_AFTER_MS = 90_000;
-    let lastActivityAt = Date.now();
-    let currentStatus: "active" | "away" = "active";
-
     const channel = supabase.channel("presence:comuni7", {
-      config: { presence: { key: currentUserId } },
+      config: { presence: { key: `viewer-${currentUserId}` } },
     });
 
     const syncPresence = () => {
@@ -263,42 +190,8 @@ const Usuarios = () => {
         next.set(userId, resolved);
       }
 
-      next.set(currentUserId, currentStatus);
       setSupabasePresenceById(next);
     };
-
-    const trackPresence = async (status: "active" | "away") => {
-      currentStatus = status;
-      await channel
-        .track({
-          user_id: currentUserId,
-          status,
-          last_seen_at: new Date().toISOString(),
-        })
-        .catch(() => {
-          // Silencioso para no afectar UX.
-        });
-      syncPresence();
-    };
-
-    const setActive = () => {
-      lastActivityAt = Date.now();
-      if (currentStatus !== "active") {
-        void trackPresence("active");
-      }
-    };
-
-    const onVisibility = () => {
-      if (document.hidden) {
-        if (currentStatus !== "away") {
-          void trackPresence("away");
-        }
-        return;
-      }
-      setActive();
-    };
-
-    const onActivity = () => setActive();
 
     channel
       .on("presence", { event: "sync" }, syncPresence)
@@ -306,33 +199,11 @@ const Usuarios = () => {
       .on("presence", { event: "leave" }, syncPresence)
       .subscribe((status) => {
         if (status === "SUBSCRIBED") {
-          void trackPresence("active");
+          syncPresence();
         }
       });
 
-    const interval = window.setInterval(() => {
-      const idleFor = Date.now() - lastActivityAt;
-      const nextStatus: "active" | "away" =
-        document.hidden || idleFor > AWAY_AFTER_MS ? "away" : "active";
-
-      void trackPresence(nextStatus);
-    }, 30_000);
-
-    window.addEventListener("mousemove", onActivity);
-    window.addEventListener("keydown", onActivity);
-    window.addEventListener("click", onActivity);
-    window.addEventListener("scroll", onActivity, { passive: true });
-    window.addEventListener("touchstart", onActivity, { passive: true });
-    document.addEventListener("visibilitychange", onVisibility);
-
     return () => {
-      window.clearInterval(interval);
-      window.removeEventListener("mousemove", onActivity);
-      window.removeEventListener("keydown", onActivity);
-      window.removeEventListener("click", onActivity);
-      window.removeEventListener("scroll", onActivity);
-      window.removeEventListener("touchstart", onActivity);
-      document.removeEventListener("visibilitychange", onVisibility);
       supabase.removeChannel(channel);
     };
   }, [currentUserId]);
