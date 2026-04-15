@@ -100,5 +100,67 @@ export async function sendDM(
     }
     throw error;
   }
+
+  // Persistir notificación para el otro participante en Supabase.
+  // Esto asegura que aparezca en la campana incluso si el canal de messages no emite al cliente.
+  try {
+    const { data: participantRows } = await supabase
+      .from("conversation_participants")
+      .select("user_id")
+      .eq("conversation_id", conversationId)
+      .neq("user_id", sender_id)
+      .limit(1);
+
+    const recipientId = participantRows?.[0]?.user_id;
+
+    if (recipientId) {
+      const { data: actorProfile } = await supabase
+        .from("profiles")
+        .select("nombre_completo, username, avatar_url")
+        .eq("user_id", sender_id)
+        .maybeSingle();
+
+      const payload = {
+        conversation_id: conversationId,
+        message_id: data.id,
+        sender_id,
+        content,
+        display:
+          actorProfile?.nombre_completo ||
+          actorProfile?.username ||
+          sender_id.slice(0, 8),
+        username: actorProfile?.username || null,
+        avatar_url: actorProfile?.avatar_url || null,
+      };
+
+      // 1) Intentar RPC existente (si está disponible en proyecto).
+      const { error: rpcError } = await supabase.rpc("create_notification", {
+        p_recipient: recipientId,
+        p_actor: sender_id,
+        p_type: "message",
+        p_entity_type: "message",
+        p_entity_id: data.id,
+        p_data: payload,
+      });
+
+      // 2) Fallback por insert directo si la RPC no existe o falla.
+      if (rpcError) {
+        await supabase.from("notifications").insert({
+          recipient_id: recipientId,
+          actor_id: sender_id,
+          type: "message",
+          entity_type: "message",
+          entity_id: data.id,
+          data: payload,
+        } as any);
+      }
+    }
+  } catch (notificationError) {
+    if (import.meta.env.DEV) {
+      console.warn("No se pudo persistir notificación de DM en Supabase", notificationError);
+    }
+    // No bloquear UX de chat si falla la notificación.
+  }
+
   return data as DMMessage;
 }

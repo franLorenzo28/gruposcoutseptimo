@@ -36,6 +36,18 @@ interface MessageWithSender extends Message {
   sender_name?: string | null;
 }
 
+type MessageTimelineItem =
+  | {
+      type: "separator";
+      key: string;
+      label: string;
+    }
+  | {
+      type: "message";
+      key: string;
+      message: MessageWithSender;
+    };
+
 // Emojis comunes scouts
 const EMOJIS = [
   "😊",
@@ -108,6 +120,27 @@ export default function Mensajes() {
     }).format(new Date(dateIso));
   }, []);
 
+  const formatMessageDayLabel = useCallback((dateIso: string) => {
+    const messageDate = new Date(dateIso);
+    if (Number.isNaN(messageDate.getTime())) return "Fecha desconocida";
+
+    const calendarKey = (date: Date) =>
+      `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+
+    const today = new Date();
+    if (calendarKey(messageDate) === calendarKey(today)) return "Hoy";
+
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    if (calendarKey(messageDate) === calendarKey(yesterday)) return "Ayer";
+
+    return new Intl.DateTimeFormat("es-UY", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    }).format(messageDate);
+  }, []);
+
   const notifyIncomingMessage = useCallback(
     (msg: MessageWithSender) => {
       if (msg.sender_id === currentUserId) return;
@@ -128,6 +161,37 @@ export default function Mensajes() {
     () => (messages.length > 0 ? messages[messages.length - 1].created_at : null),
     [messages],
   );
+
+  const messageTimeline = useMemo<MessageTimelineItem[]>(() => {
+    const timeline: MessageTimelineItem[] = [];
+    let currentDayKey = "";
+
+    const dayKeyFromIso = (dateIso: string) => {
+      const date = new Date(dateIso);
+      if (Number.isNaN(date.getTime())) return "invalid-date";
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    };
+
+    for (const message of messages) {
+      const dayKey = dayKeyFromIso(message.created_at);
+      if (dayKey !== currentDayKey) {
+        currentDayKey = dayKey;
+        timeline.push({
+          type: "separator",
+          key: `separator-${dayKey}`,
+          label: formatMessageDayLabel(message.created_at),
+        });
+      }
+
+      timeline.push({
+        type: "message",
+        key: message.id,
+        message,
+      });
+    }
+
+    return timeline;
+  }, [messages, formatMessageDayLabel]);
 
   useEffect(() => {
     (async () => {
@@ -608,11 +672,22 @@ export default function Mensajes() {
                             Sin mensajes aún. Enviá el primero.
                           </div>
                         ) : (
-                          messages.map((m) => {
+                          messageTimeline.map((timelineItem) => {
+                            if (timelineItem.type === "separator") {
+                              return (
+                                <div key={timelineItem.key} className="flex justify-center py-1">
+                                  <span className="rounded-full border border-border/70 bg-background/85 px-3 py-1 text-[11px] font-medium text-muted-foreground shadow-sm">
+                                    {timelineItem.label}
+                                  </span>
+                                </div>
+                              );
+                            }
+
+                            const m = timelineItem.message;
                             const isMine = m.sender_id === currentUserId;
                             return (
                               <div
-                                key={m.id}
+                                key={timelineItem.key}
                                 className={`flex items-end gap-2 ${
                                   isMine ? "justify-end" : "justify-start"
                                 }`}

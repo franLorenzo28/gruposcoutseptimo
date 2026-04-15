@@ -33,15 +33,15 @@ const BotonVolverGlobal = () => {
   const textoSecundario = fallbackPath === "/" ? "Ir al inicio" : "Ir a la sección";
 
   return (
-    <div className="fixed left-4 top-20 z-40 sm:left-6 sm:top-24">
+    <div className="fixed left-2 top-1/2 z-40 flex -translate-y-1/2 flex-col gap-2 sm:left-6 sm:top-24 sm:translate-y-0 sm:flex-row sm:gap-0">
       <Button
         variant="outline"
         size="sm"
         onClick={handleBack}
-        className="h-10 rounded-full border-border/70 bg-background/85 px-3 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/70"
+        className="h-10 w-10 rounded-full border-border/70 bg-background/85 px-0 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/70 sm:w-auto sm:px-3"
       >
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Volver
+        <ArrowLeft className="h-4 w-4 sm:mr-2" />
+        <span className="hidden sm:inline">Volver</span>
         <span className="sr-only">{textoSecundario}</span>
       </Button>
 
@@ -49,7 +49,7 @@ const BotonVolverGlobal = () => {
         variant="ghost"
         size="icon"
         onClick={() => navigate("/")}
-        className="ml-2 h-10 w-10 rounded-full border border-border/70 bg-background/85 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/70"
+        className="h-10 w-10 rounded-full border border-border/70 bg-background/85 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/70 sm:ml-2"
         aria-label="Ir al inicio"
       >
         <Home className="h-4 w-4" />

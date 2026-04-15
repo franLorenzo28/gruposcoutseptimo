@@ -98,6 +98,55 @@ dmsRouter.post(
       "INSERT INTO dm_messages (id, conversation_id, sender_id, content) VALUES (?, ?, ?, ?)",
     ).run(id, convoId, me, content);
     const row = db.prepare("SELECT * FROM dm_messages WHERE id = ?").get(id);
+
+    // Persistir notificación para el otro participante para que aparezca en la campana.
+    const recipientId = c.user_a === me ? c.user_b : c.user_a;
+    if (recipientId) {
+      try {
+        const actorProfile = db
+          .prepare(
+            "SELECT nombre_completo, username, avatar_url FROM profiles WHERE user_id = ?",
+          )
+          .get(me) as
+          | {
+              nombre_completo?: string | null;
+              username?: string | null;
+              avatar_url?: string | null;
+            }
+          | undefined;
+
+        const display =
+          actorProfile?.nombre_completo ||
+          actorProfile?.username ||
+          me.slice(0, 8);
+
+        db.prepare(
+          `
+            INSERT INTO notifications (id, recipient_id, actor_id, type, entity_type, entity_id, data, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          `,
+        ).run(
+          randomUUID(),
+          recipientId,
+          me,
+          "message",
+          "conversation",
+          convoId,
+          JSON.stringify({
+            conversation_id: convoId,
+            sender_id: me,
+            content,
+            display,
+            username: actorProfile?.username || null,
+            avatar_url: actorProfile?.avatar_url || null,
+          }),
+          new Date().toISOString(),
+        );
+      } catch {
+        // No bloquear envío del mensaje si falla la notificación.
+      }
+    }
+
     const io = req.app.get("io") as any;
     io?.to(`dm:${convoId}`).emit("dm:message", row);
     res.status(201).json(row);
