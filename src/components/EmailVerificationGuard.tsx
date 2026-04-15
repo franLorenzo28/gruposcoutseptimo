@@ -5,10 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Loader2, MailCheck, MailQuestion, RefreshCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+
+type VerifiedToastMode = "always" | "once-per-login" | "never";
+
+const VERIFIED_TOAST_STORAGE_PREFIX = "email-verified-toast-shown";
 
 interface EmailVerificationGuardProps {
   children: React.ReactNode;
   featureName?: string;
+  verifiedToastMode?: VerifiedToastMode;
+  verifiedToastScope?: string;
 }
 
 /**
@@ -18,6 +25,8 @@ interface EmailVerificationGuardProps {
 const EmailVerificationGuard = ({
   children,
   featureName = "Funcionalidad",
+  verifiedToastMode = "always",
+  verifiedToastScope,
 }: EmailVerificationGuardProps) => {
   const [loading, setLoading] = useState(true);
   const [verified, setVerified] = useState<boolean>(false);
@@ -26,15 +35,69 @@ const EmailVerificationGuard = ({
   const [developmentMode, setDevelopmentMode] = useState(false);
   const { toast } = useToast();
 
+  const resolveVerifiedToastKey = async () => {
+    if (typeof window === "undefined") return null;
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+
+    const scope = (verifiedToastScope || featureName || "feature").toLowerCase();
+    return `${VERIFIED_TOAST_STORAGE_PREFIX}:${scope}:${user.id}`;
+  };
+
+  const shouldShowVerifiedToast = async () => {
+    if (verifiedToastMode === "never") return false;
+    if (verifiedToastMode === "always") return true;
+
+    try {
+      const storageKey = await resolveVerifiedToastKey();
+      if (!storageKey) return true;
+      return window.sessionStorage.getItem(storageKey) !== "1";
+    } catch {
+      return true;
+    }
+  };
+
+  const markVerifiedToastAsShown = async () => {
+    if (verifiedToastMode !== "once-per-login") return;
+
+    try {
+      const storageKey = await resolveVerifiedToastKey();
+      if (!storageKey) return;
+      window.sessionStorage.setItem(storageKey, "1");
+    } catch {
+      // noop
+    }
+  };
+
+  const clearVerifiedToastSessionFlags = () => {
+    if (typeof window === "undefined") return;
+
+    try {
+      for (let index = window.sessionStorage.length - 1; index >= 0; index -= 1) {
+        const key = window.sessionStorage.key(index);
+        if (key?.startsWith(`${VERIFIED_TOAST_STORAGE_PREFIX}:`)) {
+          window.sessionStorage.removeItem(key);
+        }
+      }
+    } catch {
+      // noop
+    }
+  };
+
   const recheckVerification = async (notifyIfPending = false) => {
     try {
       const ok = await checkEmailVerified();
       setVerified(ok);
       if (ok) {
-        toast({
-          title: "Email verificado",
-          description: `Ya podés acceder a ${featureName}.`,
-        });
+        const canNotify = await shouldShowVerifiedToast();
+        if (canNotify) {
+          toast({
+            title: "Email verificado",
+            description: `Ya podés acceder a ${featureName}.`,
+          });
+          await markVerifiedToastAsShown();
+        }
       } else if (notifyIfPending) {
         toast({
           title: "Aún sin verificar",
@@ -67,6 +130,18 @@ const EmailVerificationGuard = ({
       }
     })();
   }, []);
+
+  useEffect(() => {
+    if (verifiedToastMode !== "once-per-login") return;
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") {
+        clearVerifiedToastSessionFlags();
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [verifiedToastMode]);
 
   // Polling suave para desbloquear el contenido sin recargar la página.
   useEffect(() => {

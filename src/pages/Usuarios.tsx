@@ -737,7 +737,11 @@ const Usuarios = () => {
   };
 
   return (
-    <EmailVerificationGuard featureName="Comuni 7">
+    <EmailVerificationGuard
+      featureName="Comuni 7"
+      verifiedToastMode="once-per-login"
+      verifiedToastScope="comuni7"
+    >
     {loading ? (
       <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25">
         <div className="flex items-center justify-center py-20">
