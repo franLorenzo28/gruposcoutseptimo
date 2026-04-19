@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/sheet";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useLocation } from "react-router-dom";
 
 type Novedad = {
   id: string;
@@ -22,9 +23,13 @@ type Novedad = {
 };
 
 const NovedadesRecientes = () => {
+  const location = useLocation();
+  const isHome = location.pathname === "/";
+
   // Cargar novedades de Supabase
   const { data: novedadesApi = [] } = useQuery<Novedad[]>({
     queryKey: ["novedades"],
+    enabled: isHome,
     queryFn: async () => {
       try {
         const { data, error } = await supabase
@@ -56,6 +61,10 @@ const NovedadesRecientes = () => {
     refetchOnWindowFocus: true,
   });
 
+  if (!isHome) {
+    return null;
+  }
+
   // Fallback: novedades por defecto si la API no retorna nada
   const novedades =
     novedadesApi.length > 0
@@ -75,17 +84,20 @@ const NovedadesRecientes = () => {
   return (
     <div
       aria-label="Novedades del sitio"
-      className="pointer-events-none fixed right-0 top-1/2 z-[60] -translate-y-1/2"
+      className="pointer-events-none fixed right-0 top-1/2 z-[80] -translate-y-1/2"
     >
       <Sheet>
         <SheetTrigger asChild>
           <button
             type="button"
-            className="pointer-events-auto group inline-flex items-center gap-2 rounded-l-xl border border-r-0 border-primary/30 bg-background/95 px-2.5 py-3 shadow-md backdrop-blur-sm transition-colors hover:bg-background"
+            className="pointer-events-auto group inline-flex items-center gap-2 rounded-l-xl rounded-r-none border border-r-0 border-primary/30 bg-background/95 px-2.5 py-3 shadow-md backdrop-blur-sm transition-colors hover:bg-background"
             aria-label="Abrir novedades del sitio"
           >
             <Sparkles className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
-            <span className="-rotate-180 text-[11px] font-semibold uppercase tracking-[0.14em] text-foreground/80 [writing-mode:vertical-rl] group-hover:text-foreground hidden md:inline">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/90 md:hidden">
+              Novedades
+            </span>
+            <span className="hidden -rotate-180 text-[11px] font-semibold uppercase tracking-[0.14em] text-foreground/80 [writing-mode:vertical-rl] group-hover:text-foreground md:inline">
               Novedades
             </span>
           </button>
