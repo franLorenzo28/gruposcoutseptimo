@@ -85,6 +85,33 @@ export type Database = {
         }
         Relationships: []
       }
+      eventos: {
+        Row: {
+          created_at: string | null
+          descripcion: string | null
+          fecha_fin: string | null
+          fecha_inicio: string
+          id: string
+          titulo: string
+        }
+        Insert: {
+          created_at?: string | null
+          descripcion?: string | null
+          fecha_fin?: string | null
+          fecha_inicio: string
+          id?: string
+          titulo: string
+        }
+        Update: {
+          created_at?: string | null
+          descripcion?: string | null
+          fecha_fin?: string | null
+          fecha_inicio?: string
+          id?: string
+          titulo?: string
+        }
+        Relationships: []
+      }
       follows: {
         Row: {
           accepted_at: string | null
@@ -469,6 +496,33 @@ export type Database = {
         }
         Relationships: []
       }
+      site_pages: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          slug: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          slug: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          slug?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       thread_comments: {
         Row: {
           author_id: string
@@ -553,6 +607,10 @@ export type Database = {
           p_requester_id: string
           p_units: string[]
         }
+        Returns: Json
+      }
+      request_educator_permissions: {
+        Args: { p_note?: string | null; p_units: string[] }
         Returns: Json
       }
       create_or_get_conversation: {

@@ -11,7 +11,7 @@ export type Documento = {
   storage_path: string;
   subido_por: string;
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
 };
 
 /**
@@ -65,6 +65,14 @@ export async function uploadDocumento(
 
     return response.json();
   } else {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user?.id) {
+      throw new Error("Debes iniciar sesión para subir documentos");
+    }
+
     // Supabase: upload to Storage then create record in rama_documentos
     const fileName = `${Date.now()}-${file.name}`;
     const storagePath = `rama_${rama}/${fileName}`;
@@ -86,6 +94,7 @@ export async function uploadDocumento(
         mime_type: file.type,
         tamaño: file.size,
         storage_path: storagePath,
+        subido_por: user.id,
       })
       .select()
       .maybeSingle();

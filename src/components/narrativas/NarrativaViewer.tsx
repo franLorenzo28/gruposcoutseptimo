@@ -75,7 +75,8 @@ export function NarrativaViewer({
         {/* Autor y fecha */}
         <div className="flex items-center gap-4 pt-6 border-t border-border">
           <UserAvatar
-            user={narrativa.autor}
+            avatarUrl={narrativa.autor?.avatar_url ?? null}
+            userName={narrativa.autor?.nombre_completo || narrativa.autor?.username || "Anónimo"}
             size="md"
           />
           <div>
@@ -210,7 +211,6 @@ function BloqueRenderer({
             <OptimizedImage
               src={bloque.contenido}
               alt="Imagen de narrativa"
-              quality={85}
               objectFit="contain"
               className="w-full h-full transition-transform duration-300 group-hover:scale-105"
             />

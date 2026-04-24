@@ -76,6 +76,19 @@ type DashboardProps = {
   currentAccess: AdminAccess;
 };
 
+type LocalDashboardPayload = {
+  users?: any[];
+  groups?: any[];
+  events?: any[];
+  threads?: any[];
+  threadComments?: any[];
+  messages?: any[];
+  groupMessages?: any[];
+  pages?: any[];
+  follows?: any[];
+  notifications?: any[];
+};
+
 export default function Dashboard({ currentAccess }: DashboardProps) {
   const [users, setUsers] = useState<any[]>([]);
   const [stats, setStats] = useState({ total: 0, admins: 0, registradosHoy: 0 });
@@ -112,6 +125,10 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
   }
 
   async function fetchData() {
+    if (isLocalBackend()) {
+      return;
+    }
+
     setLoading(true);
     const { data: usuarios, error } = await supabase.from("profiles").select("*");
     if (error) {
@@ -130,7 +147,53 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
     setLoading(false);
   }
 
+  async function fetchLocalDashboardData() {
+    setLoading(true);
+    setLoadingAdmin(true);
+
+    try {
+      const payload = (await apiFetch("/admin/dashboard-data")) as LocalDashboardPayload;
+      const localUsers = payload.users || [];
+
+      setUsers(localUsers);
+      computeStats(localUsers);
+      setGroups(payload.groups || []);
+      setEvents(payload.events || []);
+      setThreads(payload.threads || []);
+      setThreadComments(payload.threadComments || []);
+      setMessages(payload.messages || []);
+      setGroupMessages(payload.groupMessages || []);
+      setPages(payload.pages || []);
+      setFollows(payload.follows || []);
+      setNotifications(payload.notifications || []);
+    } catch (error: any) {
+      toast({
+        title: "Error al cargar datos admin",
+        description: error?.message || "No se pudieron cargar los datos del panel admin en backend local.",
+        variant: "destructive",
+      });
+      setUsers([]);
+      computeStats([]);
+      setGroups([]);
+      setEvents([]);
+      setThreads([]);
+      setThreadComments([]);
+      setMessages([]);
+      setGroupMessages([]);
+      setPages([]);
+      setFollows([]);
+      setNotifications([]);
+    } finally {
+      setLoading(false);
+      setLoadingAdmin(false);
+    }
+  }
+
   async function fetchAdminData() {
+    if (isLocalBackend()) {
+      return;
+    }
+
     setLoadingAdmin(true);
     const [groupsRes, eventsRes, threadsRes, commentsRes, messagesRes, groupMessagesRes, pagesRes, followsRes, notificationsRes] = await Promise.all([
       supabase.from("groups").select("*").order("created_at", { ascending: false }).limit(200),
@@ -214,6 +277,11 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
   }, [users, events, groups, threads, threadComments, messages, groupMessages, follows, notifications, today, sevenDaysAgo]);
 
   useEffect(() => {
+    if (isLocalBackend()) {
+      void fetchLocalDashboardData();
+      return;
+    }
+
     fetchData();
     fetchAdminData();
   }, []);
@@ -561,7 +629,9 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
         description: "El usuario fue eliminado correctamente.",
       });
     } catch (err) {
-      console.error("Error al eliminar:", err);
+      if (import.meta.env.DEV) {
+        console.error("Error al eliminar:", err);
+      }
       toast({
         title: "Error inesperado",
         description: "No se pudo eliminar el usuario.",

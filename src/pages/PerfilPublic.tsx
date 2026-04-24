@@ -117,19 +117,14 @@ const PerfilPublic = () => {
         status: nextStatus,
       }));
 
-      toast({
-        title: nextStatus === "accepted" ? "Ahora lo sigues" : "Solicitud enviada",
-        description:
-          nextStatus === "accepted"
-            ? "Este perfil es público, el seguimiento se aprobó automáticamente."
-            : "Te avisaremos cuando sea aceptada (si es privado).",
-      });
-
-      if (result.notificationPersisted === false) {
+      if (nextStatus === "accepted") {
         toast({
-          title: "Aviso",
-          description: "La notificación puede tardar en aparecer en el destinatario.",
-          variant: "destructive",
+          title: "Ahora lo sigues",
+          description: "Este perfil es público, el seguimiento se aprobó automáticamente.",
+        });
+      } else {
+        toast({
+          title: "Solicitud enviada",
         });
       }
 

@@ -26,6 +26,6 @@ describe("rama helpers", () => {
 
   it("retorna sin-rama para edad nula", () => {
     expect(getRamaFromProfile({ edad: null })).toBe("sin-rama");
-    expect(getRamaLabel({ edad: null })).toBe("Sin rama");
+    expect(getRamaLabel({ edad: null })).toBe("Sin unidad");
   });
 });

@@ -8,6 +8,18 @@ import { maybeSendNotificationEmail } from "../notification-email";
 
 export const adminRouter = Router();
 
+type DashboardUserRow = {
+  user_id: string;
+  email: string | null;
+  nombre_completo: string | null;
+  username: string | null;
+  role: "admin" | "user";
+  rol_adulto: string | null;
+  rama_que_educa: string | null;
+  is_public: boolean;
+  created_at: string | null;
+};
+
 function isAdminEmail(email: string | null | undefined): boolean {
   if (!email) return false;
   const list = (process.env.ADMIN_EMAILS || "")
@@ -75,6 +87,111 @@ function validateAdminCaller(req: any): { ok: true } | { ok: false; status: numb
 
   return { ok: true };
 }
+
+adminRouter.get("/dashboard-data", adminGate, (req: any, res: any) => {
+  const authCheck = validateAdminCaller(req);
+  if (!authCheck.ok) {
+    return res.status(authCheck.status).json({ error: authCheck.error });
+  }
+
+  const usersRaw = db
+    .prepare(
+      `
+      SELECT
+        u.id as user_id,
+        u.email,
+        u.username,
+        u.created_at,
+        p.nombre_completo,
+        p.rol_adulto,
+        p.rama_que_educa,
+        COALESCE(p.is_public, 0) as is_public
+      FROM users u
+      LEFT JOIN profiles p ON p.user_id = u.id
+      ORDER BY datetime(u.created_at) DESC
+      `,
+    )
+    .all() as Array<{
+      user_id: string;
+      email: string | null;
+      nombre_completo: string | null;
+      username: string | null;
+      rol_adulto: string | null;
+      rama_que_educa: string | null;
+      is_public: number;
+      created_at: string | null;
+    }>;
+
+  const users: DashboardUserRow[] = usersRaw.map((row) => ({
+    user_id: row.user_id,
+    email: row.email,
+    nombre_completo: row.nombre_completo,
+    username: row.username,
+    role: isAdminEmail(row.email) ? "admin" : "user",
+    rol_adulto: row.rol_adulto,
+    rama_que_educa: row.rama_que_educa,
+    is_public: row.is_public === 1,
+    created_at: row.created_at,
+  }));
+
+  const groups = db
+    .prepare("SELECT * FROM groups ORDER BY datetime(created_at) DESC LIMIT 200")
+    .all();
+
+  const events = db
+    .prepare(
+      `
+      SELECT
+        id,
+        title as titulo,
+        NULL as descripcion,
+        fecha_inicio,
+        NULL as fecha_fin,
+        created_at
+      FROM events
+      ORDER BY datetime(fecha_inicio) DESC
+      LIMIT 200
+      `,
+    )
+    .all();
+
+  const threads = db
+    .prepare("SELECT * FROM threads ORDER BY datetime(created_at) DESC LIMIT 200")
+    .all();
+
+  const threadComments = db
+    .prepare("SELECT * FROM thread_comments ORDER BY datetime(created_at) DESC LIMIT 200")
+    .all();
+
+  const messages = db
+    .prepare("SELECT * FROM dm_messages ORDER BY datetime(created_at) DESC LIMIT 200")
+    .all();
+
+  const groupMessages = db
+    .prepare("SELECT * FROM group_messages ORDER BY datetime(created_at) DESC LIMIT 200")
+    .all();
+
+  const follows = db
+    .prepare("SELECT * FROM follows ORDER BY datetime(created_at) DESC LIMIT 500")
+    .all();
+
+  const notifications = db
+    .prepare("SELECT * FROM notifications ORDER BY datetime(created_at) DESC LIMIT 500")
+    .all();
+
+  return res.json({
+    users,
+    groups,
+    events,
+    threads,
+    threadComments,
+    messages,
+    groupMessages,
+    pages: [],
+    follows,
+    notifications,
+  });
+});
 
 adminRouter.post("/users/delete", adminGate, (req: any, res: any) => {
   const parse = deleteSchema.safeParse(req.body);

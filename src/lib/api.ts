@@ -127,7 +127,9 @@ export async function getEventos() {
 }
 
 // Crear un evento
-export async function createEvento(evento: Record<string, any>) {
+export async function createEvento(
+  evento: Database["public"]["Tables"]["eventos"]["Insert"],
+) {
   if (isLocalBackend()) {
     await apiFetch("/events", { method: "POST", body: JSON.stringify(evento) });
     return;

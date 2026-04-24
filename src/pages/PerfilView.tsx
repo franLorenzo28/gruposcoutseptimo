@@ -353,15 +353,6 @@ const PerfilView = () => {
         } else {
           toast({
             title: "Solicitud enviada",
-            description: `Se envió la solicitud de seguimiento a ${profile?.nombre_completo || "este usuario"}`,
-          });
-        }
-
-        if (result.notificationPersisted === false) {
-          toast({
-            title: "Aviso",
-            description: "La notificación puede tardar en aparecer en el destinatario.",
-            variant: "destructive",
           });
         }
       }

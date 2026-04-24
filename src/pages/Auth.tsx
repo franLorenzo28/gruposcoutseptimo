@@ -264,7 +264,9 @@ const Auth = () => {
           try {
             const { data, error } = await supabase.auth.getUser(accessToken);
             if (!error && data?.user) {
-              console.log("Usuario autenticado detectado con token:", data.user.email);
+              if (import.meta.env.DEV) {
+                console.log("Usuario autenticado detectado con token:", data.user.email);
+              }
               setTimeout(() => {
                 navigate("/", { replace: true });
               }, 100);
@@ -286,7 +288,9 @@ const Auth = () => {
       const {
         data: { subscription: sub },
       } = supabase.auth.onAuthStateChange(async (event, session) => {
-        console.log("Auth state change evento:", event, "email:", session?.user?.email);
+        if (import.meta.env.DEV) {
+          console.log("Auth state change evento:", event, "email:", session?.user?.email);
+        }
         
         // Solo redirigir en eventos específicos de login exitoso
         if (event === "SIGNED_IN" && session?.user) {
@@ -295,14 +299,20 @@ const Auth = () => {
             // Durante callback OAuth dejamos que checkSession aplique reglas de login/signup.
             return;
           }
-          console.log("SIGNED_IN detectado, redirigiendo a /");
+          if (import.meta.env.DEV) {
+            console.log("SIGNED_IN detectado, redirigiendo a /");
+          }
           setTimeout(() => {
             navigate("/", { replace: true });
           }, 200);
         } else if (event === "TOKEN_REFRESHED" && session?.user) {
-          console.log("TOKEN_REFRESHED con usuario activo");
+          if (import.meta.env.DEV) {
+            console.log("TOKEN_REFRESHED con usuario activo");
+          }
         } else if (event === "USER_UPDATED" && session?.user) {
-          console.log("USER_UPDATED con usuario activo");
+          if (import.meta.env.DEV) {
+            console.log("USER_UPDATED con usuario activo");
+          }
         }
       });
       subscription = sub;
@@ -596,7 +606,6 @@ const Auth = () => {
                 alt="Grupo Scout Séptimo"
                 className="w-full h-full object-contain drop-shadow-sm"
                 loading="eager"
-                fetchPriority="high"
                 decoding="async"
               />
             </div>

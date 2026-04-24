@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import { apiFetch, ensureLocalToken, isLocalBackend } from "@/lib/backend";
 
 const ADMIN_UPLOAD_ERROR = "Solo los usuarios admin pueden subir archivos multimedia";
@@ -127,7 +128,7 @@ async function sendNotificationToUser(args: {
     p_type: args.type,
     p_entity_type: args.entityType,
     p_entity_id: args.entityId,
-    p_data: args.data,
+    p_data: args.data as Json,
   });
 
   if (!rpcError) return;
@@ -138,7 +139,7 @@ async function sendNotificationToUser(args: {
     type: args.type,
     entity_type: args.entityType,
     entity_id: args.entityId,
-    data: args.data,
+    data: args.data as Json,
   });
 
   if (insertError) {

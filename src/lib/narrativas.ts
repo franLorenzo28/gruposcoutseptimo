@@ -25,8 +25,58 @@ export const FEATURES_CHANGELOG = {
  */
 
 import { supabase } from "@/integrations/supabase/client";
+import type { Database, Json } from "@/integrations/supabase/types";
 import { isLocalBackend, apiFetch } from "@/lib/backend";
-import { NarrativaConAutor, CreateNarrativaInput, UpdateNarrativaInput } from "@/types/narrativa";
+import {
+  NarrativaConAutor,
+  NarrativaBloque,
+  CreateNarrativaInput,
+  UpdateNarrativaInput,
+} from "@/types/narrativa";
+
+type NarrativaRow = Database["public"]["Tables"]["narrativas"]["Row"];
+
+function normalizeBloques(value: Json): NarrativaBloque[] {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .filter(
+      (item): item is { id: string; tipo: "texto" | "imagen"; contenido: string } =>
+        typeof item === "object" &&
+        item !== null &&
+        "id" in item &&
+        "tipo" in item &&
+        "contenido" in item &&
+        typeof (item as { id: unknown }).id === "string" &&
+        (((item as { tipo: unknown }).tipo === "texto") ||
+          (item as { tipo: unknown }).tipo === "imagen") &&
+        typeof (item as { contenido: unknown }).contenido === "string",
+    )
+    .map((item) => ({
+      id: item.id,
+      tipo: item.tipo,
+      contenido: item.contenido,
+    }));
+}
+
+function mapNarrativaRow(row: NarrativaRow): NarrativaConAutor {
+  return {
+    id: row.id,
+    titulo: row.titulo,
+    year_section: row.year_section,
+    bloques: normalizeBloques(row.bloques),
+    autor_id: row.autor_id,
+    fecha_publicacion: row.fecha_publicacion,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+    autor: {
+      id: row.autor_id,
+      nombre_completo: null,
+      username: null,
+      avatar_url: null,
+    },
+  };
+}
 
 /**
  * Get all narrativas, optionally filtered by year_section
@@ -57,15 +107,7 @@ export async function getNarrativas(yearSection?: string): Promise<NarrativaConA
   if (error) throw error;
 
   // Map Supabase response to NarrativaConAutor format
-  return (data || []).map((row: any) => ({
-    ...row,
-    autor: {
-      id: row.autor_id,
-      nombre_completo: null,
-      username: null,
-      avatar_url: null,
-    },
-  }));
+  return (data || []).map(mapNarrativaRow);
 }
 
 /**
@@ -87,15 +129,7 @@ export async function getNarrativa(id: string): Promise<NarrativaConAutor> {
 
   if (error) throw error;
 
-  return {
-    ...data,
-    autor: {
-      id: data.autor_id,
-      nombre_completo: null,
-      username: null,
-      avatar_url: null,
-    },
-  } as NarrativaConAutor;
+  return mapNarrativaRow(data);
 }
 
 /**
@@ -120,7 +154,7 @@ export async function createNarrativa(
   const payload = {
     titulo: input.titulo,
     year_section: input.year_section,
-    bloques: input.bloques,
+    bloques: input.bloques as unknown as Json,
     autor_id: user.id,
     fecha_publicacion: input.fecha_publicacion ? new Date(input.fecha_publicacion).toISOString() : new Date().toISOString(),
   };
@@ -136,15 +170,7 @@ export async function createNarrativa(
 
   if (error) throw error;
 
-  return {
-    ...data,
-    autor: {
-      id: data.autor_id,
-      nombre_completo: null,
-      username: null,
-      avatar_url: null,
-    },
-  } as NarrativaConAutor;
+  return mapNarrativaRow(data);
 }
 
 /**
@@ -162,10 +188,10 @@ export async function updateNarrativa(
     })) as NarrativaConAutor;
   }
 
-  const payload: any = {};
+  const payload: Database["public"]["Tables"]["narrativas"]["Update"] = {};
   if (input.titulo !== undefined) payload.titulo = input.titulo;
   if (input.year_section !== undefined) payload.year_section = input.year_section;
-  if (input.bloques !== undefined) payload.bloques = input.bloques;
+  if (input.bloques !== undefined) payload.bloques = input.bloques as unknown as Json;
   if (input.fecha_publicacion !== undefined) payload.fecha_publicacion = new Date(input.fecha_publicacion).toISOString();
   payload.updated_at = new Date().toISOString();
 
@@ -181,15 +207,7 @@ export async function updateNarrativa(
 
   if (error) throw error;
 
-  return {
-    ...data,
-    autor: {
-      id: data.autor_id,
-      nombre_completo: null,
-      username: null,
-      avatar_url: null,
-    },
-  } as NarrativaConAutor;
+  return mapNarrativaRow(data);
 }
 
 /**
