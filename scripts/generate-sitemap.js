@@ -10,7 +10,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const BASE_URL = 'https://gruposcoutseptimo.vercel.app';
+const BASE_URL = process.env.SITE_URL || 'https://gruposcoutseptimo.vercel.app';
 
 const routes = [
   { path: '/', priority: 1.0, changefreq: 'weekly' },
@@ -21,7 +21,6 @@ const routes = [
   { path: '/movimiento-scout', priority: 0.7, changefreq: 'monthly' },
   { path: '/contacto', priority: 0.7, changefreq: 'monthly' },
   { path: '/galeria', priority: 0.6, changefreq: 'weekly' },
-  { path: '/linea-temporal', priority: 0.6, changefreq: 'monthly' },
   { path: '/unidades/manada', priority: 0.7, changefreq: 'monthly' },
   { path: '/unidades/tropa', priority: 0.7, changefreq: 'monthly' },
   { path: '/unidades/pioneros', priority: 0.7, changefreq: 'monthly' },

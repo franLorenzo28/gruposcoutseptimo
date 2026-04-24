@@ -66,6 +66,7 @@ import {
   getProfile as getLocalProfile,
   updateProfile as updateLocalProfile,
 } from "@/lib/api";
+import PageLoader from "@/components/ui/PageLoader";
 
 type Tables = Database["public"]["Tables"];
 type Profile = Tables["profiles"]["Row"];
@@ -622,9 +623,7 @@ const Perfil = () => {
   if (loading) {
     return (
       <div className="page-animate min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25">
-        <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-        </div>
+        <PageLoader message="Cargando tu perfil..." className="min-h-0 py-20" />
       </div>
     );
   }
@@ -645,7 +644,8 @@ const Perfil = () => {
                 navigate("/perfil");
               }
             }}
-            className="shrink-0"
+            className="h-11 w-11 shrink-0"
+            aria-label="Volver al perfil"
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
@@ -661,7 +661,7 @@ const Perfil = () => {
         {!emailVerified && isLocalBackend() && (
           <Alert className="mb-6 border-yellow-500 bg-yellow-50 dark:bg-yellow-950/30">
             <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-500" />
-            <AlertDescription className="flex items-center justify-between gap-4">
+            <AlertDescription className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
               <div>
                 <p className="font-medium text-yellow-800 dark:text-yellow-200">
                   Email no verificado
@@ -707,9 +707,9 @@ const Perfil = () => {
               {formData.nombre_completo || "Usuario Scout"}
             </h2>
             <p className="text-sm text-muted-foreground mb-3">{userEmail}</p>
-            <div className="flex gap-2 justify-center sm:justify-start">
+            <div className="flex flex-col gap-2 sm:flex-row sm:justify-start justify-center">
               <Label htmlFor="avatar-upload" className="cursor-pointer">
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-muted/30 text-foreground rounded-md hover:bg-muted/40 transition-colors text-sm font-medium">
+                <div className="inline-flex min-h-11 items-center gap-2 px-4 py-2 bg-muted/30 text-foreground rounded-md hover:bg-muted/40 transition-colors text-sm font-medium">
                   <Upload className="w-4 h-4" />
                   {formData.avatar_url ? "Cambiar foto" : "Subir foto"}
                 </div>
@@ -726,6 +726,7 @@ const Perfil = () => {
                   type="button"
                   variant="outline"
                   size="sm"
+                  className="min-h-11"
                   onClick={async () => {
                     try {
                       const auth = await getAuthUser();
@@ -1139,8 +1140,8 @@ const Perfil = () => {
           </div>
 
           {/* Botones de acción - Sticky en móvil */}
-          <div className="sticky bottom-0 left-0 right-0 bg-background/95 backdrop-blur-md border-t p-4 -mx-4 sm:mx-0 sm:relative sm:bg-transparent sm:backdrop-blur-none sm:border-0 sm:p-0 z-10 mt-4">
-            <div className="flex gap-3">
+          <div className="sticky bottom-0 left-0 right-0 bg-background/95 backdrop-blur-md border-t p-4 -mx-4 max-[390px]:px-3 sm:mx-0 sm:relative sm:bg-transparent sm:backdrop-blur-none sm:border-0 sm:p-0 z-10 mt-4">
+            <div className="flex gap-3 max-[390px]:flex-col">
               <Button
                 type="submit"
                 className="flex-1 gap-2 h-12 text-base font-semibold shadow-lg sm:shadow-none"
@@ -1163,7 +1164,7 @@ const Perfil = () => {
                 type="button"
                 variant="outline"
                 size="lg"
-                className="h-12"
+                className="h-12 max-[390px]:w-full"
                 onClick={() => {
                   if (hasChanges()) {
                     setShowUnsavedDialog(true);
@@ -1178,9 +1179,9 @@ const Perfil = () => {
             </div>
 
             {hasChanges() && (
-              <div className="mt-3 p-3 bg-muted/30 border border-primary/20 rounded-md animate-pulse">
+              <div className="mt-3 p-3 bg-muted/30 border border-primary/20 rounded-md" role="status" aria-live="polite">
                 <p className="text-sm text-primary font-medium text-center">
-                  ⚠️ Tienes cambios sin guardar
+                  Tienes cambios pendientes de guardar.
                 </p>
               </div>
             )}

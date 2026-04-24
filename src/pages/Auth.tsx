@@ -40,6 +40,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import logoImage from "@/assets/grupo-scout-logo.png";
+import PageLoader from "@/components/ui/PageLoader";
 
 function isVercelAppHost(hostname: string): boolean {
   return hostname.endsWith(".vercel.app");
@@ -136,6 +137,7 @@ const Auth = () => {
   const [googleLoginAllowed, setGoogleLoginAllowed] = useState(false);
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [authTab, setAuthTab] = useState<"login" | "signup">("login");
+  const [inlineMessage, setInlineMessage] = useState<string>("");
   const navigate = useNavigate();
   const { toast } = useToast();
   const isLogin = authTab === "login";
@@ -357,6 +359,7 @@ const Auth = () => {
     // Validar y sanear datos antes de registrar
     const { valid, errors, sanitized } = validateAuth({ email, password, nombreCompleto });
     if (!valid) {
+      setInlineMessage(errors.length > 1 ? errors.join(" • ") : errors[0]);
       toast({
         title: "Error en el formulario",
         description: errors.length > 1 ? errors.join(" • ") : errors[0],
@@ -365,6 +368,7 @@ const Auth = () => {
       return;
     }
     setLoading(true);
+    setInlineMessage("");
     try {
       // Usar cliente Supabase (mock o real según configuración)
       const redirectUrl = buildAuthRedirect("/");
@@ -429,6 +433,7 @@ const Auth = () => {
     // Validar y sanear datos antes de login
     const { valid, errors, sanitized } = validateAuth({ email, password });
     if (!valid) {
+      setInlineMessage(errors.length > 1 ? errors.join(" • ") : errors[0]);
       toast({
         title: "Error en el formulario",
         description: errors.length > 1 ? errors.join(" • ") : errors[0],
@@ -437,6 +442,7 @@ const Auth = () => {
       return;
     }
     setLoading(true);
+    setInlineMessage("");
     try {
       // Usar cliente Supabase (mock o real según configuración)
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -545,17 +551,14 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-[100svh] flex items-start sm:items-center justify-center px-4 pt-8 pb-10 sm:py-8 bg-gradient-to-br from-red-700 via-red-600 to-orange-400 dark:from-red-950 dark:via-red-900 dark:to-orange-800 relative overflow-hidden text-foreground">
+    <div className="min-h-[100svh] flex items-start sm:items-center justify-center px-4 pt-8 pb-10 max-[390px]:px-3 max-[390px]:pt-6 sm:py-8 bg-gradient-to-br from-red-700 via-red-600 to-orange-400 dark:from-red-950 dark:via-red-900 dark:to-orange-800 relative overflow-hidden text-foreground">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.35),transparent_55%)] dark:bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_55%)]" />
       <div className="absolute -top-20 -right-16 h-64 w-64 rounded-full bg-white/20 dark:bg-white/10 blur-3xl" />
       <div className="absolute -bottom-24 -left-20 h-72 w-72 rounded-full bg-white/15 dark:bg-white/5 blur-3xl" />
       {processingOAuth ? (
         <Card className="w-full max-w-md border border-white/30 dark:border-white/10 bg-background/85 dark:bg-background/80 backdrop-blur-xl shadow-2xl">
           <CardContent className="pt-6">
-            <div className="flex flex-col items-center justify-center py-8 space-y-4">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-              <p className="text-sm text-muted-foreground">Procesando inicio de sesión con Google...</p>
-            </div>
+            <PageLoader compact message="Procesando inicio de sesión con Google..." className="min-h-0 py-8" />
           </CardContent>
         </Card>
       ) : (
@@ -576,9 +579,9 @@ const Auth = () => {
             }
           />
         </div>
-        <CardHeader className="text-center text-foreground relative z-10">
+        <CardHeader className="text-center text-foreground relative z-10 px-5 pb-4 max-[390px]:px-4">
           <div className="flex justify-center mb-4">
-            <div className="relative w-24 h-24">
+            <div className="relative h-20 w-20 sm:h-24 sm:w-24">
               <img
                 src={logoImage}
                 alt="Grupo Scout Séptimo"
@@ -588,25 +591,34 @@ const Auth = () => {
               />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">
+          <CardTitle className="text-xl sm:text-2xl font-bold">
             Grupo Scout Séptimo
           </CardTitle>
-          <CardDescription>Únete a nuestra comunidad scout</CardDescription>
+          <CardDescription className="text-sm sm:text-base">Únete a nuestra comunidad scout</CardDescription>
         </CardHeader>
-        <CardContent className="relative z-10">
+        <CardContent className="relative z-10 px-5 pb-6 max-[390px]:px-4">
           <Tabs
             value={authTab}
-            onValueChange={(value) => setAuthTab(value as "login" | "signup")}
+            onValueChange={(value) => {
+              setAuthTab(value as "login" | "signup");
+              setInlineMessage("");
+            }}
             className="w-full"
           >
             <TabsList className="grid w-full grid-cols-2 bg-background/80 dark:bg-background/70 backdrop-blur-md border border-white/40 dark:border-white/10">
-              <TabsTrigger value="login" className="transition-all data-[state=active]:bg-background/95 data-[state=active]:shadow-sm">
+              <TabsTrigger value="login" className="min-h-11 transition-all data-[state=active]:bg-background/95 data-[state=active]:shadow-sm">
                 Iniciar Sesión
               </TabsTrigger>
-              <TabsTrigger value="signup" className="transition-all data-[state=active]:bg-background/95 data-[state=active]:shadow-sm">
+              <TabsTrigger value="signup" className="min-h-11 transition-all data-[state=active]:bg-background/95 data-[state=active]:shadow-sm">
                 Registrarse
               </TabsTrigger>
             </TabsList>
+
+            {inlineMessage && (
+              <p className="mt-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive" role="alert" aria-live="assertive">
+                {inlineMessage}
+              </p>
+            )}
 
             <TabsContent value="login" className="data-[state=active]:animate-in data-[state=active]:fade-in data-[state=active]:slide-in-from-bottom-2 data-[state=active]:duration-500">
               <form onSubmit={handleSignIn} className="space-y-4">
@@ -619,9 +631,14 @@ const Auth = () => {
                     autoComplete="email"
                     placeholder="pepe@email.com"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (inlineMessage) setInlineMessage("");
+                    }}
                     required
+                    className="min-h-11"
                   />
+                  <p className="text-xs text-muted-foreground">Usa el correo con el que creaste tu cuenta.</p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="login-password">Contraseña</Label>
@@ -632,8 +649,12 @@ const Auth = () => {
                       autoComplete="current-password"
                       placeholder="••••••••"
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        if (inlineMessage) setInlineMessage("");
+                      }}
                       required
+                      className="min-h-11"
                     />
                     <button
                       type="button"
@@ -658,8 +679,9 @@ const Auth = () => {
                       </span>
                     </button>
                   </div>
+                  <p className="text-xs text-muted-foreground">Mínimo 6 caracteres.</p>
                 </div>
-                <Button type="submit" className="w-full shadow-md" disabled={loading}>
+                <Button type="submit" className="w-full min-h-11 shadow-md" disabled={loading || !email.trim() || !password.trim()}>
                   {loading ? "Iniciando sesión..." : "Iniciar Sesión"}
                 </Button>
 
@@ -678,7 +700,7 @@ const Auth = () => {
                     <Button
                       type="button"
                       variant="outline"
-                      className="w-full bg-background/90 hover:bg-background"
+                      className="w-full min-h-11 bg-background/90 hover:bg-background"
                       onClick={() => handleGoogleSignIn("login")}
                       disabled={loading || !oauthSafety.safe}
                     >
@@ -704,6 +726,11 @@ const Auth = () => {
                     </Button>
                     {checkingEmail && (
                       <p className="text-xs text-muted-foreground mt-2">Verificando correo…</p>
+                    )}
+                    {googleLoginAllowed && !checkingEmail && email.trim() !== "" && (
+                      <p className="text-xs text-foreground/80 mt-2">
+                        Correo encontrado. Puedes entrar con Google de forma rápida.
+                      </p>
                     )}
                     {!googleLoginAllowed && email.trim() !== "" && !checkingEmail && (
                       <p className="text-xs text-muted-foreground mt-2">
@@ -731,9 +758,14 @@ const Auth = () => {
                     autoComplete="name"
                     placeholder="Pepe González"
                     value={nombreCompleto}
-                    onChange={(e) => setNombreCompleto(e.target.value)}
+                    onChange={(e) => {
+                      setNombreCompleto(e.target.value);
+                      if (inlineMessage) setInlineMessage("");
+                    }}
                     required
+                    className="min-h-11"
                   />
+                  <p className="text-xs text-muted-foreground">Como quieres que te vea la comunidad.</p>
                 </div>
 
                 <div className="space-y-2">
@@ -745,8 +777,12 @@ const Auth = () => {
                     autoComplete="email"
                     placeholder="pepe@email.com"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (inlineMessage) setInlineMessage("");
+                    }}
                     required
+                    className="min-h-11"
                   />
                 </div>
                 <div className="space-y-2">
@@ -758,9 +794,13 @@ const Auth = () => {
                       autoComplete="new-password"
                       placeholder="••••••••"
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        if (inlineMessage) setInlineMessage("");
+                      }}
                       required
                       minLength={6}
+                      className="min-h-11"
                     />
                     <button
                       type="button"
@@ -785,8 +825,9 @@ const Auth = () => {
                       </span>
                     </button>
                   </div>
+                  <p className="text-xs text-muted-foreground">Mínimo 6 caracteres.</p>
                 </div>
-                <Button type="submit" className="w-full shadow-md" disabled={loading}>
+                <Button type="submit" className="w-full min-h-11 shadow-md" disabled={loading || !nombreCompleto.trim() || !email.trim() || !password.trim()}>
                   {loading ? "Registrando..." : "Registrarse"}
                 </Button>
 
@@ -805,7 +846,7 @@ const Auth = () => {
                     <Button
                       type="button"
                       variant="outline"
-                      className="w-full bg-background/90 hover:bg-background"
+                      className="w-full min-h-11 bg-background/90 hover:bg-background"
                       onClick={() => handleGoogleSignIn("signup")}
                       disabled={loading || !oauthSafety.safe}
                     >

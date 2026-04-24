@@ -78,6 +78,7 @@ import SaltarAlContenido from "@/components/layout/SaltarAlContenido";
 import { querySilent } from "@/lib/supabase-logger";
 import { PageGridBackground } from "@/components/PageGridBackground";
 import { useGlobalPresenceHeartbeat } from "@/hooks/useGlobalPresenceHeartbeat";
+import PageLoader from "@/components/ui/PageLoader";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -299,9 +300,7 @@ const App = () => (
                 <main id="main-content" tabIndex={-1} className="min-h-screen">
                   <Suspense
                     fallback={
-                      <div className="flex min-h-screen items-center justify-center">
-                        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                      </div>
+                      <PageLoader message="Cargando sección..." />
                     }
                   >
                     <TransicionRuta>

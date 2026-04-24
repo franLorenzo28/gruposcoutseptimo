@@ -208,6 +208,10 @@ const Navigation = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [location.pathname]);
+
   // Load user profile
   useEffect(() => {
     (async () => {
@@ -271,37 +275,29 @@ const Navigation = () => {
 
   const handleSignOut = async () => {
     try {
-      console.log("Cerrando sesión...");
-      
       // Limpiar TODOS los sistemas de autenticación
       if (isLocalBackend()) {
-        console.log("Modo local: limpiando token del backend");
         localStorage.removeItem("local_api_token");
       } else {
-        console.log("Modo Supabase: signOut");
         await supabase.auth.signOut();
       }
-      
+
       // IMPORTANTE: Limpiar también la sesión mock de Supabase (usado en modo local)
-      console.log("Limpiando sesión mock de Supabase");
       localStorage.removeItem("scout-session");
-      
+
       // Limpiar cualquier otro dato de sesión
-      console.log("Limpiando sessionStorage");
       sessionStorage.clear();
-      
+
       // Actualizar estado local
-      console.log("Actualizando estado...");
       setIsLoggedIn(false);
       setUserName(null);
       setAvatarUrl(null);
-      
+
       toast({
         title: "Sesión cerrada",
         description: "Has cerrado sesión exitosamente",
       });
-      
-      console.log("Redirigiendo a /auth...");
+
       navigate("/auth", { replace: true });
     } catch (error) {
       console.error("Error al cerrar sesión:", error);
@@ -665,7 +661,13 @@ const Navigation = () => {
               {isLoggedIn && (
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="ghost" size="icon" className="relative h-9 w-9">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="relative h-9 w-9"
+                      aria-label="Abrir notificaciones"
+                      title="Notificaciones"
+                    >
                       <Bell className="h-5 w-5" />
                       {unreadCount > 0 && (
                         <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] leading-none rounded-full px-1.5 py-1">
@@ -976,7 +978,13 @@ const Navigation = () => {
               {isLoggedIn && (
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="ghost" size="icon" className="relative h-9 w-9">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="relative h-9 w-9"
+                      aria-label="Abrir notificaciones"
+                      title="Notificaciones"
+                    >
                       <Bell className="h-5 w-5" />
                       {unreadCount > 0 && (
                         <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] leading-none rounded-full px-1.5 py-1">
@@ -1055,7 +1063,14 @@ const Navigation = () => {
               <ThemeToggle />
               <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="xl:hidden">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="xl:hidden"
+                    aria-label={isMobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
+                    aria-expanded={isMobileMenuOpen}
+                    title={isMobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
+                  >
                     {isMobileMenuOpen ? (
                       <X className="h-6 w-6" />
                     ) : (
@@ -1074,6 +1089,7 @@ const Navigation = () => {
                     avatarUrl={avatarUrl}
                     isAdmin={isAdmin}
                     needsProfileSetup={needsProfileSetup}
+                    currentPath={location.pathname}
                     isActive={isActive}
                     handleSignOut={handleSignOut}
                     onLinkClick={() => setIsMobileMenuOpen(false)}
@@ -1099,6 +1115,7 @@ interface MobileMenuProps {
   avatarUrl: string | null;
   isAdmin: boolean;
   needsProfileSetup: boolean;
+  currentPath: string;
   isActive: (path: string) => boolean;
   handleSignOut: () => void;
   onLinkClick: () => void;
@@ -1111,6 +1128,7 @@ function MobileMenu({
   avatarUrl,
   isAdmin,
   needsProfileSetup,
+  currentPath,
   isActive,
   handleSignOut,
   onLinkClick,
@@ -1119,6 +1137,23 @@ function MobileMenu({
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const profileMainPath = needsProfileSetup ? "/perfil/editar" : "/perfil";
   const profileMainLabel = needsProfileSetup ? "Crear perfil" : "Ver mi perfil";
+
+  useEffect(() => {
+    const activeParentPaths = navSections
+      .flatMap((section) => section.links)
+      .filter((link) => {
+        if (!link.path || !link.subitems?.length) return false;
+        return link.subitems.some((subitem) => {
+          if (!subitem.path) return false;
+          if (subitem.path === "/") return currentPath === "/";
+          return currentPath === subitem.path || currentPath.startsWith(`${subitem.path}/`);
+        });
+      })
+      .map((link) => link.path as string);
+
+    if (activeParentPaths.length === 0) return;
+    setExpandedItems((prev) => Array.from(new Set([...prev, ...activeParentPaths])));
+  }, [currentPath, navSections]);
 
   const toggleExpanded = (path: string) => {
     setExpandedItems(prev =>

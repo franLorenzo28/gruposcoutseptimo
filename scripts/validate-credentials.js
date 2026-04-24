@@ -23,9 +23,19 @@ const envVariables = {
   },
 };
 
+const nodeEnv = String(process.env.NODE_ENV || "").toLowerCase();
+const viteEnv = String(process.env.VITE_ENV || "").toLowerCase();
+const vercelEnv = String(process.env.VERCEL_ENV || "").toLowerCase();
+
 const isCI = process.env.CI === "true" || process.env.GITHUB_ACTIONS === "true";
-const isProduction = process.env.VITE_ENV === "production";
-const isDevelopment = process.env.VITE_ENV === "development";
+const isProduction =
+  viteEnv === "production" ||
+  nodeEnv === "production" ||
+  vercelEnv === "production";
+const isDevelopment =
+  viteEnv === "development" ||
+  nodeEnv === "development" ||
+  (!isProduction && !isCI);
 
 let hasErrors = false;
 const warnings = [];
