@@ -174,7 +174,6 @@ const Auth = () => {
     const accessToken = hashParams.get('access_token');
     
     if (accessToken) {
-      console.log("Detectado callback de OAuth con access_token");
       setProcessingOAuth(true);
       setLoading(true);
     }
@@ -197,7 +196,6 @@ const Auth = () => {
         }
 
         if (session?.user) {
-          console.log("Usuario autenticado detectado en checkSession:", session.user.email);
           // Validar intent de OAuth (login vs signup)
           if (!isLocalBackend()) {
             const oauthIntent = localStorage.getItem("oauth_intent");
@@ -264,9 +262,6 @@ const Auth = () => {
           try {
             const { data, error } = await supabase.auth.getUser(accessToken);
             if (!error && data?.user) {
-              if (import.meta.env.DEV) {
-                console.log("Usuario autenticado detectado con token:", data.user.email);
-              }
               setTimeout(() => {
                 navigate("/", { replace: true });
               }, 100);
@@ -288,10 +283,6 @@ const Auth = () => {
       const {
         data: { subscription: sub },
       } = supabase.auth.onAuthStateChange(async (event, session) => {
-        if (import.meta.env.DEV) {
-          console.log("Auth state change evento:", event, "email:", session?.user?.email);
-        }
-        
         // Solo redirigir en eventos específicos de login exitoso
         if (event === "SIGNED_IN" && session?.user) {
           const pendingOauthIntent = localStorage.getItem("oauth_intent");
@@ -299,20 +290,9 @@ const Auth = () => {
             // Durante callback OAuth dejamos que checkSession aplique reglas de login/signup.
             return;
           }
-          if (import.meta.env.DEV) {
-            console.log("SIGNED_IN detectado, redirigiendo a /");
-          }
           setTimeout(() => {
             navigate("/", { replace: true });
           }, 200);
-        } else if (event === "TOKEN_REFRESHED" && session?.user) {
-          if (import.meta.env.DEV) {
-            console.log("TOKEN_REFRESHED con usuario activo");
-          }
-        } else if (event === "USER_UPDATED" && session?.user) {
-          if (import.meta.env.DEV) {
-            console.log("USER_UPDATED con usuario activo");
-          }
         }
       });
       subscription = sub;
@@ -528,11 +508,10 @@ const Auth = () => {
     try {
       // Evita redirects a deployments efímeros usando dominio canónico cuando esté configurado.
       const redirectUrl = buildAuthRedirect("/auth/callback");
-      console.log("Iniciando OAuth con redirect a:", redirectUrl);
 
       localStorage.setItem("oauth_intent", intent);
       
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           redirectTo: redirectUrl,
@@ -552,7 +531,6 @@ const Auth = () => {
         });
         setLoading(false);
       } else {
-        console.log("OAuth iniciado correctamente:", data);
         // No desactivar loading aquá porque la página se redirigirá
       }
     } catch (error: any) {
