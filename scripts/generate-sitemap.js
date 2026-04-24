@@ -10,7 +10,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const BASE_URL = 'https://gruposcout7.com';
+const BASE_URL = 'https://gruposcoutseptimo.vercel.app';
 
 const routes = [
   { path: '/', priority: 1.0, changefreq: 'weekly' },

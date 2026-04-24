@@ -26,7 +26,7 @@ export const config = {
     supabase: import.meta.env.VITE_SUPABASE_URL || "",
     website: isDevelopment()
       ? "http://localhost:5173"
-      : "https://gruposcout7.com",
+      : "https://gruposcoutseptimo.vercel.app",
   },
 
   // API Keys
