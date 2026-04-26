@@ -12,6 +12,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useLocation } from "react-router-dom";
+import { useState } from "react";
 
 type Novedad = {
   id: string;
@@ -25,6 +26,8 @@ type Novedad = {
 const NovedadesRecientes = () => {
   const location = useLocation();
   const isHome = location.pathname === "/";
+  const [newsOpen, setNewsOpen] = useState(false);
+  const [hasOpenedNews, setHasOpenedNews] = useState(false);
 
   // Cargar novedades de Supabase
   const { data: novedadesApi = [] } = useQuery<Novedad[]>({
@@ -86,20 +89,29 @@ const NovedadesRecientes = () => {
       aria-label="Novedades del sitio"
       className="pointer-events-none fixed right-0 top-1/2 z-[80] -translate-y-1/2"
     >
-      <Sheet>
+      <Sheet
+        open={newsOpen}
+        onOpenChange={(open) => {
+          setNewsOpen(open);
+          if (open) setHasOpenedNews(true);
+        }}
+      >
         <SheetTrigger asChild>
           <button
             type="button"
-            className="pointer-events-auto group inline-flex items-center gap-2 rounded-l-xl rounded-r-none border border-r-0 border-primary/30 bg-background/95 px-2.5 py-3 shadow-md backdrop-blur-sm transition-colors hover:bg-background"
+            className={
+              hasOpenedNews
+                ? "pointer-events-auto inline-flex h-10 w-10 items-center justify-center rounded-l-xl rounded-r-none border border-r-0 border-primary/30 bg-background/95 shadow-md backdrop-blur-sm transition-colors hover:bg-background"
+                : "pointer-events-auto group inline-flex items-center gap-2 rounded-l-xl rounded-r-none border border-r-0 border-primary/30 bg-background/95 px-2.5 py-3 shadow-md backdrop-blur-sm transition-colors hover:bg-background"
+            }
             aria-label="Abrir novedades del sitio"
           >
             <Sparkles className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
-            <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/90 md:hidden">
-              Novedades
-            </span>
-            <span className="hidden -rotate-180 text-[11px] font-semibold uppercase tracking-[0.14em] text-foreground/80 [writing-mode:vertical-rl] group-hover:text-foreground md:inline">
-              Novedades
-            </span>
+            {!hasOpenedNews && (
+              <span className="hidden -rotate-180 text-[11px] font-semibold uppercase tracking-[0.14em] text-foreground/80 [writing-mode:vertical-rl] group-hover:text-foreground md:inline">
+                Novedades
+              </span>
+            )}
           </button>
         </SheetTrigger>
 

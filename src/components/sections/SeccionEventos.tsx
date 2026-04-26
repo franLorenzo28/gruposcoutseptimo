@@ -6,14 +6,32 @@ import { Reveal } from "@/components/Reveal";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+type EventItem = {
+  id: number;
+  title: string;
+  date: string;
+  location: string;
+  participants: string;
+  type: string;
+  status: string;
+  image?: string;
+  href?: string;
+};
+
 // --- Mock Data: Reemplazar con datos de una API ---
-const sampleEvents = [
+const sampleEvents: EventItem[] = [
   {
     id: 1,
     title: "Lobabi",
@@ -32,6 +50,7 @@ const sampleEvents = [
     participants: "Grupos Scouts de todo el país",
     type: "Evento Construcción de 2 días",
     status: "En incógnita",
+    href: "/bauen",
     image: "https://images.unsplash.com/photo-1599946343513-c4963d360293?q=80&w=1932&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   },
   {
@@ -46,7 +65,7 @@ const sampleEvents = [
   },
 ];
 
-const EventCard = ({ event, index }: { event: any; index: number }) => {
+const EventCard = ({ event, index }: { event: EventItem; index: number }) => {
   const fechaValida = event.date && event.date !== "A confirmar";
   const [imageFailed, setImageFailed] = useState(!event.image);
   const isUnknown = event.status?.toLowerCase() === "en incógnita";
@@ -156,14 +175,99 @@ const EventCard = ({ event, index }: { event: any; index: number }) => {
               </Tooltip>
             </div>
           </TooltipProvider>
+
+          <div className="pt-2">
+            {event.href ? (
+              <Link to={event.href}>
+                <Button className="w-full" size="sm">
+                  Entrar al evento
+                </Button>
+              </Link>
+            ) : (
+              <Button className="w-full" size="sm" variant="outline" disabled>
+                En preparación
+              </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
     </Reveal>
   );
 };
 
+const MobileEventAccordion = ({ events }: { events: EventItem[] }) => {
+  return (
+    <div className="md:hidden space-y-3 mb-12">
+      <Accordion type="single" collapsible className="space-y-3">
+        {events.map((event) => {
+          const isUnknown = event.status?.toLowerCase() === "en incógnita";
+          return (
+            <AccordionItem
+              key={event.id}
+              value={`event-${event.id}`}
+              className="overflow-hidden rounded-xl border border-border/70 bg-background/70 backdrop-blur-sm"
+            >
+              <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                <div className="min-w-0 text-left">
+                  <p className="text-base font-semibold leading-tight">{event.title}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{event.date}</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <span className="rounded-full bg-muted/30 px-2.5 py-1 text-[11px] font-semibold text-primary">
+                      {event.type}
+                    </span>
+                    <span className="rounded-full border border-border px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
+                      {event.status}
+                    </span>
+                  </div>
+                </div>
+              </AccordionTrigger>
+
+              <AccordionContent className="px-4 pb-4">
+                <div className="space-y-2 text-sm text-foreground">
+                  <p className="flex items-start gap-2">
+                    <Calendar className="mt-0.5 h-4 w-4 text-primary" aria-hidden="true" />
+                    <span>{event.date}</span>
+                  </p>
+                  <p className="flex items-start gap-2">
+                    <MapPin className="mt-0.5 h-4 w-4 text-primary" aria-hidden="true" />
+                    <span>{event.location}</span>
+                  </p>
+                  <p className="flex items-start gap-2">
+                    <Users className="mt-0.5 h-4 w-4 text-primary" aria-hidden="true" />
+                    <span>{event.participants}</span>
+                  </p>
+                  {isUnknown && (
+                    <p className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                      <EyeOff className="h-3.5 w-3.5" aria-hidden="true" />
+                      Los detalles finales de este evento aún no están publicados.
+                    </p>
+                  )}
+                </div>
+
+                <div className="mt-4">
+                  {event.href ? (
+                    <Link to={event.href}>
+                      <Button className="w-full" size="sm">
+                        Entrar al evento
+                      </Button>
+                    </Link>
+                  ) : (
+                    <Button className="w-full" size="sm" variant="outline" disabled>
+                      En preparación
+                    </Button>
+                  )}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          );
+        })}
+      </Accordion>
+    </div>
+  );
+};
+
 const Events = () => {
-  const [events, setEvents] = useState<any[]>([]);
+  const [events, setEvents] = useState<EventItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -209,11 +313,14 @@ const Events = () => {
           ))}
         </div>
       ) : events.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mb-12">
-          {events.map((event, index) => (
-            <EventCard key={event.id} event={event} index={index} />
-          ))}
-        </div>
+        <>
+          <MobileEventAccordion events={events} />
+          <div className="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mb-12">
+            {events.map((event, index) => (
+              <EventCard key={event.id} event={event} index={index} />
+            ))}
+          </div>
+        </>
       ) : (
         <Reveal>
           <div className="text-center py-16 px-6 bg-muted/30 rounded-lg border-2 border-dashed border-border">

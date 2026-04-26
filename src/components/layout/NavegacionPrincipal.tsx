@@ -1078,22 +1078,27 @@ const Navigation = () => {
                     )}
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="right" className="w-[85vw] max-w-[400px] sm:w-[400px]">
-                  <SheetHeader>
+                <SheetContent
+                  side="right"
+                  className="flex h-[100dvh] w-[85vw] max-w-[400px] flex-col overflow-hidden p-0 sm:w-[400px]"
+                >
+                  <SheetHeader className="shrink-0 border-b px-6 py-4 pr-12">
                     <SheetTitle className="text-left">Menú</SheetTitle>
                   </SheetHeader>
-                  <MobileMenu
-                    navSections={visibleNavSections}
-                    isLoggedIn={isLoggedIn}
-                    userName={userName}
-                    avatarUrl={avatarUrl}
-                    isAdmin={isAdmin}
-                    needsProfileSetup={needsProfileSetup}
-                    currentPath={location.pathname}
-                    isActive={isActive}
-                    handleSignOut={handleSignOut}
-                    onLinkClick={() => setIsMobileMenuOpen(false)}
-                  />
+                  <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 pb-6">
+                    <MobileMenu
+                      navSections={visibleNavSections}
+                      isLoggedIn={isLoggedIn}
+                      userName={userName}
+                      avatarUrl={avatarUrl}
+                      isAdmin={isAdmin}
+                      needsProfileSetup={needsProfileSetup}
+                      currentPath={location.pathname}
+                      isActive={isActive}
+                      handleSignOut={handleSignOut}
+                      onLinkClick={() => setIsMobileMenuOpen(false)}
+                    />
+                  </div>
                 </SheetContent>
               </Sheet>
             </div>
