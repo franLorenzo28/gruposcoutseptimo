@@ -667,15 +667,25 @@ const PerfilView = () => {
                   📞 {sanitizeText(profile.telefono)}
                 </p>
               )}
+              {!!(profile as any)?.profesion_ocupacion && (
+                <p className="text-xs sm:text-sm text-muted-foreground">
+                  🎓 {sanitizeText((profile as any).profesion_ocupacion)}
+                </p>
+              )}
               {isOwnProfile && profile.telefono && !privacyPrefs.mostrar_telefono && (
                 <p className="text-xs sm:text-sm text-muted-foreground/80">
                   Teléfono oculto por privacidad.
                 </p>
               )}
               {!!(profile as any)?.descripcion_personal && (
-                <p className="text-sm sm:text-base whitespace-pre-line mt-2">
-                  {sanitizeText((profile as any).descripcion_personal)}
-                </p>
+                <div className="mt-2">
+                  <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">
+                    Historia scout
+                  </p>
+                  <p className="text-sm sm:text-base whitespace-pre-line">
+                    {sanitizeText((profile as any).descripcion_personal)}
+                  </p>
+                </div>
               )}
               {/* Para adultos ya mostramos Rol y Rama que educa arriba; no repetir aquá */}
             </div>
@@ -691,13 +701,10 @@ const PerfilView = () => {
 
             {/* Mostrar unidades para jóvenes O para educadores adultos */}
             {(profile?.seisena ||
-              (profile?.edad && profile?.edad >= 7 && profile?.edad <= 20) ||
-              (profile?.edad && profile?.edad >= 21 && profile?.rol_adulto === "Educador/a")) && (
+              (profile?.edad && profile?.edad >= 7 && profile?.edad <= 20)) && (
               <div className="bg-muted/50 rounded-lg p-3 sm:p-4">
                 <h3 className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">
-                  {profile?.edad && profile?.edad >= 21 && profile?.rol_adulto === "Educador/a" 
-                    ? "Manada (coordina)" 
-                    : "Manada"}
+                  Manada
                 </h3>
                 <p className="text-sm sm:text-base">
                   {profile?.seisena || "No especificada"}
@@ -706,13 +713,10 @@ const PerfilView = () => {
             )}
 
             {(profile?.patrulla ||
-              (profile?.edad && profile?.edad >= 11 && profile?.edad <= 20) ||
-              (profile?.edad && profile?.edad >= 21 && profile?.rol_adulto === "Educador/a")) && (
+              (profile?.edad && profile?.edad >= 11 && profile?.edad <= 20)) && (
               <div className="bg-muted/50 rounded-lg p-3 sm:p-4">
                 <h3 className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">
-                  {profile?.edad && profile?.edad >= 21 && profile?.rol_adulto === "Educador/a" 
-                    ? "Tropa (coordina)" 
-                    : "Tropa"}
+                  Tropa
                 </h3>
                 <p className="text-sm sm:text-base">
                   {profile?.patrulla || "No especificada"}
@@ -721,13 +725,10 @@ const PerfilView = () => {
             )}
 
             {(profile?.equipo_pioneros ||
-              (profile?.edad && profile?.edad >= 15 && profile?.edad <= 20) ||
-              (profile?.edad && profile?.edad >= 21 && profile?.rol_adulto === "Educador/a")) && (
+              (profile?.edad && profile?.edad >= 15 && profile?.edad <= 20)) && (
               <div className="bg-muted/50 rounded-lg p-3 sm:p-4">
                 <h3 className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">
-                  {profile?.edad && profile?.edad >= 21 && profile?.rol_adulto === "Educador/a" 
-                    ? "Pioneros (coordina)" 
-                    : "Pioneros"}
+                  Pioneros
                 </h3>
                 <p className="text-sm sm:text-base">
                   {profile?.equipo_pioneros || "No especificado"}
@@ -736,13 +737,10 @@ const PerfilView = () => {
             )}
 
             {(profile?.comunidad_rovers ||
-              (profile?.edad && profile?.edad >= 18 && profile?.edad <= 20) ||
-              (profile?.edad && profile?.edad >= 21 && profile?.rol_adulto === "Educador/a")) && (
+              (profile?.edad && profile?.edad >= 18 && profile?.edad <= 20)) && (
               <div className="bg-muted/50 rounded-lg p-3 sm:p-4">
                 <h3 className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">
-                  {profile?.edad && profile?.edad >= 21 && profile?.rol_adulto === "Educador/a" 
-                    ? "Rovers (coordina)" 
-                    : "Rovers"}
+                  Rovers
                 </h3>
                 <p className="text-sm sm:text-base">
                   {profile?.comunidad_rovers || "No especificada"}
@@ -787,10 +785,6 @@ const PerfilView = () => {
                 <p className="text-sm sm:text-base font-medium">
                   {(() => {
                     const r = (profile as any).rama_que_educa;
-                    const unidad = r === "manada" ? profile.seisena :
-                                   r === "tropa" ? profile.patrulla :
-                                   r === "pioneros" ? profile.equipo_pioneros :
-                                   r === "rovers" ? profile.comunidad_rovers : "";
                     const nombreRama = r === "manada" ? "Manada" :
                                       r === "tropa" ? "Tropa" :
                                       r === "pioneros" ? "Pioneros" :
@@ -799,7 +793,7 @@ const PerfilView = () => {
                                   r === "tropa" ? "⚜️" :
                                   r === "pioneros" ? "🏔️" :
                                   r === "rovers" ? "🚶" : "";
-                    return `${emoji} Educador/a de ${nombreRama}${unidad ? ` • ${unidad}` : ""}`;
+                    return `${emoji} Educador/a de ${nombreRama}`;
                   })()}
                 </p>
               </div>

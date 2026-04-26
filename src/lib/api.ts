@@ -63,8 +63,6 @@ export async function updateProfile(
   const sanitizedProfile: Partial<Profile> & { user_id: string } = {
     ...profile,
   };
-  delete sanitizedProfile.rol_adulto;
-  delete sanitizedProfile.rama_que_educa;
 
   if (isLocalBackend()) {
     // Mapea campos relevantes al backend local

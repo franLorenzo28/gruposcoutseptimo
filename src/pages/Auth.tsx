@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, ChevronDown, ChevronUp } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -20,6 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import logoImage from "@/assets/grupo-scout-logo.png";
 import PageLoader from "@/components/ui/PageLoader";
+import { PageGridBackground } from "@/components/PageGridBackground";
 
 function isVercelAppHost(hostname: string): boolean {
   return hostname.endsWith(".vercel.app");
@@ -208,6 +209,7 @@ const Auth = () => {
   const [signupCaptchaQuestion, setSignupCaptchaQuestion] = useState("");
   const [signupCaptchaId, setSignupCaptchaId] = useState("");
   const [signupCaptchaAnswer, setSignupCaptchaAnswer] = useState("");
+  const [showOptionalSignup, setShowOptionalSignup] = useState(false);
   const [showPasswordLogin, setShowPasswordLogin] = useState(false);
   const [showPasswordSignup, setShowPasswordSignup] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -216,6 +218,7 @@ const Auth = () => {
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [authTab, setAuthTab] = useState<"login" | "signup">("login");
   const [inlineMessage, setInlineMessage] = useState<string>("");
+  const [loginRedirecting, setLoginRedirecting] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const isLogin = authTab === "login";
@@ -628,6 +631,7 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
     setInlineMessage("");
+    setLoginRedirecting(false);
     try {
       const trimmedEmail = email.trim().toLowerCase();
       const trimmedPassword = password.trim();
@@ -638,6 +642,9 @@ const Auth = () => {
       if (!trimmedPassword) {
         throw new Error("La contraseña es obligatoria.");
       }
+
+      // Evita que un intent OAuth viejo bloquee la navegación post-login normal.
+      localStorage.removeItem("oauth_intent");
 
       if (isLocalBackend()) {
         const result = await localAuthRequest<{ token: string; user?: { id?: string } }>("/auth/login", {
@@ -654,7 +661,11 @@ const Auth = () => {
           title: "¡Bienvenido!",
           description: "Has iniciado sesión correctamente.",
         });
-        navigate("/");
+        setLoginRedirecting(true);
+        setInlineMessage("Inicio de sesión correcto. Redirigiendo...");
+        setTimeout(() => {
+          navigate("/", { replace: true });
+        }, 450);
         return;
       }
 
@@ -695,13 +706,20 @@ const Auth = () => {
             variant: "destructive",
           });
         } else {
+          setLoginRedirecting(true);
+          setInlineMessage("Inicio de sesión correcto. Redirigiendo...");
           toast({
             title: "¡Bienvenido!",
             description: "Has iniciado sesión correctamente.",
           });
+          setTimeout(() => {
+            navigate("/", { replace: true });
+          }, 450);
+          return;
         }
       }
     } catch (error) {
+      setLoginRedirecting(false);
       console.error("Error inesperado en login:", error);
       const message = error instanceof Error ? error.message : "Ocurrió un error inesperado";
       setInlineMessage(message);
@@ -763,10 +781,12 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-[100svh] flex items-start sm:items-center justify-center px-4 pt-8 pb-10 max-[390px]:px-3 max-[390px]:pt-6 sm:py-8 bg-gradient-to-br from-red-700 via-red-600 to-orange-400 dark:from-red-950 dark:via-red-900 dark:to-orange-800 relative overflow-hidden text-foreground">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.35),transparent_55%)] dark:bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_55%)]" />
-      <div className="absolute -top-20 -right-16 h-64 w-64 rounded-full bg-white/20 dark:bg-white/10 blur-3xl" />
-      <div className="absolute -bottom-24 -left-20 h-72 w-72 rounded-full bg-white/15 dark:bg-white/5 blur-3xl" />
+    <PageGridBackground className="overflow-hidden">
+      <div className="relative min-h-[100svh] flex items-center justify-center px-4 py-3 max-[390px]:px-3 text-foreground">
+        <div className="absolute inset-0 bg-gradient-to-br from-red-700 via-red-600 to-orange-400 dark:from-red-950 dark:via-red-900 dark:to-orange-800" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.35),transparent_55%)] dark:bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_55%)]" />
+        <div className="absolute -top-20 -right-16 h-64 w-64 rounded-full bg-white/20 dark:bg-white/10 blur-3xl" />
+        <div className="absolute -bottom-24 -left-20 h-72 w-72 rounded-full bg-white/15 dark:bg-white/5 blur-3xl" />
       {needsGoogleCompletion ? (
         <Card className="w-full max-w-lg border border-white/30 dark:border-white/10 bg-background/85 dark:bg-background/80 backdrop-blur-xl shadow-2xl relative overflow-hidden">
           <div className="absolute inset-0 pointer-events-none">
@@ -925,7 +945,7 @@ const Auth = () => {
           </CardContent>
         </Card>
       ) : (
-        <Card className="w-full max-w-md border border-white/30 dark:border-white/10 bg-background/85 dark:bg-background/80 backdrop-blur-xl shadow-2xl relative overflow-hidden">
+        <Card className="w-full max-w-lg border border-white/30 dark:border-white/10 bg-background/85 dark:bg-background/80 backdrop-blur-xl shadow-2xl relative overflow-hidden">
           <div className="absolute inset-0 pointer-events-none">
             <div
               className={
@@ -942,9 +962,9 @@ const Auth = () => {
               }
             />
           </div>
-          <CardHeader className="text-center text-foreground relative z-10 px-5 pb-4 max-[390px]:px-4">
-            <div className="flex justify-center mb-4">
-              <div className="relative h-20 w-20 sm:h-24 sm:w-24">
+          <CardHeader className="text-center text-foreground relative z-10 px-4 pb-3 pt-4 sm:px-5">
+            <div className="flex justify-center mb-2">
+              <div className="relative h-14 w-14 sm:h-16 sm:w-16">
                 <img
                   src={logoImage}
                   alt="Grupo Scout Séptimo"
@@ -957,35 +977,54 @@ const Auth = () => {
             <CardTitle className="text-xl sm:text-2xl font-bold">
               Grupo Scout Séptimo
             </CardTitle>
-            <CardDescription className="text-sm sm:text-base">Únete a nuestra comunidad scout</CardDescription>
+            <CardDescription className="text-xs sm:text-sm">Únete a nuestra comunidad scout</CardDescription>
           </CardHeader>
-          <CardContent className="relative z-10 px-5 pb-6 max-[390px]:px-4 h-[65vh] flex flex-col overflow-hidden">
+          <CardContent className="relative z-10 px-4 pb-4 sm:px-5 sm:pb-5">
             <Tabs
               value={authTab}
               onValueChange={(value) => {
                 setAuthTab(value as "login" | "signup");
                 setInlineMessage("");
+                setLoginRedirecting(false);
               }}
-              className="w-full flex flex-col"
+              className="w-full"
             >
-              <TabsList className="grid w-full grid-cols-2 bg-background/80 dark:bg-background/70 backdrop-blur-md border border-white/40 dark:border-white/10 flex-shrink-0">
-                <TabsTrigger value="login" className="min-h-11 transition-all data-[state=active]:bg-background/95 data-[state=active]:shadow-sm">
+              <TabsList className="grid h-11 w-full grid-cols-2 overflow-hidden rounded-xl bg-background/80 p-1 backdrop-blur-md border border-white/40 dark:bg-background/70 dark:border-white/10">
+                <TabsTrigger value="login" className="h-9 rounded-md text-sm transition-all data-[state=active]:bg-background/95 data-[state=active]:shadow-sm">
                   Iniciar Sesión
                 </TabsTrigger>
-                <TabsTrigger value="signup" className="min-h-11 transition-all data-[state=active]:bg-background/95 data-[state=active]:shadow-sm">
+                <TabsTrigger value="signup" className="h-9 rounded-md text-sm transition-all data-[state=active]:bg-background/95 data-[state=active]:shadow-sm">
                   Registrarse
                 </TabsTrigger>
               </TabsList>
 
               {inlineMessage && (
-                <p className="mt-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive" role="alert" aria-live="assertive">
-                  {inlineMessage}
+                <p
+                  className={
+                    loginRedirecting
+                      ? "mt-3 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-300"
+                      : "mt-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive"
+                  }
+                  role={loginRedirecting ? "status" : "alert"}
+                  aria-live={loginRedirecting ? "polite" : "assertive"}
+                >
+                  {loginRedirecting ? (
+                    <span className="inline-flex items-center gap-2">
+                      <span
+                        className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-emerald-300 border-t-transparent"
+                        aria-hidden="true"
+                      />
+                      {inlineMessage}
+                    </span>
+                  ) : (
+                    inlineMessage
+                  )}
                 </p>
               )}
 
-              <TabsContent value="login" className="data-[state=active]:animate-in data-[state=active]:fade-in data-[state=active]:slide-in-from-bottom-2 data-[state=active]:duration-500 overflow-y-auto flex-1 pr-2">
-                <form onSubmit={handleSignIn} className="space-y-4">
-                  <div className="space-y-2">
+              <TabsContent value="login" className="data-[state=active]:animate-in data-[state=active]:fade-in data-[state=active]:slide-in-from-bottom-2 data-[state=active]:duration-300 mt-3">
+                <form onSubmit={handleSignIn} className="space-y-3">
+                  <div className="space-y-1.5">
                     <Label htmlFor="login-email">Correo electrónico</Label>
                     <Input
                       id="login-email"
@@ -999,11 +1038,10 @@ const Auth = () => {
                         if (inlineMessage) setInlineMessage("");
                       }}
                       required
-                      className="min-h-11"
+                      className="h-10"
                     />
-                    <p className="text-xs text-muted-foreground">Usa el correo con el que creaste tu cuenta.</p>
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <Label htmlFor="login-password">Contraseña</Label>
                     <div className="relative">
                       <Input
@@ -1017,7 +1055,7 @@ const Auth = () => {
                           if (inlineMessage) setInlineMessage("");
                         }}
                         required
-                        className="min-h-11"
+                        className="h-10"
                       />
                       <button
                         type="button"
@@ -1030,9 +1068,8 @@ const Auth = () => {
                         <span className="sr-only">{showPasswordLogin ? "Ocultar contraseña" : "Ver contraseña"}</span>
                       </button>
                     </div>
-                    <p className="text-xs text-muted-foreground">Mínimo 6 caracteres.</p>
                   </div>
-                  <Button type="submit" className="w-full min-h-11 shadow-md" disabled={loading || !email.trim() || !password.trim()}>
+                  <Button type="submit" className="w-full h-10 shadow-md" disabled={loading || !email.trim() || !password.trim()}>
                     {loading ? "Iniciando sesión..." : "Iniciar Sesión"}
                   </Button>
 
@@ -1049,7 +1086,7 @@ const Auth = () => {
                       <Button
                         type="button"
                         variant="outline"
-                        className="w-full min-h-11 bg-background/90 hover:bg-background"
+                        className="w-full h-10 bg-background/90 hover:bg-background"
                         onClick={() => handleGoogleSignIn("login")}
                         disabled={loading || !oauthSafety.safe}
                       >
@@ -1075,10 +1112,28 @@ const Auth = () => {
                 </form>
               </TabsContent>
 
-              <TabsContent value="signup" className="data-[state=active]:animate-in data-[state=active]:fade-in data-[state=active]:slide-in-from-bottom-2 data-[state=active]:duration-500 overflow-y-auto flex-1 pr-2">
-                <form onSubmit={handleSignUp} className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="space-y-2">
+              <TabsContent value="signup" className="data-[state=active]:animate-in data-[state=active]:fade-in data-[state=active]:slide-in-from-bottom-2 data-[state=active]:duration-300 mt-3">
+                {!isLocalBackend() && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full h-10 bg-background/90 hover:bg-background mb-3"
+                    onClick={() => handleGoogleSignIn("signup")}
+                    disabled={loading || !oauthSafety.safe}
+                  >
+                    <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
+                      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+                      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+                    </svg>
+                    Registrarse con Google
+                  </Button>
+                )}
+
+                <form onSubmit={handleSignUp} className="space-y-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1.5">
                       <Label htmlFor="signup-nombre">Nombre</Label>
                       <Input
                         id="signup-nombre"
@@ -1091,10 +1146,10 @@ const Auth = () => {
                           if (inlineMessage) setInlineMessage("");
                         }}
                         required
-                        className="min-h-11"
+                        className="h-10"
                       />
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-1.5">
                       <Label htmlFor="signup-apellido">Apellido</Label>
                       <Input
                         id="signup-apellido"
@@ -1107,12 +1162,12 @@ const Auth = () => {
                           if (inlineMessage) setInlineMessage("");
                         }}
                         required
-                        className="min-h-11"
+                        className="h-10"
                       />
                     </div>
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <Label htmlFor="signup-tipo-relacion">Tipo de relación</Label>
                     <Select
                       value={signupTipoRelacion}
@@ -1121,7 +1176,7 @@ const Auth = () => {
                         if (inlineMessage) setInlineMessage("");
                       }}
                     >
-                      <SelectTrigger id="signup-tipo-relacion" className="min-h-11">
+                      <SelectTrigger id="signup-tipo-relacion" className="h-10">
                         <SelectValue placeholder="Selecciona tu relación" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1133,90 +1188,104 @@ const Auth = () => {
                     </Select>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-rama">Rama o unidad</Label>
-                    <Input
-                      id="signup-rama"
-                      type="text"
-                      placeholder="Lobatos, Tropa, Pioneros o Rover"
-                      value={signupRama}
-                      onChange={(e) => {
-                        setSignupRama(e.target.value);
-                        if (inlineMessage) setInlineMessage("");
-                      }}
-                      className="min-h-11"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-scout-relacionado">Nombre del scout relacionado</Label>
-                    <Input
-                      id="signup-scout-relacionado"
-                      type="text"
-                      placeholder="Opcional"
-                      value={signupNombreScoutRelacionado}
-                      onChange={(e) => {
-                        setSignupNombreScoutRelacionado(e.target.value);
-                        if (inlineMessage) setInlineMessage("");
-                      }}
-                      className="min-h-11"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-email">Correo electrónico</Label>
-                    <Input
-                      id="signup-email"
-                      type="email"
-                      inputMode="email"
-                      autoComplete="email"
-                      placeholder="pepe@email.com"
-                      value={email}
-                      onChange={(e) => {
-                        setEmail(e.target.value);
-                        if (inlineMessage) setInlineMessage("");
-                      }}
-                      required
-                      className="min-h-11"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password">Contraseña</Label>
-                    <div className="relative">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="signup-email">Correo electrónico</Label>
                       <Input
-                        id="signup-password"
-                        type={showPasswordSignup ? "text" : "password"}
-                        autoComplete="new-password"
-                        placeholder="••••••••"
-                        value={password}
+                        id="signup-email"
+                        type="email"
+                        inputMode="email"
+                        autoComplete="email"
+                        placeholder="pepe@email.com"
+                        value={email}
                         onChange={(e) => {
-                          setPassword(e.target.value);
+                          setEmail(e.target.value);
                           if (inlineMessage) setInlineMessage("");
                         }}
                         required
-                        minLength={8}
-                        className="min-h-11"
+                        className="h-10"
                       />
-                      <button
-                        type="button"
-                        aria-pressed={showPasswordSignup}
-                        aria-label={showPasswordSignup ? "Ocultar contraseña" : "Ver contraseña"}
-                        onClick={() => setShowPasswordSignup((s) => !s)}
-                        className="absolute right-2 top-1/2 transform -translate-y-1/2 inline-flex items-center text-muted-foreground p-1"
-                      >
-                        {showPasswordSignup ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                        <span className="sr-only">{showPasswordSignup ? "Ocultar contraseña" : "Ver contraseña"}</span>
-                      </button>
                     </div>
-                    <p className="text-xs text-muted-foreground">Mínimo 8 caracteres.</p>
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor="signup-password">Contraseña</Label>
+                      <div className="relative">
+                        <Input
+                          id="signup-password"
+                          type={showPasswordSignup ? "text" : "password"}
+                          autoComplete="new-password"
+                          placeholder="••••••••"
+                          value={password}
+                          onChange={(e) => {
+                            setPassword(e.target.value);
+                            if (inlineMessage) setInlineMessage("");
+                          }}
+                          required
+                          minLength={8}
+                          className="h-10"
+                        />
+                        <button
+                          type="button"
+                          aria-pressed={showPasswordSignup}
+                          aria-label={showPasswordSignup ? "Ocultar contraseña" : "Ver contraseña"}
+                          onClick={() => setShowPasswordSignup((s) => !s)}
+                          className="absolute right-2 top-1/2 transform -translate-y-1/2 inline-flex items-center text-muted-foreground p-1"
+                        >
+                          {showPasswordSignup ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                          <span className="sr-only">{showPasswordSignup ? "Ocultar contraseña" : "Ver contraseña"}</span>
+                        </button>
+                      </div>
+                    </div>
                   </div>
 
+                  <button
+                    type="button"
+                    onClick={() => setShowOptionalSignup((current) => !current)}
+                    className="w-full rounded-md border border-border/70 bg-background/50 px-3 py-2 text-left text-sm text-muted-foreground inline-flex items-center justify-between"
+                  >
+                    Datos opcionales
+                    {showOptionalSignup ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </button>
+
+                  {showOptionalSignup && (
+                    <div className="space-y-3 rounded-md border border-border/70 bg-muted/30 p-3">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="signup-rama">Rama o unidad</Label>
+                        <Input
+                          id="signup-rama"
+                          type="text"
+                          placeholder="Lobatos, Tropa, Pioneros o Rover"
+                          value={signupRama}
+                          onChange={(e) => {
+                            setSignupRama(e.target.value);
+                            if (inlineMessage) setInlineMessage("");
+                          }}
+                          className="h-10"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label htmlFor="signup-scout-relacionado">Nombre del scout relacionado</Label>
+                        <Input
+                          id="signup-scout-relacionado"
+                          type="text"
+                          placeholder="Opcional"
+                          value={signupNombreScoutRelacionado}
+                          onChange={(e) => {
+                            setSignupNombreScoutRelacionado(e.target.value);
+                            if (inlineMessage) setInlineMessage("");
+                          }}
+                          className="h-10"
+                        />
+                      </div>
+                    </div>
+                  )}
+
                   {isLocalBackend() && (
-                    <div className="space-y-2 rounded-md border border-border/70 bg-muted/40 p-3">
+                    <div className="space-y-1.5 rounded-md border border-border/70 bg-muted/40 p-3">
                       <Label htmlFor="signup-captcha">Captcha de seguridad</Label>
                       <p className="text-xs text-muted-foreground">
-                        Resuelve esto para demostrar que eres una persona real: {signupCaptchaQuestion || "cargando..."}
+                        Resuelve: {signupCaptchaQuestion || "cargando..."}
                       </p>
                       <Input
                         id="signup-captcha"
@@ -1229,14 +1298,14 @@ const Auth = () => {
                           if (inlineMessage) setInlineMessage("");
                         }}
                         required={isLocalBackend()}
-                        className="min-h-11"
+                        className="h-10"
                       />
                     </div>
                   )}
 
                   <Button
                     type="submit"
-                    className="w-full min-h-11 shadow-md"
+                    className="w-full h-10 shadow-md"
                     disabled={
                       loading ||
                       !signupNombre.trim() ||
@@ -1249,42 +1318,16 @@ const Auth = () => {
                     {loading ? "Registrando..." : "Registrarse"}
                   </Button>
 
-                  {!isLocalBackend() && (
-                    <>
-                      <div className="relative my-4">
-                        <div className="absolute inset-0 flex items-center">
-                          <span className="w-full border-t" />
-                        </div>
-                        <div className="relative flex justify-center text-xs uppercase">
-                          <span className="bg-background/90 px-2 text-muted-foreground">O continúa con</span>
-                        </div>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="w-full min-h-11 bg-background/90 hover:bg-background"
-                        onClick={() => handleGoogleSignIn("signup")}
-                        disabled={loading || !oauthSafety.safe}
-                      >
-                        <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
-                          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
-                          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-                          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-                        </svg>
-                        Registrarse con Google
-                      </Button>
-                      {!oauthSafety.safe && <p className="text-xs text-destructive mt-2">{oauthSafety.reason}</p>}
-                      {oauthSafety.warning && <p className="text-xs text-muted-foreground mt-2">{oauthSafety.warning}</p>}
-                    </>
-                  )}
+                  {!isLocalBackend() && !oauthSafety.safe && <p className="text-xs text-destructive mt-2">{oauthSafety.reason}</p>}
+                  {!isLocalBackend() && oauthSafety.warning && <p className="text-xs text-muted-foreground mt-2">{oauthSafety.warning}</p>}
                 </form>
               </TabsContent>
             </Tabs>
           </CardContent>
         </Card>
       )}
-    </div>
+      </div>
+    </PageGridBackground>
   );
 };
 

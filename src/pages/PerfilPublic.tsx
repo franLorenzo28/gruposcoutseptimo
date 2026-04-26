@@ -185,6 +185,7 @@ const PerfilPublic = () => {
   const displayName = (profile?.nombre_completo ?? minimalProfile?.nombre_completo) || "Usuario Scout";
   const displayUsername = sanitizeText((profile as any)?.username || minimalProfile?.username || null);
   const displayDescription = sanitizeText((profile as any)?.descripcion_personal || "");
+  const displayOccupation = sanitizeText((profile as any)?.profesion_ocupacion || "");
   const privacyPrefs = (() => {
     const raw = (profile as any)?.privacy_preferences;
     const defaults = {
@@ -243,6 +244,11 @@ const PerfilPublic = () => {
               {displayDescription && (
                 <p className="mt-2 text-sm whitespace-pre-line text-muted-foreground">
                   {displayDescription}
+                </p>
+              )}
+              {displayOccupation && (
+                <p className="mt-1 text-sm text-muted-foreground">
+                  🎓 {displayOccupation}
                 </p>
               )}
             </div>

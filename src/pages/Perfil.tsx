@@ -1,7 +1,9 @@
 ﻿// --- Validación y sanitización ---
 type ProfileFormData = {
   nombre_completo: string;
+  profesion_ocupacion: string;
   descripcion_personal: string;
+  telefono: string;
   edad: number;
   fecha_nacimiento: string;
   seisena: string;
@@ -29,11 +31,16 @@ function validateProfile(data: ProfileFormData) {
   // Username: obligatorio, sin espacios ni caracteres raros
   if (!data.username.trim()) errors.push("El nombre de usuario es obligatorio.");
   if (!/^[a-zA-Z0-9._-]{3,20}$/.test(data.username)) errors.push("El nombre de usuario solo puede tener letras, números, puntos, guiones y guion bajo (3-20 caracteres).");
+  if (data.telefono.trim() && !/^\+?[0-9\s-]{7,20}$/.test(data.telefono.trim())) {
+    errors.push("El teléfono no es válido. Usa solo números, espacios, guiones y opcional + al inicio.");
+  }
   // Sanitización básica
   const sanitized = {
     ...data,
     nombre_completo: data.nombre_completo.replace(/[<>"']/g, ""),
+    profesion_ocupacion: data.profesion_ocupacion.replace(/[<>"']/g, "").trim(),
     descripcion_personal: data.descripcion_personal.replace(/[<>"']/g, "").trim(),
+    telefono: data.telefono.replace(/[^0-9+\s-]/g, "").trim(),
     username: data.username.replace(/[^a-zA-Z0-9._-]/g, ""),
   };
   return { valid: errors.length === 0, errors, sanitized };
@@ -86,7 +93,9 @@ const Perfil = () => {
 
   const [formData, setFormData] = useState<{
     nombre_completo: string;
+    profesion_ocupacion: string;
     descripcion_personal: string;
+    telefono: string;
     edad: number;
     fecha_nacimiento: string;
     seisena: string;
@@ -101,7 +110,9 @@ const Perfil = () => {
     username_updated_at: string | null;
   }>({
     nombre_completo: "",
+    profesion_ocupacion: "",
     descripcion_personal: "",
+    telefono: "",
     edad: 0,
     fecha_nacimiento: "",
     seisena: "",
@@ -119,7 +130,6 @@ const Perfil = () => {
     null,
   );
   const [ramaActual, setRamaActual] = useState("");
-  const [ramaEducador, setRamaEducador] = useState<"" | "manada" | "tropa" | "pioneros" | "rovers">("");
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
   const [emailVerified, setEmailVerified] = useState(true);
@@ -174,21 +184,6 @@ const Perfil = () => {
     else setRamaActual("");
   }, [formData.edad]);
 
-  // Detectar rama educador según datos
-  useEffect(() => {
-    // Si ya hay un valor explácito en rama_que_educa, usarlo
-    if (formData.rama_que_educa) {
-      setRamaEducador(formData.rama_que_educa as "" | "manada" | "tropa" | "pioneros" | "rovers");
-    } else {
-      // Fallback: detectar por campos legacy
-      if (formData.seisena) setRamaEducador("manada");
-      else if (formData.patrulla) setRamaEducador("tropa");
-      else if (formData.equipo_pioneros) setRamaEducador("pioneros");
-      else if (formData.comunidad_rovers) setRamaEducador("rovers");
-      else setRamaEducador("");
-    }
-  }, [formData.rama_que_educa, formData.seisena, formData.patrulla, formData.equipo_pioneros, formData.comunidad_rovers]);
-
   useEffect(() => {
     getProfile();
   }, []);
@@ -211,7 +206,9 @@ const Perfil = () => {
         const profileData = {
           ...formData,
           nombre_completo: p?.nombre_completo || "",
+          profesion_ocupacion: p?.profesion_ocupacion || "",
           descripcion_personal: p?.descripcion_personal || "",
+          telefono: p?.telefono || "",
           edad: p?.edad || 0,
           fecha_nacimiento: p?.fecha_nacimiento
             ? p.fecha_nacimiento.split("T")[0]
@@ -251,7 +248,9 @@ const Perfil = () => {
         const profileData = {
           ...formData,
           nombre_completo: userNombre,
+          profesion_ocupacion: (profile as any).profesion_ocupacion || "",
           descripcion_personal: (profile as any).descripcion_personal || "",
+          telefono: (profile as any).telefono || "",
           edad: (profile as any).edad || 0,
           fecha_nacimiento: (profile as any).fecha_nacimiento
             ? (profile as any).fecha_nacimiento.split("T")[0]
@@ -335,7 +334,9 @@ const Perfil = () => {
     // Comparar campos editables
     return (
       formData.nombre_completo !== originalData.nombre_completo ||
+      formData.profesion_ocupacion !== originalData.profesion_ocupacion ||
       formData.descripcion_personal !== originalData.descripcion_personal ||
+      formData.telefono !== originalData.telefono ||
 
       formData.edad !== originalData.edad ||
       formData.fecha_nacimiento !== originalData.fecha_nacimiento ||
@@ -493,7 +494,9 @@ const Perfil = () => {
       const profileData: any = {
         user_id: auth.id,
         nombre_completo: sanitized.nombre_completo,
+        profesion_ocupacion: sanitized.profesion_ocupacion || null,
         descripcion_personal: sanitized.descripcion_personal || null,
+        telefono: sanitized.telefono || null,
         edad: sanitized.edad,
         avatar_url: avatarUrl,
         updated_at: new Date().toISOString(),
@@ -532,9 +535,9 @@ const Perfil = () => {
       // Permitir a Adultos Educadores guardar sus unidades a cargo
       if (sanitized.edad >= 21 && sanitized.rol_adulto === "Educador/a") {
         profileData.seisena = null;
-        profileData.patrulla = sanitized.patrulla || null;
-        profileData.equipo_pioneros = sanitized.equipo_pioneros || null;
-        profileData.comunidad_rovers = sanitized.comunidad_rovers || null;
+        profileData.patrulla = null;
+        profileData.equipo_pioneros = null;
+        profileData.comunidad_rovers = null;
         profileData.rama_que_educa = sanitized.rama_que_educa || null;
       }
 
@@ -545,7 +548,10 @@ const Perfil = () => {
           const refreshed = {
             ...formData,
             nombre_completo: updated?.nombre_completo || formData.nombre_completo,
+            profesion_ocupacion:
+              updated?.profesion_ocupacion ?? formData.profesion_ocupacion,
             descripcion_personal: updated?.descripcion_personal || formData.descripcion_personal,
+            telefono: updated?.telefono ?? formData.telefono,
             fecha_nacimiento: updated?.fecha_nacimiento
               ? String(updated.fecha_nacimiento).split("T")[0]
               : formData.fecha_nacimiento,
@@ -881,6 +887,19 @@ const Perfil = () => {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="profesion_ocupacion">Profesión u ocupación</Label>
+                <Input
+                  id="profesion_ocupacion"
+                  name="profesion_ocupacion"
+                  value={formData.profesion_ocupacion}
+                  onChange={handleChange}
+                  placeholder="Ej: Estudiante, Docente, Ingeniero"
+                  maxLength={120}
+                  className="bg-background"
+                />
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="edad">Edad</Label>
                 <Input
                   id="edad"
@@ -916,8 +935,26 @@ const Perfil = () => {
                 />
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="telefono">Teléfono</Label>
+                <Input
+                  id="telefono"
+                  name="telefono"
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  value={formData.telefono}
+                  onChange={handleChange}
+                  placeholder="Ej: +598 99 123 456"
+                  className="bg-background"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Se mostrará según tu configuración de privacidad.
+                </p>
+              </div>
+
               <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="descripcion_personal">Descripción (tipo Instagram)</Label>
+                <Label htmlFor="descripcion_personal">Historia scout (dónde estuviste)</Label>
                 <Textarea
                   id="descripcion_personal"
                   name="descripcion_personal"
@@ -931,13 +968,13 @@ const Perfil = () => {
                       }));
                     }
                   }}
-                  placeholder="Contá algo sobre vos..."
+                  placeholder="Ej: Estuve en Seisena Roja, luego Patrulla Halcón y más adelante en Equipo Alpha de Pioneros."
                   maxLength={500}
                   rows={4}
                   className="bg-background resize-none"
                 />
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>Se muestra en tu perfil.</span>
+                  <span>Describe tu recorrido histórico, no tu unidad actual.</span>
                   <span>{formData.descripcion_personal.length}/500</span>
                 </div>
               </div>
@@ -1051,7 +1088,7 @@ const Perfil = () => {
               <div className="mt-6 space-y-4 p-4 border rounded-md bg-muted/30">
                 <h4 className="font-semibold text-base">Información del Educador</h4>
                 <p className="text-xs text-muted-foreground">
-                  Selecciona la unidad que diriges y proporciona información de tu unidad.
+                  Selecciona la unidad en la que educas actualmente.
                 </p>
                 <div className="space-y-4">
                   {/* Selector principal de unidad */}
@@ -1067,8 +1104,6 @@ const Perfil = () => {
                           ...prev,
                           rama_que_educa: rama,
                         }));
-                        // Actualizar ramaEducador state para UI
-                        setRamaEducador(rama as "" | "manada" | "tropa" | "pioneros" | "rovers");
                       }}
                       className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     >
@@ -1079,61 +1114,9 @@ const Perfil = () => {
                       <option value="rovers">🚶 Rovers (18-20 años)</option>
                     </select>
                     <p className="text-xs text-muted-foreground">
-                      Selecciona la unidad principal en la que trabajas como educador/a
+                      Ya no pedimos patrulla/equipo/comunidad coordinada en el perfil de educador.
                     </p>
                   </div>
-
-                  {/* Campos específicos según la unidad */}
-                  {ramaEducador === "tropa" && (
-                    <div className="space-y-2">
-                      <Label htmlFor="patrulla_educador">Patrulla de Tropa (opcional)</Label>
-                      <Input
-                        id="patrulla_educador"
-                        name="patrulla"
-                        value={formData.patrulla}
-                        onChange={handleChange}
-                        placeholder="Ej: Patrulla Halcón, Patrulla Águila..."
-                        className="bg-background"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Nombre de la patrulla que coordinas en Tropa
-                      </p>
-                    </div>
-                  )}
-
-                  {ramaEducador === "pioneros" && (
-                    <div className="space-y-2">
-                      <Label htmlFor="pioneros_educador">Equipo de Pioneros (opcional)</Label>
-                      <Input
-                        id="pioneros_educador"
-                        name="equipo_pioneros"
-                        value={formData.equipo_pioneros}
-                        onChange={handleChange}
-                        placeholder="Ej: Equipo Alpha, Equipo Beta..."
-                        className="bg-background"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Nombre del equipo que coordinas en Pioneros
-                      </p>
-                    </div>
-                  )}
-
-                  {ramaEducador === "rovers" && (
-                    <div className="space-y-2">
-                      <Label htmlFor="rovers_educador">Comunidad Rovers (opcional)</Label>
-                      <Input
-                        id="rovers_educador"
-                        name="comunidad_rovers"
-                        value={formData.comunidad_rovers}
-                        onChange={handleChange}
-                        placeholder="Ej: Comunidad Rover, Clan Rovers..."
-                        className="bg-background"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Nombre de la comunidad que coordinas en Rovers
-                      </p>
-                    </div>
-                  )}
                 </div>
               </div>
             )}
