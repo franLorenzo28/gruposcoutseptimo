@@ -79,7 +79,9 @@ function isAdminEmail(email: string | null | undefined): boolean {
 profilesRouter.get("/me", authMiddleware, (req: any, res: any) => {
   const userId = (req as any).user.id as string;
   const user = db
-    .prepare("SELECT id, email, username, email_verified_at, created_at FROM users WHERE id = ?")
+    .prepare(
+      "SELECT id, email, username, account_status, account_classification, account_review_reason, account_reviewed_at, email_verified_at, created_at FROM users WHERE id = ?",
+    )
     .get(userId) as any;
   if (!user) {
     return res

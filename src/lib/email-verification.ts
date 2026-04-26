@@ -109,7 +109,9 @@ export async function verifyEmailToken(token: string) {
     return {
       success: !!payload.success,
       message: payload.message,
-      userId: payload.verified_user_id || payload.user_id // Soportar ambos nombres
+      userId: payload.verified_user_id || payload.user_id, // Soportar ambos nombres
+      nextStatus: payload.next_status || payload.nextStatus || null,
+      classification: payload.classification || null,
     };
   } catch (error: any) {
     console.error('❌ Error en verifyEmailToken:', error);

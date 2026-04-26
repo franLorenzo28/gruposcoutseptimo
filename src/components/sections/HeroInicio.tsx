@@ -172,7 +172,7 @@ const Hero = () => {
                     <span>1</span>
                   </div>
                   <div className="text-xs sm:text-sm md:text-base text-gray-300 mt-1 sm:mt-2 font-medium">
-                    Local Scout (prestado)
+                    Local Scout
                   </div>
                 </div>
               </div>

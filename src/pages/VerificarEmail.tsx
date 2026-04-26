@@ -34,11 +34,19 @@ const VerificarEmail = () => {
 
       if (result.success) {
         setStatus("success");
-        setMessage(result.message || "Email verificado correctamente");
+        setMessage(
+          result.message ||
+            (result.nextStatus === "pendiente_aprobacion"
+              ? "Email verificado. Tu cuenta quedó pendiente de aprobación por administración."
+              : "Email verificado correctamente"),
+        );
         
         toast({
           title: "Email verificado",
-          description: "Tu cuenta ha sido verificada exitosamente. Ahora podés acceder a todas las funcionalidades!",
+          description:
+            result.nextStatus === "pendiente_aprobacion"
+              ? "Tu cuenta quedó pendiente de aprobación por administración."
+              : "Tu cuenta ha sido verificada exitosamente. Ahora podés acceder a todas las funcionalidades!",
         });
 
         // Redirigir a Comuni 7 después de 3 segundos

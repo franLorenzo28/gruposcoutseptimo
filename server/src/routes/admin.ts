@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { randomUUID } from "node:crypto";
+import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { db } from "../db";
 import { authMiddleware } from "../auth";
@@ -14,9 +15,28 @@ type DashboardUserRow = {
   nombre_completo: string | null;
   username: string | null;
   role: "admin" | "user";
+  account_status: string | null;
+  account_classification: string | null;
+  account_review_reason: string | null;
   rol_adulto: string | null;
   rama_que_educa: string | null;
   is_public: boolean;
+  created_at: string | null;
+};
+
+type PendingUserRow = {
+  user_id: string;
+  email: string | null;
+  nombre_completo: string | null;
+  apellido: string | null;
+  username: string | null;
+  account_status: string | null;
+  account_classification: string | null;
+  account_review_reason: string | null;
+  tipo_relacion: string | null;
+  rama: string | null;
+  nombre_scout_relacionado: string | null;
+  email_verified_at: string | null;
   created_at: string | null;
 };
 
@@ -102,7 +122,14 @@ adminRouter.get("/dashboard-data", adminGate, (req: any, res: any) => {
         u.email,
         u.username,
         u.created_at,
+        u.account_status,
+        u.account_classification,
+        u.account_review_reason,
         p.nombre_completo,
+        p.apellido,
+        p.tipo_relacion,
+        p.rama,
+        p.nombre_scout_relacionado,
         p.rol_adulto,
         p.rama_que_educa,
         COALESCE(p.is_public, 0) as is_public
@@ -115,7 +142,14 @@ adminRouter.get("/dashboard-data", adminGate, (req: any, res: any) => {
       user_id: string;
       email: string | null;
       nombre_completo: string | null;
+      apellido: string | null;
       username: string | null;
+      account_status: string | null;
+      account_classification: string | null;
+      account_review_reason: string | null;
+      tipo_relacion: string | null;
+      rama: string | null;
+      nombre_scout_relacionado: string | null;
       rol_adulto: string | null;
       rama_que_educa: string | null;
       is_public: number;
@@ -128,11 +162,40 @@ adminRouter.get("/dashboard-data", adminGate, (req: any, res: any) => {
     nombre_completo: row.nombre_completo,
     username: row.username,
     role: isAdminEmail(row.email) ? "admin" : "user",
+    account_status: row.account_status,
+    account_classification: row.account_classification,
+    account_review_reason: row.account_review_reason,
     rol_adulto: row.rol_adulto,
     rama_que_educa: row.rama_que_educa,
     is_public: row.is_public === 1,
     created_at: row.created_at,
   }));
+
+  const pendingUsers = db
+    .prepare(
+      `
+      SELECT
+        u.id as user_id,
+        u.email,
+        u.username,
+        u.email_verified_at,
+        u.created_at,
+        u.account_status,
+        u.account_classification,
+        u.account_review_reason,
+        p.nombre_completo,
+        p.apellido,
+        p.tipo_relacion,
+        p.rama,
+        p.nombre_scout_relacionado
+      FROM users u
+      LEFT JOIN profiles p ON p.user_id = u.id
+      WHERE u.account_status IN ('pendiente_email', 'pendiente_aprobacion', 'rechazado')
+      ORDER BY datetime(u.created_at) DESC
+      LIMIT 200
+      `,
+    )
+    .all() as PendingUserRow[];
 
   const groups = db
     .prepare("SELECT * FROM groups ORDER BY datetime(created_at) DESC LIMIT 200")
@@ -190,6 +253,150 @@ adminRouter.get("/dashboard-data", adminGate, (req: any, res: any) => {
     pages: [],
     follows,
     notifications,
+    pendingUsers,
+  });
+});
+
+const reviewUserSchema = z.object({
+  status: z.enum(["activo", "rechazado"]),
+  reason: z.string().trim().max(500).optional(),
+});
+
+adminRouter.get("/users/pending", adminGate, (req: any, res: any) => {
+  const authCheck = validateAdminCaller(req);
+  if (!authCheck.ok) {
+    return res.status(authCheck.status).json({ error: authCheck.error });
+  }
+
+  const pendingUsers = db
+    .prepare(
+      `
+      SELECT
+        u.id as user_id,
+        u.email,
+        u.username,
+        u.email_verified_at,
+        u.created_at,
+        u.account_status,
+        u.account_classification,
+        u.account_review_reason,
+        p.nombre_completo,
+        p.apellido,
+        p.tipo_relacion,
+        p.rama,
+        p.nombre_scout_relacionado
+      FROM users u
+      LEFT JOIN profiles p ON p.user_id = u.id
+      WHERE u.account_status IN ('pendiente_email', 'pendiente_aprobacion', 'rechazado')
+      ORDER BY datetime(u.created_at) DESC
+      LIMIT 200
+      `,
+    )
+    .all() as PendingUserRow[];
+
+  res.json({ pendingUsers });
+});
+
+adminRouter.post("/users/:userId/review", adminGate, (req: any, res: any) => {
+  const authCheck = validateAdminCaller(req);
+  if (!authCheck.ok) {
+    return res.status(authCheck.status).json({ error: authCheck.error });
+  }
+
+  const parse = reviewUserSchema.safeParse(req.body);
+  if (!parse.success) {
+    return res.status(400).json({ error: parse.error.flatten() });
+  }
+
+  const { userId } = req.params;
+  const target = db
+    .prepare("SELECT id, email, account_status FROM users WHERE id = ?")
+    .get(userId) as { id?: string; email?: string | null; account_status?: string | null } | undefined;
+  if (!target?.id) {
+    return res.status(404).json({ error: "Usuario no encontrado" });
+  }
+
+  const status = parse.data.status;
+  const reason = parse.data.reason || null;
+  db.prepare(
+    "UPDATE users SET account_status = ?, account_review_reason = ?, account_reviewed_at = ? WHERE id = ?",
+  ).run(status, reason, new Date().toISOString(), userId);
+
+  if (status === "activo") {
+    db.prepare("UPDATE users SET email_verified_at = COALESCE(email_verified_at, ?) WHERE id = ?").run(
+      new Date().toISOString(),
+      userId,
+    );
+  }
+
+  res.json({
+    ok: true,
+    user_id: userId,
+    account_status: status,
+    account_review_reason: reason,
+  });
+});
+
+const createTestUserSchema = z.object({
+  email: z.string().email(),
+  nombre: z.string().min(2).max(80),
+  apellido: z.string().min(2).max(80),
+  password: z.string().min(8).optional(),
+  status: z.enum(["activo", "pendiente_email", "pendiente_aprobacion", "rechazado"]).optional(),
+});
+
+adminRouter.post("/users/test-users", adminGate, (req: any, res: any) => {
+  const authCheck = validateAdminCaller(req);
+  if (!authCheck.ok) {
+    return res.status(authCheck.status).json({ error: authCheck.error });
+  }
+
+  const parse = createTestUserSchema.safeParse(req.body);
+  if (!parse.success) {
+    return res.status(400).json({ error: parse.error.flatten() });
+  }
+
+  const { email, nombre, apellido, password, status } = parse.data;
+  const existing = db.prepare("SELECT id FROM users WHERE email = ?").get(email) as { id?: string } | undefined;
+  if (existing?.id) {
+    return res.status(409).json({ error: "Email ya existe" });
+  }
+
+  const userId = randomUUID();
+  const passwordHash = bcrypt.hashSync(password || "Test12345!", 10);
+  const accountStatus = status || "activo";
+  const username = `${nombre}_${apellido}`
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 32);
+
+  db.prepare(
+    "INSERT INTO users (id, email, password_hash, username, account_status, account_classification, account_review_reason, email_verified_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+  ).run(
+    userId,
+    email,
+    passwordHash,
+    username || `test_${userId.slice(0, 8)}`,
+    accountStatus,
+    accountStatus === "activo" ? "aprobado_automatico" : "revision_manual",
+    "Usuario de test creado por administración",
+    accountStatus === "pendiente_email" ? null : new Date().toISOString(),
+  );
+
+  db.prepare(
+    "INSERT INTO profiles (user_id, nombre_completo, apellido, tipo_relacion, is_public) VALUES (?, ?, ?, ?, 0)",
+  ).run(userId, nombre, apellido, "test");
+
+  res.status(201).json({
+    ok: true,
+    user_id: userId,
+    email,
+    account_status: accountStatus,
+    classification: accountStatus === "activo" ? "aprobado_automatico" : "revision_manual",
   });
 });
 

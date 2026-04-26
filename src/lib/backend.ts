@@ -34,19 +34,64 @@ function clearStoredToken() {
   }
 }
 
+export async function localAuthRequest<TResponse = unknown>(
+  path: string,
+  body: unknown,
+): Promise<TResponse> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+  let payload: any = null;
+  try {
+    payload = await res.json();
+  } catch {
+    payload = null;
+  }
+
+  if (!res.ok) {
+    const message =
+      payload?.error?.message || payload?.error || payload?.message || "Solicitud fallida";
+    throw new Error(message);
+  }
+
+  return payload as TResponse;
+}
+
+export async function localAuthGet<TResponse = unknown>(path: string): Promise<TResponse> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  let payload: any = null;
+  try {
+    payload = await res.json();
+  } catch {
+    payload = null;
+  }
+
+  if (!res.ok) {
+    const message =
+      payload?.error?.message || payload?.error || payload?.message || "Solicitud fallida";
+    throw new Error(message);
+  }
+
+  return payload as TResponse;
+}
+
 export function resetLocalBackendAuth() {
   clearStoredToken();
 }
 
 async function login(email: string, password: string) {
-  const res = await fetch(`${API_BASE}/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
+  const data = await localAuthRequest<{ token: string }>("/auth/login", {
+    email,
+    password,
   });
-  if (!res.ok) throw new Error("Login fallido");
-  const data = await res.json();
-  return data.token as string;
+  return data.token;
 }
 
 function sanitizeUsername(input: string) {
@@ -61,25 +106,12 @@ function sanitizeUsername(input: string) {
   return `user_${Math.random().toString(36).slice(2, 8)}`;
 }
 
-async function register(email: string, password: string, username: string) {
-  const res = await fetch(`${API_BASE}/auth/register`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      email,
-      password,
-      username: sanitizeUsername(username),
-    }),
+async function registerBridge(email: string, password: string, username: string) {
+  const data = await localAuthRequest<{ token: string }>("/auth/local-bridge", {
+    email,
+    password,
+    username: sanitizeUsername(username),
   });
-  if (!res.ok) {
-    try {
-      const j = await res.json();
-      throw new Error(j?.error?.message || j?.error || "Registro fallido");
-    } catch {
-      throw new Error("Registro fallido");
-    }
-  }
-  const data = await res.json();
   return data.token as string;
 }
 
@@ -108,7 +140,7 @@ export async function ensureLocalToken() {
     } catch {
       // Si falla el registro puente por cualquier motivo, caer a invitado para no bloquear
       try {
-        token = await register(email, DEFAULT_PASSWORD, username);
+        token = await registerBridge(email, DEFAULT_PASSWORD, username);
       } catch (_e: any) {
         const rand = Math.random().toString(36).slice(2, 8);
         const guestEmail = `guest-${rand}@local.dev`;
@@ -117,7 +149,7 @@ export async function ensureLocalToken() {
         try {
           token = await login(guestEmail, guestPass);
         } catch {
-          token = await register(guestEmail, guestPass, guestUser);
+          token = await registerBridge(guestEmail, guestPass, guestUser);
         }
       }
     }
@@ -134,7 +166,7 @@ export async function ensureLocalToken() {
   try {
     token = await login(email, password);
   } catch {
-    token = await register(email, password, username);
+    token = await registerBridge(email, password, username);
   }
   setStoredToken(token);
   setStoredTokenOwner("guest");
@@ -227,6 +259,8 @@ export async function getAuthUser(): Promise<{
   id: string;
   email?: string | null;
   email_verified?: boolean;
+  account_status?: string | null;
+  account_classification?: string | null;
   isLocal: boolean;
 } | null> {
   if (isLocalBackend()) {
@@ -238,6 +272,8 @@ export async function getAuthUser(): Promise<{
           id: String(me.id), 
           email: me.email || null, 
           email_verified: !!me.email_verified_at,
+          account_status: me.account_status || null,
+          account_classification: me.account_classification || null,
           isLocal: true 
         };
       }
@@ -252,6 +288,8 @@ export async function getAuthUser(): Promise<{
         id: data.user.id,
         email: data.user.email,
         email_verified: !!data.user.email_confirmed_at,
+        account_status: null,
+        account_classification: null,
         isLocal: false,
       };
     }

@@ -87,6 +87,23 @@ type LocalDashboardPayload = {
   pages?: any[];
   follows?: any[];
   notifications?: any[];
+  pendingUsers?: any[];
+};
+
+type PendingUser = {
+  user_id: string;
+  email: string | null;
+  nombre_completo: string | null;
+  apellido: string | null;
+  username: string | null;
+  account_status: string | null;
+  account_classification: string | null;
+  account_review_reason: string | null;
+  tipo_relacion: string | null;
+  rama: string | null;
+  nombre_scout_relacionado: string | null;
+  email_verified_at: string | null;
+  created_at: string | null;
 };
 
 export default function Dashboard({ currentAccess }: DashboardProps) {
@@ -109,6 +126,12 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
   const [pages, setPages] = useState<any[]>([]);
   const [follows, setFollows] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
+  const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
+  const [testUserNombre, setTestUserNombre] = useState("");
+  const [testUserApellido, setTestUserApellido] = useState("");
+  const [testUserEmail, setTestUserEmail] = useState("");
+  const [testUserPassword, setTestUserPassword] = useState("Test12345!");
+  const [testUserStatus, setTestUserStatus] = useState<"activo" | "pendiente_email" | "pendiente_aprobacion" | "rechazado">("activo");
   const [editGroup, setEditGroup] = useState<any | null>(null);
   const [editEvent, setEditEvent] = useState<any | null>(null);
   const [editPage, setEditPage] = useState<any | null>(null);
@@ -166,6 +189,7 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
       setPages(payload.pages || []);
       setFollows(payload.follows || []);
       setNotifications(payload.notifications || []);
+      setPendingUsers((payload.pendingUsers || []) as PendingUser[]);
     } catch (error: any) {
       toast({
         title: "Error al cargar datos admin",
@@ -183,6 +207,7 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
       setPages([]);
       setFollows([]);
       setNotifications([]);
+      setPendingUsers([]);
     } finally {
       setLoading(false);
       setLoadingAdmin(false);
@@ -225,6 +250,68 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
     setFollows(followsRes.data || []);
     setNotifications(notificationsRes.data || []);
     setLoadingAdmin(false);
+  }
+
+  async function handleReviewPendingUser(userId: string, status: "activo" | "rechazado", reason?: string) {
+    if (!isLocalBackend()) return;
+    try {
+      await apiFetch(`/admin/users/${userId}/review`, {
+        method: "POST",
+        body: JSON.stringify({ status, reason }),
+      });
+      toast({
+        title: status === "activo" ? "Usuario aprobado" : "Usuario rechazado",
+        description: status === "activo" ? "La cuenta quedó activa." : "La cuenta fue rechazada.",
+      });
+      await fetchLocalDashboardData();
+    } catch (error: any) {
+      toast({
+        title: "No se pudo actualizar",
+        description: error?.message || "Error al revisar el usuario.",
+        variant: "destructive",
+      });
+    }
+  }
+
+  async function handleCreateTestUser() {
+    if (!isLocalBackend()) return;
+    if (!testUserNombre.trim() || !testUserApellido.trim() || !testUserEmail.trim()) {
+      toast({
+        title: "Completa el formulario",
+        description: "Nombre, apellido y email son obligatorios.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await apiFetch("/admin/users/test-users", {
+        method: "POST",
+        body: JSON.stringify({
+          nombre: testUserNombre.trim(),
+          apellido: testUserApellido.trim(),
+          email: testUserEmail.trim().toLowerCase(),
+          password: testUserPassword.trim() || "Test12345!",
+          status: testUserStatus,
+        }),
+      });
+      toast({
+        title: "Usuario de test creado",
+        description: "La cuenta quedó disponible en el panel.",
+      });
+      setTestUserNombre("");
+      setTestUserApellido("");
+      setTestUserEmail("");
+      setTestUserPassword("Test12345!");
+      setTestUserStatus("activo");
+      await fetchLocalDashboardData();
+    } catch (error: any) {
+      toast({
+        title: "No se pudo crear",
+        description: error?.message || "Error al crear el usuario de test.",
+        variant: "destructive",
+      });
+    }
   }
 
   const today = new Date().toISOString().slice(0, 10);
@@ -744,6 +831,94 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
           </TabsList>
 
           <TabsContent value="overview">
+            {isLocalBackend() && (
+              <Card className="mb-4 border-dashed border-amber-400/60 bg-amber-50/40 dark:bg-amber-950/20">
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                    <Users className="h-4 w-4" />
+                    Aprobaciones y usuarios de test
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid gap-3 lg:grid-cols-2">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium">Pendientes de revisión</p>
+                        <Badge variant="secondary">{pendingUsers.length}</Badge>
+                      </div>
+                      <div className="space-y-2 max-h-72 overflow-auto pr-1">
+                        {pendingUsers.length === 0 ? (
+                          <p className="text-sm text-muted-foreground">No hay cuentas pendientes en este momento.</p>
+                        ) : (
+                          pendingUsers.slice(0, 6).map((user) => (
+                            <div key={user.user_id} className="rounded-lg border bg-background/80 p-3 space-y-2">
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <div>
+                                  <p className="font-medium text-sm">{user.nombre_completo || user.email || user.user_id}</p>
+                                  <p className="text-xs text-muted-foreground">{user.email} · {user.account_status}</p>
+                                </div>
+                                <Badge variant="outline">{user.account_classification || "sin clasificación"}</Badge>
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                {user.account_review_reason || "Sin motivo de revisión"}
+                              </p>
+                              <div className="flex flex-wrap gap-2">
+                                <Button size="sm" onClick={() => handleReviewPendingUser(user.user_id, "activo")}>
+                                  Aprobar
+                                </Button>
+                                <Button size="sm" variant="destructive" onClick={() => handleReviewPendingUser(user.user_id, "rechazado", "Rechazado por administración") }>
+                                  Rechazar
+                                </Button>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="space-y-3 rounded-xl border bg-background/80 p-4">
+                      <p className="text-sm font-medium">Crear usuario de test</p>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label htmlFor="test-user-nombre">Nombre</Label>
+                          <Input id="test-user-nombre" value={testUserNombre} onChange={(e) => setTestUserNombre(e.target.value)} placeholder="Pepe" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="test-user-apellido">Apellido</Label>
+                          <Input id="test-user-apellido" value={testUserApellido} onChange={(e) => setTestUserApellido(e.target.value)} placeholder="González" />
+                        </div>
+                        <div className="space-y-2 sm:col-span-2">
+                          <Label htmlFor="test-user-email">Email</Label>
+                          <Input id="test-user-email" type="email" value={testUserEmail} onChange={(e) => setTestUserEmail(e.target.value)} placeholder="test@email.com" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="test-user-password">Contraseña</Label>
+                          <Input id="test-user-password" type="text" value={testUserPassword} onChange={(e) => setTestUserPassword(e.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="test-user-status">Estado inicial</Label>
+                          <Select value={testUserStatus} onValueChange={(value) => setTestUserStatus(value as typeof testUserStatus)}>
+                            <SelectTrigger id="test-user-status">
+                              <SelectValue placeholder="Estado" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="activo">Activo</SelectItem>
+                              <SelectItem value="pendiente_email">Pendiente email</SelectItem>
+                              <SelectItem value="pendiente_aprobacion">Pendiente aprobación</SelectItem>
+                              <SelectItem value="rechazado">Rechazado</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <Button className="w-full" onClick={handleCreateTestUser}>
+                        Crear usuario de test
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
               <Card>
                 <CardHeader className="pb-2"><CardTitle className="text-sm">Actividad 7 días</CardTitle></CardHeader>

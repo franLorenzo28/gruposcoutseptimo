@@ -17,6 +17,10 @@ db.exec(`
     email TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     username TEXT UNIQUE,
+    account_status TEXT NOT NULL DEFAULT 'pendiente_email',
+    account_classification TEXT,
+    account_review_reason TEXT,
+    account_reviewed_at TEXT,
     email_verified_at TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
@@ -33,8 +37,12 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS profiles (
     user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
     nombre_completo TEXT,
+    apellido TEXT,
     profesion_ocupacion TEXT,
     descripcion_personal TEXT,
+    tipo_relacion TEXT,
+    nombre_scout_relacionado TEXT,
+    rama TEXT,
     privacy_preferences TEXT,
     notification_preferences TEXT,
     telefono TEXT,
@@ -230,10 +238,20 @@ function ensureProfileColumns() {
       missing.push({
         sql: `ALTER TABLE profiles ADD COLUMN profesion_ocupacion TEXT`,
       });
+    if (!names.has("apellido"))
+      missing.push({ sql: `ALTER TABLE profiles ADD COLUMN apellido TEXT` });
     if (!names.has("descripcion_personal"))
       missing.push({
         sql: `ALTER TABLE profiles ADD COLUMN descripcion_personal TEXT`,
       });
+    if (!names.has("tipo_relacion"))
+      missing.push({ sql: `ALTER TABLE profiles ADD COLUMN tipo_relacion TEXT` });
+    if (!names.has("nombre_scout_relacionado"))
+      missing.push({
+        sql: `ALTER TABLE profiles ADD COLUMN nombre_scout_relacionado TEXT`,
+      });
+    if (!names.has("rama"))
+      missing.push({ sql: `ALTER TABLE profiles ADD COLUMN rama TEXT` });
     if (!names.has("privacy_preferences"))
       missing.push({
         sql: `ALTER TABLE profiles ADD COLUMN privacy_preferences TEXT`,
@@ -295,6 +313,22 @@ function ensureUserColumns() {
     if (!names.has("email_verified_at"))
       missing.push({
         sql: `ALTER TABLE users ADD COLUMN email_verified_at TEXT`,
+      });
+    if (!names.has("account_status"))
+      missing.push({
+        sql: `ALTER TABLE users ADD COLUMN account_status TEXT NOT NULL DEFAULT 'pendiente_email'`,
+      });
+    if (!names.has("account_classification"))
+      missing.push({
+        sql: `ALTER TABLE users ADD COLUMN account_classification TEXT`,
+      });
+    if (!names.has("account_review_reason"))
+      missing.push({
+        sql: `ALTER TABLE users ADD COLUMN account_review_reason TEXT`,
+      });
+    if (!names.has("account_reviewed_at"))
+      missing.push({
+        sql: `ALTER TABLE users ADD COLUMN account_reviewed_at TEXT`,
       });
     if (missing.length) {
       const tx = db.transaction((stmts: Array<{ sql: string }>) => {

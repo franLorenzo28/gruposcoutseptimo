@@ -144,7 +144,7 @@ const FooterNew = () => {
                   href="tel:+59898138668"
                   className="text-sm hover:text-primary transition-colors duration-300"
                 >
-                  +598 098 138 668
+                  +598 98 138 668
                 </a>
               </li>
               <li className="flex items-center group">
