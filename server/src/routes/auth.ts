@@ -11,6 +11,7 @@ import {
   isAdminIp,
   normalizeAccountStatus,
 } from "../registration";
+import { maybeSendNotificationEmail } from "../notification-email";
 
 export const authRouter = Router();
 
@@ -272,6 +273,68 @@ authRouter.post(
     } catch (error) {
       console.error("Error al enviar email de verificación:", error);
       // No bloquear el registro si falla el email
+    }
+
+    // Notificar a administradores sobre nuevo registro
+    try {
+      const adminEmails = (process.env.ADMIN_EMAILS || "")
+        .split(",")
+        .map((value) => value.trim().toLowerCase())
+        .filter(Boolean);
+
+      if (adminEmails.length > 0) {
+        const adminUsers = db
+          .prepare(
+            "SELECT id, email FROM users WHERE LOWER(email) IN (" + adminEmails.map(() => "?").join(",") + ")",
+          )
+          .all(...adminEmails) as Array<{ id: string; email: string }>;
+
+        if (adminUsers.length > 0) {
+          const fullName = `${nombre} ${apellido}`.trim();
+          const createdAt = new Date().toISOString();
+          const notificationData = {
+            kind: "user_registration_request",
+            user_id: id,
+            display: fullName,
+            email,
+            tipo_relacion,
+            rama: rama ?? null,
+            nombre_scout_relacionado: nombre_scout_relacionado ?? null,
+            classification: registration.classification,
+            status: "pendiente_email",
+            content: `Nuevo registro: ${fullName} (${email}).`,
+            created_at: createdAt,
+          };
+
+          for (const admin of adminUsers) {
+            db.prepare(
+              `
+              INSERT INTO notifications (id, recipient_id, actor_id, type, entity_type, entity_id, data, created_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            `,
+            ).run(
+              randomUUID(),
+              admin.id,
+              id,
+              "message",
+              "admin_request",
+              id,
+              JSON.stringify(notificationData),
+              createdAt,
+            );
+
+            void maybeSendNotificationEmail(
+              admin.id,
+              "Nuevo registro pendiente",
+              `${fullName} (${email}) se registro y requiere revision administrativa.`,
+            ).catch(() => {
+              // Silencioso para no bloquear el registro por errores de correo.
+            });
+          }
+        }
+      }
+    } catch {
+      // Silencioso para no bloquear el registro si falla la notificacion.
     }
 
     res.status(201).json({

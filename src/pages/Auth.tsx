@@ -299,12 +299,25 @@ const Auth = () => {
         }
 
         if (session?.user) {
+          if (needsGoogleCompletion) {
+            setProcessingOAuth(false);
+            setLoading(false);
+            return;
+          }
+
           if (!isLocalBackend() && shouldPromptGoogleCompletion(session.user)) {
             setGoogleCompletionDraft(buildGoogleCompletionDraft(session.user));
             setNeedsGoogleCompletion(true);
             setProcessingOAuth(false);
             setLoading(false);
             localStorage.removeItem("oauth_intent");
+            return;
+          }
+
+          const isAuthRoute = window.location.pathname === "/auth";
+          if (isAuthRoute && !accessToken) {
+            setProcessingOAuth(false);
+            setLoading(false);
             return;
           }
 
@@ -397,6 +410,9 @@ const Auth = () => {
       } = supabase.auth.onAuthStateChange(async (event, session) => {
         // Solo redirigir en eventos específicos de login exitoso
         if (event === "SIGNED_IN" && session?.user) {
+          if (needsGoogleCompletion || (!isLocalBackend() && shouldPromptGoogleCompletion(session.user))) {
+            return;
+          }
           const pendingOauthIntent = localStorage.getItem("oauth_intent");
           if (pendingOauthIntent) {
             // Durante callback OAuth dejamos que checkSession aplique reglas de login/signup.

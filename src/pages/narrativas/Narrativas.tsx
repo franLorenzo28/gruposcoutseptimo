@@ -278,7 +278,6 @@ export default function Narrativas() {
         <div className="space-y-4">
           <Accordion
             type="multiple"
-            defaultValue={sortedYearSections.slice(0, 3)}
             className="space-y-2"
           >
             {sortedYearSections.map((yearSection) => {

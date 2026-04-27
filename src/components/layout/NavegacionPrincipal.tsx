@@ -325,6 +325,13 @@ const Navigation = () => {
       };
     }
 
+    if (n.type === "message" && kind === "user_registration_request") {
+      return {
+        title: "Nuevo registro pendiente",
+        description: `${d.display || "Un usuario"} solicita acceso (${d.email || "sin email"})`,
+      };
+    }
+
     if (n.type === "message" && kind === "educator_permission_response") {
       return {
         title: d.approved ? "Permisos aprobados" : "Solicitud rechazada",
@@ -441,6 +448,20 @@ const Navigation = () => {
           {d.note ? (
             <p className="text-xs text-muted-foreground line-clamp-2">{String(d.note)}</p>
           ) : null}
+        </div>
+      );
+    }
+
+    if (n.type === "message" && kind === "user_registration_request") {
+      return (
+        <div className="space-y-1">
+          <p className="text-sm leading-snug">
+            <span className="font-semibold">{d.display || actor || "Nuevo usuario"}</span>{" "}
+            solicita registro.
+          </p>
+          <p className="text-xs text-muted-foreground line-clamp-2">
+            {`${d.email || "sin email"}${d.tipo_relacion ? ` · ${d.tipo_relacion}` : ""}${d.rama ? ` · ${d.rama}` : ""}`}
+          </p>
         </div>
       );
     }

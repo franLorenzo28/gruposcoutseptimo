@@ -101,17 +101,18 @@ const NovedadesRecientes = () => {
             type="button"
             className={
               hasOpenedNews
-                ? "pointer-events-auto inline-flex h-10 w-10 items-center justify-center rounded-l-xl rounded-r-none border border-r-0 border-primary/30 bg-background/95 shadow-md backdrop-blur-sm transition-colors hover:bg-background"
-                : "pointer-events-auto group inline-flex items-center gap-2 rounded-l-xl rounded-r-none border border-r-0 border-primary/30 bg-background/95 px-2.5 py-3 shadow-md backdrop-blur-sm transition-colors hover:bg-background"
+                ? "pointer-events-auto hidden items-center justify-center rounded-l-xl rounded-r-none border border-r-0 border-primary/30 bg-background/95 shadow-md backdrop-blur-sm transition-colors hover:bg-background md:inline-flex md:h-auto md:w-auto md:gap-2 md:px-2.5 md:py-3"
+                : "pointer-events-auto group inline-flex items-center gap-2 rounded-l-xl rounded-r-none border border-r-0 border-primary/30 bg-background/95 px-2.5 py-3 shadow-md backdrop-blur-sm transition-colors hover:bg-background md:px-2.5 md:py-3"
             }
             aria-label="Abrir novedades del sitio"
           >
             <Sparkles className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
-            {!hasOpenedNews && (
-              <span className="hidden -rotate-180 text-[11px] font-semibold uppercase tracking-[0.14em] text-foreground/80 [writing-mode:vertical-rl] group-hover:text-foreground md:inline">
-                Novedades
-              </span>
-            )}
+            <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/90 md:hidden">
+              {hasOpenedNews ? "" : "Novedades"}
+            </span>
+            <span className="hidden -rotate-180 text-[11px] font-semibold uppercase tracking-[0.14em] text-foreground/80 [writing-mode:vertical-rl] group-hover:text-foreground md:inline">
+              Novedades
+            </span>
           </button>
         </SheetTrigger>
 
