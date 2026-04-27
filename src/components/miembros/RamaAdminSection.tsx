@@ -13,6 +13,7 @@ interface RamaAdminSectionProps {
   eventos: any[];
   onSaveContent: (data: any) => void;
   onAddEvent: (event: any) => void;
+  onUpdateEvent: (eventId: string, event: any) => void;
   onDeleteEvent: (eventId: string) => void;
 }
 
@@ -23,14 +24,15 @@ export function RamaAdminSection({
   eventos,
   onSaveContent,
   onAddEvent,
+  onUpdateEvent,
   onDeleteEvent,
 }: RamaAdminSectionProps) {
   const [activeTab, setActiveTab] = useState("contenido");
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 bg-red-100 dark:bg-red-950/30">
+        <TabsList className="grid w-full grid-cols-3 border bg-muted/50 p-0.5">
           <TabsTrigger value="contenido" className="gap-2">
             <Settings className="h-4 w-4" />
             <span className="hidden sm:inline">Contenido</span>
@@ -39,7 +41,7 @@ export function RamaAdminSection({
             <Calendar className="h-4 w-4" />
             <span className="hidden sm:inline">Eventos</span>
             {eventos.length > 0 && (
-              <span className="ml-1 inline-flex items-center justify-center rounded-full bg-white dark:bg-slate-900 px-2 py-0.5 text-xs font-semibold text-scout-yellow dark:text-yellow-400">
+              <span className="ml-1 inline-flex items-center justify-center rounded-full border bg-background px-2 py-0.5 text-xs font-semibold">
                 {eventos.length}
               </span>
             )}
@@ -50,7 +52,7 @@ export function RamaAdminSection({
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="contenido" className="mt-4">
+        <TabsContent value="contenido" className="mt-3">
           <AdminRamaContent
             ramaName={ramaName}
             initialData={ramaContent}
@@ -58,16 +60,17 @@ export function RamaAdminSection({
           />
         </TabsContent>
 
-        <TabsContent value="eventos" className="mt-4">
+        <TabsContent value="eventos" className="mt-3">
           <AdminEvents
             ramaName={ramaName}
             eventos={eventos}
             onAddEvent={onAddEvent}
+            onUpdateEvent={onUpdateEvent}
             onDeleteEvent={onDeleteEvent}
           />
         </TabsContent>
 
-        <TabsContent value="documentos" className="mt-4">
+        <TabsContent value="documentos" className="mt-3">
           <AdminDocuments ramaName={ramaName} rama={rama} />
         </TabsContent>
       </Tabs>

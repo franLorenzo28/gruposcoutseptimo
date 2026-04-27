@@ -9,6 +9,7 @@ import {
   Download,
   Edit2,
   Trash2,
+  Search,
   Users,
   Shield,
   Clock,
@@ -751,31 +752,40 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25 p-2 sm:p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/20 p-3 sm:p-5 md:p-8">
+      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 md:space-y-8">
         {/* Header */}
-        <div className="mb-4 sm:mb-6 md:mb-8">
-          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent mb-1 sm:mb-2">
-            Panel de Admin
-          </h1>
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="text-xs sm:text-sm md:text-base text-muted-foreground">Gestiona usuarios y contenido</p>
-            {currentAccess.isSuperAdmin ? (
-              <Badge className="bg-red-600 text-white">Admin Supremo</Badge>
-            ) : currentAccess.isMod ? (
-              <Badge className="bg-amber-500 text-white">Moderador</Badge>
-            ) : null}
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {currentAccess.isSuperAdmin
-              ? "Tienes control total: roles, permisos de educador y eliminación de usuarios."
-              : "Como mod puedes gestionar permisos de educador por unidad, sin control total de roles."}
-          </p>
-        </div>
+        <Card className="border bg-card/80 shadow-sm">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="space-y-1">
+                <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                  Panel de Admin
+                </h1>
+                <p className="text-sm text-muted-foreground">Gestiona usuarios, contenido y permisos del sistema.</p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                {currentAccess.isSuperAdmin ? (
+                  <Badge className="bg-red-600 text-white">Admin Supremo</Badge>
+                ) : currentAccess.isMod ? (
+                  <Badge className="bg-amber-500 text-white">Moderador</Badge>
+                ) : null}
+                <Badge variant="outline">Usuarios: {stats.total}</Badge>
+                <Badge variant="outline">Admins: {stats.admins}</Badge>
+                {isLocalBackend() && <Badge variant="outline">Pendientes: {pendingUsers.length}</Badge>}
+              </div>
+            </div>
+            <p className="mt-3 text-xs text-muted-foreground">
+              {currentAccess.isSuperAdmin
+                ? "Tienes control total: roles, permisos de educador y eliminación de usuarios."
+                : "Como mod puedes gestionar permisos de educador por unidad, sin control total de roles."}
+            </p>
+          </CardContent>
+        </Card>
 
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4 mb-4 sm:mb-6 md:mb-8">
-          <Card className="border-l-4 border-l-blue-500">
+          <Card className="border-l-4 border-l-blue-500 shadow-sm transition-shadow hover:shadow-md">
             <CardHeader className="pb-2 sm:pb-3">
               <CardTitle className="flex items-center gap-2 text-xs sm:text-sm md:text-base">
                 <Users className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500" />
@@ -788,7 +798,7 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-red-500">
+          <Card className="border-l-4 border-l-red-500 shadow-sm transition-shadow hover:shadow-md">
             <CardHeader className="pb-2 sm:pb-3">
               <CardTitle className="flex items-center gap-2 text-xs sm:text-sm md:text-base">
                 <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-red-500" />
@@ -802,7 +812,7 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-green-500 sm:col-span-2 md:col-span-1">
+          <Card className="border-l-4 border-l-green-500 sm:col-span-2 md:col-span-1 shadow-sm transition-shadow hover:shadow-md">
             <CardHeader className="pb-2 sm:pb-3">
               <CardTitle className="flex items-center gap-2 text-xs sm:text-sm md:text-base">
                 <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-green-500" />
@@ -818,16 +828,43 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
         </div>
 
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="flex flex-wrap gap-1 sm:gap-2 bg-muted/50 p-1 sm:p-2 rounded-lg w-full justify-start overflow-x-auto">
-            <TabsTrigger value="overview" className="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2">Resumen</TabsTrigger>
-            <TabsTrigger value="users" className="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2">Usuarios</TabsTrigger>
-            <TabsTrigger value="groups" className="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2">Grupos</TabsTrigger>
-            <TabsTrigger value="events" className="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2">Eventos</TabsTrigger>
-            <TabsTrigger value="threads" className="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2">Posts</TabsTrigger>
-            <TabsTrigger value="comments" className="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2">Comentarios</TabsTrigger>
-            <TabsTrigger value="messages" className="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2">Msgs</TabsTrigger>
-            <TabsTrigger value="groupMessages" className="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2">Msgs Grupo</TabsTrigger>
-            <TabsTrigger value="pages" className="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2">Páginas</TabsTrigger>
+          <TabsList className="w-full justify-start gap-1 overflow-x-auto rounded-lg border bg-muted/40 p-1 sm:p-1.5">
+            <TabsTrigger value="overview" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 gap-1.5">
+              <Shield className="h-3.5 w-3.5" />
+              Resumen
+            </TabsTrigger>
+            <TabsTrigger value="users" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 gap-1.5">
+              <Users className="h-3.5 w-3.5" />
+              Usuarios
+            </TabsTrigger>
+            <TabsTrigger value="groups" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 gap-1.5">
+              <Layers className="h-3.5 w-3.5" />
+              Grupos
+            </TabsTrigger>
+            <TabsTrigger value="events" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 gap-1.5">
+              <CalendarDays className="h-3.5 w-3.5" />
+              Eventos
+            </TabsTrigger>
+            <TabsTrigger value="threads" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 gap-1.5">
+              <MessageSquare className="h-3.5 w-3.5" />
+              Posts
+            </TabsTrigger>
+            <TabsTrigger value="comments" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 gap-1.5">
+              <MessageSquare className="h-3.5 w-3.5" />
+              Comentarios
+            </TabsTrigger>
+            <TabsTrigger value="messages" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 gap-1.5">
+              <MessagesSquare className="h-3.5 w-3.5" />
+              Msgs
+            </TabsTrigger>
+            <TabsTrigger value="groupMessages" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 gap-1.5">
+              <MessagesSquare className="h-3.5 w-3.5" />
+              Msgs Grupo
+            </TabsTrigger>
+            <TabsTrigger value="pages" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 gap-1.5">
+              <FileText className="h-3.5 w-3.5" />
+              Páginas
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">
@@ -1013,13 +1050,16 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
           </TabsContent>
 
           <TabsContent value="users">
-            <div className="flex flex-col gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-6">
-              <Input
-                placeholder="Buscar usuario..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="text-xs sm:text-sm flex-1"
-              />
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3 md:gap-4 mb-4 sm:mb-6">
+              <div className="relative w-full sm:max-w-md">
+                <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por email, nombre o usuario..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-8 text-xs sm:text-sm"
+                />
+              </div>
               <Button onClick={exportCSV} className="gap-2 whitespace-nowrap text-xs sm:text-sm w-full sm:w-auto">
                 <Download className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span className="hidden sm:inline">Exportar CSV</span>

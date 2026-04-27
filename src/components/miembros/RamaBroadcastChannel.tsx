@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, Megaphone } from "lucide-react";
+import { Loader2, Megaphone, RefreshCw } from "lucide-react";
 import type { MiembroRama } from "@/lib/member-auth";
 import { listRamaBroadcast, publishRamaBroadcast } from "@/lib/rama-difusion";
 import { useToast } from "@/hooks/use-toast";
@@ -42,15 +42,15 @@ export function RamaBroadcastChannel({
       setDraft("");
       broadcastQuery.refetch();
       toast({
-        title: "Difusión enviada",
-        description: "El mensaje ya está visible para toda la unidad.",
+        title: "Difusion enviada",
+        description: "El mensaje ya esta visible para toda la unidad.",
       });
     },
     onError: (error: unknown) => {
       const description =
         error instanceof Error
           ? error.message
-          : "No se pudo publicar el mensaje de difusión";
+          : "No se pudo publicar el mensaje de difusion";
       toast({
         title: "Error",
         description,
@@ -66,25 +66,40 @@ export function RamaBroadcastChannel({
   };
 
   return (
-    <Card className="border-border/60 bg-card/80">
-      <CardContent className="space-y-4 p-4 sm:p-5">
-        <div className="flex items-center gap-2">
-          <Megaphone className="h-5 w-5 text-primary" />
-          <h2 className="text-lg font-bold">Canal de difusión</h2>
+    <Card className="border-border/60 bg-card/80 shadow-sm">
+      <CardContent className="space-y-3 p-3 sm:p-3.5">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <Megaphone className="h-5 w-5 text-primary" />
+              <h2 className="text-base font-bold">Canal de difusion</h2>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {isRamaAdmin
+                ? "Como educador/a, puedes publicar avisos para toda la unidad."
+                : "Solo lectura: aqui veras avisos oficiales de tu equipo educativo."}
+            </p>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => broadcastQuery.refetch()}
+            disabled={broadcastQuery.isFetching}
+          >
+            {broadcastQuery.isFetching ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
+          </Button>
         </div>
 
-        <p className="text-sm text-muted-foreground">
-          {isRamaAdmin
-            ? "Como educador/a, puedes publicar avisos para toda la unidad."
-            : "Solo lectura: aquí verás avisos oficiales de tu equipo educativo."}
-        </p>
-
         {isRamaAdmin && (
-          <div className="space-y-2 rounded-xl border border-border/70 bg-background/70 p-3">
+          <div className="space-y-2 rounded-lg border border-border/70 bg-background/70 p-2.5">
             <textarea
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
-              className="min-h-[88px] w-full resize-y rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              className="min-h-[72px] w-full resize-y rounded-lg border border-border bg-background px-2.5 py-2 text-sm"
               placeholder="Escribe un aviso para toda la unidad..."
               maxLength={2000}
             />
@@ -107,15 +122,15 @@ export function RamaBroadcastChannel({
           </div>
         )}
 
-        <div className="space-y-3">
+        <div className="space-y-2">
           {broadcastQuery.isLoading ? (
             <div className="flex items-center gap-2 rounded-lg border border-border/60 p-3 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
-              Cargando difusión...
+              Cargando difusion...
             </div>
           ) : (broadcastQuery.data || []).length === 0 ? (
             <div className="rounded-lg border border-dashed border-border/70 p-3 text-sm text-muted-foreground">
-              Aún no hay mensajes de difusión para esta unidad.
+              Aun no hay mensajes de difusion para esta unidad.
             </div>
           ) : (
             (broadcastQuery.data || []).map((message) => {
@@ -123,10 +138,7 @@ export function RamaBroadcastChannel({
                 message.nombre_completo ||
                 (message.username ? `@${message.username}` : "Educador/a");
               return (
-                <article
-                  key={message.id}
-                  className="rounded-xl border border-border/60 bg-background/80 p-3"
-                >
+                <article key={message.id} className="rounded-lg border border-border/60 bg-background/80 p-2.5">
                   <p className="whitespace-pre-wrap text-sm leading-relaxed">{message.content}</p>
                   <p className="mt-2 text-xs text-muted-foreground">
                     {author} · {formatDateTime(message.created_at)}

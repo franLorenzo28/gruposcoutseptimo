@@ -8,6 +8,7 @@ interface Document {
   tamaño: number;
   created_at: string;
   original_filename: string;
+  storage_path?: string | null;
 }
 
 export function useRamaDocuments(rama: string) {
@@ -16,7 +17,7 @@ export function useRamaDocuments(rama: string) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadDocuments();
+    void loadDocuments();
   }, [rama]);
 
   const loadDocuments = async () => {
@@ -25,20 +26,19 @@ export function useRamaDocuments(rama: string) {
       setError(null);
 
       if (isLocalBackend()) {
-        // Use Express backend for local development
         const data = await apiFetch(`/unidades/${rama}/documentos`);
-        setDocuments(data || []);
-      } else {
-        // Use Supabase for production
-        const { data, error: supabaseError } = await supabase
-          .from("rama_documentos")
-          .select("*")
-          .eq("rama", rama)
-          .order("created_at", { ascending: false });
-
-        if (supabaseError) throw supabaseError;
-        setDocuments(data || []);
+        setDocuments(Array.isArray(data) ? (data as Document[]) : []);
+        return;
       }
+
+      const { data, error: supabaseError } = await supabase
+        .from("rama_documentos")
+        .select("*")
+        .eq("rama", rama)
+        .order("created_at", { ascending: false });
+
+      if (supabaseError) throw supabaseError;
+      setDocuments((data || []) as Document[]);
     } catch (err) {
       console.error("Error loading documents:", err);
       setError("No se pudieron cargar los documentos");
@@ -47,23 +47,45 @@ export function useRamaDocuments(rama: string) {
     }
   };
 
+  const removeGhostDocument = (docId: string) => {
+    setDocuments((prev) => prev.filter((d) => d.id !== docId));
+  };
+
   const getDownloadUrl = async (docId: string): Promise<string> => {
     if (isLocalBackend()) {
-      // Express backend generates signed URL
       const response = await apiFetch(`/unidades/${rama}/documentos/${docId}/download-url`);
       return response.url;
-    } else {
-      // Use Supabase Storage for production
-      const doc = documents.find((d) => d.id === docId);
-      if (!doc) throw new Error("Documento no encontrado");
-
-      const { data, error } = await supabase.storage
-        .from("rama-documentos")
-        .createSignedUrl((doc as any).storage_path, 3600); // 1 hour expiry
-
-      if (error) throw error;
-      return data.signedUrl;
     }
+
+    const doc = documents.find((d) => d.id === docId);
+    if (!doc) throw new Error("Documento no encontrado");
+    if (!doc.storage_path) {
+      removeGhostDocument(docId);
+      throw new Error("El archivo ya no existe en storage");
+    }
+
+    const { data, error } = await supabase.storage
+      .from("rama-documentos")
+      .createSignedUrl(doc.storage_path, 3600);
+
+    if (error) {
+      removeGhostDocument(docId);
+      throw error;
+    }
+
+    // Avoid opening 404 for stale DB rows whose storage object no longer exists.
+    try {
+      const probe = await fetch(data.signedUrl, { method: "HEAD" });
+      if (!probe.ok) {
+        removeGhostDocument(docId);
+        throw new Error("El archivo ya no existe en storage");
+      }
+    } catch {
+      removeGhostDocument(docId);
+      throw new Error("El archivo ya no existe en storage");
+    }
+
+    return data.signedUrl;
   };
 
   return { documents, isLoading, error, getDownloadUrl };
