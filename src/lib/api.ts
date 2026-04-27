@@ -204,7 +204,10 @@ export async function deleteMyAccount(): Promise<void> {
     await apiFetch("/users/me", { method: "DELETE" });
     return;
   }
-  // En modo Supabase puro, borrar cuenta no está implementado aquí para evitar inconsistencias
-  // Se podría implementar un RPC o flujo admin específico si fuera necesario.
-  throw new Error("Eliminar cuenta no disponible en este modo");
+  const { error } = await supabase.functions.invoke("delete-my-account", {
+    method: "POST",
+  });
+  if (error) {
+    throw new Error(error.message || "No se pudo eliminar la cuenta");
+  }
 }

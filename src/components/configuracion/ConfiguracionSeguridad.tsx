@@ -91,7 +91,7 @@ export default function ConfiguracionSeguridad() {
   const [loadingEmailVerification, setLoadingEmailVerification] = useState(true);
   const [sendingVerificationEmail, setSendingVerificationEmail] = useState(false);
   const [lastVerificationLink, setLastVerificationLink] = useState<string | null>(null);
-  const allowDeleteAccount = isLocalBackend();
+  const allowDeleteAccount = true;
 
   const form = useForm<PasswordFormValues>({
     resolver: zodResolver(passwordSchema),
@@ -710,11 +710,6 @@ export default function ConfiguracionSeguridad() {
             </div>
           </SectionBlock>
 
-          {!allowDeleteAccount && (
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              Disponible en modo local.
-            </p>
-          )}
 
           <Button
             variant="destructive"
