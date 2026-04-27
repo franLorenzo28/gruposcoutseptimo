@@ -57,20 +57,35 @@ export default function LoginMiembros() {
   useEffect(() => {
     (async () => {
       try {
-        // Siempre forzamos reconfirmación al entrar a este flujo
+        // Siempre forzamos reconfirmacion al entrar a este flujo
         logout();
         resetLocalBackendAuth();
 
         const auth = await getAuthUser();
         if (!auth?.id) {
-          setError("Necesitas iniciar sesión con tu cuenta principal para confirmar acceso.");
+          setError("Necesitas iniciar sesion con tu cuenta principal para confirmar acceso.");
           return;
         }
+
+        const accountStatus = String(auth.account_status || "").trim().toLowerCase();
+        if (accountStatus === "rechazado") {
+          setError("Tu cuenta fue rechazada por administracion. Contacta con un admin si crees que es un error.");
+          return;
+        }
+        if (accountStatus === "pendiente_email") {
+          setError("Debes verificar tu correo antes de acceder al area de miembros.");
+          return;
+        }
+        if (accountStatus === "pendiente_aprobacion") {
+          setError("Tu cuenta esta pendiente de aprobacion por administracion.");
+          return;
+        }
+
         setAuthUserId(auth.id);
 
         const profile = (await getProfile(auth.id).catch(() => null)) as any;
         if (!profile) {
-          setError("No encontramos tu perfil. Completa tu perfil antes de ingresar al área interna.");
+          setError("No encontramos tu perfil. Completa tu perfil antes de ingresar al area interna.");
           return;
         }
 
@@ -147,8 +162,8 @@ export default function LoginMiembros() {
                   </p>
                   <h1 className="mt-3 text-3xl font-black">Confirmacion de acceso interno</h1>
                   <p className="mt-2 text-sm text-muted-foreground">
-                  Este ingreso no usa campos manuales. Validamos tu cuenta y aplicamos reglas por
-                  edad, rol y unidad para habilitar el acceso correcto.
+                    Este ingreso no usa campos manuales. Validamos tu cuenta y aplicamos reglas por
+                    edad, rol y unidad para habilitar el acceso correcto.
                   </p>
                 </div>
 
@@ -205,7 +220,7 @@ export default function LoginMiembros() {
 
                 {!loading && !error && isRamaAdmin && (
                   <p className="text-sm text-emerald-700">
-                    Como educador/a de unidad, tendrás permisos de administración del dashboard de tu unidad.
+                    Como educador/a de unidad, tendras permisos de administracion del dashboard de tu unidad.
                   </p>
                 )}
               </div>
@@ -213,8 +228,8 @@ export default function LoginMiembros() {
               {isAuthenticated && session && (
                 <div className="mt-6 rounded-lg border border-border/60 p-3 text-sm text-muted-foreground">
                   <UserCheck className="inline mr-1 h-4 w-4" />
-                  Ya hay sesión activa como <strong>{session.nombre}</strong>. Puedes ir directo a tu
-                  panel desde <Link to={redirectTo} className="text-primary underline ml-1">aquí</Link>.
+                  Ya hay sesion activa como <strong>{session.nombre}</strong>. Puedes ir directo a tu
+                  panel desde <Link to={redirectTo} className="text-primary underline ml-1">aqui</Link>.
                 </div>
               )}
             </CardContent>
@@ -224,4 +239,3 @@ export default function LoginMiembros() {
     </div>
   );
 }
-

@@ -620,7 +620,7 @@ const Auth = () => {
       } else {
         toast({
           title: "Confirma tu correo electrónico",
-          description: `Te enviamos un correo a ${trimmedEmail}. Abre ese email y haz clic en el enlace de confirmación (revisa también la carpeta de spam).`,
+          description: `Te enviamos un correo a ${trimmedEmail}. Luego de verificarlo, un admin debe aprobar tu acceso antes de habilitar funciones internas.`,
         });
         setEmail("");
         setPassword("");

@@ -61,6 +61,7 @@ import { isRestrictedForGuest } from "@/lib/access-control";
 import { acceptFollow, rejectFollow } from "@/lib/follows";
 import {
   getCurrentUserAdminAccess,
+  reviewUserRegistrationRequest,
   reviewEducatorPermissionRequest,
   type EducatorUnit,
 } from "@/lib/admin-permissions";
@@ -715,12 +716,19 @@ const Navigation = () => {
                             const kind = String((n.data as any)?.kind || "").toLowerCase();
                             const isEducatorPermissionRequest =
                               n.type === "message" && kind === "educator_permission_request";
+                            const isUserRegistrationRequest =
+                              n.type === "message" && kind === "user_registration_request";
                             const requestStatus = String((n.data as any)?.status || "pending").toLowerCase();
                             const canReviewEducatorRequest =
                               isEducatorPermissionRequest &&
                               canManageEducatorRequests &&
                               !n.read &&
                               requestStatus === "pending";
+                            const canReviewRegistrationRequest =
+                              isUserRegistrationRequest &&
+                              canManageEducatorRequests &&
+                              !n.read &&
+                              (requestStatus === "pending" || requestStatus === "pendiente_email");
 
                             return (
                               <li
@@ -874,6 +882,82 @@ const Navigation = () => {
                                             toast({
                                               title: "Error",
                                               description: error?.message || "No se pudo rechazar la solicitud",
+                                              variant: "destructive",
+                                            });
+                                          }
+                                        }}
+                                      >
+                                        <X className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  ) : canReviewRegistrationRequest ? (
+                                    <div className="flex items-center gap-1.5">
+                                      <Button
+                                        size="icon"
+                                        className="h-7 w-7"
+                                        aria-label="Aprobar registro"
+                                        title="Aprobar registro"
+                                        onClick={async () => {
+                                          const requesterId = String((n.data as any)?.user_id || (n.data as any)?.requester_id || "").trim();
+                                          if (!requesterId) {
+                                            toast({
+                                              title: "Solicitud invalida",
+                                              description: "No se pudo identificar al usuario registrado.",
+                                              variant: "destructive",
+                                            });
+                                            return;
+                                          }
+
+                                          try {
+                                            await reviewUserRegistrationRequest({
+                                              notificationId: n.id,
+                                              requesterId,
+                                              approve: true,
+                                            });
+                                            markRead(n.id);
+                                            removeNotification(n.id);
+                                            toast({ title: "Usuario aprobado" });
+                                          } catch (error: any) {
+                                            toast({
+                                              title: "Error",
+                                              description: error?.message || "No se pudo aprobar el registro",
+                                              variant: "destructive",
+                                            });
+                                          }
+                                        }}
+                                      >
+                                        <Check className="h-4 w-4" />
+                                      </Button>
+                                      <Button
+                                        size="icon"
+                                        variant="outline"
+                                        className="h-7 w-7"
+                                        aria-label="Rechazar registro"
+                                        title="Rechazar registro"
+                                        onClick={async () => {
+                                          const requesterId = String((n.data as any)?.user_id || (n.data as any)?.requester_id || "").trim();
+                                          if (!requesterId) {
+                                            toast({
+                                              title: "Solicitud invalida",
+                                              description: "No se pudo identificar al usuario registrado.",
+                                              variant: "destructive",
+                                            });
+                                            return;
+                                          }
+
+                                          try {
+                                            await reviewUserRegistrationRequest({
+                                              notificationId: n.id,
+                                              requesterId,
+                                              approve: false,
+                                            });
+                                            markRead(n.id);
+                                            removeNotification(n.id);
+                                            toast({ title: "Usuario rechazado" });
+                                          } catch (error: any) {
+                                            toast({
+                                              title: "Error",
+                                              description: error?.message || "No se pudo rechazar el registro",
                                               variant: "destructive",
                                             });
                                           }

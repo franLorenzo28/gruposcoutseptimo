@@ -23,6 +23,14 @@ export interface MemberAccessDecision {
   reason?: string;
 }
 
+function normalizeAdultRole(value: string | null | undefined): string {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
 export function deriveRamaFromEdad(edad: number | null | undefined): MiembroRama | null {
   if (typeof edad !== "number" || Number.isNaN(edad)) return null;
   if (edad >= 18) return "rover";
@@ -97,20 +105,25 @@ export function resolveMemberAccessFromProfile(profile: {
   comunidad_rovers?: string | null;
 }): MemberAccessDecision {
   const edad = profile.edad;
-  const ramaPorEdad = deriveRamaFromEdad(edad);
+  const rolAdultoNormalizado = normalizeAdultRole(profile.rol_adulto);
+  const isEducador =
+    rolAdultoNormalizado === "educador/a" ||
+    rolAdultoNormalizado === "educador" ||
+    rolAdultoNormalizado === "educadora";
 
-  if (!ramaPorEdad) {
-    return {
-      allowed: false,
-      rama: null,
-      allowedRamas: [],
-      isRamaAdmin: false,
-      accessType: null,
-      reason: "No se pudo determinar tu unidad por edad. Revisa tu fecha de nacimiento en el perfil.",
-    };
-  }
+  if (typeof edad === "number" && !Number.isNaN(edad) && edad < 21) {
+    const ramaPorEdad = deriveRamaFromEdad(edad);
+    if (!ramaPorEdad) {
+      return {
+        allowed: false,
+        rama: null,
+        allowedRamas: [],
+        isRamaAdmin: false,
+        accessType: null,
+        reason: "No se pudo determinar tu unidad por edad. Revisa tu fecha de nacimiento en el perfil.",
+      };
+    }
 
-  if ((edad ?? 0) < 21) {
     return {
       allowed: true,
       rama: ramaPorEdad,
@@ -120,8 +133,7 @@ export function resolveMemberAccessFromProfile(profile: {
     };
   }
 
-  const rolAdulto = String(profile.rol_adulto || "").trim();
-  if (!rolAdulto) {
+  if (!isEducador) {
     return {
       allowed: false,
       rama: null,
@@ -129,19 +141,7 @@ export function resolveMemberAccessFromProfile(profile: {
       isRamaAdmin: false,
       accessType: null,
       reason:
-        "Si tienes 21 años o más, debes indicar tu rol en el perfil para ingresar al área de miembros.",
-    };
-  }
-
-  if (rolAdulto !== "Educador/a") {
-    return {
-      allowed: false,
-      rama: null,
-      allowedRamas: [],
-      isRamaAdmin: false,
-      accessType: null,
-      reason:
-        "El área de miembros es exclusiva para beneficiarios y educadores. Si no eres educador/a, no tienes acceso interno.",
+        "El area de miembros es exclusiva para beneficiarios y educadores. Si no eres educador/a, no tienes acceso interno.",
     };
   }
 

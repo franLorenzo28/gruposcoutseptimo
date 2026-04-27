@@ -58,29 +58,41 @@ export default function PanelRama({ rama }: { rama: MiembroRama }) {
   const allowedRamas = session?.allowedRamas?.length ? session.allowedRamas : session?.rama ? [session.rama] : [];
   const isRamaAdmin = !!session?.isRamaAdmin && allowedRamas.includes(rama);
 
+  const defaultRamaContent = {
+    lema: config.lema,
+    reuniones: config.reuniones,
+    info: config.info,
+    avisos: [] as string[],
+  };
+
+  const parseStoredJson = <T,>(raw: string | null, fallback: T): T => {
+    if (!raw) return fallback;
+    try {
+      return JSON.parse(raw) as T;
+    } catch {
+      return fallback;
+    }
+  };
+
   // State for admin data
   const [ramaContent, setRamaContent] = useState(() => {
     if (typeof window === "undefined") return { lema: config.lema, reuniones: config.reuniones, info: config.info, avisos: [] };
     const stored = localStorage.getItem(`rama_${rama}_content`);
-    return stored ? JSON.parse(stored) : { lema: config.lema, reuniones: config.reuniones, info: config.info, avisos: [] };
+    return parseStoredJson(stored, defaultRamaContent);
   });
 
   const [eventos, setEventos] = useState(() => {
     if (typeof window === "undefined") return [];
     const stored = localStorage.getItem(`rama_${rama}_eventos`);
-    return stored ? JSON.parse(stored) : [];
+    return parseStoredJson(stored, [] as Array<any>);
   });
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     const storedContent = localStorage.getItem(`rama_${rama}_content`);
     const storedEventos = localStorage.getItem(`rama_${rama}_eventos`);
-    setRamaContent(
-      storedContent
-        ? JSON.parse(storedContent)
-        : { lema: config.lema, reuniones: config.reuniones, info: config.info, avisos: [] },
-    );
-    setEventos(storedEventos ? JSON.parse(storedEventos) : []);
+    setRamaContent(parseStoredJson(storedContent, defaultRamaContent));
+    setEventos(parseStoredJson(storedEventos, [] as Array<any>));
   }, [rama]);
 
   // Save content to localStorage
@@ -105,11 +117,11 @@ export default function PanelRama({ rama }: { rama: MiembroRama }) {
       id: Date.now().toString(),
       ...eventData,
     };
-    setEventos([...eventos, newEvent]);
+    setEventos((prev) => [...prev, newEvent]);
   };
 
   const handleDeleteEvent = (eventId: string) => {
-    setEventos(eventos.filter((e) => e.id !== eventId));
+    setEventos((prev) => prev.filter((e) => e.id !== eventId));
   };
 
   return (

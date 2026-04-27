@@ -353,3 +353,33 @@ export async function reviewEducatorPermissionRequest(args: {
 
   if (error) throw error;
 }
+
+export async function reviewUserRegistrationRequest(args: {
+  notificationId: string;
+  requesterId: string;
+  approve: boolean;
+  note?: string;
+}): Promise<void> {
+  if (isLocalBackend()) {
+    throw new Error("Esta accion esta disponible solo en Supabase.");
+  }
+
+  const access = await getCurrentUserAdminAccess();
+  if (!access.canOpenAdminPanel) {
+    throw new Error("No tienes permisos para revisar registros.");
+  }
+
+  if (!access.userId) {
+    throw new Error("No hay sesion activa.");
+  }
+
+  const note = String(args.note || "").trim();
+  const { error } = await (supabase as any).rpc("review_user_registration_request", {
+    p_notification_id: args.notificationId,
+    p_requester_id: args.requesterId,
+    p_approve: args.approve,
+    p_note: note || null,
+  });
+
+  if (error) throw error;
+}

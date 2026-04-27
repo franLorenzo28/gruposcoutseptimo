@@ -284,12 +284,26 @@ export async function getAuthUser(): Promise<{
   } else {
     const { data } = await supabase.auth.getUser();
     if (data?.user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("user_id", data.user.id)
+        .maybeSingle();
+      const accountStatus =
+        profile && typeof (profile as any).account_status === "string"
+          ? ((profile as any).account_status as string)
+          : null;
+      const accountClassification =
+        profile && typeof (profile as any).account_classification === "string"
+          ? ((profile as any).account_classification as string)
+          : null;
+
       return {
         id: data.user.id,
         email: data.user.email,
         email_verified: !!data.user.email_confirmed_at,
-        account_status: null,
-        account_classification: null,
+        account_status: accountStatus,
+        account_classification: accountClassification,
         isLocal: false,
       };
     }
