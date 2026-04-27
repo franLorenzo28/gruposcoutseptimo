@@ -178,7 +178,9 @@ const DashboardCoordinador = () => {
       }
 
       // Filtrar scouts excluyendo educadores
-      const scoutsOnly = scoutsData.filter(s => s.edad < 21);
+      const scoutsOnly = scoutsData.filter(
+        (s) => typeof s.edad === "number" && s.edad >= 7 && s.edad < 21,
+      );
       setScouts(scoutsOnly);
 
       // Calcular estadásticas
@@ -236,7 +238,7 @@ const DashboardCoordinador = () => {
   const handleSendGroupMessage = async () => {
     if (!groupMessage.trim()) {
       toast({
-        title: "Mensaje vacáo",
+        title: "Mensaje vacío",
         description: "Escribe un mensaje para enviar",
         variant: "destructive",
       });
@@ -742,14 +744,14 @@ const DashboardCoordinador = () => {
                 Mensaje grupal a tu sección
               </DialogTitle>
               <DialogDescription>
-                Enváa un mensaje a todos los scouts de tus secciones ({scouts.length} destinatarios)
+                Envía un mensaje a todos los scouts de tus secciones ({scouts.length} destinatarios)
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Mensaje</label>
                 <Textarea
-                  placeholder="Escribe tu mensaje aquá... Ej: Recordatorio: Reunión este sábado a las 15:00 en la sede."
+                  placeholder="Escribe tu mensaje aquí... Ej: Recordatorio: Reunión este sábado a las 15:00 en la sede."
                   value={groupMessage}
                   onChange={(e) => setGroupMessage(e.target.value)}
                   rows={6}

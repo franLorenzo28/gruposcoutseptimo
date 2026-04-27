@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ElementType } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,7 +22,7 @@ const CONFIG_TABS: Array<{
   group: ConfigGroup;
   label: string;
   description: string;
-  icon: React.ElementType;
+  icon: ElementType;
 }> = [
   {
     id: "perfil",

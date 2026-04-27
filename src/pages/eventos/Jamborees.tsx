@@ -231,7 +231,7 @@ const Jamborees = () => {
                 Historia de Jamborees Mundiales
               </h2>
               <p className="text-muted-foreground max-w-2xl">
-                Exploraen el historial de todos los Jamborees Mundiales Scout desde 1967 hasta la actualidad.
+                Explora el historial de todos los Jamborees Mundiales Scout desde 1967 hasta la actualidad.
               </p>
             </div>
           </Reveal>
