@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Music, Footprints, BookOpen, Upload, Download, Trash2, ChevronDown, Play, Info, FileText, Volume2, Disc3 } from "lucide-react";
+import { Music, Upload, Download, Trash2, ChevronDown, Play, Info, FileText, Volume2, Disc3 } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
 import { PageGridBackground } from "@/components/PageGridBackground";
 import { useToast } from "@/hooks/use-toast";

@@ -21,7 +21,7 @@ const ArchivoCompania = lazy(() => import("@/pages/archivo/Compania"));
 const ArchivoCapsulaTiempo = lazy(() => import("@/pages/archivo/CapsulaTiempo"));
 const Cancionero = lazy(() => import("@/pages/Cancionero"));
 const Veteranos = lazy(() => import("@/pages/Veteranos"));
-const Dirigentes = lazy(() => import("@/pages/Dirigentes"));
+const DirigEn = lazy(() => import("@/pages/DirigEn"));
 const Locales = lazy(() => import("@/pages/Locales"));
 const Jamborees = lazy(() => import("@/pages/eventos/Jamborees"));
 const Jamboree1981 = lazy(() => import("@/pages/eventos/Jamboree1981"));
@@ -134,7 +134,7 @@ export function AppRoutes() {
                 }
               />
               <Route path="/veteranos" element={<AdminGuard><Veteranos /></AdminGuard>} />
-              <Route path="/dirigentes" element={<AdminGuard><Dirigentes /></AdminGuard>} />
+              <Route path="/dirigentes" element={<AdminGuard><DirigEn /></AdminGuard>} />
               <Route
                 path="/archivo/locales"
                 element={

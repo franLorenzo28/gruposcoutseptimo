@@ -614,8 +614,10 @@ const Usuarios = () => {
       <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25">
         <div className="flex items-center justify-center py-20">
           <div className="relative">
-            <div className="animate-spin rounded-full h-12 w-12 border-4 border-muted border-t-primary"></div>
-            <div className="absolute inset-0 animate-spin rounded-full h-12 w-12 border-4 border-transparent border-t-primary animate-reverse" style={{ animationDelay: "-0.2s" }}></div>
+            <div className="w-14 h-14 rounded-full border-[5px] border-muted border-t-primary animate-spin"></div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-full border-[3px] border-muted border-t-accent animate-spin animate-reverse"></div>
+            </div>
           </div>
         </div>
       </div>

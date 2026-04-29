@@ -1,8 +1,8 @@
-﻿import SeccionEventos from "@/components/sections/SeccionEventos";
-import { Link } from "react-router-dom";
+﻿import { Link } from "react-router-dom";
+import SeccionEventos from "@/components/sections/SeccionEventos";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Calendar, Flag } from "lucide-react";
+import { Calendar } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
 import { PageGridBackground } from "@/components/PageGridBackground";
 import NovedadesRecientes from "@/components/sections/NovedadesRecientes";
@@ -46,18 +46,6 @@ const Eventos = () => {
               >
                 Cartelera
               </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="rounded-full"
-                onClick={() =>
-                  document
-                    .getElementById("bauen")
-                    ?.scrollIntoView({ behavior: "smooth" })
-                }
-              >
-                BAUEN
-              </Button>
             </div>
           </Reveal>
         </div>
@@ -70,55 +58,6 @@ const Eventos = () => {
           <CardContent className="p-3 sm:p-4 md:p-6">
             <SeccionEventos />
           </CardContent>
-        </Card>
-      </section>
-
-      {/* Sección destacada BAUEN */}
-      <section id="bauen" className="py-12 sm:py-16 bg-gradient-to-b from-background via-background/95 to-muted/25 w-full">
-        <Card className="card-hover border-2 border-primary/20 shadow-2xl bg-background/70 backdrop-blur-sm overflow-hidden rounded-none w-full">
-          <CardContent className="p-6 sm:p-8 md:p-10 lg:p-12 max-w-7xl mx-auto">
-                <div className="text-center mb-8">
-                  <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-muted/40 backdrop-blur-sm rounded-full mb-4">
-                    <Flag className="w-5 h-5 text-primary" />
-                    <span className="text-primary font-bold text-sm">Evento Destacado</span>
-                  </div>
-                  <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 text-balance">
-                    ¿Buscás información sobre BAUEN?
-                  </h2>
-                  <p className="text-lg md:text-xl text-muted-foreground mb-8 leading-relaxed">
-                    Descubrí todo sobre el evento scout nacional más importante del año. Creado por nuestro grupo en 2004, BAUEN reúne a más de 300 scouts de todo el país.
-                  </p>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-8">
-                  <Card className="text-center card-hover">
-                    <CardContent className="p-2 sm:p-4">
-                      <div className="text-2xl sm:text-3xl font-bold text-primary mb-1">2004</div>
-                      <p className="text-xs sm:text-sm text-muted-foreground">Año de creación</p>
-                    </CardContent>
-                  </Card>
-                  <Card className="text-center card-hover">
-                    <CardContent className="p-2 sm:p-4">
-                      <div className="text-2xl sm:text-3xl font-bold text-primary mb-1">+300</div>
-                      <p className="text-xs sm:text-sm text-muted-foreground">Participantes</p>
-                    </CardContent>
-                  </Card>
-                  <Card className="text-center card-hover">
-                    <CardContent className="p-2 sm:p-4">
-                      <div className="text-2xl sm:text-3xl font-bold text-primary mb-1">4</div>
-                      <p className="text-xs sm:text-sm text-muted-foreground">Unidades participantes</p>
-                    </CardContent>
-                  </Card>
-                </div>
-                <div className="text-center">
-                  <Link to="/bauen">
-                    <Button size="lg" className="gap-2 text-base sm:text-lg px-6 sm:px-8 py-5 sm:py-6 w-full sm:w-auto shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 whitespace-normal">
-                      <Calendar className="w-5 h-5" />
-                      Ver toda la información de BAUEN
-                      <Flag className="w-5 h-5" />
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
         </Card>
       </section>
 
