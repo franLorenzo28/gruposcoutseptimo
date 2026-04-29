@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import type { Profile } from "@/types/profile";
 import { querySilent } from "@/lib/supabase-logger";
+import { NotificationsProvider } from "@/context/Notifications";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -150,7 +151,9 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
         <TooltipProvider>
           <SupabaseUserProvider>
-            {children}
+            <NotificationsProvider>
+              {children}
+            </NotificationsProvider>
           </SupabaseUserProvider>
         </TooltipProvider>
       </ThemeProvider>

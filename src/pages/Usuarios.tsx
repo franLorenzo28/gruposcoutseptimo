@@ -613,7 +613,10 @@ const Usuarios = () => {
     {loading ? (
       <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25">
         <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+          <div className="relative">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-muted border-t-primary"></div>
+            <div className="absolute inset-0 animate-spin rounded-full h-12 w-12 border-4 border-transparent border-t-primary animate-reverse" style={{ animationDelay: "-0.2s" }}></div>
+          </div>
         </div>
       </div>
     ) : (
