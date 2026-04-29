@@ -57,7 +57,7 @@ const CONFIG_TABS: Array<{
 export default function Configuracion() {
   const [activeTab, setActiveTab] = useState<ConfigTab>("perfil");
   const navigate = useNavigate();
-  const activeTabConfig = CONFIG_TABS.find((tab) => tab.id === activeTab) || CONFIG_TABS[0];
+  const activeTabConfig = CONFIG_TABS.find((tab) => tab.id === activeTab) || CONFIG_TABS[0]!;
   const groups: ConfigGroup[] = ["Cuenta", "Preferencias"];
 
   const renderContent = () => {

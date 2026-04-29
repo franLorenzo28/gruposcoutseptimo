@@ -106,7 +106,7 @@ const FILTERS: Array<{ key: "all" | TopicCategory; label: string }> = [
 
 const MovimientoScout = () => {
   const [activeFilter, setActiveFilter] = useState<"all" | TopicCategory>("all");
-  const [activeTopicId, setActiveTopicId] = useState<string>(TOPICS[0].id);
+  const [activeTopicId, setActiveTopicId] = useState<string>(TOPICS[0]!.id);
 
   const filteredTopics = useMemo(
     () =>
@@ -120,12 +120,14 @@ const MovimientoScout = () => {
     if (filteredTopics.length === 0) return;
     const activeVisible = filteredTopics.some((topic) => topic.id === activeTopicId);
     if (!activeVisible) {
-      setActiveTopicId(filteredTopics[0].id);
+      setActiveTopicId(filteredTopics[0]!.id);
     }
   }, [activeTopicId, filteredTopics]);
 
   const activeTopic =
-    TOPICS.find((topic) => topic.id === activeTopicId) ?? filteredTopics[0] ?? TOPICS[0];
+    TOPICS.find((topic) => topic.id === activeTopicId) ?? filteredTopics[0] ?? TOPICS[0] ?? TOPICS[0];
+
+  if (!activeTopic) return null;
 
   return (
     <PageGridBackground>

@@ -44,7 +44,7 @@ export function mapEducatorRamaToMiembroRama(
   ramaEducador: string | null | undefined,
 ): MiembroRama | null {
   const ramas = mapEducatorRamasToMiembroRamas(ramaEducador);
-  return ramas.length > 0 ? ramas[0] : null;
+  return ramas.length > 0 ? ramas[0] ?? null : null;
 }
 
 export function mapEducatorRamasToMiembroRamas(
@@ -75,10 +75,8 @@ export function inferEducatorRama(profile: {
   equipo_pioneros?: string | null;
   comunidad_rovers?: string | null;
 }): RamaEducador | null {
-  const explicit = String(profile.rama_que_educa || "")
-    .split(/[;,|]/g)[0]
-    .trim()
-    .toLowerCase();
+  const parts = String(profile.rama_que_educa || "").split(/[;,|]/g);
+  const explicit = (parts[0] ?? "").trim().toLowerCase();
   if (
     explicit === "manada" ||
     explicit === "tropa" ||
@@ -141,7 +139,7 @@ export function resolveMemberAccessFromProfile(profile: {
       isRamaAdmin: false,
       accessType: null,
       reason:
-        "El area de miembros es exclusiva para beneficiarios y educadores. Si no eres educador/a, no tienes acceso interno.",
+        "El area de miembros es exclusiva para beneficiarios y educadores. Tu rol actual no te permite acceder.",
     };
   }
 

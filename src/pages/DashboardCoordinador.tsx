@@ -104,7 +104,7 @@ const DashboardCoordinador = () => {
       if (profileError) throw profileError;
 
       // Verificar que sea educador
-      if (!profile || profile.edad < 21 || profile.rol_adulto !== "Educador/a") {
+      if (!profile || (profile.edad ?? 0) < 21 || profile.rol_adulto !== "Educador/a") {
         toast({
           title: "Acceso restringido",
           description: "Solo educadores pueden acceder a este dashboard",
@@ -185,10 +185,10 @@ const DashboardCoordinador = () => {
 
       // Calcular estadásticas
       const porRama = {
-        manada: scoutsOnly.filter((s) => s.edad >= 7 && s.edad <= 10).length,
-        tropa: scoutsOnly.filter((s) => s.edad >= 11 && s.edad <= 14).length,
-        pioneros: scoutsOnly.filter((s) => s.edad >= 15 && s.edad <= 17).length,
-        rovers: scoutsOnly.filter((s) => s.edad >= 18 && s.edad <= 20).length,
+        manada: scoutsOnly.filter((s) => (s.edad ?? 0) >= 7 && (s.edad ?? 0) <= 10).length,
+        tropa: scoutsOnly.filter((s) => (s.edad ?? 0) >= 11 && (s.edad ?? 0) <= 14).length,
+        pioneros: scoutsOnly.filter((s) => (s.edad ?? 0) >= 15 && (s.edad ?? 0) <= 17).length,
+        rovers: scoutsOnly.filter((s) => (s.edad ?? 0) >= 18 && (s.edad ?? 0) <= 20).length,
       };
 
       setStats({

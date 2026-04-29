@@ -158,7 +158,7 @@ export default function Mensajes() {
   );
 
   const lastMessageAt = useMemo(
-    () => (messages.length > 0 ? messages[messages.length - 1].created_at : null),
+    () => (messages.length > 0 ? messages[messages.length - 1]!.created_at : null),
     [messages],
   );
 

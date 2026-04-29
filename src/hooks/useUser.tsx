@@ -1,5 +1,5 @@
 import { useContext } from "react";
-import { SupabaseUserContext } from "../App";
+import { SupabaseUserContext } from "@/providers/AppProviders";
 
 export function useUser() {
   const context = useContext(SupabaseUserContext);

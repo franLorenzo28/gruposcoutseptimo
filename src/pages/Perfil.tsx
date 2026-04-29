@@ -67,29 +67,54 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import type { Database } from "@/integrations/supabase/types";
 import { isLocalBackend, uploadImage, getAuthUser, apiFetch } from "@/lib/backend";
 import {
   getProfile as getLocalProfile,
   updateProfile as updateLocalProfile,
 } from "@/lib/api";
 import PageLoader from "@/components/ui/PageLoader";
+import { querySilent } from "@/lib/supabase-logger";
 
-type Tables = Database["public"]["Tables"];
-type Profile = Tables["profiles"]["Row"];
-type ProfileInsert = Tables["profiles"]["Insert"];
-type ProfileUpdate = Tables["profiles"]["Update"];
+// Garantiza que exista una fila en profiles para el usuario autenticado
+async function ensureProfileExists(userId: string) {
+  try {
+    const { data: existing, error } = await querySilent(() => supabase
+      .from("profiles")
+      .select("user_id")
+      .eq("user_id", userId)
+      .maybeSingle()
+    );
+    if (error) return;
+    if (existing) return;
+
+    const { data: userData } = await supabase.auth.getUser();
+    const user = userData?.user;
+    const userMetadata = user?.user_metadata || {};
+    const nombreFallback =
+      (userMetadata as any).nombre ||
+      user?.email ||
+      "Scout";
+    const telefonoFallback = (userMetadata as any).telefono || "";
+    await supabase.from("profiles").insert({
+      user_id: userId,
+      nombre_completo: nombreFallback,
+      telefono: telefonoFallback,
+      is_public: false,
+      email: user?.email ?? null,
+      role: "user"
+    });
+  } catch {
+    // No bloquear flujo si falla
+  }
+}
 
 const Perfil = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [profile, setProfile] = useState<Profile | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [showCropDialog, setShowCropDialog] = useState(false);
   const [tempImageSrc, setTempImageSrc] = useState<string>("");
-  const [croppedBlob, setCroppedBlob] = useState<Blob | null>(null);
 
   const [formData, setFormData] = useState<{
     nombre_completo: string;
@@ -160,9 +185,10 @@ const Perfil = () => {
     if (formData.fecha_nacimiento) {
       const hoy = new Date();
       // Parsear fecha sin conversión UTC para evitar desfase de días
-      const [year, month, day] = formData.fecha_nacimiento
-        .split("-")
-        .map(Number);
+      const parts = formData.fecha_nacimiento.split("-").map(Number);
+      const year = parts[0] ?? 0;
+      const month = parts[1] ?? 1;
+      const day = parts[2] ?? 1;
       const nacimiento = new Date(year, month - 1, day);
       let años = hoy.getFullYear() - nacimiento.getFullYear();
       const m = hoy.getMonth() - nacimiento.getMonth();
@@ -199,6 +225,11 @@ const Perfil = () => {
       }
       setUserEmail(auth.email || "");
       setEmailVerified(auth.email_verified ?? true);
+
+      // Asegurar que exista el perfil en Supabase antes de consultar
+      if (!isLocalBackend()) {
+        await ensureProfileExists(auth.id);
+      }
 
       // Modo local: obtener desde backend propio
       if (isLocalBackend()) {
@@ -244,7 +275,6 @@ const Perfil = () => {
       const userNombre =
         (userMetadata as any).nombre || profile?.nombre_completo || "";
       if (profile) {
-        setProfile(profile as Profile);
         const profileData = {
           ...formData,
           nombre_completo: userNombre,
@@ -273,7 +303,7 @@ const Perfil = () => {
           user_id: auth.id,
           nombre_completo: userNombre,
           telefono: null,
-        });
+        } as any);
         if (insertError) throw insertError;
         await getProfile();
       }
@@ -410,7 +440,6 @@ const Perfil = () => {
     });
 
     setAvatarFile(croppedFile);
-    setCroppedBlob(croppedImage);
 
     // Crear preview del crop
     const previewUrl = URL.createObjectURL(croppedImage);
@@ -421,7 +450,6 @@ const Perfil = () => {
     if (!avatarFile) return null;
 
     try {
-      setUploadingAvatar(true);
       if (isLocalBackend()) {
         // Subir al backend local
         const url = await uploadImage(avatarFile);
@@ -445,15 +473,12 @@ const Perfil = () => {
         variant: "destructive",
       });
       return null;
-    } finally {
-      setUploadingAvatar(false);
     }
   };
 
   const removeAvatarPreview = () => {
     setAvatarFile(null);
     setAvatarPreview(null);
-    setCroppedBlob(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -553,7 +578,7 @@ const Perfil = () => {
             descripcion_personal: updated?.descripcion_personal || formData.descripcion_personal,
             telefono: updated?.telefono ?? formData.telefono,
             fecha_nacimiento: updated?.fecha_nacimiento
-              ? String(updated.fecha_nacimiento).split("T")[0]
+              ? String(updated.fecha_nacimiento).split("T")[0] ?? ""
               : formData.fecha_nacimiento,
             rol_adulto: updated?.rol_adulto ?? formData.rol_adulto,
             seisena: updated?.seisena ?? formData.seisena,

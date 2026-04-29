@@ -12,7 +12,7 @@ export function DocumentsList({ rama }: DocumentsListProps) {
   const { documents, isLoading, error, getDownloadUrl } = useRamaDocuments(rama);
   const [downloading, setDownloading] = useState<string | null>(null);
 
-  const handleDownload = async (docId: string, docName: string) => {
+  const handleDownload = async (docId: string, _docName: string) => {
     try {
       setDownloading(docId);
       const url = await getDownloadUrl(docId);

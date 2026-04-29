@@ -119,7 +119,7 @@ export function NarrativaViewer({
         <DialogContent className="max-w-5xl w-full h-[90vh] p-0 bg-black/95 border-none">
           <div className="relative w-full h-full flex items-center justify-center">
             {/* Imagen principal */}
-            {imageBloques.length > 0 && lightboxIndex < imageBloques.length && (
+            {imageBloques.length > 0 && lightboxIndex < imageBloques.length && imageBloques[lightboxIndex] && (
               <img
                 src={imageBloques[lightboxIndex].contenido}
                 alt={`Imagen ${lightboxIndex + 1}`}

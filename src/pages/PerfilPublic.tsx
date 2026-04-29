@@ -17,7 +17,7 @@ import {
   cancelRequest,
   unfollowUser,
 } from "@/lib/follows";
-import { UserPlus, UserMinus, Clock, Check, Loader2 } from "lucide-react";
+import { UserPlus, Clock, Check, Loader2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,

@@ -34,7 +34,7 @@ export async function listDocumentos(rama: string): Promise<Documento[]> {
       .order("created_at", { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    return (data || []) as unknown as Documento[];
   }
 }
 
@@ -102,7 +102,7 @@ export async function uploadDocumento(
     if (dbError) throw dbError;
     if (!data) throw new Error("Document not created");
 
-    return data;
+    return data as unknown as Documento;
   }
 }
 

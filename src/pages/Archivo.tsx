@@ -139,7 +139,7 @@ const Archivo = () => {
   const communityImages = getOptimizedImageProps("community");
   const [query, setQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<"all" | ArchiveSection["group"]>("all");
-  const [activeSectionTo, setActiveSectionTo] = useState<string>(secciones[0].to);
+  const [activeSectionTo, setActiveSectionTo] = useState<string>(secciones[0]!.to);
 
   const seccionesFiltradas = useMemo(() => {
     const term = query.trim().toLowerCase();
@@ -155,7 +155,7 @@ const Archivo = () => {
     if (seccionesFiltradas.length === 0) return;
     const activeVisible = seccionesFiltradas.some((section) => section.to === activeSectionTo);
     if (!activeVisible) {
-      setActiveSectionTo(seccionesFiltradas[0].to);
+      setActiveSectionTo(seccionesFiltradas[0]!.to);
     }
   }, [activeSectionTo, seccionesFiltradas]);
 
@@ -163,6 +163,8 @@ const Archivo = () => {
     seccionesFiltradas.find((section) => section.to === activeSectionTo) ??
     seccionesFiltradas[0] ??
     secciones[0];
+
+  if (!activeSection) return null;
 
   const activeGroupMeta =
     sectionGroupMeta.find((group) => group.key === activeSection.group) ?? sectionGroupMeta[0];
@@ -175,13 +177,13 @@ const Archivo = () => {
   const goPrev = () => {
     if (seccionesFiltradas.length < 2) return;
     const prev = (activeIndex - 1 + seccionesFiltradas.length) % seccionesFiltradas.length;
-    setActiveSectionTo(seccionesFiltradas[prev].to);
+    setActiveSectionTo(seccionesFiltradas[prev]!.to);
   };
 
   const goNext = () => {
     if (seccionesFiltradas.length < 2) return;
     const next = (activeIndex + 1) % seccionesFiltradas.length;
-    setActiveSectionTo(seccionesFiltradas[next].to);
+    setActiveSectionTo(seccionesFiltradas[next]!.to);
   };
 
   return (
@@ -346,7 +348,7 @@ const Archivo = () => {
                         </div>
                         <div>
                           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
-                            {activeGroupMeta.title}
+                            {activeGroupMeta?.title}
                           </p>
                           <h3 className="text-2xl font-black leading-tight">{activeSection.title}</h3>
                         </div>
@@ -420,7 +422,7 @@ const Archivo = () => {
                           </div>
                           <div>
                             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-                              {activeGroupMeta.title}
+                              {activeGroupMeta?.title}
                             </p>
                             <h3 className="text-3xl font-black leading-tight">{activeSection.title}</h3>
                           </div>

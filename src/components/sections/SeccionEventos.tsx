@@ -66,7 +66,7 @@ const sampleEvents: EventItem[] = [
 ];
 
 const EventCard = ({ event, index }: { event: EventItem; index: number }) => {
-  const fechaValida = event.date && event.date !== "A confirmar";
+  void event.date;
   const [imageFailed, setImageFailed] = useState(!event.image);
   const isUnknown = event.status?.toLowerCase() === "en incógnita";
 

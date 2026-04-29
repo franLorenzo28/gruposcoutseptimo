@@ -1,4 +1,4 @@
-﻿import { useEffect, useState, useMemo, useCallback, ReactNode } from "react";
+﻿import { useEffect, useState, useMemo, ReactNode } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { isLocalBackend, getAuthUser } from "@/lib/backend";
@@ -20,7 +20,6 @@ import {
   Users as UsersIcon,
   SlidersHorizontal,
   UserPlus,
-  Settings,
   Crown,
   Shield,
   MessageCircle,
@@ -45,19 +44,17 @@ import {
 } from "@/components/ui/dialog";
 import {
   createThread,
-  listThreads,
   listComments,
   addComment,
   deleteThread,
   isAdmin,
   type ThreadWithAuthor,
+  type Thread,
 } from "@/lib/threads";
 import {
-  listGroups,
   createGroup,
   joinGroup,
   leaveGroup,
-  type GroupWithMemberCount,
 } from "@/lib/groups";
 import { Trash2, Image as ImageIcon, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -128,7 +125,7 @@ const Usuarios = () => {
 
   const profileById = useMemo(() => {
     const map = new Map<string, Profile>();
-    profiles.forEach((profile) => {
+    profiles.forEach((profile: Profile) => {
       map.set(profile.user_id, profile);
     });
     return map;
@@ -144,7 +141,7 @@ const Usuarios = () => {
   >(new Map());
 
   const presenceIds = useMemo(
-    () => profiles.map((p) => p.user_id).sort(),
+    () => profiles.map((p: Profile) => p.user_id).sort(),
     [profiles],
   );
 
@@ -248,7 +245,7 @@ const Usuarios = () => {
 
   // Enriquecer threads con datos del autor (useMemo para evitar recalcular)
   const threads = useMemo(() => {
-    return threadsData.map((thread) => {
+    return threadsData.map((thread: Thread) => {
       const author = profileById.get(thread.author_id);
       return {
         ...thread,
@@ -268,7 +265,7 @@ const Usuarios = () => {
     // Filter by search term
     if (debouncedSearchTerm.trim()) {
       const term = debouncedSearchTerm.toLowerCase();
-      filtered = filtered.filter((p) => {
+      filtered = filtered.filter((p: Profile) => {
         const searchable = [
           p.nombre_completo || "",
           p.username || "",
@@ -282,26 +279,26 @@ const Usuarios = () => {
 
     // Filter by rama
     if (ENABLE_RAMA_FILTER && ramaFilter !== "all") {
-      filtered = filtered.filter((p) => getRamaFromProfile(p) === ramaFilter);
+      filtered = filtered.filter((p: Profile) => getRamaFromProfile(p) === ramaFilter);
     }
 
     // Filter by visibility
     if (visibilityFilter === "public") {
-      filtered = filtered.filter((p) => p.is_public === true);
+      filtered = filtered.filter((p: Profile) => p.is_public === true);
     } else if (visibilityFilter === "private") {
-      filtered = filtered.filter((p) => p.is_public !== true);
+      filtered = filtered.filter((p: Profile) => p.is_public !== true);
     }
 
     // Apply sorting
     const sorted = [...filtered];
     if (sortBy === "name") {
-      sorted.sort((a, b) =>
+      sorted.sort((a: Profile, b: Profile) =>
         (a.nombre_completo || "").localeCompare(b.nombre_completo || ""),
       );
     } else if (sortBy === "age-asc") {
-      sorted.sort((a, b) => (a.edad || 0) - (b.edad || 0));
+      sorted.sort((a: Profile, b: Profile) => (a.edad || 0) - (b.edad || 0));
     } else if (sortBy === "age-desc") {
-      sorted.sort((a, b) => (b.edad || 0) - (a.edad || 0));
+      sorted.sort((a: Profile, b: Profile) => (b.edad || 0) - (a.edad || 0));
     } else if (sortBy === "rama") {
       const ramaOrder: Record<RamaKey, number> = {
         manada: 1,
@@ -311,7 +308,7 @@ const Usuarios = () => {
         adulto: 5,
         "sin-rama": 6,
       };
-      sorted.sort((a, b) => {
+      sorted.sort((a: Profile, b: Profile) => {
         const ramaA = getRamaFromProfile(a);
         const ramaB = getRamaFromProfile(b);
         return ramaOrder[ramaA] - ramaOrder[ramaB];
@@ -342,13 +339,13 @@ const Usuarios = () => {
       );
 
       // Enriquecer con datos del autor actual
-      const author = profiles.find((p) => p.user_id === currentUserId);
-      const enriched: ThreadWithAuthor = {
+      const author = profiles.find((p: Profile) => p.user_id === currentUserId);
+      void ({
         ...thread,
         author_name: author?.nombre_completo,
         author_username: author?.username,
         author_avatar: author?.avatar_url,
-      };
+      } as ThreadWithAuthor);
 
       // Refrescar threads con React Query
       await refetchThreads();
@@ -1091,7 +1088,7 @@ const Usuarios = () => {
             </Card>
 
             <div className="space-y-4">
-              {threads.map((t) => {
+              {threads.map((t: ThreadWithAuthor) => {
                 const isThreadAuthor = t.author_id === currentUserId;
                 const canDelete = isThreadAuthor || isAdmin(userEmail);
 
@@ -1184,7 +1181,7 @@ const Usuarios = () => {
                                 ) : (
                                   threadComments.map((c) => {
                                     const commentAuthor = profiles.find(
-                                      (p) => p.user_id === c.author_id,
+                                      (p: Profile) => p.user_id === c.author_id,
                                     );
                                     return (
                                       <div

@@ -5,7 +5,7 @@ import { Reveal } from "@/components/Reveal";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { getOptimizedImageProps } from "@/lib/optimized-images";
 import { useToast } from "@/hooks/use-toast";
-import { useSupabaseUser } from "@/App";
+import { useSupabaseUser } from "@/providers/AppProviders";
 const Hero = () => {
   const { toast } = useToast();
   const { user } = useSupabaseUser();

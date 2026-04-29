@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { useSupabaseUser } from '../App';
+import { useSupabaseUser } from '@/providers/AppProviders';
 import { supabase } from '../integrations/supabase/client';
 
 type ProfileRow = {
@@ -85,7 +85,7 @@ export default function AdminDashboard() {
   async function handleSaveEdit() {
     if (!editUser) return;
 
-    await supabase.from('profiles').update(editData).eq('user_id', editUser.user_id);
+    await supabase.from('profiles').update(editData as any).eq('user_id', editUser.user_id);
     setUsers((prev) =>
       prev.map((u) => (u.user_id === editUser.user_id ? { ...u, ...editData } : u))
     );

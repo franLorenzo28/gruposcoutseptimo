@@ -195,7 +195,7 @@ const FILTERS: Array<{ key: "all" | TopicCategory; label: string }> = [
 
 const Scoutpedia = () => {
   const [activeFilter, setActiveFilter] = useState<"all" | TopicCategory>("all");
-  const [activeTopicId, setActiveTopicId] = useState<string>(TOPICS[0].id);
+  const [activeTopicId, setActiveTopicId] = useState<string>(TOPICS[0]!.id);
 
   const filteredTopics = useMemo(
     () =>
@@ -209,12 +209,14 @@ const Scoutpedia = () => {
     if (filteredTopics.length === 0) return;
     const activeVisible = filteredTopics.some((topic) => topic.id === activeTopicId);
     if (!activeVisible) {
-      setActiveTopicId(filteredTopics[0].id);
+      setActiveTopicId(filteredTopics[0]!.id);
     }
   }, [activeTopicId, filteredTopics]);
 
   const activeTopic =
-    TOPICS.find((topic) => topic.id === activeTopicId) ?? filteredTopics[0] ?? TOPICS[0];
+    TOPICS.find((topic) => topic.id === activeTopicId) ?? filteredTopics[0] ?? TOPICS[0] ?? TOPICS[0];
+
+  if (!activeTopic) return null;
 
   const activeIndex = Math.max(
     0,
@@ -224,13 +226,13 @@ const Scoutpedia = () => {
   const goPrev = () => {
     if (filteredTopics.length < 2) return;
     const prev = (activeIndex - 1 + filteredTopics.length) % filteredTopics.length;
-    setActiveTopicId(filteredTopics[prev].id);
+    setActiveTopicId(filteredTopics[prev]!.id);
   };
 
   const goNext = () => {
     if (filteredTopics.length < 2) return;
     const next = (activeIndex + 1) % filteredTopics.length;
-    setActiveTopicId(filteredTopics[next].id);
+    setActiveTopicId(filteredTopics[next]!.id);
   };
 
   return (

@@ -9,7 +9,7 @@ const RESTRICTED_PREFIXES_FOR_GUEST = [
 const GUEST_ALLOWED_EXACT = new Set(["/movimiento-scout"]);
 
 export function normalizePathname(pathname: string): string {
-  const withoutQuery = pathname.split("?")[0].split("#")[0];
+  const withoutQuery = (pathname.split("?")[0] ?? "").split("#")[0] ?? "";
   const trimmed = withoutQuery.replace(/\/+$/, "");
   return trimmed.length > 0 ? trimmed : "/";
 }

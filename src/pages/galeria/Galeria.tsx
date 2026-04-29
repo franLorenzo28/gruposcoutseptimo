@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useRef, useState } from "react";
+﻿import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,7 +34,6 @@ import {
   X,
 } from "lucide-react";
 import { OptimizedImage } from "@/components/ui/optimized-image";
-import { Reveal } from "@/components/Reveal";
 import { PageGridBackground } from "@/components/PageGridBackground";
 import { getAuthUser } from "@/lib/backend";
 import { isCurrentUserAdmin } from "@/lib/admin-permissions";
@@ -100,8 +99,8 @@ const Galeria = () => {
 
         if (storageAlbums.length) {
           setAlbums(storageAlbums);
-          setSelected(storageAlbums[0].name);
-          const imgs = await listImages(storageAlbums[0].name).catch(() => []);
+          setSelected(storageAlbums[0]!.name);
+          const imgs = await listImages(storageAlbums[0]!.name).catch(() => []);
           setImages(imgs);
         } else {
           setAlbums([]);
@@ -238,7 +237,7 @@ const Galeria = () => {
       await deleteAlbum(selected);
       const updated = await listAlbums().catch(() => []);
       setAlbums(updated);
-      setSelected(updated.length > 0 ? updated[0].name : "");
+      setSelected(updated.length > 0 ? updated[0]!.name : "");
       setImages([]);
       toast({
         title: "Álbum eliminado",
@@ -509,7 +508,7 @@ const Galeria = () => {
         <DialogContent className="max-w-7xl w-full h-[90vh] p-0 bg-black/95 border-none">
           <div className="relative w-full h-full flex items-center justify-center">
             {/* Imagen principal */}
-            {images.length > 0 && lightboxIndex < images.length && (
+            {images.length > 0 && lightboxIndex < images.length && images[lightboxIndex] && (
               <img
                 src={images[lightboxIndex].url}
                 alt={`Imagen ${lightboxIndex + 1}`}

@@ -384,11 +384,13 @@ export function useSendMessageMutation() {
       }
 
       const { data: userData } = await supabase.auth.getUser();
+      const senderId = userData.user?.id;
+      if (!senderId) throw new Error("Not authenticated");
       const { data, error } = await supabase
         .from("messages")
         .insert({
           conversation_id: conversationId,
-          sender_id: userData.user?.id,
+          sender_id: senderId,
           content,
         })
         .select()

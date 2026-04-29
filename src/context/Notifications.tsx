@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useSupabaseUser } from "@/App";
+import { useSupabaseUser } from "@/providers/AppProviders";
 import { useToast } from "@/hooks/use-toast";
 import { listAlbums, listImages } from "@/lib/gallery";
 import { apiFetch, getAuthUser, isLocalBackend } from "@/lib/backend";
@@ -281,7 +281,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
     setNotifications(prev => prev.filter(n => n.id !== id));
   }, []);
 
-  const syncPendingFollowRequests = useCallback(async (currentUserId: string) => {
+  const syncPendingFollowRequests = useCallback(async (_currentUserId: string) => {
     if (!isNotificationEnabled("follow_request")) return;
     const pendingResult = await getPendingRequestsForMe();
     if (pendingResult.error) return;
@@ -720,7 +720,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
             if (!cancelled) knownGalleryPathsRef.current = current;
             return;
           }
-          const first = newPaths[0];
+          const first = newPaths[0] ?? "";
           const albumName = first.split("/")[0] || "Galería";
           const notif: AppNotification = {
             id: `gallery-new-${albumName}-${Date.now()}`,
@@ -821,7 +821,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
         if (data.length === 50) {
           setHasMore(true);
           const oldest = data[data.length - 1];
-          setOldestPersistedTimestamp(oldest.created_at);
+          if (oldest) setOldestPersistedTimestamp(oldest.created_at);
         } else {
           setHasMore(false);
         }
@@ -895,7 +895,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
         });
         if (data.length === 50) {
           const oldest = data[data.length - 1];
-          setOldestPersistedTimestamp(oldest.created_at);
+          if (oldest) setOldestPersistedTimestamp(oldest.created_at);
           setHasMore(true);
         } else {
           setHasMore(false);

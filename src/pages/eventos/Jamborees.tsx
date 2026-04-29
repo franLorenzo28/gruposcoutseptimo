@@ -1,10 +1,10 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Globe2, Flag, CalendarDays, MapPin, BookOpen, ChevronRight, Users } from "lucide-react";
+import { Globe2, Flag, CalendarDays, MapPin, BookOpen } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
 import { PageGridBackground } from "@/components/PageGridBackground";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Suspense, lazy } from "react";
 
 const JamboresMundiales = lazy(() =>

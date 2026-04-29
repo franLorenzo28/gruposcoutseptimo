@@ -3,10 +3,9 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 // Navigation es global en App.tsx
 import UserAvatar from "@/components/UserAvatar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -33,8 +32,6 @@ import {
   Shield,
   UserPlus,
   UserMinus,
-  Settings,
-  Image as ImageIcon,
   Send,
   Trash2,
 } from "lucide-react";

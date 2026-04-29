@@ -139,7 +139,7 @@ export default function Narrativas() {
       if (!grouped[n.year_section]) {
         grouped[n.year_section] = [];
       }
-      grouped[n.year_section].push(n);
+      grouped[n.year_section]!.push(n);
     });
 
     // Ordenar años descendentemente (más reciente primero)
@@ -152,7 +152,7 @@ export default function Narrativas() {
       })
       .reduce((acc, key) => {
         // Ordenar narrativas dentro del año por fecha de publicación descendente (más reciente primero)
-        acc[key] = grouped[key].sort((a, b) => {
+        acc[key] = (grouped[key] ?? []).sort((a, b) => {
           const dateA = new Date(a.fecha_publicacion || a.created_at).getTime();
           const dateB = new Date(b.fecha_publicacion || b.created_at).getTime();
           return dateB - dateA;

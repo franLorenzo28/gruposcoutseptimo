@@ -43,7 +43,7 @@ export async function listCancioneroAudios(): Promise<CancioneroAudio[]> {
   const signedFiles = await Promise.all(
     files
       .filter((file) => file.name !== ".emptyFolderPlaceholder")
-      .map(async (file) => {
+      .map(async (file): Promise<CancioneroAudio | null> => {
         const { data, error: signedError } = await supabase.storage
           .from(BUCKET_NAME)
           .createSignedUrl(file.name, 60 * 60);

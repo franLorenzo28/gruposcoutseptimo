@@ -51,7 +51,7 @@ export async function listLagerfeuerFiles(): Promise<LagerfeuerFile[]> {
 
     // Extraer año del nombre del archivo (ej: "1967-01.pdf" -> 1967)
     const match = file.name.match(/^(\d{4})/);
-    const año = match ? parseInt(match[1]) : 0;
+    const año = match ? parseInt(match[1] ?? "0") : 0;
 
     // Extraer información del nombre del archivo
     // Formato esperado: "YYYY-NN-descripcion.pdf"

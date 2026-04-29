@@ -1,6 +1,5 @@
-﻿import { Facebook, Instagram, Mail, Phone, MapPin, Heart, Youtube } from "lucide-react";
+﻿import { Facebook, Instagram, Mail, Phone, MapPin, Youtube } from "lucide-react";
 import { Link } from "react-router-dom";
-import { cn } from "@/lib/utils";
 import logoImage from "@/assets/grupo-scout-logo.png";
 import { useUser } from "@/hooks/useUser";
 import { isRestrictedForGuest } from "@/lib/access-control";

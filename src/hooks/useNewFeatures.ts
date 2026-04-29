@@ -57,7 +57,7 @@ export function useNewFeatures() {
   }, []);
 
   const markAsRead = () => {
-    const now = new Date().toISOString().split("T")[0];
+    const now = new Date().toISOString().split("T")[0] ?? "";
     localStorage.setItem(STORAGE_KEY, now);
     setHasNews(false);
   };

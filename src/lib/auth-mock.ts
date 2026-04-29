@@ -76,7 +76,7 @@ class AuthMockService {
    */
   async signInWithPassword({
     email,
-    password,
+    password: _password,
   }: {
     email: string;
     password: string;
@@ -112,7 +112,7 @@ class AuthMockService {
    */
   async signUp({
     email,
-    password,
+    password: _password,
     options,
   }: {
     email: string;
@@ -168,7 +168,7 @@ class AuthMockService {
    * Escuchar cambios de autenticación
    */
   onAuthStateChange(
-    callback: (event: string, session: Session | null) => void,
+    _callback: (event: string, session: Session | null) => void,
   ): { data: { subscription: { unsubscribe: () => void } } } {
     // Mock: No hay eventos en tiempo real, solo retornamos unsubscribe vacío
     return {
@@ -208,8 +208,8 @@ class AuthMockService {
     }
 
     // Actualizar usuario (ignoramos password en el mock)
-    const { password, ...userUpdates } = updates;
-    users[userIndex] = { ...users[userIndex], ...userUpdates };
+    const { password: _password, ...userUpdates } = updates;
+    users[userIndex] = { ...users[userIndex], ...userUpdates } as User;
     this.saveUsers(users);
 
     // Actualizar sesión
@@ -220,7 +220,7 @@ class AuthMockService {
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(updatedSession));
 
     return {
-      data: { user: users[userIndex], session: updatedSession },
+      data: { user: users[userIndex]!, session: updatedSession as Session },
       error: null,
     };
   }

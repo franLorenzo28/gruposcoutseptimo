@@ -50,7 +50,7 @@ const Contacto = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Validar y sanear datos antes de enviar
-    const { valid, errors, sanitized } = validateContact(formData);
+    const { valid, errors } = validateContact(formData);
     if (!valid) {
       toast({
         title: "Error en el formulario",

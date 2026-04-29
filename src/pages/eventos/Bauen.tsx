@@ -1,7 +1,7 @@
 ﻿// Navigation y Footer son globales en App.tsx
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Flag, Target, Users, Calendar, Award, Flame, Instagram, Phone } from "lucide-react";
+import { Flag, Calendar, Instagram, Phone } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 const Bauen = () => {

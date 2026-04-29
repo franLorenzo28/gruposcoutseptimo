@@ -298,7 +298,7 @@ const CapsulaTiempo = () => {
 
       <Dialog open={lightboxOpen} onOpenChange={(open) => !open && closeLightbox()}>
         <DialogContent className="max-w-6xl p-0 overflow-hidden bg-background/95 border-border/70">
-          {lightboxIndex !== null && (
+          {lightboxIndex !== null && imagenesGaleria[lightboxIndex] && (
             <div className="relative">
               <img
                 src={imagenesGaleria[lightboxIndex].src}

@@ -1,5 +1,4 @@
-import React, { lazy, Suspense } from "react";
-import { useState, useCallback } from "react";
+import { lazy, Suspense, useState, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -160,7 +159,7 @@ const AvatarCropDialog = ({
               min={1}
               max={3}
               step={0.1}
-              onValueChange={(values) => setZoom(values[0])}
+              onValueChange={(values) => setZoom(values[0] ?? 1)}
               className="w-full"
             />
           </div>

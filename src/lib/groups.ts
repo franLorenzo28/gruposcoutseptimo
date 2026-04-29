@@ -98,7 +98,7 @@ export async function listGroups(): Promise<GroupWithMemberCount[]> {
     }),
   );
 
-  return enriched;
+  return enriched as unknown as GroupWithMemberCount[];
 }
 
 // Crear grupo
@@ -383,7 +383,7 @@ export async function listGroupMessages(
       sender_username: sender?.username,
       sender_avatar: sender?.avatar_url,
     };
-  });
+  }) as unknown as GroupMessageWithSender[];
 }
 
 // Enviar mensaje al grupo

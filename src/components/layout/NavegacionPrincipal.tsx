@@ -26,7 +26,6 @@ import {
   FileText,
   Compass,
   Clock,
-  MapPin,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -192,7 +191,6 @@ const Navigation = () => {
 
   const profileMainPath = needsProfileSetup ? "/perfil/editar" : "/perfil";
   const profileMainLabel = needsProfileSetup ? "Crear perfil" : "Perfil";
-  const mobileProfileMainLabel = needsProfileSetup ? "Crear perfil" : "Ver mi perfil";
   const visibleNavSections = navSections
     .map((section) => ({
       ...section,
@@ -558,15 +556,16 @@ const Navigation = () => {
               <div className="flex items-center gap-1 rounded-full border border-white/10 bg-slate-950/55 px-2 py-1 shadow-sm backdrop-blur-sm supports-[backdrop-filter]:backdrop-blur-sm dark:bg-slate-950/55">
                 {/* Mostrar primer sección siempre horizontal */}
                 {visibleNavSections[0]?.links.map((link) => {
+                  const linkPath = link.path ?? "#";
                   const isSpecialActive =
-                    (link.path === "/historia" && isActive("/linea-temporal")) ||
-                    (link.path === "/eventos" && isActive("/bauen"));
-                  const active = isActive(link.path) || isSpecialActive;
+                    (linkPath === "/historia" && isActive("/linea-temporal")) ||
+                    (linkPath === "/eventos" && isActive("/bauen"));
+                  const active = isActive(linkPath) || isSpecialActive;
 
                   return (
                     <Link
-                      key={link.path}
-                      to={link.path}
+                      key={linkPath}
+                      to={linkPath}
                       onClick={() => setIsMobileMenuOpen(false)}
                       className={cn(
                         "relative px-3 py-2 rounded-full text-xs md:text-sm font-medium transition-all duration-300 group nav-link-underline [will-change:transform]",
@@ -630,7 +629,7 @@ const Navigation = () => {
                               </PopoverTrigger>
                               <PopoverContent side="right" align="start" className="w-48 p-2">
                                 <div className="space-y-1">
-                                  {link.subitems.map((subitem) => {
+                                  {(link.subitems ?? []).map((subitem) => {
                                     const SubIcon = subitem.icon;
                                     const subActive = isActive(subitem.path || "");
                                     return (
@@ -1405,7 +1404,7 @@ function MobileMenu({
                     </button>
                     {isExpanded && (
                       <div className="pl-6 space-y-1 mt-1">
-                        {link.subitems.map((subitem) => (
+                        {(link.subitems ?? []).map((subitem) => (
                           <Link
                             key={subitem.path}
                             to={subitem.path || "#"}

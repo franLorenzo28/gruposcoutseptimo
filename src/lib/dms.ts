@@ -75,7 +75,7 @@ export async function sendDM(
 
   // Validar que el usuario participa en la conversación (evita error RLS silencioso)
   // La tabla conversation_participants no está tipada en Database, hacemos chequeo vía RPC-like fallback
-  const { data: checkRows, error: checkError } = await supabase
+  const { data: _checkRows, error: checkError } = await supabase
     .from("messages") // usamos messages para una consulta rápida de any prior message
     .select("conversation_id")
     .eq("conversation_id", conversationId)

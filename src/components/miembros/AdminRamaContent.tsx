@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { AlertCircle, Save, X } from "lucide-react";
+import { Save, X } from "lucide-react";
 
 interface RamaContentData {
   lema: string;
