@@ -115,11 +115,6 @@ const Cancionero = () => {
     );
   };
 
-  useEffect(() => {
-    loadAudios();
-    checkAdmin();
-  }, []);
-
   const checkAdmin = async () => {
     try {
       const admin = await isCurrentUserAdmin();
@@ -145,6 +140,11 @@ const Cancionero = () => {
       setLoadingAudios(false);
     }
   };
+
+  useEffect(() => {
+    loadAudios();
+    checkAdmin();
+  }, []);
 
   const handleAudioUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;

@@ -16,10 +16,6 @@ export function useRamaDocuments(rama: string) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    void loadDocuments();
-  }, [rama]);
-
   const loadDocuments = async () => {
     try {
       setIsLoading(true);
@@ -46,6 +42,10 @@ export function useRamaDocuments(rama: string) {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    void loadDocuments();
+  }, [rama]);
 
   const removeGhostDocument = (docId: string) => {
     setDocuments((prev) => prev.filter((d) => d.id !== docId));

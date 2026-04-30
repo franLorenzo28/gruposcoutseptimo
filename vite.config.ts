@@ -1,6 +1,6 @@
 /// <reference types="vitest" />
 import { defineConfig } from "vitest/config";
-import react from "@vitejs/plugin-react-swc";
+import react from "@vitejs/plugin-react";
 import path from "path";
 
 // https://vitejs.dev/config/
@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
-    chunkSizeWarningLimit: 800, // Reducido de 1200 para mejor control
+    chunkSizeWarningLimit: 800,
     sourcemap: mode !== "production",
     minify: "esbuild",
     target: "esnext",
@@ -23,7 +23,6 @@ export default defineConfig(({ mode }) => ({
         chunkFileNames: "assets/[name]-[hash].js",
         entryFileNames: "assets/[name]-[hash].js",
         assetFileNames: "assets/[name]-[hash].[ext]",
-        // Mejor code splitting
         manualChunks(id) {
           if (id.includes('node_modules')) {
             if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
@@ -43,8 +42,8 @@ export default defineConfig(({ mode }) => ({
       },
     },
     cssCodeSplit: true,
-    reportCompressedSize: true, // Habilitar para ver tamaños
-    assetsInlineLimit: 4096, // Inline assets < 4KB
+    reportCompressedSize: true,
+    assetsInlineLimit: 4096,
   },
   plugins: [
     react(),

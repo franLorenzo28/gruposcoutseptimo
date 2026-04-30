@@ -314,94 +314,18 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
   // Suscripción a solicitudes de seguimiento nuevas
   useEffect(() => {
     if (!user) return;
-    const channelFollowsToMe = supabase
-      .channel(`follows:pending:${user.id}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "follows", filter: `followed_id=eq.${user.id}` },
-        async payload => {
-          const row: any = payload.new;
-          if (!isNotificationEnabled("follow_request")) return;
-          if (row.status === "pending") {
-            // Obtener perfil del seguidor
-            const { data: prof } = await supabase
-              .from("profiles")
-              .select("nombre_completo, username, avatar_url")
-              .eq("user_id", row.follower_id)
-              .maybeSingle();
-            const display = prof?.nombre_completo || prof?.username || row.follower_id.slice(0, 8);
-            const notif: AppNotification = {
-              id: `follow-${row.follower_id}-${row.created_at}`,
-              type: "follow_request",
-              created_at: row.created_at || new Date().toISOString(),
-              read: false,
-              data: {
-                follower_id: row.follower_id,
-                display,
-                username: prof?.username || null,
-                avatar_url: prof?.avatar_url || null,
-              }
-            };
-            addNotification(notif);
-            notifyViaPush("Nueva solicitud de seguimiento", `${display} quiere seguirte`);
-            await persistNotification({
-              persistKey: `follow-pending-${row.follower_id}-${row.created_at}`,
-              recipientId: user.id,
-              actorId: row.follower_id,
-              type: "follow_request",
-              entityType: "follow",
-              entityId: `${row.follower_id}:${user.id}`,
-              data: notif.data,
-              createdAt: notif.created_at,
-            });
-            return;
-          }
+    // Unique channel names per mount to avoid StrictMode conflicts when cleanup is async
+    const channelFollowsToMe = supabase.channel(`follows:to-me:${user.id}:${Date.now()}`);
+    const channelThreads = supabase.channel(`threads:new:${user.id}:${Date.now()}`);
+    const channelGroupInvites = supabase.channel(`groups:member:${user.id}:${Date.now()}`);
 
-          if (row.status === "accepted") {
-            if (!isNotificationEnabled("follow_accepted")) return;
-            const { data: prof } = await supabase
-              .from("profiles")
-              .select("nombre_completo, username, avatar_url")
-              .eq("user_id", row.follower_id)
-              .maybeSingle();
-            const display = prof?.nombre_completo || prof?.username || row.follower_id.slice(0, 8);
-            const notif: AppNotification = {
-              id: `follow-accepted-${row.follower_id}-${row.created_at}`,
-              type: "follow_accepted",
-              created_at: row.created_at || new Date().toISOString(),
-              read: false,
-              data: {
-                follower_id: row.follower_id,
-                display,
-                username: prof?.username || null,
-                avatar_url: prof?.avatar_url || null,
-              }
-            };
-            addNotification(notif);
-            notifyViaPush("Nuevo seguidor", `${display} ahora te sigue`);
-            await persistNotification({
-              persistKey: `follow-accepted-${row.follower_id}-${row.created_at}`,
-              recipientId: user.id,
-              actorId: row.follower_id,
-              type: "follow_accepted",
-              entityType: "follow",
-              entityId: `${row.follower_id}:${user.id}`,
-              data: notif.data,
-              createdAt: notif.created_at,
-            });
-          }
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "follows", filter: `followed_id=eq.${user.id}` },
-        async payload => {
-          const row: any = payload.new;
-          const oldRow: any = payload.old;
-          if (!oldRow || oldRow.status === row.status) return;
-          if (row.status !== "accepted") return;
-          if (!isNotificationEnabled("follow_accepted")) return;
-
+    channelFollowsToMe.on(
+      "postgres_changes",
+      { event: "INSERT", schema: "public", table: "follows", filter: `followed_id=eq.${user.id}` },
+      async (payload: any) => {
+        const row: any = payload.new;
+        if (!isNotificationEnabled("follow_request")) return;
+        if (row.status === "pending") {
           const { data: prof } = await supabase
             .from("profiles")
             .select("nombre_completo, username, avatar_url")
@@ -409,121 +333,74 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
             .maybeSingle();
           const display = prof?.nombre_completo || prof?.username || row.follower_id.slice(0, 8);
           const notif: AppNotification = {
-            id: `follow-accepted-update-${row.follower_id}-${row.created_at}`,
-            type: "follow_accepted",
-            created_at: new Date().toISOString(),
-            read: false,
-            data: {
-              follower_id: row.follower_id,
-              display,
-              username: prof?.username || null,
-              avatar_url: prof?.avatar_url || null,
-            }
-          };
-          addNotification(notif);
-          notifyViaPush("Nuevo seguidor", `${display} ahora te sigue`);
-          await persistNotification({
-            persistKey: `follow-accepted-update-${row.follower_id}-${row.created_at}`,
-            recipientId: user.id,
-            actorId: row.follower_id,
-            type: "follow_accepted",
-            entityType: "follow",
-            entityId: `${row.follower_id}:${user.id}`,
-            data: notif.data,
-            createdAt: notif.created_at,
-          });
-        }
-      )
-      .subscribe();
-
-    const channelThreads = supabase
-      .channel(`threads:new:${user.id}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "threads" },
-        async (payload) => {
-          const row: any = payload.new;
-          if (!row || row.author_id === user.id) return;
-          if (!isNotificationEnabled("thread_new")) return;
-
-          const { data: prof } = await supabase
-            .from("profiles")
-            .select("nombre_completo, username, avatar_url")
-            .eq("user_id", row.author_id)
-            .maybeSingle();
-          const display = prof?.nombre_completo || prof?.username || "Scout";
-
-          const notif: AppNotification = {
-            id: `thread-new-${row.id}`,
-            type: "thread_new",
+            id: `follow-${row.follower_id}-${row.created_at}`,
+            type: "follow_request",
             created_at: row.created_at || new Date().toISOString(),
             read: false,
-            data: {
-              thread_id: row.id,
-              author_id: row.author_id,
-              display,
-              avatar_url: prof?.avatar_url || null,
-              content: row.content || "",
-            },
+            data: { follower_id: row.follower_id, display, username: prof?.username || null, avatar_url: prof?.avatar_url || null }
           };
           addNotification(notif);
-          notifyViaPush("Nuevo hilo", `${display} publicó un hilo`);
-          await persistNotification({
-            persistKey: `thread-new-${row.id}-${user.id}`,
-            recipientId: user.id,
-            actorId: row.author_id,
-            type: "thread_new",
-            entityType: "thread",
-            entityId: row.id,
-            data: notif.data,
-            createdAt: notif.created_at,
-          });
+          notifyViaPush("Nueva solicitud de seguimiento", `${display} quiere seguirte`);
+          await persistNotification({ persistKey: `follow-pending-${row.follower_id}-${row.created_at}`, recipientId: user.id, actorId: row.follower_id, type: "follow_request", entityType: "follow", entityId: `${row.follower_id}:${user.id}`, data: notif.data, createdAt: notif.created_at });
+          return;
         }
-      )
-      .subscribe();
-
-    const channelGroupInvites = supabase
-      .channel(`groups:member:${user.id}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "group_members", filter: `user_id=eq.${user.id}` },
-        async (payload) => {
-          const row: any = payload.new;
-          if (!row?.group_id) return;
-          if (!isNotificationEnabled("group_invite")) return;
-
-          const { data: group } = await supabase
-            .from("groups")
-            .select("id, name")
-            .eq("id", row.group_id)
-            .maybeSingle();
-
-          const notif: AppNotification = {
-            id: `group-member-${row.group_id}-${row.joined_at || row.user_id}`,
-            type: "group_invite",
-            created_at: row.joined_at || new Date().toISOString(),
-            read: false,
-            data: {
-              group_id: row.group_id,
-              group_name: group?.name || "Grupo",
-              role: row.role,
-            },
-          };
+        if (row.status === "accepted") {
+          if (!isNotificationEnabled("follow_accepted")) return;
+          const { data: prof } = await supabase.from("profiles").select("nombre_completo, username, avatar_url").eq("user_id", row.follower_id).maybeSingle();
+          const display = prof?.nombre_completo || prof?.username || row.follower_id.slice(0, 8);
+          const notif: AppNotification = { id: `follow-accepted-${row.follower_id}-${row.created_at}`, type: "follow_accepted", created_at: row.created_at || new Date().toISOString(), read: false, data: { follower_id: row.follower_id, display, username: prof?.username || null, avatar_url: prof?.avatar_url || null } };
           addNotification(notif);
-          notifyViaPush("Nuevo grupo", `Ahora formas parte de ${group?.name || "un grupo"}`);
-          await persistNotification({
-            persistKey: `group-invite-${row.group_id}-${row.user_id}-${row.joined_at || ""}`,
-            recipientId: user.id,
-            actorId: row.user_id,
-            type: "group_invite",
-            entityType: "group",
-            entityId: row.group_id,
-            data: notif.data,
-            createdAt: notif.created_at,
-          });
+          notifyViaPush("Nuevo seguidor", `${display} ahora te sigue`);
+          await persistNotification({ persistKey: `follow-accepted-${row.follower_id}-${row.created_at}`, recipientId: user.id, actorId: row.follower_id, type: "follow_accepted", entityType: "follow", entityId: `${row.follower_id}:${user.id}`, data: notif.data, createdAt: notif.created_at });
         }
-      )
-      .subscribe();
+      }
+    ).on(
+      "postgres_changes",
+      { event: "UPDATE", schema: "public", table: "follows", filter: `followed_id=eq.${user.id}` },
+      async (payload: any) => {
+        const row: any = payload.new;
+        const oldRow: any = payload.old;
+        if (!oldRow || oldRow.status === row.status || row.status !== "accepted" || !isNotificationEnabled("follow_accepted")) return;
+        const { data: prof } = await supabase.from("profiles").select("nombre_completo, username, avatar_url").eq("user_id", row.follower_id).maybeSingle();
+        const display = prof?.nombre_completo || prof?.username || row.follower_id.slice(0, 8);
+        const notif: AppNotification = { id: `follow-accepted-update-${row.follower_id}-${row.created_at}`, type: "follow_accepted", created_at: new Date().toISOString(), read: false, data: { follower_id: row.follower_id, display, username: prof?.username || null, avatar_url: prof?.avatar_url || null } };
+        addNotification(notif);
+        notifyViaPush("Nuevo seguidor", `${display} ahora te sigue`);
+        await persistNotification({ persistKey: `follow-accepted-update-${row.follower_id}-${row.created_at}`, recipientId: user.id, actorId: row.follower_id, type: "follow_accepted", entityType: "follow", entityId: `${row.follower_id}:${user.id}`, data: notif.data, createdAt: notif.created_at });
+      }
+    );
+    channelFollowsToMe.subscribe();
+
+    channelThreads.on(
+      "postgres_changes",
+      { event: "INSERT", schema: "public", table: "threads" },
+      async (payload: any) => {
+        const row: any = payload.new;
+        if (!row || row.author_id === user.id || !isNotificationEnabled("thread_new")) return;
+        const { data: prof } = await supabase.from("profiles").select("nombre_completo, username, avatar_url").eq("user_id", row.author_id).maybeSingle();
+        const display = prof?.nombre_completo || prof?.username || "Scout";
+        const notif: AppNotification = { id: `thread-new-${row.id}`, type: "thread_new", created_at: row.created_at || new Date().toISOString(), read: false, data: { thread_id: row.id, author_id: row.author_id, display, avatar_url: prof?.avatar_url || null, content: row.content || "" } };
+        addNotification(notif);
+        notifyViaPush("Nuevo hilo", `${display} publicó un hilo`);
+        await persistNotification({ persistKey: `thread-new-${row.id}-${user.id}`, recipientId: user.id, actorId: row.author_id, type: "thread_new", entityType: "thread", entityId: row.id, data: notif.data, createdAt: notif.created_at });
+      }
+    );
+    channelThreads.subscribe();
+
+    channelGroupInvites.on(
+      "postgres_changes",
+      { event: "INSERT", schema: "public", table: "group_members", filter: `user_id=eq.${user.id}` },
+      async (payload: any) => {
+        const row: any = payload.new;
+        if (!row?.group_id || !isNotificationEnabled("group_invite")) return;
+        const { data: group } = await supabase.from("groups").select("id, name").eq("id", row.group_id).maybeSingle();
+        const notif: AppNotification = { id: `group-member-${row.group_id}-${row.joined_at || row.user_id}`, type: "group_invite", created_at: row.joined_at || new Date().toISOString(), read: false, data: { group_id: row.group_id, group_name: group?.name || "Grupo", role: row.role } };
+        addNotification(notif);
+        notifyViaPush("Nuevo grupo", `Ahora formas parte de ${group?.name || "un grupo"}`);
+        await persistNotification({ persistKey: `group-invite-${row.group_id}-${row.user_id}-${row.joined_at || ""}`, recipientId: user.id, actorId: row.user_id, type: "group_invite", entityType: "group", entityId: row.group_id, data: notif.data, createdAt: notif.created_at });
+      }
+    );
+    channelGroupInvites.subscribe();
 
     return () => {
       supabase.removeChannel(channelFollowsToMe);
@@ -608,9 +485,9 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
   // Suscripción a mensajes nuevos en cualquier conversación del usuario
   useEffect(() => {
     if (!user) return;
-    // Suscribirse a todos los mensajes: filtrar en el handler
+    // Unique channel name per mount to avoid StrictMode conflicts when cleanup is async
     const channelMessages = supabase
-      .channel(`messages:any:${user.id}`)
+      .channel(`messages:any:${user.id}:${Date.now()}`)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "messages" },
@@ -639,6 +516,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!user) return;
     let channel: any;
     (async () => {
+      try {
       const { data, error } = await querySilent(() => supabase
         .from("notifications")
         .select("id, type, created_at, read_at, data")
@@ -668,8 +546,9 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
 
       await syncPendingFollowRequests(user.id);
 
+      // Unique channel name per mount to avoid StrictMode conflicts when cleanup is async
       channel = supabase
-        .channel(`notifications:ins:${user.id}`)
+        .channel(`notifications:ins:${user.id}:${Date.now()}`)
         .on(
           "postgres_changes",
           { event: "INSERT", schema: "public", table: "notifications", filter: `recipient_id=eq.${user.id}` },
@@ -693,9 +572,12 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
           }
         )
         .subscribe();
+      } catch (e) {
+        console.warn("Failed to load persistent notifications:", e);
+      }
     })();
-    return () => { if (channel) supabase.removeChannel(channel); };
-  }, [user, addNotification, notifyViaPush, normalizePersistentNotification, syncPendingFollowRequests, isNotificationEnabled]);
+  return () => { if (channel) supabase.removeChannel(channel); };
+}, [user, addNotification, notifyViaPush, normalizePersistentNotification, syncPendingFollowRequests, isNotificationEnabled]);
 
   useEffect(() => {
     if (!user) return;

@@ -81,10 +81,6 @@ const DashboardCoordinador = () => {
     return list;
   }, [scouts, searchTerm, showOnlyUnit, coordinadorProfile]);
 
-  useEffect(() => {
-    loadDashboard();
-  }, []);
-
   const loadDashboard = async () => {
     try {
       setLoading(true);
@@ -128,6 +124,10 @@ const DashboardCoordinador = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadDashboard();
+  }, []);
 
   const loadScouts = async (coordinador: Profile) => {
     try {

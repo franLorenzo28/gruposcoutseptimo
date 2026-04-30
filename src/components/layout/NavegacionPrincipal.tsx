@@ -395,7 +395,7 @@ const Navigation = () => {
   const getNotificationActor = (n: any) => {
     const d = n?.data || {};
     return d.display || (d.username ? `@${d.username}` : null);
-  };
+};
 
   const getNotificationRelativeTime = (createdAt: string) => {
     const now = Date.now();

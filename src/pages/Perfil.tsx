@@ -231,10 +231,6 @@ const Perfil = () => {
     });
   }, [formData.edad]);
 
-  useEffect(() => {
-    getProfile();
-  }, []);
-
   const getProfile = async (showLoading = true) => {
     try {
       if (showLoading) setLoading(true);
@@ -306,6 +302,10 @@ const Perfil = () => {
       if (showLoading) setLoading(false);
     }
   };
+
+  useEffect(() => {
+    getProfile();
+  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,

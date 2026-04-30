@@ -12,18 +12,6 @@ const VerificarEmail = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  useEffect(() => {
-    const token = searchParams.get("token");
-    
-    if (!token) {
-      setStatus("error");
-      setMessage("Token de verificación no encontrado");
-      return;
-    }
-
-    verifyEmail(token);
-  }, [searchParams]);
-
   const verifyEmail = async (token: string) => {
     try {
       console.log("Verificando email con token:", token);
@@ -69,6 +57,18 @@ const VerificarEmail = () => {
       });
     }
   };
+
+  useEffect(() => {
+    const token = searchParams.get("token");
+    
+    if (!token) {
+      setStatus("error");
+      setMessage("Token de verificación no encontrado");
+      return;
+    }
+
+    verifyEmail(token);
+  }, [searchParams]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25 flex items-center justify-center p-4">

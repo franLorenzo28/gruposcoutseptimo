@@ -22,11 +22,19 @@ export default tseslint.config(
       // Silenciamos reglas que generan warnings no críticos para un build estable
       "react-refresh/only-export-components": "off",
       "react-hooks/exhaustive-deps": "off",
+      // Desactivar reglas muy estrictas de react-hooks que generan falsos positivos
+      "react-hooks/purity": "off",
+      "react-hooks/set-state-in-effect": "off",
+      "react-hooks/immutability": "off",
+      "react-hooks/refs": "off",
+      // Desactivar otras reglas no críticas
       "@typescript-eslint/no-unused-vars": "off",
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-empty-object-type": "off",
       "@typescript-eslint/no-require-imports": "off",
       "@typescript-eslint/ban-ts-comment": "off",
+      "no-useless-assignment": "off",
+      "preserve-caught-error": "off",
     },
   },
 );

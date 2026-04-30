@@ -32,11 +32,6 @@ export function AdminDocuments({ rama, ramaName }: AdminDocumentsProps) {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // Load documents on mount
-  useEffect(() => {
-    loadDocumentos();
-  }, [rama]);
-
   const loadDocumentos = async () => {
     setLoading(true);
     setError(null);
@@ -56,6 +51,10 @@ export function AdminDocuments({ rama, ramaName }: AdminDocumentsProps) {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadDocumentos();
+  }, [rama]);
 
   const addPendingFiles = (files: File[]) => {
     if (!files.length) return;

@@ -47,12 +47,6 @@ export function DocumentViewer({
   const [previewing, setPreviewing] = useState<string | null>(null);
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (open) {
-      loadDocumentos();
-    }
-  }, [open, rama]);
-
   const loadDocumentos = async () => {
     setLoading(true);
     setError(null);
@@ -72,6 +66,12 @@ export function DocumentViewer({
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (open) {
+      loadDocumentos();
+    }
+  }, [open, rama]);
 
   const handleDownload = async (documento: Documento) => {
     try {
