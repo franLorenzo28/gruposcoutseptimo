@@ -1,6 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { Badge } from "@/components/ui/badge";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Reveal } from "@/components/Reveal";
 import NovedadesRecientes from "@/components/sections/NovedadesRecientes";
@@ -14,10 +12,16 @@ import {
   Flag,
   User,
   Users,
-  ArrowLeft,
-  ArrowRight,
+  Plus,
+  Trash2,
+  ChevronDown,
 } from "lucide-react";
 import { PageGridBackground } from "@/components/PageGridBackground";
+import { useUser } from "@/hooks/useUser";
+import { supabase } from "@/integrations/supabase/client";
+
+const STORAGE_KEY = "grupo_scout_scoutpedia";
+const MODE = (import.meta.env.VITE_BACKEND || "supabase").toLowerCase();
 
 type TopicCategory =
   | "referentes"
@@ -30,7 +34,7 @@ type Topic = {
   id: string;
   title: string;
   category: TopicCategory;
-  icon: React.ElementType;
+  icon: string;
   eyebrow: string;
   summary: string;
   paragraphs: string[];
@@ -39,12 +43,24 @@ type Topic = {
   featured?: boolean;
 };
 
-const TOPICS: Topic[] = [
+const iconMap: Record<string, React.ElementType> = {
+  User,
+  Trophy,
+  Sparkles,
+  Users,
+  Flag,
+  BookOpen,
+  Library,
+  FileText,
+  Flame,
+};
+
+const defaultTopics: Topic[] = [
   {
     id: "baden-powell",
     title: "Sir Baden-Powell of Gilwell",
     category: "referentes",
-    icon: User,
+    icon: "User",
     eyebrow: "Fundador",
     summary: "1857-1941. Impulsor del Movimiento Scout y su marco educativo.",
     featured: true,
@@ -59,7 +75,7 @@ const TOPICS: Topic[] = [
     id: "roland-philipps",
     title: "Roland Erasmus Philipps",
     category: "referentes",
-    icon: Trophy,
+    icon: "Trophy",
     eyebrow: "Colaborador clave",
     summary: "1890-1916. Referente temprano del Sistema de Patrullas.",
     paragraphs: [
@@ -72,7 +88,7 @@ const TOPICS: Topic[] = [
     id: "kipling",
     title: "Rudyard Kipling",
     category: "referentes",
-    icon: Sparkles,
+    icon: "Sparkles",
     eyebrow: "Inspiracion literaria",
     summary: "Autor de El Libro de la Selva, base simbolica de la mistica de manada.",
     paragraphs: [
@@ -86,7 +102,7 @@ const TOPICS: Topic[] = [
     id: "metodo-scout",
     title: "El Metodo Scout",
     category: "metodo",
-    icon: Users,
+    icon: "Users",
     eyebrow: "Aprender en equipo",
     summary: "Propuesta de aventura en pequenos grupos mediante el Sistema de Patrullas.",
     paragraphs: [
@@ -99,7 +115,7 @@ const TOPICS: Topic[] = [
     id: "sistema-patrullas",
     title: "El Sistema de Patrullas",
     category: "metodo",
-    icon: Flag,
+    icon: "Flag",
     eyebrow: "Organizacion educativa",
     summary: "Elemento central del metodo para desarrollar autonomia y responsabilidad.",
     paragraphs: [
@@ -113,7 +129,7 @@ const TOPICS: Topic[] = [
     id: "escultismo-para-muchachos",
     title: "Escultismo para Muchachos",
     category: "obras",
-    icon: BookOpen,
+    icon: "BookOpen",
     eyebrow: "Texto fundacional",
     summary: "Manual publicado en 1908: base doctrinal y practica del movimiento.",
     paragraphs: [
@@ -127,7 +143,7 @@ const TOPICS: Topic[] = [
     id: "primeros-cuatro-meses",
     title: "Los Primeros Cuatro Meses de una Tropa Scout",
     category: "biblioteca",
-    icon: Library,
+    icon: "Library",
     eyebrow: "Archivo bibliografico",
     summary: "Segunda edicion (1981), impreso en Costa Rica, 49 paginas.",
     paragraphs: [
@@ -140,7 +156,7 @@ const TOPICS: Topic[] = [
     id: "manual-jefe-tropa",
     title: "Manual para el Jefe de Tropa y sus Ayudantes",
     category: "biblioteca",
-    icon: FileText,
+    icon: "FileText",
     eyebrow: "Archivo bibliografico",
     summary: "Cuarta edicion, noviembre 1981, 278 paginas.",
     paragraphs: [
@@ -154,7 +170,7 @@ const TOPICS: Topic[] = [
     id: "ciudadanos-del-manana",
     title: "Manual para Scouts - Ciudadanos del Manana",
     category: "biblioteca",
-    icon: BookOpen,
+    icon: "BookOpen",
     eyebrow: "Archivo bibliografico",
     summary: "Octava edicion, 1973, 562 paginas.",
     paragraphs: [
@@ -168,7 +184,7 @@ const TOPICS: Topic[] = [
     id: "libro-selva",
     title: "El Libro de la Selva",
     category: "mistica",
-    icon: Flame,
+    icon: "Flame",
     eyebrow: "Mistica de manada",
     summary: "Publicado en 1894. Referencia simbolica para lobatos.",
     paragraphs: [
@@ -184,280 +200,367 @@ const TOPICS: Topic[] = [
   },
 ];
 
-const FILTERS: Array<{ key: "all" | TopicCategory; label: string }> = [
+function loadTopicsLocal(): Topic[] {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (e) {
+    console.error("Error loading topics:", e);
+  }
+  return defaultTopics;
+}
+
+function saveTopicsLocal(topics: Topic[]) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(topics));
+  } catch (e) {
+    console.error("Error saving topics:", e);
+  }
+}
+
+const adminEmails = (import.meta.env.VITE_GALLERY_ADMIN_EMAILS || "")
+  .split(",")
+  .map((email: string) => email.trim().toLowerCase())
+  .filter(Boolean);
+
+function checkIsAdmin(user: any): boolean {
+  if (!user) return false;
+  const email = user?.email?.toLowerCase();
+  const appRole = user && "role" in user ? (user.role as string)?.toLowerCase() : "";
+  const rolAdulto = user && "rol_adulto" in user ? (user.rol_adulto as string)?.toLowerCase() : undefined;
+  return (
+    appRole === "admin" ||
+    appRole === "mod" ||
+    rolAdulto === "admin" ||
+    rolAdulto === "mod" ||
+    (!!email && adminEmails.includes(email))
+  );
+}
+
+const CATEGORIES: Array<{ key: "all" | TopicCategory; label: string }> = [
   { key: "all", label: "Explorar todo" },
   { key: "referentes", label: "Referentes" },
-  { key: "metodo", label: "Metodo" },
+  { key: "metodo", label: "Método" },
   { key: "obras", label: "Obras" },
   { key: "biblioteca", label: "Biblioteca" },
-  { key: "mistica", label: "Mistica" },
+  { key: "mistica", label: "Mística" },
 ];
 
 const Scoutpedia = () => {
-  const [activeFilter, setActiveFilter] = useState<"all" | TopicCategory>("all");
-  const [activeTopicId, setActiveTopicId] = useState<string>(TOPICS[0]!.id);
-
-  const filteredTopics = useMemo(
-    () =>
-      activeFilter === "all"
-        ? TOPICS
-        : TOPICS.filter((topic) => topic.category === activeFilter),
-    [activeFilter],
-  );
+  const [topics, setTopics] = useState<Topic[]>([]);
+  const [activeCategory, setActiveCategory] = useState<"all" | TopicCategory>("all");
+  const [expandedTopicId, setExpandedTopicId] = useState<string | null>(null);
+  const { user } = useUser();
+  const isAdmin = checkIsAdmin(user);
+  const isSupabaseMode = MODE === "supabase";
 
   useEffect(() => {
-    if (filteredTopics.length === 0) return;
-    const activeVisible = filteredTopics.some((topic) => topic.id === activeTopicId);
-    if (!activeVisible) {
-      setActiveTopicId(filteredTopics[0]!.id);
+    async function loadTopicsData() {
+      if (isSupabaseMode) {
+        try {
+          const { data, error } = await (supabase as any)
+            .from("scoutpedia_topics")
+            .select("*");
+          
+          if (error) {
+            console.error("Error loading scoutpedia_topics:", error);
+            setTopics(defaultTopics);
+          } else if (data && data.length > 0) {
+            const mapped = (data as any[]).map((row) => ({
+              ...row,
+              paragraphs: Array.isArray(row.paragraphs) ? row.paragraphs : [],
+              bullets: Array.isArray(row.bullets) ? row.bullets : [],
+            }));
+            setTopics(mapped as Topic[]);
+          } else {
+            setTopics(defaultTopics);
+          }
+        } catch (e) {
+          console.error("Error:", e);
+          setTopics(defaultTopics);
+        }
+      } else {
+        const loaded = loadTopicsLocal();
+        setTopics(loaded);
+      }
     }
-  }, [activeTopicId, filteredTopics]);
 
-  const activeTopic =
-    TOPICS.find((topic) => topic.id === activeTopicId) ?? filteredTopics[0] ?? TOPICS[0] ?? TOPICS[0];
+    loadTopicsData();
+  }, [isSupabaseMode]);
 
-  if (!activeTopic) return null;
+  const filteredTopics = useMemo(() => {
+    return activeCategory === "all" 
+      ? topics 
+      : topics.filter((t) => t.category === activeCategory);
+  }, [topics, activeCategory]);
 
-  const activeIndex = Math.max(
-    0,
-    filteredTopics.findIndex((topic) => topic.id === activeTopic.id),
-  );
+  const activeTopic = expandedTopicId 
+    ? topics.find((t) => t.id === expandedTopicId) 
+    : filteredTopics[0];
 
-  const goPrev = () => {
-    if (filteredTopics.length < 2) return;
-    const prev = (activeIndex - 1 + filteredTopics.length) % filteredTopics.length;
-    setActiveTopicId(filteredTopics[prev]!.id);
-  };
+  const minGridCards = 6;
+  const placeholderCount = Math.max(0, minGridCards - filteredTopics.length);
 
-  const goNext = () => {
-    if (filteredTopics.length < 2) return;
-    const next = (activeIndex + 1) % filteredTopics.length;
-    setActiveTopicId(filteredTopics[next]!.id);
-  };
+  const handleAdd = useCallback(async () => {
+    const newId = `topic-${Date.now()}`;
+    const newTopic: Topic = {
+      id: newId,
+      title: "Nuevo tema",
+      category: "referentes",
+      icon: "BookOpen",
+      eyebrow: "Nuevo",
+      summary: "Descripcion del nuevo tema",
+      paragraphs: ["Parrafo de ejemplo"],
+    };
+
+    if (isSupabaseMode) {
+      try {
+        const { error } = await (supabase as any)
+          .from("scoutpedia_topics")
+          .insert({ ...newTopic, updated_at: new Date().toISOString() });
+        
+        if (error) {
+          console.error("Error adding topic:", error);
+          return;
+        }
+        
+        setTopics((prev) => [...prev, newTopic]);
+      } catch (e) {
+        console.error("Error:", e);
+      }
+    } else {
+      setTopics((prev) => {
+        const updated = [...prev, newTopic];
+        saveTopicsLocal(updated);
+        return updated;
+      });
+    }
+    
+    setExpandedTopicId(newId);
+  }, [isSupabaseMode]);
+
+  const handleDelete = useCallback(async (id: string) => {
+    if (isSupabaseMode) {
+      try {
+        const { error } = await (supabase as any)
+          .from("scoutpedia_topics")
+          .delete()
+          .eq("id", id);
+        
+        if (error) {
+          console.error("Error deleting topic:", error);
+          return;
+        }
+        
+        setTopics((prev) => prev.filter((t) => t.id !== id));
+      } catch (e) {
+        console.error("Error:", e);
+      }
+    } else {
+      setTopics((prev) => {
+        const updated = prev.filter((t) => t.id !== id);
+        saveTopicsLocal(updated);
+        return updated;
+      });
+    }
+    
+    if (expandedTopicId === id) {
+      setExpandedTopicId(null);
+    }
+  }, [isSupabaseMode, expandedTopicId]);
+
+  const handleReset = useCallback(async () => {
+    if (isSupabaseMode) {
+      try {
+        await (supabase as any).from("scoutpedia_topics").delete().neq("id", "");
+        const { error } = await (supabase as any).from("scoutpedia_topics").insert(
+          defaultTopics.map((t) => ({ ...t, updated_at: new Date().toISOString() }))
+        );
+        if (error) console.error("Error resetting:", error);
+        setTopics(defaultTopics);
+      } catch (e) {
+        console.error("Error:", e);
+      }
+    } else {
+      saveTopicsLocal(defaultTopics);
+      setTopics(defaultTopics);
+    }
+  }, [isSupabaseMode]);
 
   return (
     <PageGridBackground>
-      <section className="relative overflow-hidden pt-16 sm:pt-20 pb-6 sm:pb-8 bg-gradient-to-b from-background via-background/95 to-muted/25">
+      {/* Hero Section */}
+      <section className="pt-20 pb-14 bg-gradient-to-b from-background via-background/95 to-muted/25">
         <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
           <div className="bg-blob w-40 h-40 bg-muted/30 -top-8 -right-8 float-slow" />
           <div className="bg-blob w-32 h-32 bg-muted/30 -bottom-10 -left-8 drift-slow" />
         </div>
-        <div className="w-full px-4 sm:px-6">
+        <div className="max-w-5xl px-4 sm:px-6 mx-auto">
           <Reveal className="max-w-none text-left">
-            <div className="inline-flex items-center gap-2 px-2.5 py-1 bg-muted/30 rounded-full mb-2 sm:mb-3">
-              <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
-              <span className="text-primary font-semibold text-xs">
-                Archivo - Scoutpedia
-              </span>
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-muted/30 rounded-full mb-4">
+              <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+              <span className="text-primary font-semibold text-sm">Archivo - Scoutpedia</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
               Scoutpedia
             </h1>
-            <p className="text-sm sm:text-base text-muted-foreground max-w-3xl">
-              Diccionario vivo de personas, obras y conceptos del Grupo Septimo.
+              <p className="text-base sm:text-lg text-muted-foreground max-w-3xl leading-relaxed mb-2">
+              Diccionario vivo de personas, obras y conceptos del Grupo Séptimo.
             </p>
           </Reveal>
         </div>
       </section>
 
-      <section className="py-4 sm:py-6">
-        <div className="w-full px-4 sm:px-6">
-          <div className="space-y-3 sm:space-y-4">
-            <Reveal>
-              <div className="rounded-xl border border-border/70 bg-card/70 p-2 sm:p-3">
-                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                  {FILTERS.map((filter) => (
-                    <button
-                      key={filter.key}
-                      onClick={() => setActiveFilter(filter.key)}
-                      className={`rounded-full px-3 py-1.5 text-xs sm:text-sm font-medium transition-colors ${
-                        activeFilter === filter.key
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted/40 text-muted-foreground hover:bg-muted/70 hover:text-foreground"
-                      }`}
-                    >
-                      {filter.label}
-                    </button>
-                  ))}
-                </div>
+      {/* Content Section */}
+      <section className="py-8 sm:py-10">
+        <div className="max-w-6xl px-4 sm:px-6 mx-auto">
+          {/* Category Tabs */}
+          <div className="flex items-center gap-3 mb-6">
+            <div className="flex-1 rounded-full border border-border/70 bg-card/60 px-2 py-2">
+              <div className="flex flex-wrap items-center gap-2">
+                {CATEGORIES.map((cat) => (
+                  <button
+                    key={cat.key}
+                    onClick={() => setActiveCategory(cat.key)}
+                    className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
+                      activeCategory === cat.key
+                        ? "bg-primary text-primary-foreground shadow-md"
+                        : "bg-muted/30 text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                    }`}
+                  >
+                    {cat.label}
+                  </button>
+                ))}
               </div>
-            </Reveal>
+            </div>
+            {isAdmin && (
+              <div className="flex gap-2 ml-auto">
+                <Button size="sm" variant="outline" onClick={handleAdd} className="gap-1.5">
+                  <Plus className="h-3.5 w-3.5" />
+                  Nuevo
+                </Button>
+                <Button size="sm" variant="outline" onClick={handleReset}>
+                  Reset
+                </Button>
+              </div>
+            )}
+          </div>
 
-            <div className="lg:hidden space-y-2 sm:space-y-3">
-              <Reveal>
-                <div className="flex gap-2 overflow-x-auto pb-2 snap-x snap-mandatory">
-                  {filteredTopics.map((topic) => {
-                    const Icon = topic.icon;
-                    const isActive = topic.id === activeTopic.id;
-                    return (
-                      <button
-                        key={topic.id}
-                        onClick={() => setActiveTopicId(topic.id)}
-                        className={`snap-start min-w-[160px] sm:min-w-[180px] rounded-lg border p-2.5 sm:p-3 text-left transition-all ${
-                          isActive
-                            ? "border-primary/60 bg-primary/10"
-                            : "border-border/70 bg-card/70"
-                        }`}
-                      >
-                        <div className="flex items-center gap-1.5">
-                          <Icon className="h-3.5 w-3.5 text-primary shrink-0" />
-                          <p className="text-[10px] font-semibold uppercase tracking-wide text-primary/90 truncate">
-                            {topic.eyebrow}
-                          </p>
-                        </div>
-                        <p className="mt-1 text-xs sm:text-sm font-semibold leading-tight truncate">{topic.title}</p>
-                      </button>
-                    );
-                  })}
-                </div>
-              </Reveal>
-
-              <Reveal>
-                <section className="rounded-2xl border border-primary/20 bg-gradient-to-br from-background via-background to-primary/5 p-4 sm:p-5 shadow-lg">
-                  <div className="flex items-center gap-2.5 sm:gap-3">
-                    <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-muted/40 shrink-0">
-                      <activeTopic.icon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-primary">
-                        Profundizando
-                      </p>
-                      <h3 className="text-lg sm:text-xl font-black leading-tight truncate">{activeTopic.title}</h3>
-                    </div>
+          {/* Grid Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+            {/* Left Column - Topic List */}
+            <div className="lg:col-span-7 grid grid-cols-2 auto-rows-min gap-3">
+              {filteredTopics.map((topic) => {
+                const Icon = iconMap[topic.icon] || BookOpen;
+                const isExpanded = expandedTopicId === topic.id;
+                
+                return (
+                  <div
+                    key={topic.id}
+                    className={`rounded-xl border bg-card/60 transition-all min-h-[140px] ${
+                      isExpanded
+                        ? "border-primary/50 bg-primary/10 shadow-lg"
+                        : "border-border/60 hover:border-primary/40"
+                    }`}
+                  >
+                    <button
+                      onClick={() => setExpandedTopicId(isExpanded ? null : topic.id)}
+                      className="w-full h-full flex items-start gap-3 p-4 text-left"
+                    >
+                      <div className={`transition-transform shrink-0 ${isExpanded ? "rotate-90" : ""}`}>
+                        <ChevronDown className="h-4 w-4 text-primary" />
+                      </div>
+                      <Icon className="h-5 w-5 text-primary shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-primary/70 line-clamp-1">
+                          {topic.eyebrow}
+                        </span>
+                        <h3 className="text-sm font-bold leading-tight mt-0.5">{topic.title}</h3>
+                        <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{topic.summary}</p>
+                      </div>
+                      {isAdmin && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleDelete(topic.id); }}
+                          className="h-7 w-7 text-muted-foreground/50 hover:text-destructive flex items-center justify-center rounded transition-colors shrink-0"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
+                    </button>
                   </div>
-
-                  <div className="mt-3 sm:mt-4 space-y-2 sm:space-y-3 text-muted-foreground border-l-2 border-primary/25 pl-3 sm:pl-4">
-                    {activeTopic.paragraphs.map((paragraph) => (
-                      <p key={paragraph} className="text-sm sm:text-base leading-relaxed">
-                        {paragraph}
-                      </p>
-                    ))}
-
-                    {activeTopic.bullets && (
-                      <ul className="space-y-1.5 rounded-lg bg-muted/25 p-3 text-xs sm:text-sm">
-                        {activeTopic.bullets.map((bullet) => (
-                          <li key={bullet} className="flex items-start gap-2">
-                            <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
-                            <span>{bullet}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-
-                    {activeTopic.note && (
-                      <p className="text-xs sm:text-sm italic text-muted-foreground/90">{activeTopic.note}</p>
-                    )}
-                  </div>
-                </section>
-              </Reveal>
+                );
+              })}
+              {Array.from({ length: placeholderCount }).map((_, idx) => (
+                <div
+                  key={`placeholder-${idx}`}
+                  aria-hidden="true"
+                  className="rounded-xl border border-border/40 bg-card/40 min-h-[100px]"
+                />
+              ))}
             </div>
 
-            <div className="hidden lg:grid gap-4 xl:grid-cols-12">
-              <div className="xl:col-span-5">
-                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2 max-h-[calc(100vh-280px)] overflow-y-auto pr-2">
-                  {filteredTopics.map((topic) => {
-                    const Icon = topic.icon;
-                    const isActive = topic.id === activeTopic.id;
-
-                    return (
-                      <Reveal key={topic.id}>
-                        <button
-                          onClick={() => setActiveTopicId(topic.id)}
-                          className={`h-full w-full text-left rounded-xl border p-3 sm:p-4 transition-all ${
-                            isActive
-                              ? "border-primary/60 bg-primary/5 shadow-lg"
-                              : "border-border/70 bg-card/75 hover:-translate-y-0.5 hover:border-primary/40"
-                          } ${topic.featured ? "md:col-span-2 xl:col-span-1 2xl:col-span-2" : ""}`}
-                        >
-                          <div className="flex items-start gap-2 sm:gap-3">
-                            <div className="mt-0.5 flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-full bg-muted/40">
-                              <Icon className="h-4 w-4 sm:h-4.5 sm:w-4.5 text-primary" />
-                            </div>
-                            <div className="min-w-0">
-                              <p className="text-[10px] font-semibold uppercase tracking-wide text-primary/90">
-                                {topic.eyebrow}
-                              </p>
-                              <h2 className="mt-0.5 text-sm sm:text-base font-bold truncate">{topic.title}</h2>
-                              <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{topic.summary}</p>
-                            </div>
-                          </div>
-                        </button>
-                      </Reveal>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="xl:col-span-7">
+            {/* Right Column - Content */}
+            <div className="lg:col-span-5">
+              {activeTopic ? (
                 <Reveal>
-                  <section className="xl:sticky xl:top-20 rounded-2xl border border-primary/20 bg-gradient-to-br from-background via-background to-primary/5 p-4 sm:p-6 shadow-xl">
-                    <div className="flex items-center gap-3 sm:gap-4">
-                      <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full bg-muted/40">
-                        <activeTopic.icon className="h-5 w-5 sm:h-5.5 sm:w-5.5 text-primary" />
+                  <div className="sticky top-6 w-full rounded-2xl border border-primary/30 bg-card/60 p-8 sm:p-10 md:p-12 shadow-2xl">
+                    <div className="flex items-start gap-5 mb-6">
+                      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted/40 shrink-0">
+                        {(() => {
+                          const Icon = iconMap[activeTopic.icon] || BookOpen;
+                          return <Icon className="h-8 w-8 text-primary" />;
+                        })()}
                       </div>
                       <div>
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-primary">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-primary/70 mb-2">
                           Profundizando
                         </p>
-                        <h3 className="text-xl sm:text-2xl font-black leading-tight">{activeTopic.title}</h3>
+                        <h3 className="text-2xl sm:text-3xl font-black leading-tight">
+                          {activeTopic.title}
+                        </h3>
                       </div>
                     </div>
 
-                    <div className="mt-4 sm:mt-5 space-y-3 sm:space-y-4 text-muted-foreground border-l-2 border-primary/25 pl-4 sm:pl-5">
-                      {activeTopic.paragraphs.map((paragraph) => (
-                        <p key={paragraph} className="text-sm sm:text-base leading-relaxed">
+                    <div className="space-y-5 text-muted-foreground border-l border-primary/30 pl-6">
+                      {activeTopic.paragraphs.map((paragraph, idx) => (
+                        <p key={idx} className="text-base sm:text-lg leading-relaxed">
                           {paragraph}
                         </p>
                       ))}
 
-                      {activeTopic.bullets && (
-                        <ul className="space-y-2 rounded-xl bg-muted/25 p-4 text-sm">
-                          {activeTopic.bullets.map((bullet) => (
-                            <li key={bullet} className="flex items-start gap-2">
-                              <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" />
-                              <span>{bullet}</span>
+                      {activeTopic.bullets && activeTopic.bullets.length > 0 && (
+                        <ul className="space-y-3.5 rounded-xl bg-muted/25 p-6">
+                          {activeTopic.bullets.map((bullet, idx) => (
+                            <li key={idx} className="flex items-start gap-4">
+                              <span className="mt-2.5 h-2.5 w-2.5 shrink-0 rounded-full bg-primary" />
+                              <span className="text-base">{bullet}</span>
                             </li>
                           ))}
                         </ul>
                       )}
 
                       {activeTopic.note && (
-                        <p className="text-sm italic text-muted-foreground/90">
-                          {activeTopic.note}
-                        </p>
+                        <div className="rounded-xl bg-muted/20 border border-border/30 p-6">
+                          <p className="text-base italic text-muted-foreground/90">
+                            {activeTopic.note}
+                          </p>
+                        </div>
                       )}
                     </div>
-                  </section>
+                  </div>
                 </Reveal>
-              </div>
-            </div>
-
-            <Reveal>
-              <section className="rounded-xl border border-primary/25 bg-card/80 p-4 sm:p-5">
-                <div className="flex items-start gap-3 sm:gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-muted/30 flex items-center justify-center shrink-0">
-                    <FileText className="w-5 h-5 text-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-base sm:text-lg font-semibold mb-1">Queres sumar mas material?</h3>
-                    <p className="text-xs sm:text-sm text-muted-foreground mb-3">
-                      Envia material y lo incorporamos a la Scoutpedia del Grupo Septimo.
-                    </p>
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
-                      <Badge variant="outline" className="bg-muted/30 text-primary border-primary/30 text-xs">
-                        Estado: seccion en crecimiento
-                      </Badge>
-                      <Link to="/contacto">
-                        <Button size="sm" className="gap-1.5 text-xs">
-                          <FileText className="w-3.5 h-3.5" />
-                          Enviar material
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
+              ) : (
+                <div className="text-center py-16 text-muted-foreground">
+                  <BookOpen className="h-12 w-12 mx-auto mb-3 opacity-40" />
+                  <p className="text-sm">Seleccioná un tema para ver el contenido</p>
                 </div>
-              </section>
-            </Reveal>
+              )}
+            </div>
           </div>
         </div>
       </section>

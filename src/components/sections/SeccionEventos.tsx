@@ -1,22 +1,22 @@
-﻿import { useEffect, useState } from "react";
-import { Calendar, MapPin, Flag, Users, EyeOff } from "lucide-react";
+﻿import { useCallback, useEffect, useState } from "react";
+import { Calendar, MapPin, Flag, Users, EyeOff, Save, X, Pencil } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Reveal } from "@/components/Reveal";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { useUser } from "@/hooks/useUser";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+
+const STORAGE_KEY = "grupo_scout_eventos";
+const MODE = (import.meta.env.VITE_BACKEND || "supabase").toLowerCase();
 
 type EventItem = {
   id: number;
@@ -28,47 +28,161 @@ type EventItem = {
   status: string;
   image?: string;
   href?: string;
+  sort_order?: number;
 };
 
-// --- Mock Data: Reemplazar con datos de una API ---
-const sampleEvents: EventItem[] = [
+const defaultEvents: EventItem[] = [
   {
     id: 1,
-    title: "Lobabi",
-    date: "A confirmar, 2026",
-    location: "Parque Rivera",
-    participants: "Manada",
-    type: "Evento de un día",
-    status: "En incógnita",
-    image: "https://images.unsplash.com/photo-1533599329424-34869443a571?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    title: "Servicio de Grupo",
+    date: "30 de Mayo, 2026",
+    location: "Sede del Grupo",
+    participants: "Todos los secciones",
+    type: "Servicio",
+    status: "Confirmado",
   },
   {
     id: 2,
-    title: "Bauen",
-    date: "A confirmar, 2026",
-    location: "Parque Baroffio",
-    participants: "Grupos Scouts de todo el país",
-    type: "Evento Construcción de 2 días",
-    status: "En incógnita",
-    href: "/bauen",
-    image: "https://images.unsplash.com/photo-1599946343513-c4963d360293?q=80&w=1932&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    title: "Bingo",
+    date: "7 de Junio, 2026",
+    location: "Sede del Grupo",
+    participants: "Tropa",
+    type: "Evento de un día",
+    status:"Confirmado",
+    image: "/assets/bingo-tropa-phonix-2025.png",
   },
   {
     id: 3,
+    title: "Campamento Invierno",
+    date: "27 y 28 de Junio, 2026",
+    location: "A confirmar",
+    participants: "Todas las secciones",
+    type: "Campamento de 2 días",
+    status: "Confirmado",
+  },
+  {
+    id: 4,
+    title: "Lobabi",
+    date: "8 de Agosto, 2026",
+    location: "Parque Rivera",
+    participants: "Manada",
+    type: "Evento de un día",
+    status: "Confirmado",
+  },
+  {
+    id: 5,
+    title: "BAUEN",
+    date: "26 y 27 de Septiembre, 2026",
+    location: "Parque Baroffio",
+    participants: "Grupos Scouts de todo el país",
+    type: "Evento Construcción de 2 días",
+    status: "Confirmado",
+    href: "/bauen",
+  },
+  {
+    id: 6,
     title: "Eniesc",
-    date: "A confirmar, 2026",
+    date: "10, 11 y 12 de Octubre, 2026",
     location: "Rivera, Uruguay",
     participants: "Tropa, Pioneros y Rovers",
     type: "Evento internacional",
     status: "Confirmado",
-    image: "https://images.unsplash.com/photo-1599946343513-c4963d360293?q=80&w=1932&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", 
+  },
+  {
+    id: 7,
+    title: "Última Reunión",
+    date: "5 de Diciembre, 2026",
+    location: "Sede del Grupo",
+    participants: "Todas las secciones",
+    type: "Evento de un día",
+    status: "Confirmado",
+  },
+  {
+    id: 8,
+    title: "Fogón de Fin de Año",
+    date: "12 de Diciembre, 2026",
+    location: "Sede del Grupo",
+    participants: "Todas las secciones",
+    type: "Evento de un día",
+    status: "Confirmado",
+  },
+  {
+    id: 9,
+    title: "Campamento de Verano",
+    date: "20 al 24 de Enero, 2027",
+    location: "A confirmar",
+    participants: "Toutes las secciones",
+    type: "Campamento de 5 días",
+    status: "Confirmado",
   },
 ];
 
-const EventCard = ({ event, index }: { event: EventItem; index: number }) => {
-  void event.date;
+function loadEventsLocal(): EventItem[] {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (e) {
+    console.error("Error loading events:", e);
+  }
+  return defaultEvents;
+}
+
+function saveEventsLocal(events: EventItem[]) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+  } catch (e) {
+    console.error("Error saving events:", e);
+  }
+}
+
+const adminEmails = (import.meta.env.VITE_GALLERY_ADMIN_EMAILS || "")
+  .split(",")
+  .map((email: string) => email.trim().toLowerCase())
+  .filter(Boolean);
+
+function checkIsAdmin(user: any): boolean {
+  if (!user) return false;
+  const email = user?.email?.toLowerCase();
+  const appRole = user && "role" in user ? (user.role as string)?.toLowerCase() : "";
+  const rolAdulto = user && "rol_adulto" in user ? (user.rol_adulto as string)?.toLowerCase() : undefined;
+  return (
+    appRole === "admin" ||
+    appRole === "mod" ||
+    rolAdulto === "admin" ||
+    rolAdulto === "mod" ||
+    (!!email && adminEmails.includes(email))
+  );
+}
+
+const EventCard = ({ event, index, isAdmin, onUpdate }: { 
+  event: EventItem; 
+  index: number;
+  isAdmin: boolean;
+  onUpdate: (id: number, updates: Partial<EventItem>) => void;
+}) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState(event);
   const [imageFailed, setImageFailed] = useState(!event.image);
   const isUnknown = event.status?.toLowerCase() === "en incógnita";
+
+  useEffect(() => {
+    setEditData(event);
+  }, [event]);
+
+  const handleSave = () => {
+    onUpdate(event.id, editData);
+    setIsEditing(false);
+  };
+
+  const handleCancel = () => {
+    setEditData(event);
+    setIsEditing(false);
+  };
 
   return (
     <Reveal delay={index * 0.08}>
@@ -76,7 +190,6 @@ const EventCard = ({ event, index }: { event: EventItem; index: number }) => {
         className="card-hover overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 group h-full flex flex-col bg-background/70 backdrop-blur-sm shadow-sm hover:shadow-lg"
         role="article"
         aria-labelledby={`event-title-${event.id}`}
-        tabIndex={0}
       >
         <div className="relative">
           <div className="h-2.5 bg-foreground/10 animate-gradient-x"></div>
@@ -85,7 +198,7 @@ const EventCard = ({ event, index }: { event: EventItem; index: number }) => {
               <div className="relative flex h-full w-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-primary/10 via-card to-muted/45">
                 <div className="absolute inset-0 border border-border/60" aria-hidden="true" />
                 <Flag className="h-9 w-9 text-primary" aria-hidden="true" />
-                <p className="text-sm font-semibold text-muted-foreground">{event.type}</p>
+                <p className="text-sm font-semibold text-muted-foreground">{isEditing ? editData.type : event.type}</p>
               </div>
             ) : (
               <img
@@ -105,88 +218,131 @@ const EventCard = ({ event, index }: { event: EventItem; index: number }) => {
                 aria-label="Estado del evento"
               >
                 <EyeOff className="h-3 w-3" />
-                {event.status}
+                {isEditing ? editData.status : event.status}
               </span>
             )}
           </div>
         </div>
         <CardHeader className="space-y-3 p-4">
           <div className="flex items-center justify-between gap-2">
-            <span
-              className="text-xs font-bold text-primary bg-muted/30 px-3 py-1 rounded-full"
-              aria-label="Tipo de evento"
-            >
-              {event.type}
-            </span>
-            {!isUnknown && (
-              <span
-                className="text-xs bg-muted/30 text-foreground px-3 py-1 rounded-full font-semibold border border-border"
-                aria-label="Estado del evento"
-              >
-                {event.status}
+            {isEditing ? (
+              <Input
+                value={editData.type}
+                onChange={(e) => setEditData({ ...editData, type: e.target.value })}
+                className="text-xs font-bold px-2 py-1 h-auto"
+                placeholder="Tipo"
+              />
+            ) : (
+              <span className="text-xs font-bold text-primary bg-muted/30 px-3 py-1 rounded-full">
+                {event.type}
               </span>
             )}
+            <div className="flex items-center gap-2">
+              {isEditing ? (
+                <Input
+                  value={editData.status}
+                  onChange={(e) => setEditData({ ...editData, status: e.target.value })}
+                  className="text-xs px-2 py-1 h-auto"
+                  placeholder="Estado"
+                />
+              ) : (
+                !isUnknown && (
+                  <span className="text-xs bg-muted/30 text-foreground px-3 py-1 rounded-full font-semibold border border-border">
+                    {event.status}
+                  </span>
+                )
+              )}
+              {isAdmin && !isEditing && (
+                <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => setIsEditing(true)}>
+                  <Pencil className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
           </div>
-          <CardTitle
-            id={`event-title-${event.id}`}
-            className="text-xl leading-tight text-foreground hover:text-primary transition-colors"
-          >
-            {event.title}
-          </CardTitle>
+          {isEditing ? (
+            <Input
+              value={editData.title}
+              onChange={(e) => setEditData({ ...editData, title: e.target.value })}
+              className="text-xl font-bold"
+              placeholder="Título"
+            />
+          ) : (
+            <CardTitle
+              id={`event-title-${event.id}`}
+              className="text-xl leading-tight text-foreground"
+            >
+              {event.title}
+            </CardTitle>
+          )}
         </CardHeader>
         <CardContent className="space-y-3 p-4 pt-0 flex-grow">
-          <TooltipProvider>
-            <div className="space-y-3 text-sm text-foreground">
-              <Tooltip>
-                <TooltipTrigger className="flex items-start text-left w-full text-foreground hover:text-primary transition-colors">
-                  <Calendar
-                    className="w-4 h-4 mr-3 mt-0.5 flex-shrink-0 transition-transform duration-300 hover:scale-110"
-                    aria-hidden="true"
+            <div className="space-y-2 text-sm text-foreground">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-primary shrink-0" />
+                {isEditing ? (
+                  <Input
+                    value={editData.date}
+                    onChange={(e) => setEditData({ ...editData, date: e.target.value })}
+                    className="flex-1 h-7 text-sm"
+                    placeholder="Fecha"
                   />
+                ) : (
                   <span>{event.date}</span>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Fecha del evento</p>
-                </TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger className="flex items-start text-left w-full text-foreground hover:text-primary transition-colors">
-                  <MapPin
-                    className="w-4 h-4 mr-3 mt-0.5 flex-shrink-0 transition-transform duration-300 hover:scale-110"
-                    aria-hidden="true"
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-primary shrink-0" />
+                {isEditing ? (
+                  <Input
+                    value={editData.location}
+                    onChange={(e) => setEditData({ ...editData, location: e.target.value })}
+                    className="flex-1 h-7 text-sm"
+                    placeholder="Ubicación"
                   />
+                ) : (
                   <span>{event.location}</span>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Ubicación</p>
-                </TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger className="flex items-start text-left w-full text-foreground hover:text-primary transition-colors">
-                  <Users
-                    className="w-4 h-4 mr-3 mt-0.5 flex-shrink-0 transition-transform duration-300 hover:scale-110"
-                    aria-hidden="true"
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-primary shrink-0" />
+                {isEditing ? (
+                  <Input
+                    value={editData.participants}
+                    onChange={(e) => setEditData({ ...editData, participants: e.target.value })}
+                    className="flex-1 h-7 text-sm"
+                    placeholder="Participantes"
                   />
+                ) : (
                   <span>{event.participants}</span>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Participantes</p>
-                </TooltipContent>
-              </Tooltip>
+                )}
+              </div>
             </div>
-          </TooltipProvider>
 
-          <div className="pt-2">
-            {event.href ? (
-              <Link to={event.href}>
-                <Button className="w-full" size="sm">
-                  Entrar al evento
+          <div className="pt-2 flex gap-2">
+            {isEditing ? (
+              <>
+                <Button size="sm" className="flex-1" onClick={handleSave}>
+                  <Save className="h-3 w-3 mr-1" />
+                  Guardar
                 </Button>
-              </Link>
+                <Button size="sm" variant="outline" onClick={handleCancel}>
+                  <X className="h-3 w-3" />
+                </Button>
+              </>
             ) : (
-              <Button className="w-full" size="sm" variant="outline" disabled>
-                En preparación
-              </Button>
+              <>
+                {(event as any).href ? (
+                  <Link to={(event as any).href} className="flex-1">
+                    <Button className="w-full" size="sm">
+                      Entrar al evento
+                    </Button>
+                  </Link>
+                ) : (
+                  <Button className="w-full" size="sm" variant="outline" disabled>
+                    En preparación
+                  </Button>
+                )}
+              </>
             )}
           </div>
         </CardContent>
@@ -195,7 +351,9 @@ const EventCard = ({ event, index }: { event: EventItem; index: number }) => {
   );
 };
 
-const MobileEventAccordion = ({ events }: { events: EventItem[] }) => {
+const MobileEventAccordion = ({ events }: { 
+  events: EventItem[];
+}) => {
   return (
     <div className="md:hidden space-y-3 mb-12">
       <Accordion type="single" collapsible className="space-y-3">
@@ -269,16 +427,88 @@ const MobileEventAccordion = ({ events }: { events: EventItem[] }) => {
 const Events = () => {
   const [events, setEvents] = useState<EventItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { user } = useUser();
+  const isAdmin = checkIsAdmin(user);
+
+  const isSupabaseMode = MODE === "supabase";
 
   useEffect(() => {
-    // Simula la carga de datos desde una API
-    const timer = setTimeout(() => {
-      setEvents(sampleEvents);
+    async function loadEventsData() {
+      if (isSupabaseMode) {
+        try {
+          const { data, error } = await (supabase as any)
+            .from("eventos")
+            .select("*")
+            .order("sort_order", { ascending: true });
+          
+          if (error) {
+            console.error("Error loading eventos from supabase:", error);
+            setEvents(defaultEvents);
+          } else if (data && data.length > 0) {
+            setEvents(data as EventItem[]);
+          } else {
+            setEvents(defaultEvents);
+          }
+        } catch (e) {
+          console.error("Error:", e);
+          setEvents(defaultEvents);
+        }
+      } else {
+        setEvents(loadEventsLocal());
+      }
       setIsLoading(false);
-    }, 1500); // Simula un retraso de 1.5 segundos
+    }
 
-    return () => clearTimeout(timer);
-  }, []);
+    loadEventsData();
+  }, [isSupabaseMode]);
+
+  const handleUpdate = useCallback(async (id: number, updates: Partial<EventItem>) => {
+    if (isSupabaseMode) {
+      try {
+        const { error } = await (supabase as any)
+          .from("eventos")
+          .update({ ...updates, updated_at: new Date().toISOString() })
+          .eq("id", id);
+        
+        if (error) {
+          console.error("Error updating evento:", error);
+          return;
+        }
+        
+        setEvents((prev) => prev.map((e) => (e.id === id ? { ...e, ...updates } : e)));
+      } catch (e) {
+        console.error("Error:", e);
+      }
+    } else {
+      setEvents((prev) => {
+        const updated = prev.map((e) => (e.id === id ? { ...e, ...updates } : e));
+        saveEventsLocal(updated);
+        return updated;
+      });
+    }
+  }, [isSupabaseMode]);
+
+  const handleReset = useCallback(async () => {
+    if (isSupabaseMode) {
+      try {
+        await (supabase as any).from("eventos").delete().neq("id", "0");
+        
+        const { error } = await (supabase as any).from("eventos").insert(
+          defaultEvents.map((e) => ({ ...e, updated_at: new Date().toISOString() }))
+        );
+        
+        if (error) {
+          console.error("Error resetting eventos:", error);
+        }
+        setEvents(defaultEvents);
+      } catch (e) {
+        console.error("Error:", e);
+      }
+    } else {
+      saveEventsLocal(defaultEvents);
+      setEvents(defaultEvents);
+    }
+  }, [isSupabaseMode]);
 
   return (
     <section
@@ -288,9 +518,16 @@ const Events = () => {
     >
       <div className="mb-8 text-center">
         <Reveal>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold">
-            Próximos Eventos
-          </h2>
+          <div className="flex items-center justify-center gap-3">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold">
+              Próximos Eventos
+            </h2>
+            {isAdmin && (
+              <Button variant="outline" size="sm" onClick={handleReset} className="text-xs">
+                Restablecer
+              </Button>
+            )}
+          </div>
           <p className="text-muted-foreground mt-2 text-lg">
             Mantente al día con nuestras actividades y campamentos.
           </p>
@@ -317,7 +554,13 @@ const Events = () => {
           <MobileEventAccordion events={events} />
           <div className="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mb-12">
             {events.map((event, index) => (
-              <EventCard key={event.id} event={event} index={index} />
+              <EventCard 
+                key={event.id} 
+                event={event} 
+                index={index} 
+                isAdmin={isAdmin}
+                onUpdate={handleUpdate}
+              />
             ))}
           </div>
         </>
@@ -397,7 +640,3 @@ const Events = () => {
 };
 
 export default Events;
-
-
-
-

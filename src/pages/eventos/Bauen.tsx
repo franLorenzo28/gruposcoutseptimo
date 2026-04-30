@@ -1,8 +1,17 @@
-﻿// Navigation y Footer son globales en App.tsx
-import { Card, CardContent } from "@/components/ui/card";
+﻿import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Flag, Calendar, Instagram, Phone } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import {
+  Flag,
+  Calendar,
+  Instagram,
+  Phone,
+  Users,
+  Timer,
+  ArrowRight,
+} from "lucide-react";
+import { Reveal } from "@/components/Reveal";
+import { PageGridBackground } from "@/components/PageGridBackground";
 
 const Bauen = () => {
   const actividades = [
@@ -39,35 +48,37 @@ const Bauen = () => {
   ];
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
-      {/* Background decorativo global */}
-      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-muted/20 dark:bg-muted/30 rounded-full blur-3xl animate-blob"></div>
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-muted/20 dark:bg-muted/30 rounded-full blur-3xl animate-blob animation-delay-2000"></div>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-muted/15 dark:bg-muted/20 rounded-full blur-3xl animate-blob animation-delay-4000"></div>
-      </div>
-
+    <PageGridBackground>
       {/* Hero Section */}
-      <section className="pt-24 sm:pt-28 md:pt-32 pb-12 sm:pb-16 bg-gradient-to-b from-background via-background/95 to-muted/25 relative">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 bg-muted/30 backdrop-blur-sm rounded-full mb-4 sm:mb-6 shadow-sm">
-              <Flag className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-              <span className="text-primary font-semibold text-xs sm:text-sm md:text-base">
+      <section className="relative overflow-hidden pt-24 sm:pt-32 pb-16 sm:pb-20 bg-gradient-to-b from-background via-background/95 to-muted/25">
+        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+          <div className="bg-blob w-64 h-64 sm:w-96 sm:h-96 bg-primary/5 -top-12 -right-12 float-slow" />
+          <div className="bg-blob w-48 h-48 sm:w-72 sm:h-72 bg-muted/30 -bottom-16 -left-16 drift-slow" />
+        </div>
+
+        <div className="max-w-5xl px-4 sm:px-6">
+          <Reveal className="text-center">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-muted/40 backdrop-blur-sm rounded-full mb-6">
+              <Flag className="w-4 h-4 text-primary" />
+              <span className="text-primary font-semibold text-sm">
                 Desde 2004 - Competencia entre Grupos Scouts
               </span>
             </div>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 sm:mb-6">
-              BAUEN
+
+            <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black mb-4 tracking-tight">
+              <span className="bg-gradient-to-r from-primary via-primary to-primary/70 bg-clip-text text-transparent">
+                BAUEN
+              </span>
             </h1>
-            <p className="text-base sm:text-xl md:text-2xl font-medium text-primary mb-6">
+
+            <p className="text-xl sm:text-2xl md:text-3xl font-medium text-primary/80 mb-8">
               Construyendo juntos los ideales del Escultismo
             </p>
-            
-            <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 sm:gap-4 mb-8 px-4">
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
               <Button
                 size="lg"
-                className="gap-2 w-full sm:w-auto"
+                className="gap-2.5 w-full sm:w-auto min-w-[200px]"
                 onClick={() => window.open('https://www.instagram.com/bauen.septimo/', '_blank')}
               >
                 <Instagram className="w-5 h-5" />
@@ -76,7 +87,7 @@ const Bauen = () => {
               <Button
                 size="lg"
                 variant="outline"
-                className="gap-2 w-full sm:w-auto"
+                className="gap-2.5 w-full sm:w-auto min-w-[200px]"
                 onClick={() => window.open('tel:098138668', '_blank')}
               >
                 <Phone className="w-5 h-5" />
@@ -84,136 +95,171 @@ const Bauen = () => {
               </Button>
             </div>
 
-            <Button
-              size="lg"
-              className="gap-2 text-sm sm:text-base"
-              variant="secondary"
-            >
-              <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
+            <Badge variant="secondary" className="text-sm px-4 py-1.5 gap-2">
+              <Calendar className="w-4 h-4" />
               Próxima Edición 2026
-            </Button>
-          </div>
+            </Badge>
+          </Reveal>
         </div>
       </section>
 
       {/* Acerca del Evento */}
-      <section className="section-padding bg-gradient-to-b from-background via-background/95 to-muted/25 relative">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="max-w-5xl mx-auto">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-8 text-center">
+      <section className="py-12 sm:py-16">
+        <div className="max-w-5xl px-4 sm:px-6">
+          <Reveal className="text-center mb-10">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3">
               Acerca del Evento
             </h2>
-            
-            <Card className="card-hover border-2 shadow-xl mb-8">
-              <CardContent className="p-6 sm:p-8 md:p-10">
-                <p className="text-lg md:text-xl text-muted-foreground leading-relaxed mb-6">
-                  <span className="font-bold text-primary">Bauen</span> significa <span className="italic">"construir"</span>. 
+            <div className="w-16 h-1 bg-primary/30 mx-auto rounded-full" />
+          </Reveal>
+
+          <Reveal>
+            <Card className="border-border/70 bg-card/50 backdrop-blur-sm shadow-xl">
+              <CardContent className="p-6 sm:p-8 md:p-10 space-y-6">
+                <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">
+                  <span className="font-bold text-primary text-2xl">Bauen</span> significa <span className="italic font-medium">"construir"</span>. 
                   El objetivo del Bauen es trabajar en equipo, desarrollando técnicas de pionerismo y, 
                   por supuesto, divirtiéndonos, ayudando a continuar construyendo juntos los ideales del Escultismo.
                 </p>
-                <p className="text-lg md:text-xl text-muted-foreground leading-relaxed mb-6">
+
+                <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">
                   Bauen es una excusa para conocer a otros grupos de nuestro país, otras formas de hacer escultismo,
                   es una instancia para practicar la empatía, la tolerancia y sentir el verdadero espíritu scout
                   del que todos tenemos conocimiento.
                 </p>
+
                 <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">
                   Si bien es un evento de competencia, no falta el apoyo, el cuidado por el otro, la hermandad y, 
                   sobre todo, la aplicación de todos nuestros valores siempre bajo la mirada de nuestra Ley y Promesa Scout.
                 </p>
               </CardContent>
             </Card>
+          </Reveal>
 
-            {/* Actividades Destacadas */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-              {actividades.map((act, idx) => (
-                <Card key={idx} className="text-center card-hover">
+          {/* Actividades Destacadas */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-10">
+            {actividades.map((act, idx) => (
+              <Reveal key={idx} delay={idx * 0.1}>
+                <Card className="text-center card-hover border-border/70 bg-card/50">
                   <CardContent className="p-6">
-                    <div className="text-4xl mb-3">{act.icon}</div>
-                    <p className="font-semibold text-lg">{act.nombre}</p>
+                    <div className="text-5xl mb-3">{act.icon}</div>
+                    <p className="font-bold text-lg">{act.nombre}</p>
                   </CardContent>
                 </Card>
-              ))}
-            </div>
+              </Reveal>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Nuestras Ramas - Rediseño */}
-      <section className="section-padding bg-gradient-to-b from-background via-background/95 to-muted/25 relative">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
+      {/* Nuestras Ramas */}
+      <section className="py-12 sm:py-16 bg-gradient-to-b from-muted/20 to-transparent">
+        <div className="max-w-5xl px-4 sm:px-6">
+          <Reveal className="text-center mb-10">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3">
               Nuestras Ramas
             </h2>
-            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-lg md:text-xl text-muted-foreground">
               Cada rama vive BAUEN de una forma única
             </p>
-          </div>
+            <div className="w-16 h-1 bg-primary/30 mx-auto rounded-full mt-3" />
+          </Reveal>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 max-w-7xl mx-auto">
+          <div className="space-y-4">
             {ramas.map((rama, idx) => (
-              <Card 
-                key={idx} 
-                className="card-hover overflow-hidden border-2 hover:shadow-2xl transition-all duration-300"
-                style={{ borderColor: rama.color + '40' }}
-              >
-                <div 
-                  className="h-3" 
-                  style={{ backgroundColor: rama.color }}
-                />
-                <CardContent className="p-6">
-                  <h3 
-                    className="text-2xl font-bold mb-3"
-                    style={{ color: rama.color }}
-                  >
-                    {rama.nombre}
-                  </h3>
-                  
-                  <div className="space-y-3 mb-4">
-                    <Badge variant="outline" className="text-xs sm:text-sm">
-                      Actividad de {rama.duracion}
-                    </Badge>
-                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                      {rama.descripcion}
-                    </p>
-                  </div>
+              <Reveal key={idx} delay={idx * 0.1}>
+                <Card 
+                  className="card-hover overflow-hidden border-2 group transition-all duration-300 hover:shadow-xl"
+                  style={{ borderColor: rama.color + '40' }}
+                >
+                  <div 
+                    className="h-2 transition-all group-hover:h-3"
+                    style={{ backgroundColor: rama.color }}
+                  />
+                  <CardContent className="p-5 sm:p-6">
+                    <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+                      {/* Icon & Info */}
+                      <div className="flex items-center gap-3 sm:flex-col sm:items-center">
+                        <div 
+                          className="flex h-12 w-12 items-center justify-center rounded-full shrink-0"
+                          style={{ backgroundColor: rama.color + '20' }}
+                        >
+                          <Users className="h-6 w-6" style={{ color: rama.color }} />
+                        </div>
+                        <div className="flex-1 sm:hidden">
+                          <h3 
+                            className="text-xl font-bold"
+                            style={{ color: rama.color }}
+                          >
+                            {rama.nombre}
+                          </h3>
+                        </div>
+                      </div>
 
-                  <div className="pt-4 border-t">
-                    <p className="text-xs text-muted-foreground">
-                      📸 Las bases de esta competencia se encuentran en la descripción de Instagram del evento:{" "}
-                      <a 
-                        href="https://www.instagram.com/bauen.septimo/" 
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline font-semibold"
-                      >
-                        @bauen.septimo
-                      </a>
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <h3 
+                          className="text-xl font-bold mb-2 hidden sm:block"
+                          style={{ color: rama.color }}
+                        >
+                          {rama.nombre}
+                        </h3>
+                        
+                        <div className="flex items-center gap-2 mb-3">
+                          <Timer className="h-4 w-4 text-muted-foreground" />
+                          <Badge variant="outline" className="text-xs">
+                            {rama.duracion}
+                          </Badge>
+                        </div>
+
+                        <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+                          {rama.descripcion}
+                        </p>
+
+                        <div className="mt-4 pt-4 border-t border-border/50">
+                          <p className="text-xs text-muted-foreground">
+                            📸 Bases en{" "}
+                            <a 
+                              href="https://www.instagram.com/bauen.septimo/" 
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-primary hover:underline font-semibold inline-flex items-center gap-1"
+                            >
+                              @bauen.septimo
+                              <ArrowRight className="h-3 w-3" />
+                            </a>
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Reveal>
             ))}
           </div>
+        </div>
+      </section>
 
-          {/* Información adicional */}
-          <div className="max-w-2xl mx-auto mt-12 text-center">
-            <Card className="card-hover border-primary/20">
-              <CardContent className="p-6">
-                <p className="text-muted-foreground mb-4">
+      {/* CTA Final */}
+      <section className="py-12 sm:py-16">
+        <div className="max-w-5xl px-4 sm:px-6">
+          <Reveal>
+            <Card className="border-primary/20 bg-gradient-to-br from-primary/5 via-background to-muted/30 shadow-xl">
+              <CardContent className="p-8 sm:p-10 text-center">
+                <p className="text-lg sm:text-xl font-medium text-muted-foreground mb-6">
                   ¿Querés participar con tu grupo?
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Button 
                     variant="outline" 
-                    className="gap-2"
+                    className="gap-2 min-w-[200px]"
                     onClick={() => window.open('https://www.instagram.com/bauen.septimo/', '_blank')}
                   >
                     <Instagram className="w-4 h-4" />
                     Seguinos en Instagram
                   </Button>
                   <Button 
-                    className="gap-2"
+                    className="gap-2 min-w-[200px]"
                     onClick={() => window.open('tel:098138668', '_blank')}
                   >
                     <Phone className="w-4 h-4" />
@@ -222,16 +268,11 @@ const Bauen = () => {
                 </div>
               </CardContent>
             </Card>
-          </div>
+          </Reveal>
         </div>
       </section>
-
-      {/* Footer global en App.tsx */}
-    </div>
+    </PageGridBackground>
   );
 };
+
 export default Bauen;
-
-
-
-
