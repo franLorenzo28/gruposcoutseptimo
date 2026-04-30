@@ -1,4 +1,5 @@
 ﻿import { BrowserRouter } from "react-router-dom";
+import { HelmetProvider } from "react-helmet-async";
 import NavegacionPrincipal from "@/components/layout/NavegacionPrincipal";
 import PieDePagina from "@/components/layout/PieDePagina";
 import { NewsPopup } from "@/components/layout/NewsPopup";
@@ -14,34 +15,33 @@ import FondoAnimado from "@/components/layout/FondoAnimado";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import SaltarAlContenido from "@/components/layout/SaltarAlContenido";
 import { PageGridBackground } from "@/components/PageGridBackground";
+import Seo from "@/components/Seo";
 
 const App = () => (
   <ErrorBoundary>
     <AppProviders>
       <Toaster />
       <Sonner />
-      <BrowserRouter
-        future={{
-          v7_startTransition: true,
-          v7_relativeSplatPath: true,
-        }}
-      >
-        <FondoAnimado />
-        <NavegacionPrincipal />
-        <NewsPopup />
-        <ScrollAlInicio />
-        <SaltarAlContenido />
-        <BotonVolverGlobal />
-        <NovedadesRecientes />
-        <PageGridBackground>
-          <main id="main-content" tabIndex={-1} className="min-h-screen">
-            <TransicionRuta>
-              <AppRoutes />
-            </TransicionRuta>
-          </main>
-        </PageGridBackground>
-        <PieDePagina />
-      </BrowserRouter>
+      <HelmetProvider>
+        <BrowserRouter>
+          <Seo />
+          <FondoAnimado />
+          <NavegacionPrincipal />
+          <NewsPopup />
+          <ScrollAlInicio />
+          <SaltarAlContenido />
+          <BotonVolverGlobal />
+          <NovedadesRecientes />
+          <PageGridBackground>
+            <main id="main-content" tabIndex={-1} className="min-h-screen">
+              <TransicionRuta>
+                <AppRoutes />
+              </TransicionRuta>
+            </main>
+          </PageGridBackground>
+          <PieDePagina />
+        </BrowserRouter>
+      </HelmetProvider>
     </AppProviders>
   </ErrorBoundary>
 );

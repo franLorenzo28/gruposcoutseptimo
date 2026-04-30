@@ -2,9 +2,9 @@ import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, Megaphone, RefreshCw } from "lucide-react";
+import { Loader2, Megaphone, RefreshCw, Trash2 } from "lucide-react";
 import type { MiembroRama } from "@/lib/member-auth";
-import { listRamaBroadcast, publishRamaBroadcast } from "@/lib/rama-difusion";
+import { deleteRamaBroadcast, listRamaBroadcast, publishRamaBroadcast } from "@/lib/rama-difusion";
 import { useToast } from "@/hooks/use-toast";
 
 interface RamaBroadcastChannelProps {
@@ -51,6 +51,28 @@ export function RamaBroadcastChannel({
         error instanceof Error
           ? error.message
           : "No se pudo publicar el mensaje de difusion";
+      toast({
+        title: "Error",
+        description,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (messageId: string) => deleteRamaBroadcast(rama, messageId),
+    onSuccess: () => {
+      broadcastQuery.refetch();
+      toast({
+        title: "Mensaje eliminado",
+        description: "La difusion fue borrada para la unidad.",
+      });
+    },
+    onError: (error: unknown) => {
+      const description =
+        error instanceof Error
+          ? error.message
+          : "No se pudo eliminar el mensaje de difusion";
       toast({
         title: "Error",
         description,
@@ -139,7 +161,23 @@ export function RamaBroadcastChannel({
                 (message.username ? `@${message.username}` : "Educador/a");
               return (
                 <article key={message.id} className="rounded-lg border border-border/60 bg-background/80 p-2.5">
-                  <p className="whitespace-pre-wrap text-sm leading-relaxed">{message.content}</p>
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="whitespace-pre-wrap text-sm leading-relaxed">{message.content}</p>
+                    {isRamaAdmin ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        onClick={() => deleteMutation.mutate(message.id)}
+                        disabled={deleteMutation.isPending}
+                        title="Eliminar mensaje"
+                        aria-label="Eliminar mensaje"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    ) : null}
+                  </div>
                   <p className="mt-2 text-xs text-muted-foreground">
                     {author} · {formatDateTime(message.created_at)}
                   </p>

@@ -23,12 +23,14 @@ const errorMessages = {
  */
 export const profileSchema = z.object({
   nombre_completo: z
-    .string({ required_error: errorMessages.required })
+    .string()
+    .min(1, errorMessages.required)
     .min(2, errorMessages.minLength(2))
     .max(100, errorMessages.maxLength(100)),
 
   username: z
-    .string({ required_error: errorMessages.required })
+    .string()
+    .min(1, errorMessages.required)
     .min(3, errorMessages.minLength(3))
     .max(30, errorMessages.maxLength(30))
     .regex(/^[a-zA-Z0-9_-]+$/, "Solo letras, números, guiones y guiones bajos"),
@@ -71,7 +73,7 @@ export type ProfileFormData = z.infer<typeof profileSchema>;
  */
 export const emailSchema = z.object({
   email: z
-    .string({ required_error: errorMessages.required })
+    .string().min(1, errorMessages.required)
     .email(errorMessages.email)
     .max(254, errorMessages.maxLength(254)),
 });
@@ -84,14 +86,14 @@ export type EmailFormData = z.infer<typeof emailSchema>;
 export const passwordSchema = z
   .object({
     password: z
-      .string({ required_error: errorMessages.required })
+      .string().min(1, errorMessages.required)
       .min(8, errorMessages.minLength(8))
       .max(128, errorMessages.maxLength(128))
       .regex(
         /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
         "Debe contener al menos una mayúscula, una minúscula y un número",
       ),
-    confirmPassword: z.string({ required_error: errorMessages.required }),
+    confirmPassword: z.string().min(1, errorMessages.required),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Las contraseñas no coinciden",
@@ -107,14 +109,14 @@ export const registerSchema = z
   .object({
     email: emailSchema.shape.email,
     password: z
-      .string({ required_error: errorMessages.required })
+      .string().min(1, errorMessages.required)
       .min(8, errorMessages.minLength(8))
       .max(128, errorMessages.maxLength(128))
       .regex(
         /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
         "Debe contener al menos una mayúscula, una minúscula y un número",
       ),
-    confirmPassword: z.string({ required_error: errorMessages.required }),
+    confirmPassword: z.string().min(1, errorMessages.required),
     nombre_completo: profileSchema.shape.nombre_completo,
     username: profileSchema.shape.username,
     terms: z.boolean().refine((val) => val === true, {
@@ -134,7 +136,7 @@ export type RegisterFormData = z.infer<typeof registerSchema>;
 export const loginSchema = z.object({
   email: emailSchema.shape.email,
   password: z
-    .string({ required_error: errorMessages.required })
+    .string().min(1, errorMessages.required)
     .min(1, errorMessages.required),
 });
 
@@ -145,7 +147,7 @@ export type LoginFormData = z.infer<typeof loginSchema>;
  */
 export const messageSchema = z.object({
   content: z
-    .string({ required_error: errorMessages.required })
+    .string().min(1, errorMessages.required)
     .min(1, "El mensaje no puede estar vacío")
     .max(2000, errorMessages.maxLength(2000)),
 });
@@ -157,7 +159,7 @@ export type MessageFormData = z.infer<typeof messageSchema>;
  */
 export const groupSchema = z.object({
   name: z
-    .string({ required_error: errorMessages.required })
+    .string().min(1, errorMessages.required)
     .min(3, errorMessages.minLength(3))
     .max(50, errorMessages.maxLength(50)),
 
@@ -177,7 +179,7 @@ export type GroupFormData = z.infer<typeof groupSchema>;
  */
 export const eventSchema = z.object({
   title: z
-    .string({ required_error: errorMessages.required })
+    .string().min(1, errorMessages.required)
     .min(3, errorMessages.minLength(3))
     .max(100, errorMessages.maxLength(100)),
 
@@ -188,7 +190,7 @@ export const eventSchema = z.object({
     .nullable(),
 
   event_date: z
-    .string({ required_error: errorMessages.required })
+    .string().min(1, errorMessages.required)
     .refine((date) => !isNaN(new Date(date).getTime()), {
       message: errorMessages.date,
     }),
@@ -233,7 +235,7 @@ export const imageFileSchema = z.custom<File>((file) => {
  */
 export const urlSchema = z.object({
   url: z
-    .string({ required_error: errorMessages.required })
+    .string().min(1, errorMessages.required)
     .url(errorMessages.url),
 });
 
@@ -267,7 +269,7 @@ export function getFieldError(
 ): string | undefined {
   if (!errors) return undefined;
 
-  const fieldError = errors.errors.find(
+  const fieldError = errors.issues.find(
     (err) => err.path.join(".") === fieldName,
   );
 
@@ -282,7 +284,7 @@ export function getFormErrors(
 ): Record<string, string> {
   if (!errors) return {};
 
-  return errors.errors.reduce(
+  return errors.issues.reduce(
     (acc, err) => {
       const path = err.path.join(".");
       acc[path] = err.message;
@@ -299,7 +301,7 @@ export const narrativaBloqueSchema = z.object({
   id: z.string().optional(),
   tipo: z.enum(["texto", "imagen"]),
   contenido: z
-    .string({ required_error: errorMessages.required })
+    .string().min(1, errorMessages.required)
     .min(1, "El contenido no puede estar vacío"),
 });
 
@@ -310,17 +312,17 @@ export type NarrativaBloqueFormData = z.infer<typeof narrativaBloqueSchema>;
  */
 export const narrativaSchema = z.object({
   titulo: z
-    .string({ required_error: errorMessages.required })
+    .string().min(1, errorMessages.required)
     .min(5, errorMessages.minLength(5))
     .max(200, errorMessages.maxLength(200)),
 
   year_section: z
-    .string({ required_error: errorMessages.required })
+    .string().min(1, errorMessages.required)
     .min(4, "Debe ingresar un año (ej: 1964 o JUN-1964)")
     .max(20, errorMessages.maxLength(20)),
 
   fecha_publicacion: z
-    .string({ required_error: errorMessages.required })
+    .string().min(1, errorMessages.required)
     .refine(
       (date) => {
         const d = new Date(date);

@@ -1,7 +1,7 @@
 ﻿import { useEffect, useState, useMemo, ReactNode } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { isLocalBackend, getAuthUser } from "@/lib/backend";
+import { getAuthUser } from "@/lib/backend";
 import { useDebounce } from "@/hooks/use-debounce";
 import UserAvatar from "@/components/UserAvatar";
 import EmailVerificationGuard from "@/components/EmailVerificationGuard";
@@ -9,7 +9,6 @@ import {
   useProfiles,
   useThreads,
   useGroups,
-  usePresence,
   type PresenceStatus,
 } from "@/hooks/useQueryData";
 import { Input } from "@/components/ui/input";
@@ -140,26 +139,8 @@ const Usuarios = () => {
     Map<string, PresenceStatus>
   >(new Map());
 
-  const presenceIds = useMemo(
-    () => profiles.map((p: Profile) => p.user_id).sort(),
-    [profiles],
-  );
-
-  const { data: presenceRows = [] } = usePresence(
-    presenceIds,
-    activeTab === "personas" && isLocalBackend(),
-  );
-
-  const presenceById = useMemo(() => {
-    const map = new Map<string, PresenceStatus>();
-    for (const row of presenceRows) {
-      map.set(row.user_id, row.status);
-    }
-    return map;
-  }, [presenceRows]);
-
   useEffect(() => {
-    if (isLocalBackend() || !currentUserId) return;
+    if (!currentUserId) return;
 
     const channel = supabase.channel("presence:comuni7", {
       config: { presence: { key: `viewer-${currentUserId}` } },
@@ -896,15 +877,10 @@ const Usuarios = () => {
               <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {filteredProfiles.map((profile) => {
                   const isCurrentUser = profile.user_id === currentUserId;
-                  const localStatus = presenceById.get(profile.user_id);
                   const supaStatus = supabasePresenceById.get(profile.user_id);
-                  const status = isLocalBackend()
-                    ? isCurrentUser
-                      ? localStatus || "active"
-                      : localStatus || "offline"
-                    : isCurrentUser
-                      ? supaStatus || "active"
-                      : supaStatus || "offline";
+                  const status = isCurrentUser
+                    ? supaStatus || "active"
+                    : supaStatus || "offline";
                   const presence = getPresenceMeta(status);
                   return (
                     <Card

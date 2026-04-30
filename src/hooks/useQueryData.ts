@@ -4,9 +4,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { isLocalBackend, apiFetch } from "@/lib/backend";
 import { listGroups } from "@/lib/groups";
 import { useToast } from "@/hooks/use-toast";
 
@@ -23,42 +21,16 @@ export type PresenceEntry = {
 // ============================================================================
 
 export function useProfiles() {
-  const queryClient = useQueryClient();
-
-  const query = useQuery({
+  return useQuery({
     queryKey: ["profiles"],
     queryFn: async () => {
-      if (isLocalBackend()) {
-        return apiFetch("/profiles/directory?limit=200&offset=0");
-      }
       const { data, error } = await supabase.rpc("list_profiles_directory");
       if (error) throw error;
       return data || [];
     },
-    staleTime: 5 * 60 * 1000, // 5 minutos
+staleTime: 5 * 60 * 1000, // 5 minutos
     gcTime: 10 * 60 * 1000, // 10 minutos
   });
-
-  useEffect(() => {
-    if (isLocalBackend()) return;
-
-    const channel = supabase
-      .channel("profiles-directory-sync")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "profiles" },
-        () => {
-          void queryClient.invalidateQueries({ queryKey: ["profiles"] });
-        },
-      )
-      .subscribe();
-
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  }, [queryClient]);
-
-  return query;
 }
 
 export function useProfile(userId: string | null) {
@@ -66,9 +38,6 @@ export function useProfile(userId: string | null) {
     queryKey: ["profile", userId],
     queryFn: async () => {
       if (!userId) throw new Error("User ID required");
-      if (isLocalBackend()) {
-        return apiFetch(`/profiles/${userId}`);
-      }
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
@@ -76,48 +45,6 @@ export function useProfile(userId: string | null) {
         .single();
       if (error) throw error;
       return data;
-    },
-    enabled: !!userId,
-    staleTime: 3 * 60 * 1000,
-  });
-}
-
-// ============================================================================
-// FOLLOWS
-// ============================================================================
-
-export function useFollows(userId: string | null) {
-  return useQuery({
-    queryKey: ["follows", userId],
-    queryFn: async () => {
-      if (!userId) throw new Error("User ID required");
-      
-      if (isLocalBackend()) {
-        const iFollow = await apiFetch(`/follows?follower_id=${userId}&status=accepted`);
-        const followsMe = await apiFetch(`/follows?followed_id=${userId}&status=accepted`);
-        return { iFollow: iFollow || [], followsMe: followsMe || [] };
-      }
-
-      const [iFollowRes, followsMeRes] = await Promise.all([
-        supabase
-          .from("follows")
-          .select("followed_id")
-          .eq("follower_id", userId)
-          .eq("status", "accepted"),
-        supabase
-          .from("follows")
-          .select("follower_id")
-          .eq("followed_id", userId)
-          .eq("status", "accepted"),
-      ]);
-
-      if (iFollowRes.error) throw iFollowRes.error;
-      if (followsMeRes.error) throw followsMeRes.error;
-
-      return {
-        iFollow: iFollowRes.data || [],
-        followsMe: followsMeRes.data || [],
-      };
     },
     enabled: !!userId,
     staleTime: 2 * 60 * 1000,
@@ -132,9 +59,6 @@ export function useThreads(enabled: boolean = true) {
   return useQuery({
     queryKey: ["threads"],
     queryFn: async () => {
-      if (isLocalBackend()) {
-        return apiFetch("/threads");
-      }
       const { data, error } = await supabase
         .from("threads")
         .select("*")
@@ -152,9 +76,6 @@ export function useThreadComments(threadId: string | null) {
     queryKey: ["thread-comments", threadId],
     queryFn: async () => {
       if (!threadId) throw new Error("Thread ID required");
-      if (isLocalBackend()) {
-        return apiFetch(`/threads/${threadId}/comments`);
-      }
       const { data, error } = await supabase
         .from("thread_comments")
         .select("*")
@@ -187,13 +108,6 @@ export function usePresence(userIds: string[], enabled: boolean = true) {
     queryKey: ["presence", sortedIds.join(",")],
     queryFn: async () => {
       if (!enabled || sortedIds.length === 0) return [] as PresenceEntry[];
-
-      if (isLocalBackend()) {
-        const ids = encodeURIComponent(sortedIds.join(","));
-        const rows = (await apiFetch(`/presence?ids=${ids}`)) as PresenceEntry[];
-        return rows || [];
-      }
-
       return sortedIds.map((id) => ({
         user_id: id,
         status: "offline" as const,
@@ -201,9 +115,7 @@ export function usePresence(userIds: string[], enabled: boolean = true) {
       }));
     },
     enabled: enabled && sortedIds.length > 0,
-    staleTime: 15 * 1000,
-    refetchInterval: enabled ? 20 * 1000 : false,
-    refetchOnWindowFocus: true,
+    staleTime: Infinity,
   });
 }
 
@@ -216,9 +128,6 @@ export function useConversations(userId: string | null) {
     queryKey: ["conversations", userId],
     queryFn: async () => {
       if (!userId) throw new Error("User ID required");
-      if (isLocalBackend()) {
-        return apiFetch("/conversations");
-      }
       // @ts-ignore - conversations table not in generated types
       const { data, error } = await (supabase as any)
         .from("conversations")
@@ -238,9 +147,6 @@ export function useMessages(conversationId: string | null) {
     queryKey: ["messages", conversationId],
     queryFn: async () => {
       if (!conversationId) throw new Error("Conversation ID required");
-      if (isLocalBackend()) {
-        return apiFetch(`/conversations/${conversationId}/messages`);
-      }
       const { data, error } = await supabase
         .from("messages")
         .select("*")
@@ -263,9 +169,6 @@ export function useAlbums() {
   return useQuery({
     queryKey: ["albums"],
     queryFn: async () => {
-      if (isLocalBackend()) {
-        return apiFetch("/albums");
-      }
       const { data, error } = await supabase
         // @ts-ignore - albums table not in generated types
         .from("albums")
@@ -283,15 +186,12 @@ export function useAlbumImages(albumId: string | null) {
     queryKey: ["album-images", albumId],
     queryFn: async () => {
       if (!albumId) throw new Error("Album ID required");
-      if (isLocalBackend()) {
-        return apiFetch(`/albums/${albumId}/images`);
-      }
       // @ts-ignore - gallery_images table not in generated types
       const { data, error } = await supabase
         // @ts-ignore
         .from("gallery_images")
         .select("*")
-        .eq("album_id", albumId)
+        .eq("album_id" as any, albumId)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data || [];
@@ -319,17 +219,6 @@ export function useFollowMutation() {
       targetUserId: string;
       currentUserId: string;
     }) => {
-      if (isLocalBackend()) {
-        if (action === "follow") {
-          return apiFetch("/follows", {
-            method: "POST",
-            body: JSON.stringify({ followed_id: targetUserId }),
-          });
-        } else {
-          return apiFetch(`/follows/${targetUserId}`, { method: "DELETE" });
-        }
-      }
-
       if (action === "follow") {
         const { error } = await supabase.from("follows").insert({
           follower_id: currentUserId,
@@ -376,13 +265,6 @@ export function useSendMessageMutation() {
       conversationId: string;
       content: string;
     }) => {
-      if (isLocalBackend()) {
-        return apiFetch(`/conversations/${conversationId}/messages`, {
-          method: "POST",
-          body: JSON.stringify({ content }),
-        });
-      }
-
       const { data: userData } = await supabase.auth.getUser();
       const senderId = userData.user?.id;
       if (!senderId) throw new Error("Not authenticated");

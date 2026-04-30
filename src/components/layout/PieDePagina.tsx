@@ -1,4 +1,4 @@
-﻿import { Facebook, Instagram, Mail, Phone, MapPin, Youtube } from "lucide-react";
+﻿import { Mail, Phone, MapPin, Camera, Video, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import logoImage from "@/assets/grupo-scout-logo.png";
 import { useUser } from "@/hooks/useUser";
@@ -189,17 +189,17 @@ const FooterNew = () => {
           <div className="flex space-x-3">
             <SocialLink
               href="https://instagram.com/grupo_scout_septimo"
-              icon={<Instagram className="w-5 h-5" />}
+              icon={<Camera className="w-5 h-5" />}
               label="Instagram"
             />
             <SocialLink
               href="https://www.youtube.com/@linceastuto"
-              icon={<Youtube className="w-5 h-5" />}
+              icon={<Video className="w-5 h-5" />}
               label="YouTube"
             />
             <SocialLink
               href="https://facebook.com/gruposcoutseptimomontevideo"
-              icon={<Facebook className="w-5 h-5" />}
+              icon={<Users className="w-5 h-5" />}
               label="Facebook"
             />
           </div>

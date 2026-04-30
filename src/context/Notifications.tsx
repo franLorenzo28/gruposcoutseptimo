@@ -3,7 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSupabaseUser } from "@/providers/AppProviders";
 import { useToast } from "@/hooks/use-toast";
 import { listAlbums, listImages } from "@/lib/gallery";
-import { apiFetch, getAuthUser, isLocalBackend } from "@/lib/backend";
 import { querySilent } from "@/lib/supabase-logger";
 import { getPendingRequestsForMe } from "@/lib/follows";
 
@@ -45,18 +44,14 @@ export const useNotifications = () => {
 
 export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useSupabaseUser();
-  const [localUserId, setLocalUserId] = useState<string | null>(null);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [oldestPersistedTimestamp, setOldestPersistedTimestamp] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const knownGalleryPathsRef = useRef<Set<string>>(new Set());
   const persistedKeysRef = useRef<Set<string>>(new Set());
-  const localInitializedRef = useRef(false);
-  const localSeenIdsRef = useRef<Set<string>>(new Set());
   const { toast } = useToast();
-  const isLocal = isLocalBackend();
-  const effectiveUserId = isLocal ? localUserId : user?.id || null;
+  const effectiveUserId = user?.id || null;
   const notificationPreferences = useMemo(() => {
     const defaults = {
       nuevos_mensajes: true,
@@ -150,19 +145,6 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
     [notificationPreferences.push_notificaciones, toast],
   );
 
-  useEffect(() => {
-    if (!isLocal) return;
-    let mounted = true;
-    (async () => {
-      const auth = await getAuthUser();
-      if (!mounted) return;
-      setLocalUserId(auth?.id || null);
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, [isLocal]);
-
   const normalizePersistentNotification = useCallback((r: any): AppNotification => {
     const kind = r?.data?.kind;
     const mappedType =
@@ -202,22 +184,6 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
           : args.data || {};
 
       try {
-        if (isLocal) {
-          await apiFetch("/notifications", {
-            method: "POST",
-            body: JSON.stringify({
-              recipientId: args.recipientId,
-              actorId: args.actorId,
-              type: effectiveType,
-              entityType: args.entityType,
-              entityId: args.entityId,
-              data: payloadData,
-              createdAt: args.createdAt || new Date().toISOString(),
-            }),
-          });
-          return;
-        }
-
         await supabase.from("notifications").insert({
           recipient_id: args.recipientId,
           actor_id: args.actorId,
@@ -231,7 +197,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
         // Silencioso: no cortar UX si falla persistencia.
       }
     },
-    [effectiveUserId, isLocal],
+    [effectiveUserId],
   );
 
   const addNotification = useCallback((n: AppNotification) => {
@@ -246,11 +212,6 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!effectiveUserId) return;
     const unread = notifications.filter(n => !n.read);
     if (unread.length === 0) return;
-    if (isLocal) {
-      await apiFetch("/notifications/mark-all-read", { method: "POST" });
-      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-      return;
-    }
     const persistentIds = unread.filter((n: any) => n?.data?._persistent).map(n => n.id);
     if (persistentIds.length > 0) {
       await supabase
@@ -259,23 +220,16 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
         .in("id", persistentIds);
     }
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-  }, [effectiveUserId, notifications, isLocal]);
+  }, [effectiveUserId, notifications]);
 
   const markRead = useCallback(async (id: string) => {
     const target = notifications.find(n => n.id === id);
     if (!target) return;
-    if (isLocal) {
-      if (!target.read) {
-        await apiFetch(`/notifications/${id}/read`, { method: "POST" });
-      }
-      setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
-      return;
-    }
     if (!target.read && (target as any)?.data?._persistent) {
       await supabase.from('notifications').update({ read_at: new Date().toISOString() }).eq('id', id);
     }
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
-  }, [notifications, isLocal]);
+  }, [notifications]);
 
   const removeNotification = useCallback((id: string) => {
     setNotifications(prev => prev.filter(n => n.id !== id));
@@ -357,124 +311,9 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
     });
   }, [isNotificationEnabled]);
 
-  useEffect(() => {
-    if (!isLocal || !effectiveUserId) return;
-    let cancelled = false;
-
-    const fetchLocalNotifications = async () => {
-      try {
-        const rows = (await apiFetch("/notifications?limit=50&offset=0")) as Array<{
-          id: string;
-          type: AppNotification["type"];
-          created_at: string;
-          read_at?: string | null;
-          data?: Record<string, unknown>;
-        }>;
-
-        const mapped = (rows || []).map((r) => ({
-          id: r.id,
-          type: r.type,
-          created_at: r.created_at,
-          read: !!r.read_at,
-          data: { ...(r.data || {}), _persistent: true },
-        })) as AppNotification[];
-
-        const pendingFollows = (await apiFetch("/follows/pending")) as Array<{
-          follower_id: string;
-          created_at: string;
-        }>;
-
-        let pendingProfiles: Array<{
-          user_id: string;
-          nombre_completo?: string;
-          username?: string;
-          avatar_url?: string;
-        }> = [];
-
-        if (pendingFollows.length > 0) {
-          pendingProfiles = (await apiFetch("/profiles/batch", {
-            method: "POST",
-            body: JSON.stringify({ ids: pendingFollows.map((f) => f.follower_id) }),
-          })) as Array<{
-            user_id: string;
-            nombre_completo?: string;
-            username?: string;
-            avatar_url?: string;
-          }>;
-        }
-
-        const mergedMap = new Map(mapped.map((n) => [n.id, n] as const));
-        for (const f of pendingFollows) {
-          const alreadyExists = Array.from(mergedMap.values()).some((n) => {
-            if (n.type !== "follow_request") return false;
-            return (n.data as any)?.follower_id === f.follower_id;
-          });
-          if (alreadyExists) continue;
-
-          const prof = pendingProfiles.find((p) => p.user_id === f.follower_id);
-          const display =
-            prof?.nombre_completo || prof?.username || f.follower_id.slice(0, 8);
-
-          mergedMap.set(`follow-pending-local-${f.follower_id}-${f.created_at}`, {
-            id: `follow-pending-local-${f.follower_id}-${f.created_at}`,
-            type: "follow_request",
-            created_at: f.created_at,
-            read: false,
-            data: {
-              follower_id: f.follower_id,
-              display,
-              username: prof?.username || null,
-              avatar_url: prof?.avatar_url || null,
-              _fallback_from_follows: true,
-            },
-          });
-        }
-
-        const merged = Array.from(mergedMap.values()).sort((a, b) =>
-          a.created_at < b.created_at ? 1 : -1,
-        );
-
-        if (!localInitializedRef.current) {
-          merged.forEach((n) => localSeenIdsRef.current.add(n.id));
-          localInitializedRef.current = true;
-        } else {
-          merged.forEach((n) => {
-            if (!localSeenIdsRef.current.has(n.id)) {
-              localSeenIdsRef.current.add(n.id);
-              if (n.type === "follow_request") {
-                const display = (n.data as any)?.display || "Alguien";
-                notifyViaPush(
-                  "Nueva solicitud de seguimiento",
-                  `${display} quiere seguirte`,
-                );
-              }
-            }
-          });
-        }
-
-        if (!cancelled) {
-          setNotifications(merged);
-          setHasMore(false);
-        }
-      } catch {
-        // Silencioso en local polling
-      }
-    };
-
-    void fetchLocalNotifications();
-    const timer = setInterval(() => {
-      void fetchLocalNotifications();
-    }, 5000);
-
-    return () => {
-      cancelled = true;
-      clearInterval(timer);
-    };
-  }, [isLocal, effectiveUserId, notifyViaPush]);
-
   // Suscripción a solicitudes de seguimiento nuevas
   useEffect(() => {
-    if (!user || isLocal) return;
+    if (!user) return;
     const channelFollowsToMe = supabase
       .channel(`follows:pending:${user.id}`)
       .on(
@@ -691,11 +530,11 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
       supabase.removeChannel(channelThreads);
       supabase.removeChannel(channelGroupInvites);
     };
-  }, [user, addNotification, notifyViaPush, persistNotification, isLocal, isNotificationEnabled]);
+  }, [user, addNotification, notifyViaPush, persistNotification, isNotificationEnabled]);
 
   // Notificación de nuevas fotos en galería (sondeo liviano)
   useEffect(() => {
-    if (!user || isLocal) return;
+    if (!user) return;
     let cancelled = false;
 
     const scanGallery = async (notify = false) => {
@@ -764,11 +603,11 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
       cancelled = true;
       clearInterval(timer);
     };
-  }, [user, addNotification, notifyViaPush, persistNotification, isLocal, isNotificationEnabled]);
+  }, [user, addNotification, notifyViaPush, persistNotification, isNotificationEnabled]);
 
   // Suscripción a mensajes nuevos en cualquier conversación del usuario
   useEffect(() => {
-    if (!user || isLocal) return;
+    if (!user) return;
     // Suscribirse a todos los mensajes: filtrar en el handler
     const channelMessages = supabase
       .channel(`messages:any:${user.id}`)
@@ -793,11 +632,11 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
       )
       .subscribe();
     return () => { supabase.removeChannel(channelMessages); };
-  }, [user, addNotification, notifyViaPush, isLocal, isNotificationEnabled]);
+  }, [user, addNotification, notifyViaPush, isNotificationEnabled]);
 
   // Cargar notificaciones persistentes (thread_comment, mention) y suscribirse a nuevas
   useEffect(() => {
-    if (!user || isLocal) return;
+    if (!user) return;
     let channel: any;
     (async () => {
       const { data, error } = await querySilent(() => supabase
@@ -856,10 +695,10 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
         .subscribe();
     })();
     return () => { if (channel) supabase.removeChannel(channel); };
-  }, [user, addNotification, notifyViaPush, normalizePersistentNotification, isLocal, syncPendingFollowRequests, isNotificationEnabled]);
+  }, [user, addNotification, notifyViaPush, normalizePersistentNotification, syncPendingFollowRequests, isNotificationEnabled]);
 
   useEffect(() => {
-    if (!user || isLocal) return;
+    if (!user) return;
 
     void syncPendingFollowRequests(user.id);
     const timer = setInterval(() => {
@@ -869,10 +708,9 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
     return () => {
       clearInterval(timer);
     };
-  }, [user, isLocal, syncPendingFollowRequests]);
+  }, [user, syncPendingFollowRequests]);
 
   const loadMore = useCallback(async () => {
-    if (isLocal) return;
     if (!user || !hasMore || loadingMore || !oldestPersistedTimestamp) return;
     setLoadingMore(true);
     try {
@@ -906,7 +744,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
     } finally {
       setLoadingMore(false);
     }
-  }, [user, hasMore, loadingMore, oldestPersistedTimestamp, normalizePersistentNotification, isLocal, isNotificationEnabled]);
+  }, [user, hasMore, loadingMore, oldestPersistedTimestamp, normalizePersistentNotification, isNotificationEnabled]);
 
   const unreadCount = notifications.filter(n => !n.read).length;
 

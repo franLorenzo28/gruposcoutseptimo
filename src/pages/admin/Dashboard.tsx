@@ -221,7 +221,7 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
     }
 
     setLoadingAdmin(true);
-    const [groupsRes, eventsRes, threadsRes, commentsRes, messagesRes, groupMessagesRes, pagesRes, followsRes, notificationsRes] = await Promise.all([
+    const [groupsRes, eventsRes, threadsRes, commentsRes, messagesRes, groupMessagesRes, pagesRes, followsRes, notificationsRes, pendingUsersRes] = await Promise.all([
       supabase.from("groups").select("*").order("created_at", { ascending: false }).limit(200),
       supabase.from("eventos").select("*").order("fecha_inicio", { ascending: false }).limit(200),
       supabase.from("threads").select("*").order("created_at", { ascending: false }).limit(200),
@@ -231,9 +231,17 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
       supabase.from("site_pages").select("*").order("updated_at", { ascending: false }),
       supabase.from("follows").select("*").order("created_at", { ascending: false }).limit(500),
       supabase.from("notifications").select("*").order("created_at", { ascending: false }).limit(500),
+      supabase.from("profiles")
+        .select("user_id, email, nombre_completo, username, account_status, account_classification, created_at")
+        .in("account_status", ["pendiente_email", "pendiente_aprobacion"])
+        .order("created_at", { ascending: false })
+        .limit(100),
     ]);
 
-    if (groupsRes.error || eventsRes.error || threadsRes.error || commentsRes.error || messagesRes.error || groupMessagesRes.error || pagesRes.error || followsRes.error || notificationsRes.error) {
+    const hasMainError = groupsRes.error || eventsRes.error || threadsRes.error || commentsRes.error || messagesRes.error || groupMessagesRes.error || pagesRes.error || followsRes.error || notificationsRes.error;
+    const hasPendingError = pendingUsersRes.error && pendingUsersRes.error.code !== 'PGRST116' && !pendingUsersRes.error.message?.includes('does not exist');
+    
+    if (hasMainError || hasPendingError) {
       toast({
         title: "Error al cargar datos admin",
         description: "Revisa permisos y poláticas en Supabase.",
@@ -250,21 +258,53 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
     setPages(pagesRes.data || []);
     setFollows(followsRes.data || []);
     setNotifications(notificationsRes.data || []);
+    setPendingUsers((pendingUsersRes.data || []) as unknown as PendingUser[]);
     setLoadingAdmin(false);
   }
 
   async function handleReviewPendingUser(userId: string, status: "activo" | "rechazado", reason?: string) {
-    if (!isLocalBackend()) return;
     try {
-      await apiFetch(`/admin/users/${userId}/review`, {
-        method: "POST",
-        body: JSON.stringify({ status, reason }),
-      });
+      if (isLocalBackend()) {
+        await apiFetch(`/admin/users/${userId}/review`, {
+          method: "POST",
+          body: JSON.stringify({ status, reason }),
+        });
+      } else {
+        const { data: notifData, error: notifError } = await supabase
+          .from("notifications")
+          .select("id, actor_id, data")
+          .eq("actor_id", userId)
+          .is("read_at", null)
+          .contains("data", { kind: "user_registration_request" })
+          .limit(1)
+          .single();
+
+        if (notifError && notifError.code !== "PGRST116") {
+          throw new Error("No se encontró la notificación de registro");
+        }
+
+        const notificationId = notifData?.id;
+        
+        const { error: rpcError } = await (supabase.rpc as any)("review_user_registration_request", {
+          p_notification_id: notificationId,
+          p_requester_id: userId,
+          p_approve: status === "activo",
+          p_note: reason || null,
+        });
+
+        if (rpcError) throw rpcError;
+      }
+      
       toast({
         title: status === "activo" ? "Usuario aprobado" : "Usuario rechazado",
         description: status === "activo" ? "La cuenta quedó activa." : "La cuenta fue rechazada.",
       });
-      await fetchLocalDashboardData();
+      
+      if (isLocalBackend()) {
+        await fetchLocalDashboardData();
+      } else {
+        await fetchAdminData();
+      }
     } catch (error: any) {
       toast({
         title: "No se pudo actualizar",

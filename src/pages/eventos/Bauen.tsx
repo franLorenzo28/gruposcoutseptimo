@@ -4,11 +4,11 @@ import { Badge } from "@/components/ui/badge";
 import {
   Flag,
   Calendar,
-  Instagram,
   Phone,
   Users,
   Timer,
   ArrowRight,
+  Camera,
 } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
 import { PageGridBackground } from "@/components/PageGridBackground";
@@ -81,7 +81,7 @@ const Bauen = () => {
                 className="gap-2.5 w-full sm:w-auto min-w-[200px]"
                 onClick={() => window.open('https://www.instagram.com/bauen.septimo/', '_blank')}
               >
-                <Instagram className="w-5 h-5" />
+                <Camera className="w-5 h-5" />
                 @bauen.septimo
               </Button>
               <Button
@@ -255,7 +255,7 @@ const Bauen = () => {
                     className="gap-2 min-w-[200px]"
                     onClick={() => window.open('https://www.instagram.com/bauen.septimo/', '_blank')}
                   >
-                    <Instagram className="w-4 h-4" />
+                    <Camera className="w-4 h-4" />
                     Seguinos en Instagram
                   </Button>
                   <Button 

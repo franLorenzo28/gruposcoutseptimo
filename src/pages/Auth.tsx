@@ -2,7 +2,6 @@
 import { useNavigate } from "react-router-dom";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { isLocalBackend, localAuthGet, localAuthRequest } from "@/lib/backend";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +20,7 @@ import { ToastAction } from "@/components/ui/toast";
 import logoImage from "@/assets/grupo-scout-logo.png";
 import PageLoader from "@/components/ui/PageLoader";
 import { PageGridBackground } from "@/components/PageGridBackground";
+import RegistroContactoWhatsApp from "@/components/auth/RegistroContactoWhatsApp";
 
 function isVercelAppHost(hostname: string): boolean {
   return hostname.endsWith(".vercel.app");
@@ -123,19 +123,6 @@ function splitFullName(fullName: string): { nombre: string; apellido: string } {
   };
 }
 
-type LocalCaptcha = {
-  challenge_id: string;
-  question: string;
-  expires_in_seconds: number;
-};
-
-type LocalRegisterResponse = {
-  success: boolean;
-  message: string;
-  classification?: string;
-  nextStep?: string;
-};
-
 type GoogleCompletionDraft = {
   nombre: string;
   apellido: string;
@@ -206,9 +193,6 @@ const Auth = () => {
   const [signupTipoRelacion, setSignupTipoRelacion] = useState("scout");
   const [signupRama, setSignupRama] = useState("");
   const [signupNombreScoutRelacionado, setSignupNombreScoutRelacionado] = useState("");
-  const [signupCaptchaQuestion, setSignupCaptchaQuestion] = useState("");
-  const [signupCaptchaId, setSignupCaptchaId] = useState("");
-  const [signupCaptchaAnswer, setSignupCaptchaAnswer] = useState("");
   const [showOptionalSignup, setShowOptionalSignup] = useState(false);
   const [showPasswordLogin, setShowPasswordLogin] = useState(false);
   const [showPasswordSignup, setShowPasswordSignup] = useState(false);
@@ -219,37 +203,25 @@ const Auth = () => {
   const [authTab, setAuthTab] = useState<"login" | "signup">("login");
   const [inlineMessage, setInlineMessage] = useState<string>("");
   const [loginRedirecting, setLoginRedirecting] = useState(false);
+  const [showWhatsappContacts, setShowWhatsappContacts] = useState(false);
+  const [recentSignupName, setRecentSignupName] = useState("");
+  const [whatsappGateActive, setWhatsappGateActive] = useState(false);
+  const whatsappGateRef = useRef(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const isLogin = authTab === "login";
   const oauthSafety = useMemo(() => getOAuthSafety(), []);
   const oauthProfileToastShownRef = useRef(false);
 
-  const loadSignupCaptcha = async () => {
-    if (!isLocalBackend()) return;
-    try {
-      const captcha = await localAuthGet<LocalCaptcha>("/auth/captcha");
-      setSignupCaptchaQuestion(captcha.question);
-      setSignupCaptchaId(captcha.challenge_id);
-      setSignupCaptchaAnswer("");
-    } catch (error) {
-      console.warn("No se pudo cargar el captcha local", error);
-      setSignupCaptchaQuestion("");
-      setSignupCaptchaId("");
-    }
-  };
+  useEffect(() => {
+    whatsappGateRef.current = showWhatsappContacts || whatsappGateActive;
+  }, [showWhatsappContacts, whatsappGateActive]);
 
   useEffect(() => {
-    if (isLocalBackend() && authTab === "signup") {
-      void loadSignupCaptcha();
-    }
-  }, [authTab]);
-
-  useEffect(() => {
-    if (!isLocalBackend() && !oauthSafety.safe && oauthSafety.reason) {
+    if (!oauthSafety.safe && oauthSafety.reason) {
       console.warn("OAuth safety check:", oauthSafety.reason);
     }
-    if (!isLocalBackend() && oauthSafety.warning) {
+    if (oauthSafety.warning) {
       console.warn("OAuth warning:", oauthSafety.warning);
     }
   }, [oauthSafety.safe, oauthSafety.reason, oauthSafety.warning]);
@@ -277,8 +249,10 @@ const Auth = () => {
     const accessToken = hashParams.get('access_token');
     
     if (accessToken) {
-      setProcessingOAuth(true);
-      setLoading(true);
+      requestAnimationFrame(() => {
+        setProcessingOAuth(true);
+        setLoading(true);
+      });
     }
   }, [toast]);
 
@@ -286,6 +260,9 @@ const Auth = () => {
     // Verificar sesión actual y manejar callback de OAuth
     const checkSession = async () => {
       try {
+        if (whatsappGateRef.current) {
+          return;
+        }
         // Obtener accessToken del hash si existe
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         const accessToken = hashParams.get('access_token');
@@ -305,7 +282,7 @@ const Auth = () => {
             return;
           }
 
-          if (!isLocalBackend() && shouldPromptGoogleCompletion(session.user)) {
+          if (shouldPromptGoogleCompletion(session.user)) {
             setGoogleCompletionDraft(buildGoogleCompletionDraft(session.user));
             setNeedsGoogleCompletion(true);
             setProcessingOAuth(false);
@@ -322,58 +299,65 @@ const Auth = () => {
           }
 
           // Validar intent de OAuth (login vs signup)
-          if (!isLocalBackend()) {
-            const oauthIntent = localStorage.getItem("oauth_intent");
+          const oauthIntent = localStorage.getItem("oauth_intent");
 
-            if (oauthIntent && !oauthProfileToastShownRef.current) {
-              toast({
-                title: "¡Ya estás dentro!",
-                description:
-                  "Tip: completa o actualiza tu perfil para que la comunidad te conozca mejor.",
-                action: (
-                  <ToastAction altText="Ir a editar perfil" onClick={() => navigate("/perfil")}>
-                    Editar perfil
-                  </ToastAction>
-                ),
-              });
-              oauthProfileToastShownRef.current = true;
-            }
-
-            if (oauthIntent === "login" && session.user.email) {
-              const { data: isRegistered, error: regErr } = await (supabase as any).rpc("is_email_registered", {
-                p_email: session.user.email,
-              });
-
-              if (regErr) {
-                console.warn("No se pudo validar registro por RPC, se permite continuar OAuth login:", regErr);
-              } else if (!isRegistered) {
-                // No mostramos toast aquí: el RPC puede no reflejar de inmediato el estado real y generar falsos positivos.
-              }
-            }
-
-            if (oauthIntent === "signup" && session.user.email) {
-              const { data: isRegistered, error: regErr } = await (supabase as any).rpc("is_email_registered", {
-                p_email: session.user.email,
-              });
-
-              if (regErr) {
-                console.warn("No se pudo validar registro por RPC en signup OAuth:", regErr);
-              } else if (isRegistered) {
-                await supabase.auth.signOut();
-                localStorage.removeItem("oauth_intent");
-                toast({
-                  title: "Ese correo ya está registrado",
-                  description:
-                    "Ya existe una cuenta con ese correo. Iniciá sesión con Google en la pestaña de ingreso.",
-                  variant: "destructive",
-                });
-                setProcessingOAuth(false);
-                setLoading(false);
-                return;
-              }
-            }
-            localStorage.removeItem("oauth_intent");
+          if (oauthIntent && !oauthProfileToastShownRef.current) {
+            toast({
+              title: "¡Ya estás dentro!",
+              description:
+                "Tip: completa o actualiza tu perfil para que la comunidad te conozca mejor.",
+              action: (
+                <ToastAction altText="Ir a editar perfil" onClick={() => navigate("/perfil")}>
+                  Editar perfil
+                </ToastAction>
+              ),
+            });
+            oauthProfileToastShownRef.current = true;
           }
+
+          if (oauthIntent === "login" && session.user.email) {
+            const { data: isRegistered, error: regErr } = await (supabase as any).rpc("is_email_registered", {
+              p_email: session.user.email,
+            });
+
+            if (regErr) {
+              console.warn("No se pudo validar registro por RPC, se permite continuar OAuth login:", regErr);
+            } else if (!isRegistered) {
+              // No mostramos toast aquí: el RPC puede no reflejar de inmediato el estado real y generar falsos positivos.
+            }
+          }
+
+          if (oauthIntent === "signup" && session.user.email) {
+            const { data: isRegistered, error: regErr } = await (supabase as any).rpc("is_email_registered", {
+              p_email: session.user.email,
+            });
+
+            if (regErr) {
+              console.warn("No se pudo validar registro por RPC en signup OAuth:", regErr);
+            } else if (isRegistered) {
+              await supabase.auth.signOut();
+              localStorage.removeItem("oauth_intent");
+              toast({
+                title: "Ese correo ya está registrado",
+                description:
+                  "Ya existe una cuenta con ese correo. Iniciá sesión con Google en la pestaña de ingreso.",
+                variant: "destructive",
+              });
+              setProcessingOAuth(false);
+              setLoading(false);
+              return;
+            } else {
+              const meta = session.user.user_metadata as { full_name?: string; name?: string } | null;
+              const nameFromMeta = meta?.full_name || meta?.name || "";
+              setRecentSignupName(nameFromMeta);
+              setShowWhatsappContacts(true);
+              setProcessingOAuth(false);
+              setLoading(false);
+              localStorage.removeItem("oauth_intent");
+              return;
+            }
+          }
+          localStorage.removeItem("oauth_intent");
           // Pequeño delay para asegurar que la sesión se persiste
           setTimeout(() => {
             navigate("/", { replace: true });
@@ -405,12 +389,15 @@ const Auth = () => {
     // Suscribirse a cambios de autenticación
     let subscription: any;
     try {
-      const {
+     const {
         data: { subscription: sub },
       } = supabase.auth.onAuthStateChange(async (event, session) => {
         // Solo redirigir en eventos específicos de login exitoso
         if (event === "SIGNED_IN" && session?.user) {
-          if (needsGoogleCompletion || (!isLocalBackend() && shouldPromptGoogleCompletion(session.user))) {
+          if (whatsappGateRef.current) {
+            return;
+          }
+          if (needsGoogleCompletion || shouldPromptGoogleCompletion(session.user)) {
             return;
           }
           const pendingOauthIntent = localStorage.getItem("oauth_intent");
@@ -433,11 +420,10 @@ const Auth = () => {
         subscription.unsubscribe();
       }
     };
-  }, [navigate]);
+  }, [navigate, needsGoogleCompletion]);
 
   const handleGoogleProfileCompletion = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isLocalBackend()) return;
 
     const nombre = sanitizeText(googleCompletionDraft.nombre);
     const apellido = sanitizeText(googleCompletionDraft.apellido);
@@ -476,9 +462,10 @@ const Auth = () => {
       });
 
       localStorage.removeItem("oauth_intent");
+      setRecentSignupName(`${nombre} ${apellido}`.trim());
+      setShowWhatsappContacts(true);
       setNeedsGoogleCompletion(false);
       setProcessingOAuth(false);
-      navigate("/", { replace: true });
     } catch (error) {
       const message = error instanceof Error ? error.message : "No se pudo completar el perfil";
       setInlineMessage(message);
@@ -496,21 +483,19 @@ const Auth = () => {
   useEffect(() => {
     const trimmed = email.trim().toLowerCase();
     if (!trimmed) {
-      setGoogleLoginAllowed(false);
-      setCheckingEmail(false);
+      requestAnimationFrame(() => {
+        setGoogleLoginAllowed(false);
+        setCheckingEmail(false);
+      });
       return;
     }
     if (!/^\S+@\S+\.\S+$/.test(trimmed)) {
-      setGoogleLoginAllowed(false);
-      setCheckingEmail(false);
+      requestAnimationFrame(() => {
+        setGoogleLoginAllowed(false);
+        setCheckingEmail(false);
+      });
       return;
     }
-    if (isLocalBackend()) {
-      setGoogleLoginAllowed(true);
-      setCheckingEmail(false);
-      return;
-    }
-
     let isCancelled = false;
     setCheckingEmail(true);
 
@@ -541,6 +526,7 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
     setInlineMessage("");
+    setWhatsappGateActive(true);
     try {
       const trimmedEmail = email.trim().toLowerCase();
       const trimmedPassword = password.trim();
@@ -553,33 +539,6 @@ const Auth = () => {
       }
       if (trimmedPassword.length < 8) {
         throw new Error("La contraseña debe tener al menos 8 caracteres.");
-      }
-
-      if (isLocalBackend()) {
-        if (!signupCaptchaId || !signupCaptchaAnswer.trim()) {
-          throw new Error("Completa el captcha antes de registrarte.");
-        }
-
-        const payload = await localAuthRequest<LocalRegisterResponse>("/auth/register", {
-          email: trimmedEmail,
-          password: trimmedPassword,
-          nombre: sanitizeText(signupNombre),
-          apellido: sanitizeText(signupApellido),
-          tipo_relacion: signupTipoRelacion,
-          rama: signupRama.trim() || null,
-          nombre_scout_relacionado: signupNombreScoutRelacionado.trim() || null,
-          captcha_id: signupCaptchaId,
-          captcha_answer: Number(signupCaptchaAnswer),
-        });
-
-        toast({
-          title: "Registro creado",
-          description: payload.message,
-        });
-        setInlineMessage(payload.message);
-        await loadSignupCaptcha();
-        setPassword("");
-        return;
       }
 
       const fullName = `${signupNombre.trim()} ${signupApellido.trim()}`.trim();
@@ -622,6 +581,8 @@ const Auth = () => {
           title: "Confirma tu correo electrónico",
           description: `Te enviamos un correo a ${trimmedEmail}. Luego de verificarlo, un admin debe aprobar tu acceso antes de habilitar funciones internas.`,
         });
+        setRecentSignupName(fullName);
+        setShowWhatsappContacts(true);
         setEmail("");
         setPassword("");
         setSignupNombre("");
@@ -638,6 +599,7 @@ const Auth = () => {
         description: message,
         variant: "destructive",
       });
+      setWhatsappGateActive(false);
     } finally {
       setLoading(false);
     }
@@ -661,29 +623,6 @@ const Auth = () => {
 
       // Evita que un intent OAuth viejo bloquee la navegación post-login normal.
       localStorage.removeItem("oauth_intent");
-
-      if (isLocalBackend()) {
-        const result = await localAuthRequest<{ token: string; user?: { id?: string } }>("/auth/login", {
-          email: trimmedEmail,
-          password: trimmedPassword,
-        });
-        if (result.token) {
-          localStorage.setItem("local_api_token", result.token);
-          if (result.user?.id) {
-            localStorage.setItem("local_api_token_owner", result.user.id);
-          }
-        }
-        toast({
-          title: "¡Bienvenido!",
-          description: "Has iniciado sesión correctamente.",
-        });
-        setLoginRedirecting(true);
-        setInlineMessage("Inicio de sesión correcto. Redirigiendo...");
-        setTimeout(() => {
-          navigate("/", { replace: true });
-        }, 450);
-        return;
-      }
 
       const { data, error } = await supabase.auth.signInWithPassword({
         email: trimmedEmail,
@@ -803,7 +742,15 @@ const Auth = () => {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.35),transparent_55%)] dark:bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_55%)]" />
         <div className="absolute -top-20 -right-16 h-64 w-64 rounded-full bg-white/20 dark:bg-white/10 blur-3xl" />
         <div className="absolute -bottom-24 -left-20 h-72 w-72 rounded-full bg-white/15 dark:bg-white/5 blur-3xl" />
-      {needsGoogleCompletion ? (
+      {showWhatsappContacts ? (
+        <RegistroContactoWhatsApp
+          nombreCompleto={recentSignupName}
+          onBack={() => {
+            setShowWhatsappContacts(false);
+            setAuthTab("login");
+          }}
+        />
+      ) : needsGoogleCompletion ? (
         <Card className="w-full max-w-lg border border-white/30 dark:border-white/10 bg-background/85 dark:bg-background/80 backdrop-blur-xl shadow-2xl relative overflow-hidden">
           <div className="absolute inset-0 pointer-events-none">
             <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/20 via-orange-400/10 to-transparent" />
@@ -1089,8 +1036,7 @@ const Auth = () => {
                     {loading ? "Iniciando sesión..." : "Iniciar Sesión"}
                   </Button>
 
-                  {!isLocalBackend() && (
-                    <>
+                  <>
                       <div className="relative my-4">
                         <div className="absolute inset-0 flex items-center">
                           <span className="w-full border-t" />
@@ -1123,29 +1069,26 @@ const Auth = () => {
                       )}
                       {!oauthSafety.safe && <p className="text-xs text-destructive mt-2">{oauthSafety.reason}</p>}
                       {oauthSafety.warning && <p className="text-xs text-muted-foreground mt-2">{oauthSafety.warning}</p>}
-                    </>
-                  )}
+                  </>
                 </form>
               </TabsContent>
 
               <TabsContent value="signup" className="data-[state=active]:animate-in data-[state=active]:fade-in data-[state=active]:slide-in-from-bottom-2 data-[state=active]:duration-300 mt-3">
-                {!isLocalBackend() && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full h-10 bg-background/90 hover:bg-background mb-3"
-                    onClick={() => handleGoogleSignIn("signup")}
-                    disabled={loading || !oauthSafety.safe}
-                  >
-                    <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
-                      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
-                      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-                      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-                    </svg>
-                    Registrarse con Google
-                  </Button>
-                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full h-10 bg-background/90 hover:bg-background mb-3"
+                  onClick={() => handleGoogleSignIn("signup")}
+                  disabled={loading || !oauthSafety.safe}
+                >
+                  <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
+                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+                  </svg>
+                  Registrarse con Google
+                </Button>
 
                 <form onSubmit={handleSignUp} className="space-y-3">
                   <div className="grid grid-cols-2 gap-2">
@@ -1297,28 +1240,6 @@ const Auth = () => {
                     </div>
                   )}
 
-                  {isLocalBackend() && (
-                    <div className="space-y-1.5 rounded-md border border-border/70 bg-muted/40 p-3">
-                      <Label htmlFor="signup-captcha">Captcha de seguridad</Label>
-                      <p className="text-xs text-muted-foreground">
-                        Resuelve: {signupCaptchaQuestion || "cargando..."}
-                      </p>
-                      <Input
-                        id="signup-captcha"
-                        type="text"
-                        inputMode="numeric"
-                        placeholder="Respuesta"
-                        value={signupCaptchaAnswer}
-                        onChange={(e) => {
-                          setSignupCaptchaAnswer(e.target.value);
-                          if (inlineMessage) setInlineMessage("");
-                        }}
-                        required={isLocalBackend()}
-                        className="h-10"
-                      />
-                    </div>
-                  )}
-
                   <Button
                     type="submit"
                     className="w-full h-10 shadow-md"
@@ -1327,15 +1248,14 @@ const Auth = () => {
                       !signupNombre.trim() ||
                       !signupApellido.trim() ||
                       !email.trim() ||
-                      !password.trim() ||
-                      (isLocalBackend() && (!signupCaptchaId || !signupCaptchaAnswer.trim()))
+                      !password.trim()
                     }
                   >
                     {loading ? "Registrando..." : "Registrarse"}
                   </Button>
 
-                  {!isLocalBackend() && !oauthSafety.safe && <p className="text-xs text-destructive mt-2">{oauthSafety.reason}</p>}
-                  {!isLocalBackend() && oauthSafety.warning && <p className="text-xs text-muted-foreground mt-2">{oauthSafety.warning}</p>}
+                  {!oauthSafety.safe && <p className="text-xs text-destructive mt-2">{oauthSafety.reason}</p>}
+                  {oauthSafety.warning && <p className="text-xs text-muted-foreground mt-2">{oauthSafety.warning}</p>}
                 </form>
               </TabsContent>
             </Tabs>

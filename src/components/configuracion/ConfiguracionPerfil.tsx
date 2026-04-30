@@ -35,7 +35,7 @@ export default function ConfiguracionPerfil() {
   const [charCount, setCharCount] = useState(0);
 
   const form = useForm<ProfileFormValues>({
-    resolver: zodResolver(profileSchema),
+    resolver: zodResolver(profileSchema) as any,
     defaultValues: {
       nombre_completo: user?.profile?.nombre_completo || user?.nombre_completo || "",
       profesion_ocupacion: user?.profile?.profesion_ocupacion || user?.profesion_ocupacion || "",

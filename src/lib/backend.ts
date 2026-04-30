@@ -1,12 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8080";
-const MODE = (import.meta.env.VITE_BACKEND || "supabase").toLowerCase();
-
 export function isLocalBackend() {
-  // IMPORTANTE: Solo retornar true si EXPLÍCITAMENTE está en modo "local"
-  // En producción (Netlify) siempre será false
-  return MODE === "local" && typeof window !== "undefined" && window.location.hostname === "localhost";
+  return false;
 }
 
 function getStoredToken() {
@@ -44,7 +40,7 @@ export async function localAuthRequest<TResponse = unknown>(
     body: JSON.stringify(body),
   });
 
-  let payload: any = null;
+  let payload: any;
   try {
     payload = await res.json();
   } catch {
@@ -66,7 +62,7 @@ export async function localAuthGet<TResponse = unknown>(path: string): Promise<T
     headers: { "Content-Type": "application/json" },
   });
 
-  let payload: any = null;
+  let payload: any;
   try {
     payload = await res.json();
   } catch {
@@ -125,7 +121,6 @@ export async function ensureLocalToken() {
     const owner = getStoredTokenOwner();
     if (owner === expectedOwner) return token;
     clearStoredToken();
-    token = null;
   }
 
   const DEFAULT_PASSWORD = "supabase-bridge-password";
@@ -263,50 +258,30 @@ export async function getAuthUser(): Promise<{
   account_classification?: string | null;
   isLocal: boolean;
 } | null> {
-  if (isLocalBackend()) {
-    try {
-      await ensureLocalToken();
-      const me = (await apiFetch("/profiles/me")) as any;
-      if (me && me.id) {
-        return { 
-          id: String(me.id), 
-          email: me.email || null, 
-          email_verified: !!me.email_verified_at,
-          account_status: me.account_status || null,
-          account_classification: me.account_classification || null,
-          isLocal: true 
-        };
-      }
-      return null;
-    } catch {
-      return null;
-    }
-  } else {
-    const { data } = await supabase.auth.getUser();
-    if (data?.user) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("user_id", data.user.id)
-        .maybeSingle();
-      const accountStatus =
-        profile && typeof (profile as any).account_status === "string"
-          ? ((profile as any).account_status as string)
-          : null;
-      const accountClassification =
-        profile && typeof (profile as any).account_classification === "string"
-          ? ((profile as any).account_classification as string)
-          : null;
+  const { data } = await supabase.auth.getUser();
+  if (data?.user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("user_id", data.user.id)
+      .maybeSingle();
+    const accountStatus =
+      profile && typeof (profile as any).account_status === "string"
+        ? ((profile as any).account_status as string)
+        : null;
+    const accountClassification =
+      profile && typeof (profile as any).account_classification === "string"
+        ? ((profile as any).account_classification as string)
+        : null;
 
-      return {
-        id: data.user.id,
-        email: data.user.email,
-        email_verified: !!data.user.email_confirmed_at,
-        account_status: accountStatus,
-        account_classification: accountClassification,
-        isLocal: false,
-      };
-    }
-    return null;
+    return {
+      id: data.user.id,
+      email: data.user.email,
+      email_verified: !!data.user.email_confirmed_at,
+      account_status: accountStatus,
+      account_classification: accountClassification,
+      isLocal: false,
+    };
   }
+  return null;
 }

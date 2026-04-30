@@ -2,11 +2,8 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { isLocalBackend, apiFetch } from "@/lib/backend";
-import { getFollowers, getFollowing } from "@/lib/follows";
-import { createOrGetConversation, listDMs, sendDM } from "@/lib/dms";
+import { sendDM } from "@/lib/dms";
 import { useToast } from "@/hooks/use-toast";
-import { resolveMemberAccessFromProfile } from "@/lib/member-auth";
 import { Smile } from "lucide-react";
 import {
   Popover,
@@ -72,27 +69,10 @@ const EMOJIS = [
   "🔥",
 ];
 
-function calculateAgeFromDate(fechaNacimiento: string | null | undefined): number | null {
-  if (!fechaNacimiento) return null;
-  const [y, m, d] = String(fechaNacimiento)
-    .split("-")
-    .map((part) => parseInt(part, 10));
-  if (!y || !m || !d) return null;
-
-  const birth = new Date(y, m - 1, d);
-  if (Number.isNaN(birth.getTime())) return null;
-
-  const now = new Date();
-  let years = now.getFullYear() - birth.getFullYear();
-  const monthDelta = now.getMonth() - birth.getMonth();
-  if (monthDelta < 0 || (monthDelta === 0 && now.getDate() < birth.getDate())) years--;
-  return years;
-}
-
 export default function Mensajes() {
   const [directory, setDirectory] = useState<ProfileLite[]>([]);
   const [mutualFollows, setMutualFollows] = useState<Set<string>>(new Set());
-  const [ramaContactIds, setRamaContactIds] = useState<Set<string>>(new Set());
+  const [ramaContactIds, _setRamaContactIds] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
   const [selectedUser, setSelectedUser] = useState<ProfileLite | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -195,80 +175,6 @@ export default function Mensajes() {
 
   useEffect(() => {
     (async () => {
-      if (isLocalBackend()) {
-        // me
-        const me = (await apiFetch("/profiles/me")) as any;
-        const myId = String(me.id || me.user_id);
-        setCurrentUserId(myId);
-        // mutuals
-        const { data: iFollow } = await getFollowing(myId);
-        const { data: followsMe } = await getFollowers(myId);
-        const iFollowSet = new Set<string>(
-          (iFollow || []).map((f: any) =>
-            String(f.followed_id || f.following_id),
-          ),
-        );
-        const followsMeSet = new Set<string>(
-          (followsMe || []).map((f: any) => String(f.follower_id)),
-        );
-        const mutuals = new Set<string>();
-        iFollowSet.forEach((id) => {
-          if (followsMeSet.has(id)) mutuals.add(id);
-        });
-        setMutualFollows(mutuals);
-        // Directory = perfiles de mutuals
-        const ids = Array.from(mutuals);
-        const profiles = ids.length
-          ? await apiFetch("/profiles/batch", {
-              method: "POST",
-              body: JSON.stringify({ ids }),
-            })
-          : [];
-        const mutualProfiles =
-          (profiles as any[]).map((p) => ({
-            user_id: String((p as any).user_id),
-            nombre_completo: (p as any).nombre_completo ?? null,
-            username: (p as any).username ?? null,
-            avatar_url: (p as any).avatar_url ?? null,
-          }));
-
-        // Si es educador, agregar contactos de su rama sin requerir seguimiento mutuo
-        const edadCalculada = calculateAgeFromDate(me.fecha_nacimiento || null);
-        const access = resolveMemberAccessFromProfile({
-          edad: edadCalculada,
-          rol_adulto: me.rol_adulto,
-          rama_que_educa: me.rama_que_educa,
-          seisena: me.seisena,
-          patrulla: me.patrulla,
-          equipo_pioneros: me.equipo_pioneros,
-          comunidad_rovers: me.comunidad_rovers,
-        });
-
-        if (access.accessType === "educador" && access.rama) {
-          const ramaContactsRaw = await apiFetch(`/profiles/rama-contacts/${access.rama}`).catch(
-            () => [],
-          );
-          const ramaContacts = (ramaContactsRaw as any[]).map((contact) => ({
-            user_id: String((contact as any).user_id),
-            nombre_completo: (contact as any).nombre_completo ?? null,
-            username: (contact as any).username ?? null,
-            avatar_url: (contact as any).avatar_url ?? null,
-          }));
-
-          const mergedById = new Map<string, ProfileLite>();
-          for (const profile of [...mutualProfiles, ...ramaContacts]) {
-            mergedById.set(profile.user_id, profile);
-          }
-
-          setDirectory(Array.from(mergedById.values()));
-          setRamaContactIds(new Set(ramaContacts.map((contact) => contact.user_id)));
-        } else {
-          setDirectory(mutualProfiles);
-          setRamaContactIds(new Set());
-        }
-        return;
-      }
-      // Supabase path
       const { data: userData } = await supabase.auth.getUser();
       if (userData.user) {
         setCurrentUserId(userData.user.id);
@@ -334,19 +240,13 @@ export default function Mensajes() {
   const startConversationWithUser = async (user: ProfileLite) => {
     setSelectedUser(user);
     try {
-      if (isLocalBackend()) {
-        const convo = await createOrGetConversation(user.user_id);
-        setConversationId(convo.id);
-        loadMessages(convo.id);
-      } else {
-        const { data, error } = await supabase.rpc(
-          "create_or_get_conversation",
-          { other_user_id: user.user_id },
-        );
-        if (error) throw error;
-        setConversationId(String(data));
-        loadMessages(String(data));
-      }
+      const { data, error } = await supabase.rpc(
+        "create_or_get_conversation",
+        { other_user_id: user.user_id },
+      );
+      if (error) throw error;
+      setConversationId(String(data));
+      loadMessages(String(data));
     } catch (e: any) {
       toast({ title: "Error", description: e.message, variant: "destructive" });
     }
@@ -364,55 +264,6 @@ export default function Mensajes() {
   }, [conversationId, backToMainMenu]);
 
   const loadMessages = async (convId: string) => {
-    if (isLocalBackend()) {
-      try {
-        const data = await listDMs(convId);
-        const messagesWithSender: MessageWithSender[] = (data as Message[]).map(
-          (msg) => {
-            const sender = directory.find((u) => u.user_id === msg.sender_id);
-            return {
-              ...msg,
-              sender_username: sender?.username,
-              sender_name: sender?.nombre_completo,
-            };
-          },
-        );
-        const isInitialLoad = !initializedConversationRef.current.has(convId);
-        if (isInitialLoad) {
-          initializedConversationRef.current.add(convId);
-          messagesWithSender.forEach((msg) => {
-            notifiedMessageIdsRef.current.add(msg.id);
-          });
-          const lastMsg = messagesWithSender[messagesWithSender.length - 1];
-          if (lastMsg) {
-            toast({
-              title: "Último mensaje",
-              description: `Enviado el ${formatMessageDateTime(lastMsg.created_at)}`,
-            });
-          }
-        }
-        setMessages((prev) => {
-          if (!isInitialLoad) {
-            const prevIds = new Set(prev.map((m) => m.id));
-            messagesWithSender.forEach((msg) => {
-              if (!prevIds.has(msg.id)) notifyIncomingMessage(msg);
-            });
-          }
-          return messagesWithSender;
-        });
-        setTimeout(() => {
-          const el = messagesContainerRef.current;
-          if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
-        }, 100);
-      } catch (error: any) {
-        toast({
-          title: "Error",
-          description: error.message,
-          variant: "destructive",
-        });
-      }
-      return;
-    }
     const { data, error } = await supabase
       .from("messages")
       .select("*")
@@ -468,12 +319,6 @@ export default function Mensajes() {
   // Real-time/polling para mensajes nuevos
   useEffect(() => {
     if (!conversationId) return;
-    if (isLocalBackend()) {
-      const interval = setInterval(() => {
-        loadMessages(conversationId);
-      }, 1500);
-      return () => clearInterval(interval);
-    }
     const channel = supabase
       .channel(`messages:${conversationId}`)
       .on(

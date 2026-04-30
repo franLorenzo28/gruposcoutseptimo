@@ -1,4 +1,3 @@
-import { apiFetch, isLocalBackend } from "@/lib/backend";
 import { supabase } from "@/integrations/supabase/client";
 import type { MiembroRama } from "@/lib/member-auth";
 
@@ -16,11 +15,6 @@ export interface RamaBroadcastMessage {
 export async function listRamaBroadcast(
   rama: MiembroRama,
 ): Promise<RamaBroadcastMessage[]> {
-  if (isLocalBackend()) {
-    const rows = await apiFetch(`/unidades/${rama}/difusion`);
-    return rows as RamaBroadcastMessage[];
-  }
-
   const { data: rows, error } = await (supabase as any)
     .from("rama_broadcast_messages")
     .select("id, rama, author_id, content, created_at")
@@ -72,14 +66,6 @@ export async function publishRamaBroadcast(
   rama: MiembroRama,
   content: string,
 ): Promise<RamaBroadcastMessage> {
-  if (isLocalBackend()) {
-    const row = await apiFetch(`/unidades/${rama}/difusion`, {
-      method: "POST",
-      body: JSON.stringify({ content }),
-    });
-    return row as RamaBroadcastMessage;
-  }
-
   const {
     data: { user },
     error: authError,
@@ -118,4 +104,19 @@ export async function publishRamaBroadcast(
     username: profile?.username ?? null,
     avatar_url: profile?.avatar_url ?? null,
   };
+}
+
+export async function deleteRamaBroadcast(
+  rama: MiembroRama,
+  messageId: string,
+): Promise<void> {
+  const { error } = await (supabase as any)
+    .from("rama_broadcast_messages")
+    .delete()
+    .eq("id", messageId)
+    .eq("rama", rama);
+
+  if (error) {
+    throw new Error(error.message || "No se pudo eliminar el mensaje.");
+  }
 }

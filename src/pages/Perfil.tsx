@@ -67,11 +67,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { isLocalBackend, uploadImage, getAuthUser, apiFetch } from "@/lib/backend";
-import {
-  getProfile as getLocalProfile,
-  updateProfile as updateLocalProfile,
-} from "@/lib/api";
+import { getAuthUser } from "@/lib/backend";
 import PageLoader from "@/components/ui/PageLoader";
 import { querySilent } from "@/lib/supabase-logger";
 
@@ -158,10 +154,31 @@ const Perfil = () => {
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
   const [emailVerified, setEmailVerified] = useState(true);
-  const [resendingEmail, setResendingEmail] = useState(false);
 
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Detectar si hay cambios pendientes - definido antes del useEffect que lo usa
+  const hasChanges = () => {
+    if (!originalData) return false;
+    if (avatarFile) return true;
+    if (formData.password) return true;
+    return (
+      formData.nombre_completo !== originalData.nombre_completo ||
+      formData.profesion_ocupacion !== originalData.profesion_ocupacion ||
+      formData.descripcion_personal !== originalData.descripcion_personal ||
+      formData.telefono !== originalData.telefono ||
+      formData.edad !== originalData.edad ||
+      formData.fecha_nacimiento !== originalData.fecha_nacimiento ||
+      formData.seisena !== originalData.seisena ||
+      formData.patrulla !== originalData.patrulla ||
+      formData.equipo_pioneros !== originalData.equipo_pioneros ||
+      formData.comunidad_rovers !== originalData.comunidad_rovers ||
+      formData.rol_adulto !== originalData.rol_adulto ||
+      formData.rama_que_educa !== originalData.rama_que_educa ||
+      formData.username !== originalData.username
+    );
+  };
 
   // Prevenir cierre/recarga del navegador con cambios sin guardar
   useEffect(() => {
@@ -195,19 +212,23 @@ const Perfil = () => {
       if (m < 0 || (m === 0 && hoy.getDate() < nacimiento.getDate())) {
         años--;
       }
-      setFormData((prev) => ({ ...prev, edad: años }));
+      requestAnimationFrame(() => {
+        setFormData((prev) => ({ ...prev, edad: años }));
+      });
     }
   }, [formData.fecha_nacimiento]);
 
   // Determinar rama actual según edad
   useEffect(() => {
     const edad = formData.edad;
-    if (edad >= 21) setRamaActual("Adulto");
-    else if (edad >= 18) setRamaActual("Rover");
-    else if (edad >= 15) setRamaActual("Pionero");
-    else if (edad >= 11) setRamaActual("Tropa");
-    else if (edad >= 7) setRamaActual("Manada");
-    else setRamaActual("");
+    requestAnimationFrame(() => {
+      if (edad >= 21) setRamaActual("Adulto");
+      else if (edad >= 18) setRamaActual("Rover");
+      else if (edad >= 15) setRamaActual("Pionero");
+      else if (edad >= 11) setRamaActual("Tropa");
+      else if (edad >= 7) setRamaActual("Manada");
+      else setRamaActual("");
+    });
   }, [formData.edad]);
 
   useEffect(() => {
@@ -226,41 +247,9 @@ const Perfil = () => {
       setUserEmail(auth.email || "");
       setEmailVerified(auth.email_verified ?? true);
 
-      // Asegurar que exista el perfil en Supabase antes de consultar
-      if (!isLocalBackend()) {
-        await ensureProfileExists(auth.id);
-      }
+      await ensureProfileExists(auth.id);
 
-      // Modo local: obtener desde backend propio
-      if (isLocalBackend()) {
-        const p: any = await getLocalProfile(auth.id).catch(() => null);
-        const profileData = {
-          ...formData,
-          nombre_completo: p?.nombre_completo || "",
-          profesion_ocupacion: p?.profesion_ocupacion || "",
-          descripcion_personal: p?.descripcion_personal || "",
-          telefono: p?.telefono || "",
-          edad: p?.edad || 0,
-          fecha_nacimiento: p?.fecha_nacimiento
-            ? p.fecha_nacimiento.split("T")[0]
-            : "",
-          seisena: p?.seisena || "",
-          patrulla: p?.patrulla || "",
-          equipo_pioneros: p?.equipo_pioneros || "",
-          comunidad_rovers: p?.comunidad_rovers || "",
-          rol_adulto: p?.rol_adulto || "",
-          rama_que_educa: p?.rama_que_educa || null,
-          password: "",
-          avatar_url: p?.avatar_url || null,
-          username: (p as any)?.username || "",
-          username_updated_at: (p as any)?.username_updated_at || null,
-        };
-        setFormData(profileData);
-        setOriginalData(profileData);
-        return;
-      }
-
-      // Supabase (fallback)
+      // Supabase (always)
       const { data: profile, error } = await supabase
         .from("profiles")
         .select("*")
@@ -355,31 +344,6 @@ const Perfil = () => {
 
   const [userEmail, setUserEmail] = useState("");
 
-  // Detectar si hay cambios pendientes
-  const hasChanges = () => {
-    if (!originalData) return false;
-    if (avatarFile) return true; // Hay nuevo avatar
-    if (formData.password) return true; // Hay nueva contraseña
-
-    // Comparar campos editables
-    return (
-      formData.nombre_completo !== originalData.nombre_completo ||
-      formData.profesion_ocupacion !== originalData.profesion_ocupacion ||
-      formData.descripcion_personal !== originalData.descripcion_personal ||
-      formData.telefono !== originalData.telefono ||
-
-      formData.edad !== originalData.edad ||
-      formData.fecha_nacimiento !== originalData.fecha_nacimiento ||
-      formData.seisena !== originalData.seisena ||
-      formData.patrulla !== originalData.patrulla ||
-      formData.equipo_pioneros !== originalData.equipo_pioneros ||
-      formData.comunidad_rovers !== originalData.comunidad_rovers ||
-      formData.rol_adulto !== originalData.rol_adulto ||
-      formData.rama_que_educa !== originalData.rama_que_educa ||
-      formData.username !== originalData.username
-    );
-  };
-
   useEffect(() => {
     // Obtener el email del usuario cuando se carga el componente
     (async () => {
@@ -450,13 +414,6 @@ const Perfil = () => {
     if (!avatarFile) return null;
 
     try {
-      if (isLocalBackend()) {
-        // Subir al backend local
-        const url = await uploadImage(avatarFile);
-        return url;
-      }
-
-      // Supabase storage
       const fileExt = avatarFile.name.split(".").pop();
       const fileName = `${Date.now()}.${fileExt}`;
       const filePath = `${userId}/${fileName}`;
@@ -507,15 +464,13 @@ const Perfil = () => {
         }
       }
 
-      // Actualizar contraseña: solo soportado en Supabase
-      if (!isLocalBackend() && sanitized.password) {
+      if (sanitized.password) {
         const { error: passwordError } = await supabase.auth.updateUser({
           password: sanitized.password,
         });
         if (passwordError) throw passwordError;
       }
 
-      // Preparar datos de perfil
       const profileData: any = {
         user_id: auth.id,
         nombre_completo: sanitized.nombre_completo,
@@ -566,50 +521,19 @@ const Perfil = () => {
         profileData.rama_que_educa = sanitized.rama_que_educa || null;
       }
 
-      if (isLocalBackend()) {
-        const updated = (await updateLocalProfile(profileData as any)) as any;
-        if (updated) {
-          // Aplicar respuesta del backend directamente para evitar parpadeos
-          const refreshed = {
-            ...formData,
-            nombre_completo: updated?.nombre_completo || formData.nombre_completo,
-            profesion_ocupacion:
-              updated?.profesion_ocupacion ?? formData.profesion_ocupacion,
-            descripcion_personal: updated?.descripcion_personal || formData.descripcion_personal,
-            telefono: updated?.telefono ?? formData.telefono,
-            fecha_nacimiento: updated?.fecha_nacimiento
-              ? String(updated.fecha_nacimiento).split("T")[0] ?? ""
-              : formData.fecha_nacimiento,
-            rol_adulto: updated?.rol_adulto ?? formData.rol_adulto,
-            seisena: updated?.seisena ?? formData.seisena,
-            patrulla: updated?.patrulla ?? formData.patrulla,
-            equipo_pioneros: updated?.equipo_pioneros ?? formData.equipo_pioneros,
-            comunidad_rovers: updated?.comunidad_rovers ?? formData.comunidad_rovers,
-            avatar_url: updated?.avatar_url ?? avatarUrl,
-            username: updated?.username ?? formData.username,
-            username_updated_at:
-              updated?.username_updated_at ?? formData.username_updated_at,
-          };
-          setFormData(refreshed);
-          setOriginalData(refreshed);
-        }
-      } else {
-        const { error: profileError } = await supabase
-          .from("profiles")
-          .update(profileData)
-          .eq("user_id", auth.id);
-        if (profileError) throw profileError;
-      }
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update(profileData)
+        .eq("user_id", auth.id);
+      if (profileError) throw profileError;
 
       toast({
         title: "¡Perfil actualizado!",
         description: "Tus cambios han sido guardados.",
       });
 
-  // Recargar perfil desde servidor para reflejar cambios (sin mostrar loading)
-  if (!isLocalBackend()) await getProfile(false);
+      await getProfile(false);
 
-      // Limpiar estados temporales
       setAvatarFile(null);
       setAvatarPreview(null);
     } catch (error: any) {
@@ -624,31 +548,11 @@ const Perfil = () => {
   };
 
   const handleResendVerificationEmail = async () => {
-    if (!isLocalBackend()) {
-      toast({
-        title: "No disponible",
-        description: "La verificación de email solo está disponible en modo local",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      setResendingEmail(true);
-      await apiFetch("/auth/resend-verification", { method: "POST" });
-      toast({
-        title: "✉️ Email enviado",
-        description: "Revisa tu correo para verificar tu cuenta",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "No se pudo enviar el email",
-        variant: "destructive",
-      });
-    } finally {
-      setResendingEmail(false);
-    }
+    toast({
+      title: "Funcionalidad no disponible",
+      description: "Solicita la verificación desde tu panel de Supabase",
+      variant: "destructive",
+    });
   };
 
   if (loading) {
@@ -689,7 +593,7 @@ const Perfil = () => {
         </div>
 
         {/* Email Verification Banner */}
-        {!emailVerified && isLocalBackend() && (
+        {!emailVerified && (
           <Alert className="mb-6 border-yellow-500 bg-yellow-50 dark:bg-yellow-950/30">
             <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-500" />
             <AlertDescription className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
@@ -705,11 +609,10 @@ const Perfil = () => {
                 size="sm"
                 variant="outline"
                 onClick={handleResendVerificationEmail}
-                disabled={resendingEmail}
                 className="gap-2 shrink-0"
               >
                 <Mail className="h-4 w-4" />
-                {resendingEmail ? "Enviando..." : "Reenviar email"}
+                Reenviar email
               </Button>
             </AlertDescription>
           </Alert>
@@ -762,18 +665,10 @@ const Perfil = () => {
                     try {
                       const auth = await getAuthUser();
                       if (!auth) return;
-
-                      if (isLocalBackend()) {
-                        await updateLocalProfile({
-                          user_id: auth.id,
-                          avatar_url: null,
-                        } as any);
-                      } else {
-                        await supabase
-                          .from("profiles")
-                          .update({ avatar_url: null })
-                          .eq("user_id", auth.id);
-                      }
+                      await supabase
+                        .from("profiles")
+                        .update({ avatar_url: null })
+                        .eq("user_id", auth.id);
 
                       setFormData((prev) => ({ ...prev, avatar_url: null }));
                       setOriginalData((prev) =>
