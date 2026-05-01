@@ -102,9 +102,16 @@ export default function GrupoDetail() {
       return () => clearInterval(interval);
     }
 
-    const channel = supabase
-      .channel(`group_messages:${id}`)
-      .on(
+    const channelPrefix = `group_messages:${id}:`;
+    supabase
+      .getChannels()
+      .filter((existing) => existing.topic.startsWith(channelPrefix))
+      .forEach((existing) => {
+        void supabase.removeChannel(existing);
+      });
+
+    const channel = supabase.channel(`group_messages:${id}:${Date.now()}`);
+    channel.on(
         "postgres_changes",
         {
           event: "INSERT",
@@ -137,8 +144,8 @@ export default function GrupoDetail() {
             messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
           }, 100);
         },
-      )
-      .subscribe();
+      );
+    channel.subscribe();
 
     return () => {
       supabase.removeChannel(channel);

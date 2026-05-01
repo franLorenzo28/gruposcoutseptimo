@@ -319,9 +319,16 @@ export default function Mensajes() {
   // Real-time/polling para mensajes nuevos
   useEffect(() => {
     if (!conversationId) return;
-    const channel = supabase
-      .channel(`messages:${conversationId}`)
-      .on(
+    const channelPrefix = `messages:${conversationId}:`;
+    supabase
+      .getChannels()
+      .filter((existing) => existing.topic.startsWith(channelPrefix))
+      .forEach((existing) => {
+        void supabase.removeChannel(existing);
+      });
+
+    const channel = supabase.channel(`messages:${conversationId}:${Date.now()}`);
+    channel.on(
         "postgres_changes",
         {
           event: "INSERT",
@@ -347,8 +354,8 @@ export default function Mensajes() {
             if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
           }, 100);
         },
-      )
-      .subscribe();
+      );
+    channel.subscribe();
     return () => {
       supabase.removeChannel(channel);
     };

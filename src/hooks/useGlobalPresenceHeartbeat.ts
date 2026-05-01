@@ -80,7 +80,15 @@ export function useGlobalPresenceHeartbeat(userId: string | null | undefined) {
     let lastActivityAt = Date.now();
     let currentStatus: PresenceHeartbeatStatus = "active";
 
-    const channel = supabase.channel("presence:comuni7", {
+    const channelPrefix = `presence:comuni7:heartbeat:${userId}:`;
+    supabase
+      .getChannels()
+      .filter((existing) => existing.topic.startsWith(channelPrefix))
+      .forEach((existing) => {
+        void supabase.removeChannel(existing);
+      });
+
+    const channel = supabase.channel(`presence:comuni7:heartbeat:${userId}:${Date.now()}`, {
       config: { presence: { key: userId } },
     });
 

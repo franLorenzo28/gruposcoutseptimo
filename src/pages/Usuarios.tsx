@@ -142,7 +142,15 @@ const Usuarios = () => {
   useEffect(() => {
     if (!currentUserId) return;
 
-    const channel = supabase.channel("presence:comuni7", {
+    const channelPrefix = `presence:comuni7:${currentUserId}:`;
+    supabase
+      .getChannels()
+      .filter((existing) => existing.topic.startsWith(channelPrefix))
+      .forEach((existing) => {
+        void supabase.removeChannel(existing);
+      });
+
+    const channel = supabase.channel(`presence:comuni7:${currentUserId}:${Date.now()}`, {
       config: { presence: { key: `viewer-${currentUserId}` } },
     });
 
@@ -171,15 +179,14 @@ const Usuarios = () => {
       setSupabasePresenceById(next);
     };
 
-    channel
-      .on("presence", { event: "sync" }, syncPresence)
-      .on("presence", { event: "join" }, syncPresence)
-      .on("presence", { event: "leave" }, syncPresence)
-      .subscribe((status) => {
-        if (status === "SUBSCRIBED") {
-          syncPresence();
-        }
-      });
+    channel.on("presence", { event: "sync" }, syncPresence);
+    channel.on("presence", { event: "join" }, syncPresence);
+    channel.on("presence", { event: "leave" }, syncPresence);
+    channel.subscribe((status) => {
+      if (status === "SUBSCRIBED") {
+        syncPresence();
+      }
+    });
 
     return () => {
       supabase.removeChannel(channel);
