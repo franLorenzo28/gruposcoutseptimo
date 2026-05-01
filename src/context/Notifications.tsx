@@ -6,6 +6,21 @@ import { listAlbums, listImages } from "@/lib/gallery";
 import { querySilent } from "@/lib/supabase-logger";
 import { getPendingRequestsForMe } from "@/lib/follows";
 
+// Module-level state survives StrictMode remounts AND HMR
+const _subscribedUsers = new Set<string>();
+let _channel: any = null;
+
+// Cleanup channels before HMR replaces the module
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    supabase.getChannels().forEach((ch) => {
+      void supabase.removeChannel(ch);
+    });
+    _channel = null;
+    _subscribedUsers.clear();
+  });
+}
+
 export type AppNotification = {
   id: string;
   type:
@@ -311,14 +326,22 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
     });
   }, [isNotificationEnabled]);
 
-  // Realtime subscriptions - setup ONCE, never cleanup (avoids StrictMode async race conditions)
-  const realtimeChannelRef = useRef<any>(null);
-
+  // Realtime subscriptions - module-level guard survives StrictMode + HMR
   useEffect(() => {
-    if (!user || realtimeChannelRef.current) return;
+    if (!user) return;
 
-    const channel = supabase.channel(`notifs-all:${user.id}`);
-    realtimeChannelRef.current = channel;
+    // Check Supabase client first (survives HMR + StrictMode)
+    const existing = supabase.getChannels().find(
+      (ch: any) => ch.topic.includes(user.id)
+    );
+    if (existing) return; // Channel already exists, don't add handlers again
+
+    // Guard: module-level Set survives StrictMode remounts
+    if (_subscribedUsers.has(user.id)) return;
+    _subscribedUsers.add(user.id);
+
+    const channel = supabase.channel(`septimo-notifs-v2-${user.id}`);
+    _channel = channel;
 
     // 1. Follows - INSERT
     channel.on(
@@ -413,7 +436,6 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
     );
 
     channel.subscribe();
-    // NO cleanup - channel lives for the entire app session
   }, [user, addNotification, notifyViaPush, persistNotification, isNotificationEnabled, normalizePersistentNotification]);
 
   // Notificación de nuevas fotos en galería (sondeo liviano)
