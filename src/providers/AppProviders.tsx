@@ -27,12 +27,14 @@ type SupabaseUserWithProfile = User & {
 interface SupabaseUserContextType {
   user: SupabaseUserWithProfile | null;
   isUserLoading: boolean;
+  accountStatus: string | null;
   refreshUser: () => Promise<void>;
 }
 
 export const SupabaseUserContext = createContext<SupabaseUserContextType>({
   user: null,
   isUserLoading: true,
+  accountStatus: null,
   refreshUser: async () => {},
 });
 
@@ -40,6 +42,7 @@ export const useSupabaseUser = () => useContext(SupabaseUserContext);
 
 const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<SupabaseUserWithProfile | null>(null);
+  const [accountStatus, setAccountStatus] = useState<string | null>(null);
   const [isUserLoading, setIsUserLoading] = useState(true);
 
   const refreshUser = async () => {
@@ -47,6 +50,7 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
       const { data: { user: sessionUser } } = await supabase.auth.getUser();
       if (!sessionUser) {
         setUser(null);
+        setAccountStatus(null);
         return;
       }
 
@@ -60,6 +64,7 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
       if (profile) {
         const combinedUser = { ...sessionUser, ...profile } as unknown as SupabaseUserWithProfile;
         setUser(combinedUser);
+        setAccountStatus(profile.account_status ?? null);
         try {
           localStorage.setItem("adminUser", JSON.stringify(combinedUser));
         } catch {
@@ -74,6 +79,7 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
   async function fetchUserAndProfile(sessionUser: any) {
     if (!sessionUser) {
       setUser(null);
+      setAccountStatus(null);
       setIsUserLoading(false);
       return;
     }
@@ -88,9 +94,27 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
     );
 
     if (error || !profile) {
+      // No profile yet - let them in (Google signups might not have trigger yet)
       setUser(sessionUser);
+      setAccountStatus(null);
       localStorage.setItem("adminUser", JSON.stringify(sessionUser));
       setIsUserLoading(false);
+      return;
+    }
+
+    const status = profile.account_status ?? 'activo';
+    setAccountStatus(status);
+
+    // Block access if not approved
+    if (status !== 'activo') {
+      // User is pending or rejected - sign them out
+      await supabase.auth.signOut();
+      setUser(null);
+      setAccountStatus(status);
+      setIsUserLoading(false);
+      // Store pending status so we can show a message
+      localStorage.setItem("pendingAccountStatus", status);
+      localStorage.setItem("pendingUserName", profile.nombre_completo || sessionUser.email || "Usuario");
       return;
     }
 
@@ -113,11 +137,13 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
         fetchUserAndProfile(u);
       } else {
         setUser(null);
+        setAccountStatus(null);
         setIsUserLoading(false);
       }
     }).catch((err) => {
       if (import.meta.env.DEV) console.error("Error getSession:", err);
       setUser(null);
+      setAccountStatus(null);
       setIsUserLoading(false);
     });
 
@@ -128,6 +154,7 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
           fetchUserAndProfile(u);
         } else {
           setUser(null);
+          setAccountStatus(null);
           setIsUserLoading(false);
         }
       },
@@ -139,7 +166,7 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   return (
-    <SupabaseUserContext.Provider value={{ user, isUserLoading, refreshUser }}>
+    <SupabaseUserContext.Provider value={{ user, isUserLoading, accountStatus, refreshUser }}>
       {children}
     </SupabaseUserContext.Provider>
   );

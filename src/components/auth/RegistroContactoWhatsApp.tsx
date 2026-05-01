@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CheckCircle2, Loader2 } from "lucide-react";
 
 type WhatsAppContact = {
   unidad: string;
@@ -8,7 +10,13 @@ type WhatsAppContact = {
 
 type RegistroContactoWhatsAppProps = {
   nombreCompleto?: string;
+  userId?: string;
+  userEmail?: string;
+  tipoRelacion?: string;
+  rama?: string;
+  nombreScoutRelacionado?: string;
   onBack?: () => void;
+  onContacted?: () => void;
 };
 
 const CONTACTS: WhatsAppContact[] = [
@@ -31,9 +39,29 @@ const buildWhatsAppUrl = (phone: string, message: string) => {
   return `https://wa.me/${digits}?text=${encoded}`;
 };
 
-export default function RegistroContactoWhatsApp({ nombreCompleto, onBack }: RegistroContactoWhatsAppProps) {
+export default function RegistroContactoWhatsApp({
+  nombreCompleto,
+  userId,
+  userEmail,
+  tipoRelacion,
+  rama,
+  nombreScoutRelacionado,
+  onBack,
+  onContacted,
+}: RegistroContactoWhatsAppProps) {
   const safeName = nombreCompleto?.trim() || DEFAULT_NAME;
   const message = buildMessage(safeName);
+  const [contacted, setContacted] = useState(false);
+  const [sending, setSending] = useState(false);
+
+  const handleContacted = async () => {
+    setSending(true);
+    setContacted(true);
+    if (onContacted) {
+      await onContacted();
+    }
+    setSending(false);
+  };
 
   return (
     <Card className="w-full max-w-xl border border-white/30 dark:border-white/10 bg-background/90 dark:bg-background/80 backdrop-blur-xl shadow-2xl relative overflow-hidden">
@@ -78,6 +106,33 @@ export default function RegistroContactoWhatsApp({ nombreCompleto, onBack }: Reg
         <p className="text-xs text-muted-foreground">
           Importante: no se aprobaran usuarios que no hayan pasado por este contacto.
         </p>
+
+        {/* Botón "Ya fui contactado" */}
+        {onContacted && (
+          <Button
+            type="button"
+            className="w-full h-11 gap-2"
+            onClick={handleContacted}
+            disabled={sending || contacted}
+          >
+            {sending ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Enviando solicitud...
+              </>
+            ) : contacted ? (
+              <>
+                <CheckCircle2 className="w-4 h-4" />
+                Solicitud enviada al admin
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="w-4 h-4" />
+                Ya fui contactado, enviar solicitud
+              </>
+            )}
+          </Button>
+        )}
 
         {onBack ? (
           <Button type="button" variant="outline" className="w-full h-10" onClick={onBack}>

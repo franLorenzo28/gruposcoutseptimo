@@ -18,6 +18,8 @@ import {
   MessagesSquare,
   FileText,
   Layers,
+  UserCheck,
+  UserX,
 } from "lucide-react";
 import {
   Dialog,
@@ -232,7 +234,7 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
       supabase.from("follows").select("*").order("created_at", { ascending: false }).limit(500),
       supabase.from("notifications").select("*").order("created_at", { ascending: false }).limit(500),
       supabase.from("profiles")
-        .select("user_id, email, nombre_completo, username, account_status, account_classification, created_at")
+        .select("user_id, email, nombre_completo, username, account_status, account_classification, account_review_reason, tipo_relacion, rama, nombre_scout_relacionado, rol_adulto, created_at")
         .in("account_status", ["pendiente_email", "pendiente_aprobacion"])
         .order("created_at", { ascending: false })
         .limit(100),
@@ -813,6 +815,7 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
                 <Badge variant="outline">Usuarios: {stats.total}</Badge>
                 <Badge variant="outline">Admins: {stats.admins}</Badge>
                 {isLocalBackend() && <Badge variant="outline">Pendientes: {pendingUsers.length}</Badge>}
+                {!isLocalBackend() && pendingUsers.length > 0 && <Badge variant="destructive">{pendingUsers.length} pendiente{pendingUsers.length !== 1 ? "s" : ""}</Badge>}
               </div>
             </div>
             <p className="mt-3 text-xs text-muted-foreground">
@@ -905,6 +908,13 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
               <FileText className="h-3.5 w-3.5" />
               Páginas
             </TabsTrigger>
+            {!isLocalBackend() && (
+              <TabsTrigger value="requests" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 gap-1.5">
+                <UserCheck className="h-3.5 w-3.5" />
+                Solicitudes
+                {pendingUsers.length > 0 && <Badge variant="destructive" className="ml-1 h-4 px-1 text-[10px]">{pendingUsers.length}</Badge>}
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="overview">
@@ -1560,6 +1570,86 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {!isLocalBackend() && (
+            <TabsContent value="requests">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between text-base sm:text-lg">
+                    <span className="flex items-center gap-2"><UserCheck className="w-4 h-4" />Solicitudes de Registro ({pendingUsers.length})</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {loadingAdmin ? (
+                    <div className="py-8 text-center text-sm text-muted-foreground">Cargando solicitudes...</div>
+                  ) : pendingUsers.length === 0 ? (
+                    <div className="py-12 text-center space-y-2">
+                      <UserCheck className="w-12 h-12 mx-auto text-muted-foreground/50" />
+                      <p className="text-sm text-muted-foreground">No hay solicitudes pendientes</p>
+                      <p className="text-xs text-muted-foreground">Todos los usuarios están aprobados</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {pendingUsers.map((user) => (
+                        <div key={user.user_id} className="rounded-lg border bg-card p-4 space-y-3">
+                          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                            <div className="space-y-1 flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h3 className="font-semibold text-sm truncate">{user.nombre_completo || "Sin nombre"}</h3>
+                                <Badge variant={user.account_status === "pendiente_aprobacion" ? "default" : "secondary"}>
+                                  {user.account_status === "pendiente_aprobacion" ? "Email verificado" : "Email pendiente"}
+                                </Badge>
+                              </div>
+                              <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                              {user.username && <p className="text-xs text-muted-foreground">@{user.username}</p>}
+                              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                                {user.tipo_relacion && (
+                                  <span>Tipo: <span className="text-foreground">{user.tipo_relacion}</span></span>
+                                )}
+                                {user.rama && (
+                                  <span>Rama: <span className="text-foreground">{user.rama}</span></span>
+                                )}
+                                {user.nombre_scout_relacionado && (
+                                  <span>Scout relacionado: <span className="text-foreground">{user.nombre_scout_relacionado}</span></span>
+                                )}
+                                <span className="text-muted-foreground">
+                                  Registrado: <span className="text-foreground">{formatDate(user.created_at)}</span>
+                                </span>
+                              </div>
+                              {user.account_review_reason && (
+                                <p className="text-xs text-muted-foreground mt-1 p-2 rounded bg-muted/50">
+                                  Motivo: {user.account_review_reason}
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex gap-2 shrink-0">
+                              <Button
+                                size="sm"
+                                className="gap-1.5 bg-green-600 hover:bg-green-700 text-white"
+                                onClick={() => handleReviewPendingUser(user.user_id, "activo")}
+                              >
+                                <UserCheck className="w-3.5 h-3.5" />
+                                Aprobar
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                className="gap-1.5"
+                                onClick={() => handleReviewPendingUser(user.user_id, "rechazado", "Rechazado por administración")}
+                              >
+                                <UserX className="w-3.5 h-3.5" />
+                                Rechazar
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
         </Tabs>
       </div>
 

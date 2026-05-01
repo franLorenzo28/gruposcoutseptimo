@@ -1,9 +1,11 @@
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useState, useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { MemberAuthProvider, useMemberAuth } from "@/context/MemberAuthContext";
 import RequireMemberAuth from "@/components/auth/RequireMemberAuth";
 import RequireRamaAccess from "@/components/auth/RequireRamaAccess";
 import RequireAuthenticatedUser from "@/components/auth/RequireAuthenticatedUser";
+import RequireApproval from "@/components/RequireApproval";
+import PendingApprovalScreen from "@/components/PendingApprovalScreen";
 import { NotificationsProvider } from "@/context/Notifications";
 import { AdminGuard } from "@/components/AdminGuard";
 import PageLoader from "@/components/ui/PageLoader";
@@ -70,13 +72,32 @@ function GlobalPresenceHeartbeat() {
   return null;
 }
 
-export function AppRoutes() {
+function AppContent() {
+  const { user, accountStatus, isUserLoading } = useSupabaseUser();
+  const [pendingInfo, setPendingInfo] = useState<{ name: string; status: string } | null>(null);
+
+  useEffect(() => {
+    if (isUserLoading || !user) return;
+    
+    const storedStatus = localStorage.getItem("pendingAccountStatus");
+    const currentStatus = storedStatus || accountStatus;
+    
+    if (currentStatus && currentStatus !== "activo") {
+      const name = localStorage.getItem("pendingUserName") || user.email || "Usuario";
+      setPendingInfo({ name, status: currentStatus });
+    }
+  }, [user, accountStatus, isUserLoading]);
+
+  if (pendingInfo) {
+    return <PendingApprovalScreen userName={pendingInfo.name} status={pendingInfo.status} />;
+  }
+
   return (
     <>
       <GlobalPresenceHeartbeat />
       <MemberAuthProvider>
         <NotificationsProvider>
-          <Suspense fallback={<PageLoader message="Cargando secciÃ³n..." />}>
+          <Suspense fallback={<PageLoader message="Cargando sección..." />}>
             <Routes>
               <Route path="/" element={<Inicio />} />
               <Route path="/linea-temporal" element={<Navigate to="/historia" replace />} />
@@ -238,12 +259,40 @@ export function AppRoutes() {
               <Route path="/auth" element={<Auth />} />
               <Route path="/auth/callback" element={<Auth />} />
               <Route path="/verificar-email" element={<VerificarEmail />} />
-              <Route path="/perfil" element={<PerfilView />} />
-              <Route path="/perfil/editar" element={<Perfil />} />
-              <Route path="/configuracion" element={<Configuracion />} />
+              <Route
+                path="/perfil"
+                element={
+                  <RequireApproval>
+                    <PerfilView />
+                  </RequireApproval>
+                }
+              />
+              <Route
+                path="/perfil/editar"
+                element={
+                  <RequireApproval>
+                    <Perfil />
+                  </RequireApproval>
+                }
+              />
+              <Route
+                path="/configuracion"
+                element={
+                  <RequireApproval>
+                    <Configuracion />
+                  </RequireApproval>
+                }
+              />
               <Route path="/perfil-public/:id" element={<PerfilPublic />} />
               <Route path="/usuarios" element={<Usuarios />} />
-              <Route path="/mensajes" element={<Mensajes />} />
+              <Route
+                path="/mensajes"
+                element={
+                  <RequireApproval>
+                    <Mensajes />
+                  </RequireApproval>
+                }
+              />
               <Route path="/grupos/:id" element={<GrupoDetail />} />
               <Route path="/dashboard-coordinador" element={<DashboardCoordinador />} />
 
@@ -265,8 +314,22 @@ export function AppRoutes() {
               <Route path="/ramas/staff" element={<Navigate to="/unidades/staff" replace />} />
               <Route path="/ramas/comite" element={<Navigate to="/unidades/comite" replace />} />
 
-              <Route path="/admin-panel" element={<AdminPanel />} />
-              <Route path="/admin" element={<AdminGuard><AdminPanel /></AdminGuard>} />
+              <Route
+                path="/admin-panel"
+                element={
+                  <RequireApproval>
+                    <AdminPanel />
+                  </RequireApproval>
+                }
+              />
+              <Route
+                path="/admin"
+                element={
+                  <RequireApproval>
+                    <AdminGuard><AdminPanel /></AdminGuard>
+                  </RequireApproval>
+                }
+              />
               <Route path="/test-diagnostic" element={<TestDiagnostic />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
@@ -275,4 +338,8 @@ export function AppRoutes() {
       </MemberAuthProvider>
     </>
   );
+}
+
+export function AppRoutes() {
+  return <AppContent />;
 }

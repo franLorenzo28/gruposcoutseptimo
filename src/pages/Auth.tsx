@@ -205,6 +205,15 @@ const Auth = () => {
   const [loginRedirecting, setLoginRedirecting] = useState(false);
   const [showWhatsappContacts, setShowWhatsappContacts] = useState(false);
   const [recentSignupName, setRecentSignupName] = useState("");
+  const [pendingSignup, setPendingSignup] = useState<{
+    nombre: string;
+    apellido: string;
+    email: string;
+    password: string;
+    tipoRelacion: string;
+    rama: string;
+    nombreScoutRelacionado: string;
+  } | null>(null);
   const [whatsappGateActive, setWhatsappGateActive] = useState(false);
   const whatsappGateRef = useRef(false);
   const navigate = useNavigate();
@@ -542,55 +551,19 @@ const Auth = () => {
       }
 
       const fullName = `${signupNombre.trim()} ${signupApellido.trim()}`.trim();
-      const redirectUrl = buildAuthRedirect("/");
-      const { error } = await supabase.auth.signUp({
+      
+      // Store registration data and show WhatsApp screen - don't create user yet
+      setPendingSignup({
+        nombre: signupNombre.trim(),
+        apellido: signupApellido.trim(),
         email: trimmedEmail,
         password: trimmedPassword,
-        options: {
-          data: {
-            nombre_completo: fullName,
-            nombre: sanitizeText(signupNombre),
-            apellido: sanitizeText(signupApellido),
-            tipo_relacion: signupTipoRelacion,
-            rama: signupRama.trim() || null,
-            nombre_scout_relacionado: signupNombreScoutRelacionado.trim() || null,
-          },
-          emailRedirectTo: redirectUrl,
-        },
+        tipoRelacion: signupTipoRelacion,
+        rama: signupRama.trim(),
+        nombreScoutRelacionado: signupNombreScoutRelacionado.trim(),
       });
-      if (error) {
-        if (
-          error.message.includes("already registered") ||
-          error.message.includes("ya está registrado")
-        ) {
-          toast({
-            title: "Usuario ya registrado",
-            description:
-              "Este correo ya está registrado. Intenta iniciar sesión.",
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Error al registrarse",
-            description: error.message,
-            variant: "destructive",
-          });
-        }
-      } else {
-        toast({
-          title: "Confirma tu correo electrónico",
-          description: `Te enviamos un correo a ${trimmedEmail}. Luego de verificarlo, un admin debe aprobar tu acceso antes de habilitar funciones internas.`,
-        });
-        setRecentSignupName(fullName);
-        setShowWhatsappContacts(true);
-        setEmail("");
-        setPassword("");
-        setSignupNombre("");
-        setSignupApellido("");
-        setSignupTipoRelacion("scout");
-        setSignupRama("");
-        setSignupNombreScoutRelacionado("");
-      }
+      setRecentSignupName(fullName);
+      setShowWhatsappContacts(true);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Ocurrió un error inesperado";
       setInlineMessage(message);
@@ -600,6 +573,63 @@ const Auth = () => {
         variant: "destructive",
       });
       setWhatsappGateActive(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Called when user clicks "Ya fui contactado" on WhatsApp screen
+  const handleContactedAndSignup = async () => {
+    if (!pendingSignup) return;
+    setLoading(true);
+    console.log("DEBUG: Attempting signup with email:", pendingSignup.email);
+    try {
+      const fullName = `${pendingSignup.nombre} ${pendingSignup.apellido}`.trim();
+      const redirectUrl = buildAuthRedirect("/");
+      console.log("DEBUG: Calling supabase.auth.signUp...");
+      const { error, data } = await supabase.auth.signUp({
+        email: pendingSignup.email,
+        password: pendingSignup.password,
+        options: {
+          data: {
+            nombre_completo: fullName,
+            nombre: sanitizeText(pendingSignup.nombre),
+            apellido: sanitizeText(pendingSignup.apellido),
+            tipo_relacion: pendingSignup.tipoRelacion,
+            rama: pendingSignup.rama || null,
+            nombre_scout_relacionado: pendingSignup.nombreScoutRelacionado || null,
+          },
+          emailRedirectTo: redirectUrl,
+        },
+      });
+      console.log("DEBUG: SignUp response - error:", error, "data:", data);
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      toast({
+        title: "¡Registro exitoso!",
+        description: `Te enviamos un correo a ${pendingSignup.email}. Luego de verificarlo, un admin debe aprobar tu acceso.`,
+      });
+
+      // Clear form and pending data
+      setEmail("");
+      setPassword("");
+      setSignupNombre("");
+      setSignupApellido("");
+      setSignupTipoRelacion("scout");
+      setSignupRama("");
+      setSignupNombreScoutRelacionado("");
+      setPendingSignup(null);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Ocurrió un error inesperado";
+      toast({
+        title: "Error al registrarse",
+        description: message,
+        variant: "destructive",
+      });
+      setPendingSignup(null);
+      setShowWhatsappContacts(false);
     } finally {
       setLoading(false);
     }
@@ -745,10 +775,17 @@ const Auth = () => {
       {showWhatsappContacts ? (
         <RegistroContactoWhatsApp
           nombreCompleto={recentSignupName}
+          userId={pendingSignup ? undefined : undefined}
+          userEmail={pendingSignup?.email}
+          tipoRelacion={pendingSignup?.tipoRelacion}
+          rama={pendingSignup?.rama}
+          nombreScoutRelacionado={pendingSignup?.nombreScoutRelacionado}
           onBack={() => {
             setShowWhatsappContacts(false);
+            setPendingSignup(null);
             setAuthTab("login");
           }}
+          onContacted={handleContactedAndSignup}
         />
       ) : needsGoogleCompletion ? (
         <Card className="w-full max-w-lg border border-white/30 dark:border-white/10 bg-background/85 dark:bg-background/80 backdrop-blur-xl shadow-2xl relative overflow-hidden">
