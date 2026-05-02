@@ -25,19 +25,19 @@ const Bauen = () => {
       nombre: "La Manada",
       color: "#FEB21A",
       duracion: "1 día",
-      descripcion: "En la Manada se realizan construcciones de cubiles. Esta se desarrolla en una sola jornada donde deben presentar sus construcciones dentro de un box delimitado. Cada cubil representa a un personaje del Libro de la Selva, elegido por cada seisena, y la elección no puede repetirse dentro del mismo Grupo Scout. Con esta propuesta se busca que exploren y se sumerjan en el mundo de las Tierras Vírgenes durante la actividad. Es una actividad familiar que los Lobatos disfrutan mucho, así como sus familias y amigos.",
+       descripcion: "En la Manada se realizan construcciones de cubiles. Esta se desarrolla en una sola jornada donde deben presentar sus construcciones dentro de un recinto delimitado. Cada cubil representa a un personaje del Libro de la Selva, elegido por cada seisena, y la elección no puede repetirse dentro del mismo Grupo Scout. Con esta propuesta se busca que exploren y se sumerjan en el mundo de las Tierras Vírgenes durante la actividad. Es una actividad familiar que los Lobatos disfrutan mucho, así como sus familias y amigos.",
     },
     {
       nombre: "Unidad Scout / Tropa",
       color: "#344F1F",
       duracion: "2 días",
-      descripcion: "Es uno de los platos fuertes del evento, ya que nuclea la mayor cantidad de participantes. Actualmente participan más de 25 patrullas en competencias de construcción de rincones de patrulla y cocina con fuego. En esta unidad se ve en tiempo real todo lo aprendido en su vida scout y su aplicación práctica: cabuyería, amarres, pionerismo, campismo, cocina, armado de toldos, mesas y bancos, además del cuidado y la limpieza del rincón.",
+       descripcion: "Es uno de los platos fuertes del evento, ya que nuclea la mayor cantidad de participantes. Actualmente participan más de 25 patrullas en competencias de construcción de rincones de patrulla y cocina con fuego. En esta unidad se ve en tiempo real todo lo aprendido en su vida scout y su aplicación práctica: cabullería, amarres, pionerismo, campismo, cocina, armado de toldos, mesas y bancos, además del cuidado y la limpieza del rincón.",
     },
     {
       nombre: "Pioneros",
       color: "#134686",
       duracion: "2 días",
-      descripcion: "Se ha transformado en una de las actividades más atractivas del segundo día. La construcción de trebuchet aplica cabuyería de forma más compleja, con precisión, técnica y roles claros dentro del equipo. Además, se realiza una cena medieval en la noche y, al día siguiente, una instancia lúdica con pruebas temáticas antes de la competencia principal.",
+       descripcion: "Se ha transformado en una de las actividades más atractivas del segundo día. La construcción de trebuchet aplica cabullería de forma más compleja, con precisión, técnica y roles claros dentro del equipo. Además, se realiza una cena medieval en la noche y, al día siguiente, una instancia lúdica con pruebas temáticas antes de la competencia principal.",
     },
     {
       nombre: "Rovers",
@@ -56,7 +56,7 @@ const Bauen = () => {
           <div className="bg-blob w-48 h-48 sm:w-72 sm:h-72 bg-muted/30 -bottom-16 -left-16 drift-slow" />
         </div>
 
-        <div className="max-w-5xl px-4 sm:px-6">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <Reveal className="text-center">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-muted/40 backdrop-blur-sm rounded-full mb-6">
               <Flag className="w-4 h-4 text-primary" />
@@ -105,7 +105,7 @@ const Bauen = () => {
 
       {/* Acerca del Evento */}
       <section className="py-12 sm:py-16">
-        <div className="max-w-5xl px-4 sm:px-6">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <Reveal className="text-center mb-10">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3">
               Acerca del Evento
@@ -154,7 +154,7 @@ const Bauen = () => {
 
       {/* Nuestras Ramas */}
       <section className="py-12 sm:py-16 bg-gradient-to-b from-muted/20 to-transparent">
-        <div className="max-w-5xl px-4 sm:px-6">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <Reveal className="text-center mb-10">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3">
               Nuestras Ramas
@@ -242,7 +242,7 @@ const Bauen = () => {
 
       {/* CTA Final */}
       <section className="py-12 sm:py-16">
-        <div className="max-w-5xl px-4 sm:px-6">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <Reveal>
             <Card className="border-primary/20 bg-gradient-to-br from-primary/5 via-background to-muted/30 shadow-xl">
               <CardContent className="p-8 sm:p-10 text-center">

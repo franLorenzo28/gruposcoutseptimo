@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { apiFetch, isLocalBackend } from "@/lib/backend";
 import { Button } from "@/components/ui/button";
@@ -45,7 +45,7 @@ type EducatorUnit = "manada" | "tropa" | "pioneros" | "rovers";
 
 const EDUCATOR_UNIT_OPTIONS: Array<{ value: EducatorUnit; label: string }> = [
   { value: "manada", label: "Manada (Lobatos)" },
-  { value: "tropa", label: "Tropa (11-14 años)" },
+  { value: "tropa", label: "Tropa (11-14 a�os)" },
   { value: "pioneros", label: "Pioneros" },
   { value: "rovers", label: "Rovers" },
 ];
@@ -287,7 +287,7 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
 
       toast({
         title: approveStatus === "activo" ? "Usuario aprobado" : "Usuario rechazado",
-        description: approveStatus === "activo" ? "La cuenta quedó activa." : "La cuenta fue rechazada.",
+        description: approveStatus === "activo" ? "La cuenta qued� activa." : "La cuenta fue rechazada.",
       });
 
       if (isLocalBackend()) {
@@ -330,7 +330,7 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
       });
       toast({
         title: "Usuario de test creado",
-        description: "La cuenta quedó disponible en el panel.",
+        description: "La cuenta qued� disponible en el panel.",
       });
       setTestUserNombre("");
       setTestUserApellido("");
@@ -541,7 +541,7 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
         toast({ title: "No se pudo guardar", description: error.message, variant: "destructive" });
       } else {
         setPages((prev) => prev.map((p) => (p.id === editPage.id ? { ...p, ...payload } : p)));
-        toast({ title: "Página actualizada" });
+        toast({ title: "P�gina actualizada" });
         setEditPage(null);
       }
     } else {
@@ -550,7 +550,7 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
         toast({ title: "No se pudo crear", description: error.message, variant: "destructive" });
       } else {
         setPages((prev) => [data, ...prev]);
-        toast({ title: "Página creada" });
+        toast({ title: "P�gina creada" });
         setEditPage(null);
       }
     }
@@ -601,7 +601,7 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
 
     if (!usernameRegex.test(normalized)) {
       setUsernameStatus("invalid");
-      setUsernameMessage("Formato inválido: 3-30 caracteres, letras, números, punto, guion o guion bajo.");
+      setUsernameMessage("Formato inv�lido: 3-30 caracteres, letras, n�meros, punto, guion o guion bajo.");
       return;
     }
 
@@ -623,7 +623,7 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
 
       if (data && data.user_id !== editUser.user_id) {
         setUsernameStatus("taken");
-        setUsernameMessage("Ese username ya está en uso.");
+        setUsernameMessage("Ese username ya est� en uso.");
         return;
       }
 
@@ -647,7 +647,7 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
     if (canEditIdentity && (usernameStatus === "taken" || usernameStatus === "invalid")) {
       toast({
         title: "No se pudo guardar",
-        description: usernameMessage || "El username no es válido o ya está en uso.",
+        description: usernameMessage || "El username no es v�lido o ya est� en uso.",
         variant: "destructive",
       });
       return;
@@ -786,7 +786,7 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
       });
       return;
     }
-    if (!window.confirm("¿Eliminar usuario? Esta acción no se puede deshacer.")) return;
+    if (!window.confirm("�Eliminar usuario? Esta acci�n no se puede deshacer.")) return;
     try {
       const { error } = await supabase.from("profiles").delete().eq("user_id", id);
       if (error) {
@@ -920,51 +920,53 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
         </div>
 
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="w-full justify-start gap-1 overflow-x-auto rounded-lg border bg-muted/40 p-1 sm:p-1.5">
-            <TabsTrigger value="overview" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 gap-1.5">
-              <Shield className="h-3.5 w-3.5" />
-              Resumen
-            </TabsTrigger>
-            <TabsTrigger value="users" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 gap-1.5">
-              <Users className="h-3.5 w-3.5" />
-              Usuarios
-            </TabsTrigger>
-            <TabsTrigger value="groups" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 gap-1.5">
-              <Layers className="h-3.5 w-3.5" />
-              Grupos
-            </TabsTrigger>
-            <TabsTrigger value="events" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 gap-1.5">
-              <CalendarDays className="h-3.5 w-3.5" />
-              Eventos
-            </TabsTrigger>
-            <TabsTrigger value="threads" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 gap-1.5">
-              <MessageSquare className="h-3.5 w-3.5" />
-              Posts
-            </TabsTrigger>
-            <TabsTrigger value="comments" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 gap-1.5">
-              <MessageSquare className="h-3.5 w-3.5" />
-              Comentarios
-            </TabsTrigger>
-            <TabsTrigger value="messages" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 gap-1.5">
-              <MessagesSquare className="h-3.5 w-3.5" />
-              Msgs
-            </TabsTrigger>
-            <TabsTrigger value="groupMessages" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 gap-1.5">
-              <MessagesSquare className="h-3.5 w-3.5" />
-              Msgs Grupo
-            </TabsTrigger>
-            <TabsTrigger value="pages" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 gap-1.5">
-              <FileText className="h-3.5 w-3.5" />
-              Páginas
-            </TabsTrigger>
-            {!isLocalBackend() && (
-              <TabsTrigger value="requests" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 gap-1.5">
-                <UserCheck className="h-3.5 w-3.5" />
-                Solicitudes
-                {totalPending > 0 && <Badge variant="destructive" className="ml-1 h-4 px-1 text-[10px]">{totalPending}</Badge>}
+          <div className="flex justify-center mb-6">
+            <TabsList className="gap-1 overflow-x-auto rounded-xl border bg-background p-1 shadow-sm">
+              <TabsTrigger value="overview" className="text-xs sm:text-sm px-3 py-1.5 gap-1.5 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <Shield className="h-3.5 w-3.5" />
+                Resumen
               </TabsTrigger>
-            )}
-          </TabsList>
+              <TabsTrigger value="users" className="text-xs sm:text-sm px-3 py-1.5 gap-1.5 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <Users className="h-3.5 w-3.5" />
+                Usuarios
+              </TabsTrigger>
+              <TabsTrigger value="groups" className="text-xs sm:text-sm px-3 py-1.5 gap-1.5 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <Layers className="h-3.5 w-3.5" />
+                Grupos
+              </TabsTrigger>
+              <TabsTrigger value="events" className="text-xs sm:text-sm px-3 py-1.5 gap-1.5 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <CalendarDays className="h-3.5 w-3.5" />
+                Eventos
+              </TabsTrigger>
+              <TabsTrigger value="threads" className="text-xs sm:text-sm px-3 py-1.5 gap-1.5 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <MessageSquare className="h-3.5 w-3.5" />
+                Posts
+              </TabsTrigger>
+              <TabsTrigger value="comments" className="text-xs sm:text-sm px-3 py-1.5 gap-1.5 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <MessageSquare className="h-3.5 w-3.5" />
+                Comentarios
+              </TabsTrigger>
+              <TabsTrigger value="messages" className="text-xs sm:text-sm px-3 py-1.5 gap-1.5 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <MessagesSquare className="h-3.5 w-3.5" />
+                Msgs
+              </TabsTrigger>
+              <TabsTrigger value="groupMessages" className="text-xs sm:text-sm px-3 py-1.5 gap-1.5 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <MessagesSquare className="h-3.5 w-3.5" />
+                Msgs Grupo
+              </TabsTrigger>
+              <TabsTrigger value="pages" className="text-xs sm:text-sm px-3 py-1.5 gap-1.5 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <FileText className="h-3.5 w-3.5" />
+                P�ginas
+              </TabsTrigger>
+              {!isLocalBackend() && (
+                <TabsTrigger value="requests" className="text-xs sm:text-sm px-3 py-1.5 gap-1.5 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  <UserCheck className="h-3.5 w-3.5" />
+                  Solicitudes
+                  {totalPending > 0 && <Badge variant="destructive" className="ml-1 h-4 px-1 text-[10px]">{totalPending}</Badge>}
+                </TabsTrigger>
+              )}
+            </TabsList>
+          </div>
 
           <TabsContent value="overview">
             {isLocalBackend() && (
@@ -979,7 +981,7 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
                   <div className="grid gap-3 lg:grid-cols-2">
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium">Pendientes de revisión</p>
+                        <p className="text-sm font-medium">Pendientes de revisi�n</p>
                         <Badge variant="secondary">{pendingUsers.length}</Badge>
                       </div>
                       <div className="space-y-2 max-h-72 overflow-auto pr-1">
@@ -991,18 +993,18 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
                               <div className="flex flex-wrap items-center justify-between gap-2">
                                 <div>
                                   <p className="font-medium text-sm">{user.nombre_completo || user.email || user.user_id}</p>
-                                  <p className="text-xs text-muted-foreground">{user.email} · {user.account_status}</p>
+                                  <p className="text-xs text-muted-foreground">{user.email} � {user.account_status}</p>
                                 </div>
-                                <Badge variant="outline">{user.account_classification || "sin clasificación"}</Badge>
+                                <Badge variant="outline">{user.account_classification || "sin clasificaci�n"}</Badge>
                               </div>
                               <p className="text-xs text-muted-foreground">
-                                {user.account_review_reason || "Sin motivo de revisión"}
+                                {user.account_review_reason || "Sin motivo de revisi�n"}
                               </p>
                               <div className="flex flex-wrap gap-2">
                                 <Button size="sm" onClick={() => handleReviewPendingUser(user.user_id, "activo")}>
                                   Aprobar
                                 </Button>
-                                <Button size="sm" variant="destructive" onClick={() => handleReviewPendingUser(user.user_id, "rechazado", "Rechazado por administración") }>
+                                <Button size="sm" variant="destructive" onClick={() => handleReviewPendingUser(user.user_id, "rechazado", "Rechazado por administraci�n") }>
                                   Rechazar
                                 </Button>
                               </div>
@@ -1021,14 +1023,14 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="test-user-apellido">Apellido</Label>
-                          <Input id="test-user-apellido" value={testUserApellido} onChange={(e) => setTestUserApellido(e.target.value)} placeholder="González" />
+                          <Input id="test-user-apellido" value={testUserApellido} onChange={(e) => setTestUserApellido(e.target.value)} placeholder="Gonz�lez" />
                         </div>
                         <div className="space-y-2 sm:col-span-2">
                           <Label htmlFor="test-user-email">Email</Label>
                           <Input id="test-user-email" type="email" value={testUserEmail} onChange={(e) => setTestUserEmail(e.target.value)} placeholder="test@email.com" />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="test-user-password">Contraseña</Label>
+                          <Label htmlFor="test-user-password">Contrase�a</Label>
                           <Input id="test-user-password" type="text" value={testUserPassword} onChange={(e) => setTestUserPassword(e.target.value)} />
                         </div>
                         <div className="space-y-2">
@@ -1040,7 +1042,7 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
                             <SelectContent>
                               <SelectItem value="activo">Activo</SelectItem>
                               <SelectItem value="pendiente_email">Pendiente email</SelectItem>
-                              <SelectItem value="pendiente_aprobacion">Pendiente aprobación</SelectItem>
+                              <SelectItem value="pendiente_aprobacion">Pendiente aprobaci�n</SelectItem>
                               <SelectItem value="rechazado">Rechazado</SelectItem>
                             </SelectContent>
                           </Select>
@@ -1055,92 +1057,120 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
               </Card>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
-              <Card>
-                <CardHeader className="pb-2"><CardTitle className="text-sm">Actividad 7 días</CardTitle></CardHeader>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6">
+              <Card className="group relative overflow-hidden border-border/50 bg-gradient-to-br from-background to-muted/20 hover:shadow-lg transition-all duration-300">
+                <div className="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-bl-full" />
+                <CardHeader className="pb-2 relative">
+                  <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Actividad 7 d�as</CardTitle>
+                </CardHeader>
                 <CardContent>
-                  <p className="text-2xl font-bold">{extraStats.actividad7d}</p>
-                  <p className="text-xs text-muted-foreground mt-1">Posts + comentarios + mensajes</p>
+                  <p className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">{extraStats.actividad7d}</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">Posts + comentarios + mensajes</p>
                 </CardContent>
               </Card>
-              <Card>
-                <CardHeader className="pb-2"><CardTitle className="text-sm">Notificaciones sin leer</CardTitle></CardHeader>
+              <Card className="group relative overflow-hidden border-border/50 bg-gradient-to-br from-background to-muted/20 hover:shadow-lg transition-all duration-300">
+                <div className="absolute top-0 right-0 w-16 h-16 bg-amber-500/5 rounded-bl-full" />
+                <CardHeader className="pb-2 relative">
+                  <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Notificaciones</CardTitle>
+                </CardHeader>
                 <CardContent>
-                  <p className="text-2xl font-bold">{extraStats.notificationsSinLeer}</p>
-                  <p className="text-xs text-muted-foreground mt-1">Pendientes de atención</p>
+                  <p className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-amber-600 to-amber-500/70 bg-clip-text">{extraStats.notificationsSinLeer}</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">Sin leer</p>
                 </CardContent>
               </Card>
-              <Card>
-                <CardHeader className="pb-2"><CardTitle className="text-sm">Solicitudes de follow</CardTitle></CardHeader>
+              <Card className="group relative overflow-hidden border-border/50 bg-gradient-to-br from-background to-muted/20 hover:shadow-lg transition-all duration-300">
+                <div className="absolute top-0 right-0 w-16 h-16 bg-blue-500/5 rounded-bl-full" />
+                <CardHeader className="pb-2 relative">
+                  <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Follows</CardTitle>
+                </CardHeader>
                 <CardContent>
-                  <p className="text-2xl font-bold">{extraStats.followPendientes}</p>
-                  <p className="text-xs text-muted-foreground mt-1">Estado pending</p>
+                  <p className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-blue-600 to-blue-500/70 bg-clip-text">{extraStats.followPendientes}</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">Pendientes</p>
                 </CardContent>
               </Card>
-              <Card>
-                <CardHeader className="pb-2"><CardTitle className="text-sm">Eventos próximos</CardTitle></CardHeader>
+              <Card className="group relative overflow-hidden border-border/50 bg-gradient-to-br from-background to-muted/20 hover:shadow-lg transition-all duration-300">
+                <div className="absolute top-0 right-0 w-16 h-16 bg-green-500/5 rounded-bl-full" />
+                <CardHeader className="pb-2 relative">
+                  <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Eventos</CardTitle>
+                </CardHeader>
                 <CardContent>
-                  <p className="text-2xl font-bold">{extraStats.eventsProximos}</p>
-                  <p className="text-xs text-muted-foreground mt-1">Con fecha futura</p>
+                  <p className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-green-600 to-green-500/70 bg-clip-text">{extraStats.eventsProximos}</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">Próximos</p>
                 </CardContent>
               </Card>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
-              <Card>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+              <Card className="border-border/50 bg-gradient-to-br from-background via-background to-muted/20">
                 <CardHeader>
-                  <CardTitle className="text-base">Distribución de perfiles</CardTitle>
+                  <CardTitle className="text-base sm:text-lg font-bold">Distribuci�n de perfiles</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex items-center justify-between text-sm">
-                    <span>Públicos</span>
-                    <span className="font-semibold">{extraStats.publicProfiles}</span>
-                  </div>
-                  <div className="h-2 rounded-full bg-muted overflow-hidden">
-                    <div
-                      className="h-full bg-emerald-500"
-                      style={{ width: `${users.length ? (extraStats.publicProfiles / users.length) * 100 : 0}%` }}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between text-sm mt-3">
-                    <span>Privados</span>
-                    <span className="font-semibold">{extraStats.privateProfiles}</span>
-                  </div>
-                  <div className="h-2 rounded-full bg-muted overflow-hidden">
-                    <div
-                      className="h-full bg-slate-500"
-                      style={{ width: `${users.length ? (extraStats.privateProfiles / users.length) * 100 : 0}%` }}
-                    />
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                        P�blicos
+                      </span>
+                      <span className="font-semibold">{extraStats.publicProfiles}</span>
+                    </div>
+                    <div className="h-2.5 rounded-full bg-muted/50 overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full transition-all duration-700"
+                        style={{ width: `${users.length ? (extraStats.publicProfiles / users.length) * 100 : 0}%` }}
+                      />
+                    </div>
                   </div>
 
-                  <div className="pt-2 text-xs text-muted-foreground">
-                    Usuarios con username: {extraStats.usersWithUsername} / {users.length}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-slate-500" />
+                        Privados
+                      </span>
+                      <span className="font-semibold">{extraStats.privateProfiles}</span>
+                    </div>
+                    <div className="h-2.5 rounded-full bg-muted/50 overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-slate-500 to-slate-400 rounded-full transition-all duration-700"
+                        style={{ width: `${users.length ? (extraStats.privateProfiles / users.length) * 100 : 0}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-border/30 flex items-center justify-between text-xs text-muted-foreground">
+                    <span>Con username</span>
+                    <span className="font-medium text-foreground">{extraStats.usersWithUsername} / {users.length}</span>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="border-border/50 bg-gradient-to-br from-background via-background to-muted/20">
                 <CardHeader>
-                  <CardTitle className="text-base">Pulso del día</CardTitle>
+                  <CardTitle className="text-base sm:text-lg font-bold">Pulso del d�a</CardTitle>
                 </CardHeader>
-                <CardContent className="grid grid-cols-3 gap-3">
-                  <div className="rounded-lg border p-3">
-                    <p className="text-[11px] uppercase text-muted-foreground">Registros</p>
-                    <p className="text-xl font-bold mt-1">{extraStats.registrosHoy}</p>
+                <CardContent>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="relative group rounded-xl border border-border/50 bg-gradient-to-br from-background to-primary/5 p-4 hover:shadow-md transition-all duration-300">
+                      <div className="absolute top-2 right-2 w-8 h-8 bg-primary/5 rounded-full" />
+                      <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Registros</p>
+                      <p className="text-2xl sm:text-3xl font-black mt-1 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">{extraStats.registrosHoy}</p>
+                    </div>
+                    <div className="relative group rounded-xl border border-border/50 bg-gradient-to-br from-background to-blue-500/5 p-4 hover:shadow-md transition-all duration-300">
+                      <div className="absolute top-2 right-2 w-8 h-8 bg-blue-500/5 rounded-full" />
+                      <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Posts</p>
+                      <p className="text-2xl sm:text-3xl font-black mt-1 bg-gradient-to-r from-blue-600 to-blue-500/70 bg-clip-text text-transparent">{extraStats.publicacionesHoy}</p>
+                    </div>
+                    <div className="relative group rounded-xl border border-border/50 bg-gradient-to-br from-background to-green-500/5 p-4 hover:shadow-md transition-all duration-300">
+                      <div className="absolute top-2 right-2 w-8 h-8 bg-green-500/5 rounded-full" />
+                      <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Mensajes</p>
+                      <p className="text-2xl sm:text-3xl font-black mt-1 bg-gradient-to-r from-green-600 to-green-500/70 bg-clip-text text-transparent">{extraStats.mensajesHoy}</p>
+                    </div>
                   </div>
-                  <div className="rounded-lg border p-3">
-                    <p className="text-[11px] uppercase text-muted-foreground">Posts</p>
-                    <p className="text-xl font-bold mt-1">{extraStats.publicacionesHoy}</p>
-                  </div>
-                  <div className="rounded-lg border p-3">
-                    <p className="text-[11px] uppercase text-muted-foreground">Mensajes</p>
-                    <p className="text-xl font-bold mt-1">{extraStats.mensajesHoy}</p>
-                  </div>
-                  <div className="rounded-lg border p-3 col-span-3">
-                    <p className="text-[11px] uppercase text-muted-foreground">Extras</p>
-                    <p className="text-sm mt-1 text-muted-foreground">
-                      Grupos recientes (7 días): <span className="font-semibold text-foreground">{extraStats.activeGroups}</span> · Publicaciones con imagen: <span className="font-semibold text-foreground">{extraStats.postsConImagen}</span>
+                  <div className="mt-4 pt-4 border-t border-border/30 rounded-lg bg-muted/20 p-3">
+                    <p className="text-xs text-muted-foreground">
+                      <span className="font-medium text-foreground">Grupos recientes (7 días):</span> {extraStats.activeGroups} · 
+                      <span className="font-medium text-foreground">Posts con imagen:</span> {extraStats.postsConImagen}
                     </p>
                   </div>
                 </CardContent>
@@ -1150,38 +1180,58 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
 
 
           <TabsContent value="requests">
-            <Card>
+            <Card className="border-border/50 bg-gradient-to-br from-background via-background to-muted/20">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-                  <UserCheck className="w-4 h-4" />
+                  <UserCheck className="w-4 h-4 text-primary" />
                   Solicitudes Pendientes ({totalPending})
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Registros Pendientes */}
                 <div>
-                  <h3 className="text-sm font-semibold mb-3">Registros de Usuario ({pendingUsers.length})</h3>
-                  <div className="grid gap-3 lg:grid-cols-2">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-1 h-5 bg-primary rounded-full" />
+                    <h3 className="text-sm font-bold">Registros de Usuario ({pendingUsers.length})</h3>
+                  </div>
+                  <div className="grid gap-3 md:grid-cols-2">
                     {pendingUsers.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">No hay cuentas pendientes.</p>
+                      <div className="col-span-full text-center py-8">
+                        <UserCheck className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
+                        <p className="text-sm text-muted-foreground">No hay cuentas pendientes.</p>
+                      </div>
                     ) : (
                       pendingUsers.map((user) => (
-                        <div key={user.user_id} className="rounded-lg border bg-background/80 p-3 space-y-2">
-                          <div className="flex flex-wrap items-center justify-between gap-2">
-                            <div>
-                              <p className="font-medium text-sm">{user.nombre_completo || user.email || user.user_id}</p>
-                              <p className="text-xs text-muted-foreground">{user.email} · {user.account_status}</p>
+                        <div key={user.user_id} className="group relative overflow-hidden rounded-xl border border-border/50 bg-background/80 p-4 space-y-3 hover:shadow-lg hover:border-primary/20 transition-all duration-300">
+                          <div className="absolute top-0 right-0 w-20 h-20 bg-primary/5 rounded-bl-full" />
+                          <div className="relative">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <div>
+                                <p className="font-semibold text-sm">{user.nombre_completo || user.email || user.user_id}</p>
+                                <p className="text-xs text-muted-foreground mt-0.5">{user.email}</p>
+                              </div>
+                              <Badge variant="outline" className="border-amber-500/30 text-amber-600 bg-amber-500/5">
+                                {user.account_status === 'pendiente_aprobacion' ? 'Email verificado' : user.account_status}
+                              </Badge>
                             </div>
-                            <Badge variant="outline">{user.account_classification || "sin clasificación"}</Badge>
+                            {user.account_classification && (
+                              <Badge variant="secondary" className="mt-2 text-[11px]">
+                                {user.account_classification}
+                              </Badge>
+                            )}
+                            {user.account_review_reason && (
+                              <p className="text-xs text-muted-foreground italic mt-2 p-2 rounded-lg bg-muted/30">
+                                {user.account_review_reason}
+                              </p>
+                            )}
                           </div>
-                          <p className="text-xs text-muted-foreground">
-                            {user.account_review_reason || "Sin motivo de revisión"}
-                          </p>
-                          <div className="flex flex-wrap gap-2">
-                            <Button size="sm" onClick={() => handleReviewPendingUser(user.user_id, "activo")}>
+                          <div className="flex flex-wrap gap-2 pt-2 border-t border-border/30">
+                            <Button size="sm" className="gap-1.5 bg-green-600 hover:bg-green-700 text-white" onClick={() => handleReviewPendingUser(user.user_id, "activo")}>
+                              <UserCheck className="w-3.5 h-3.5" />
                               Aprobar
                             </Button>
-                            <Button size="sm" variant="destructive" onClick={() => handleReviewPendingUser(user.user_id, "rechazado", "Rechazado por administración") }>
+                            <Button size="sm" variant="destructive" onClick={() => handleReviewPendingUser(user.user_id, "rechazado", "Rechazado por administraci�n") }>
+                              <UserX className="w-3.5 h-3.5" />
                               Rechazar
                             </Button>
                           </div>
@@ -1192,34 +1242,46 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
                 </div>
 
                 {/* Educadores Pendientes */}
-                <div>
-                  <h3 className="text-sm font-semibold mb-3">Permisos de Educador ({pendingEducators.length})</h3>
-                  <div className="grid gap-3 lg:grid-cols-2">
+                <div className="pt-6 border-t border-border/30">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-1 h-5 bg-blue-500 rounded-full" />
+                    <h3 className="text-sm font-bold">Permisos de Educador ({pendingEducators.length})</h3>
+                  </div>
+                  <div className="grid gap-3 md:grid-cols-2">
                     {pendingEducators.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">No hay solicitudes de educador.</p>
+                      <div className="col-span-full text-center py-8">
+                        <Users className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
+                        <p className="text-sm text-muted-foreground">No hay solicitudes de educador.</p>
+                      </div>
                     ) : (
                       pendingEducators.map((n: any) => {
                         const d = n.data || {};
                         const units = Array.isArray(d.requested_units) ? d.requested_units.join(", ") : "";
                         return (
-                          <div key={n.id} className="rounded-lg border bg-background/80 p-3 space-y-2">
-                            <div className="flex flex-wrap items-center justify-between gap-2">
-                              <div>
-                                <p className="font-medium text-sm">{d.requester_name || "Educador/a"}</p>
-                                <p className="text-xs text-muted-foreground">Unidades: {units}</p>
+                          <div key={n.id} className="group relative overflow-hidden rounded-xl border border-border/50 bg-background/80 p-4 space-y-3 hover:shadow-lg hover:border-blue-500/20 transition-all duration-300">
+                            <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500/5 rounded-bl-full" />
+                            <div className="relative">
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <div>
+                                  <p className="font-semibold text-sm">{d.requester_name || "Educador/a"}</p>
+                                  {d.note && (
+                                    <p className="text-xs text-muted-foreground italic mt-1">"{d.note}"</p>
+                                  )}
+                                </div>
+                                <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/20">
+                                  Pendiente
+                                </Badge>
                               </div>
-                              <Badge variant="secondary">Pendiente</Badge>
+                              {units && (
+                                <p className="text-xs text-muted-foreground mt-2">
+                                  <span className="font-medium">Unidades:</span> {units}
+                                </p>
+                              )}
                             </div>
-                            {d.note && (
-                              <p className="text-xs text-muted-foreground italic">
-                                "{d.note}"
-                              </p>
-                            )}
-                            <div className="flex flex-wrap gap-2 pt-2">
-                              <Button size="sm" onClick={async () => {
+                            <div className="flex flex-wrap gap-2 pt-2 border-t border-border/30">
+                              <Button size="sm" className="gap-1.5 bg-green-600 hover:bg-green-700 text-white" onClick={async () => {
                                 const requesterId = n.actor_id;
                                 const units = d.requested_units || [];
-                                console.log("[Admin] Aprobando educador:", { requesterId, units, notificationId: n.id });
                                 const { data: rpcData, error } = await (supabase.rpc as any)("simple_review_educator_permission", {
                                   p_requester_id: requesterId,
                                   p_approve: true,
@@ -1227,15 +1289,14 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
                                   p_note: "Aprobado por panel admin"
                                 });
                                 if (error) {
-                                  console.error("[Admin] Error aprobando:", error);
                                   toast({ title: "Error", description: error.message, variant: "destructive" });
                                   return;
                                 }
-                                console.log("[Admin] RPC response:", rpcData);
                                 toast({ title: "Permisos aprobados", description: `Unidades asignadas: ${units.join(", ")}` });
                                 await fetchPendingEducators();
                                 await fetchAdminData();
                               }}>
+                                <UserCheck className="w-3.5 h-3.5" />
                                 Aprobar
                               </Button>
                               <Button size="sm" variant="destructive" onClick={async () => {
@@ -1253,6 +1314,7 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
                                 await fetchPendingEducators();
                                 await fetchAdminData();
                               }}>
+                                <UserX className="w-3.5 h-3.5" />
                                 Rechazar
                               </Button>
                             </div>
@@ -1265,7 +1327,7 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
               </CardContent>
             </Card>
           </TabsContent>
-\n          <TabsContent value="users">
+          <TabsContent value="users">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3 md:gap-4 mb-4 sm:mb-6">
               <div className="relative w-full sm:max-w-md">
                 <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -1373,7 +1435,7 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
                       <thead>
                         <tr className="border-b bg-muted/50 sticky top-0">
                           <th className="text-left p-2 sm:p-3 text-xs">Nombre</th>
-                          <th className="text-left p-2 sm:p-3 text-xs hidden md:table-cell">Descripción</th>
+                          <th className="text-left p-2 sm:p-3 text-xs hidden md:table-cell">Descripci�n</th>
                           <th className="text-left p-2 sm:p-3 text-xs hidden lg:table-cell">Creador</th>
                           <th className="text-left p-2 sm:p-3 text-xs">Creado</th>
                           <th className="text-right p-2 sm:p-3 text-xs">Acciones</th>
@@ -1431,7 +1493,7 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
                     <table className="w-full text-xs sm:text-sm min-w-max">
                       <thead>
                         <tr className="border-b bg-muted/50 sticky top-0">
-                          <th className="text-left p-2 sm:p-3 text-xs">Título</th>
+                          <th className="text-left p-2 sm:p-3 text-xs">T�tulo</th>
                           <th className="text-left p-2 sm:p-3 text-xs">Inicio</th>
                           <th className="text-left p-2 sm:p-3 text-xs hidden sm:table-cell">Fin</th>
                           <th className="text-right p-2 sm:p-3 text-xs">Acciones</th>
@@ -1682,22 +1744,22 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
             <Card>
               <CardHeader>
                 <CardTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-base sm:text-lg">
-                  <span className="flex items-center gap-2"><FileText className="w-4 h-4" />Páginas ({pages.length})</span>
+                  <span className="flex items-center gap-2"><FileText className="w-4 h-4" />P�ginas ({pages.length})</span>
                   <Button size="sm" onClick={() => setEditPage({ slug: "", title: "", content: "" })} className="text-xs w-full sm:w-auto">
-                    Nueva página
+                    Nueva p�gina
                   </Button>
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {loadingAdmin ? (
-                  <div className="py-8 text-xs sm:text-sm text-muted-foreground">Cargando páginas...</div>
+                  <div className="py-8 text-xs sm:text-sm text-muted-foreground">Cargando p�ginas...</div>
                 ) : (
                   <div className="overflow-x-auto -mx-2 sm:mx-0">
                     <table className="w-full text-xs sm:text-sm min-w-max">
                       <thead>
                         <tr className="border-b bg-muted/50 sticky top-0">
                           <th className="text-left p-2 sm:p-3 text-xs">Slug</th>
-                          <th className="text-left p-2 sm:p-3 text-xs hidden sm:table-cell">Título</th>
+                          <th className="text-left p-2 sm:p-3 text-xs hidden sm:table-cell">T�tulo</th>
                           <th className="text-left p-2 sm:p-3 text-xs">Actualizado</th>
                           <th className="text-right p-2 sm:p-3 text-xs">Acciones</th>
                         </tr>
@@ -1737,85 +1799,7 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
             </Card>
           </TabsContent>
 
-          {!isLocalBackend() && (
-            <TabsContent value="requests">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between text-base sm:text-lg">
-                    <span className="flex items-center gap-2"><UserCheck className="w-4 h-4" />Solicitudes de Registro ({pendingUsers.length})</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {loadingAdmin ? (
-                    <div className="py-8 text-center text-sm text-muted-foreground">Cargando solicitudes...</div>
-                  ) : pendingUsers.length === 0 ? (
-                    <div className="py-12 text-center space-y-2">
-                      <UserCheck className="w-12 h-12 mx-auto text-muted-foreground/50" />
-                      <p className="text-sm text-muted-foreground">No hay solicitudes pendientes</p>
-                      <p className="text-xs text-muted-foreground">Todos los usuarios están aprobados</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {pendingUsers.map((user) => (
-                        <div key={user.user_id} className="rounded-lg border bg-card p-4 space-y-3">
-                          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                            <div className="space-y-1 flex-1 min-w-0">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <h3 className="font-semibold text-sm truncate">{user.nombre_completo || "Sin nombre"}</h3>
-                                <Badge variant={user.account_status === "pendiente_aprobacion" ? "default" : "secondary"}>
-                                  {user.account_status === "pendiente_aprobacion" ? "Email verificado" : "Email pendiente"}
-                                </Badge>
-                              </div>
-                              <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-                              {user.username && <p className="text-xs text-muted-foreground">@{user.username}</p>}
-                              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                                {user.tipo_relacion && (
-                                  <span>Tipo: <span className="text-foreground">{user.tipo_relacion}</span></span>
-                                )}
-                                {user.rama && (
-                                  <span>Rama: <span className="text-foreground">{user.rama}</span></span>
-                                )}
-                                {user.nombre_scout_relacionado && (
-                                  <span>Scout relacionado: <span className="text-foreground">{user.nombre_scout_relacionado}</span></span>
-                                )}
-                                <span className="text-muted-foreground">
-                                  Registrado: <span className="text-foreground">{formatDate(user.created_at)}</span>
-                                </span>
-                              </div>
-                              {user.account_review_reason && (
-                                <p className="text-xs text-muted-foreground mt-1 p-2 rounded bg-muted/50">
-                                  Motivo: {user.account_review_reason}
-                                </p>
-                              )}
-                            </div>
-                            <div className="flex gap-2 shrink-0">
-                              <Button
-                                size="sm"
-                                className="gap-1.5 bg-green-600 hover:bg-green-700 text-white"
-                                onClick={() => handleReviewPendingUser(user.user_id, "activo")}
-                              >
-                                <UserCheck className="w-3.5 h-3.5" />
-                                Aprobar
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                className="gap-1.5"
-                                onClick={() => handleReviewPendingUser(user.user_id, "rechazado", "Rechazado por administración")}
-                              >
-                                <UserX className="w-3.5 h-3.5" />
-                                Rechazar
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-          )}
+
         </Tabs>
       </div>
 
@@ -1900,7 +1884,7 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
               </div>
 
               <div>
-                <Label htmlFor="rol-adulto">Rol adulto (área de miembros)</Label>
+                <Label htmlFor="rol-adulto">Rol adulto (�rea de miembros)</Label>
                 <Select
                   value={editData.rol_adulto || "none"}
                   onValueChange={(value) => {
@@ -1927,7 +1911,7 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
                   <SelectContent>
                     <SelectItem value="none">Sin rol adulto</SelectItem>
                     <SelectItem value="Educador/a">Educador/a</SelectItem>
-                    <SelectItem value="Miembro del Comite">Miembro del Comité</SelectItem>
+                    <SelectItem value="Miembro del Comite">Miembro del Comit�</SelectItem>
                     <SelectItem value="Padre/Madre">Padre/Madre</SelectItem>
                   </SelectContent>
                 </Select>
@@ -1969,7 +1953,7 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
                     })}
                   </div>
                   <p className="mt-2 text-xs text-muted-foreground">
-                    El usuario podrá gestionar y comunicarse como educador/a en las unidades seleccionadas.
+                    El usuario podr� gestionar y comunicarse como educador/a en las unidades seleccionadas.
                   </p>
                 </div>
               )}
@@ -2005,7 +1989,7 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
                 />
               </div>
               <div>
-                <Label htmlFor="group-desc">Descripción</Label>
+                <Label htmlFor="group-desc">Descripci�n</Label>
                 <Textarea
                   id="group-desc"
                   value={editGroup.description || ""}
@@ -2036,7 +2020,7 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
           {editEvent && (
             <div className="space-y-3 sm:space-y-4">
               <div>
-                <Label htmlFor="event-title">Título</Label>
+                <Label htmlFor="event-title">T�tulo</Label>
                 <Input
                   id="event-title"
                   value={editEvent.titulo || ""}
@@ -2046,7 +2030,7 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
                 />
               </div>
               <div>
-                <Label htmlFor="event-desc">Descripción</Label>
+                <Label htmlFor="event-desc">Descripci�n</Label>
                 <Textarea
                   id="event-desc"
                   value={editEvent.descripcion || ""}
@@ -2094,7 +2078,7 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
       <Dialog open={!!editPage} onOpenChange={(open) => !open && !saving && setEditPage(null)}>
         <DialogContent className="max-w-xs sm:max-w-xl w-11/12 max-h-screen overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editPage?.id ? "Editar Página" : "Nueva Página"}</DialogTitle>
+            <DialogTitle>{editPage?.id ? "Editar P�gina" : "Nueva P�gina"}</DialogTitle>
           </DialogHeader>
           {editPage && (
             <div className="space-y-3 sm:space-y-4">
@@ -2109,7 +2093,7 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
                 />
               </div>
               <div>
-                <Label htmlFor="page-title">Título</Label>
+                <Label htmlFor="page-title">T�tulo</Label>
                 <Input
                   id="page-title"
                   value={editPage.title || ""}

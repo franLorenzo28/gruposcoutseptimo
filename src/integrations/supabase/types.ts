@@ -651,17 +651,29 @@ export type Database = {
     }
     Functions: {
       cleanup_expired_tokens: { Args: never; Returns: number }
-      create_notification: {
-        Args: {
-          p_actor: string
-          p_data: Json
-          p_entity_id: string
-          p_entity_type: string
-          p_recipient: string
-          p_type: string
-        }
-        Returns: undefined
-      }
+      create_notification:
+        | {
+            Args: {
+              p_actor: string
+              p_data: Json
+              p_entity_id: string
+              p_entity_type: string
+              p_recipient: string
+              p_type: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_actor: string
+              p_data: Json
+              p_entity_id: string
+              p_entity_type: string
+              p_recipient: string
+              p_type: string
+            }
+            Returns: undefined
+          }
       create_or_get_conversation: {
         Args: { other_user_id: string }
         Returns: string
@@ -710,6 +722,25 @@ export type Database = {
           token: string
           user_email: string
         }[]
+      }
+      review_educator_permission_request: {
+        Args: {
+          p_approve: boolean
+          p_note?: string
+          p_notification_id: string
+          p_requester_id: string
+          p_units: string[]
+        }
+        Returns: Json
+      }
+      review_user_registration_request: {
+        Args: {
+          p_approve: boolean
+          p_note?: string
+          p_notification_id: string
+          p_requester_id: string
+        }
+        Returns: Json
       }
       simple_review_educator_permission: {
         Args: {
