@@ -332,8 +332,7 @@ export async function reviewEducatorPermissionRequest(args: {
   }
 
   const note = String(args.note || "").trim();
-  const { error } = await supabase.rpc("review_educator_permission_request", {
-    p_notification_id: args.notificationId,
+  const { error } = await (supabase as any).rpc("simple_review_educator_permission", {
     p_requester_id: args.requesterId,
     p_approve: args.approve,
     p_units: units,
@@ -363,8 +362,7 @@ export async function reviewUserRegistrationRequest(args: {
   }
 
   const note = String(args.note || "").trim();
-  const { error } = await (supabase as any).rpc("review_user_registration_request", {
-    p_notification_id: args.notificationId,
+  const { error } = await (supabase as any).rpc("simple_review_user_registration", {
     p_requester_id: args.requesterId,
     p_approve: args.approve,
     p_note: note || null,

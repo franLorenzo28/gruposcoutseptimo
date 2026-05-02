@@ -159,11 +159,7 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
     setLoading(true);
     const { data: usuarios, error } = await supabase.from("profiles").select("*");
     if (error) {
-      toast({
-        title: "Error al cargar usuarios",
-        description: error.message,
-        variant: "destructive",
-      });
+      console.warn("Error loading profiles for admin:", error.message);
       setUsers([]);
       computeStats([]);
       setLoading(false);
@@ -241,15 +237,19 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
         .limit(100),
     ]);
 
-    const hasMainError = groupsRes.error || eventsRes.error || threadsRes.error || commentsRes.error || messagesRes.error || groupMessagesRes.error || pagesRes.error || followsRes.error || notificationsRes.error;
-    const hasPendingError = pendingUsersRes.error && pendingUsersRes.error.code !== 'PGRST116' && !pendingUsersRes.error.message?.includes('does not exist');
+    const criticalError = groupsRes.error || eventsRes.error || threadsRes.error;
+    const pendingError = pendingUsersRes.error && pendingUsersRes.error.code !== 'PGRST116' && !pendingUsersRes.error.message?.includes('does not exist') && !pendingUsersRes.error.message?.includes('column');
     
-    if (hasMainError || hasPendingError) {
+    if (criticalError) {
       toast({
         title: "Error al cargar datos admin",
-        description: "Revisa permisos y poláticas en Supabase.",
+        description: criticalError.message,
         variant: "destructive",
       });
+    }
+
+    if (pendingError) {
+      console.warn("Error fetching pending users:", pendingUsersRes.error?.message);
     }
 
     setGroups(groupsRes.data || []);
@@ -265,44 +265,31 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
     setLoadingAdmin(false);
   }
 
-  async function handleReviewPendingUser(userId: string, status: "activo" | "rechazado", reason?: string) {
+  async function handleReviewPendingUser(userId: string, approveStatus: "activo" | "rechazado", reason?: string) {
     try {
       if (isLocalBackend()) {
         await apiFetch(`/admin/users/${userId}/review`, {
           method: "POST",
-          body: JSON.stringify({ status, reason }),
+          body: JSON.stringify({ status: approveStatus, reason }),
         });
       } else {
-        const { data: notifData, error: notifError } = await supabase
-          .from("notifications")
-          .select("id, actor_id, data")
-          .eq("actor_id", userId)
-          .is("read_at", null)
-          .contains("data", { kind: "user_registration_request" })
-          .limit(1)
-          .single();
-
-        if (notifError && notifError.code !== "PGRST116") {
-          throw new Error("No se encontró la notificación de registro");
-        }
-
-        const notificationId = notifData?.id;
-        
-        const { error: rpcError } = await (supabase.rpc as any)("review_user_registration_request", {
-          p_notification_id: notificationId,
+        const { error: rpcError } = await (supabase.rpc as any)("simple_review_user_registration", {
           p_requester_id: userId,
-          p_approve: status === "activo",
+          p_approve: approveStatus === "activo",
           p_note: reason || null,
         });
 
-        if (rpcError) throw rpcError;
+        if (rpcError) {
+          console.error("RPC simple_review error:", rpcError);
+          throw rpcError;
+        }
       }
-      
+
       toast({
-        title: status === "activo" ? "Usuario aprobado" : "Usuario rechazado",
-        description: status === "activo" ? "La cuenta quedó activa." : "La cuenta fue rechazada.",
+        title: approveStatus === "activo" ? "Usuario aprobado" : "Usuario rechazado",
+        description: approveStatus === "activo" ? "La cuenta quedó activa." : "La cuenta fue rechazada.",
       });
-      
+
       if (isLocalBackend()) {
         await fetchLocalDashboardData();
       } else {
@@ -310,6 +297,7 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
         await fetchPendingEducators();
       }
     } catch (error: any) {
+      console.error("handleReviewPendingUser error:", error);
       toast({
         title: "No se pudo actualizar",
         description: error?.message || "Error al revisar el usuario.",
@@ -416,7 +404,7 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
       .from("notifications")
       .select("id, actor_id, recipient_id, type, entity_type, entity_id, data, created_at, read_at")
       .eq("type", "message")
-      .contains("data", { kind: "educator_permission_request", status: "pending" })
+      .eq("entity_type", "educator_permission_request")
       .is("read_at", null)
       .order("created_at", { ascending: false })
       .limit(50);
@@ -424,17 +412,26 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
       console.warn("Error fetching pending educators:", error.message);
       return;
     }
-    setPendingEducators(data || []);
+    const pending = (data || []).filter((n: any) => {
+      const d = n?.data;
+      if (!d) return false;
+      const kind = typeof d === "string" ? JSON.parse(d).kind : d.kind;
+      const status = typeof d === "string" ? JSON.parse(d).status : d.status;
+      return kind === "educator_permission_request" && status === "pending";
+    });
+    setPendingEducators(pending);
   }
 
   useEffect(() => {
     if (isLocalBackend() || !currentAccess.canOpenAdminPanel) return;
 
+    void fetchPendingEducators();
+
     const channel = supabase
       .channel("admin-notifs-realtime")
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "notifications", filter: `type=eq.message` },
+        { event: "INSERT", schema: "public", table: "notifications" },
         () => {
           void fetchPendingEducators();
         }
@@ -446,7 +443,11 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
           void fetchPendingEducators();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          console.log("Admin realtime notifications subscribed");
+        }
+      });
 
     return () => {
       void supabase.removeChannel(channel);
@@ -461,7 +462,6 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
 
     fetchData();
     fetchAdminData();
-    fetchPendingEducators();
   }, []);
 
   function formatDate(value?: string | null) {
@@ -1217,13 +1217,16 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
                             )}
                             <div className="flex flex-wrap gap-2 pt-2">
                               <Button size="sm" onClick={async () => {
-                                await supabase.rpc("review_educator_permission_request", {
-                                  p_notification_id: n.id,
+                                const { error } = await (supabase.rpc as any)("simple_review_educator_permission", {
                                   p_requester_id: n.actor_id,
                                   p_approve: true,
                                   p_units: d.requested_units || [],
                                   p_note: "Aprobado por panel admin"
                                 });
+                                if (error) {
+                                  toast({ title: "Error", description: error.message, variant: "destructive" });
+                                  return;
+                                }
                                 toast({ title: "Permisos aprobados" });
                                 await fetchPendingEducators();
                                 await fetchAdminData();
@@ -1231,13 +1234,16 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
                                 Aprobar
                               </Button>
                               <Button size="sm" variant="destructive" onClick={async () => {
-                                await supabase.rpc("review_educator_permission_request", {
-                                  p_notification_id: n.id,
+                                const { error } = await (supabase.rpc as any)("simple_review_educator_permission", {
                                   p_requester_id: n.actor_id,
                                   p_approve: false,
                                   p_units: [],
                                   p_note: "Rechazado por panel admin"
                                 });
+                                if (error) {
+                                  toast({ title: "Error", description: error.message, variant: "destructive" });
+                                  return;
+                                }
                                 toast({ title: "Solicitud rechazada" });
                                 await fetchPendingEducators();
                                 await fetchAdminData();
