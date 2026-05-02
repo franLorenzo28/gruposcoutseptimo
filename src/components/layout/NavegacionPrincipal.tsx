@@ -369,6 +369,11 @@ const Navigation = () => {
               ? `${d.count} fotos nuevas en ${d.album || "Galería"}`
               : `Nueva foto en ${d.album || "Galería"}`,
         };
+      case "rama_broadcast":
+        return {
+          title: `Difusión ${d.rama || ""}`,
+          description: (d.content || "Nuevo mensaje de difusión").slice(0, 80),
+        };
       case "thread_new":
         return {
           title: "Nuevo hilo",
@@ -502,6 +507,13 @@ const Navigation = () => {
           <p className="text-sm leading-snug">
             <span className="font-semibold">{actor || "Nuevo mensaje"}</span>{" "}
             <span className="text-muted-foreground">{(d.content || "te envió un mensaje").slice(0, 70)}</span>
+          </p>
+        );
+      case "rama_broadcast":
+        return (
+          <p className="text-sm leading-snug">
+            <span className="font-semibold">Difusión {d.rama || ""}</span>{" "}
+            <span className="text-muted-foreground">{(d.content || "").slice(0, 70)}</span>
           </p>
         );
       default:
@@ -961,6 +973,72 @@ const Navigation = () => {
                                             });
                                           }
                                         }}
+                                      >
+                                        <X className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  ) : n.type === "rama_broadcast" ? (
+                                    <div className="flex items-center gap-1">
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        className="h-7 px-2 text-xs"
+                                        asChild
+                                      >
+                                        <Link to="/area-miembros">Ver</Link>
+                                      </Button>
+                                      {!n.read && (
+                                        <Button
+                                          size="icon"
+                                          variant="ghost"
+                                          className="h-7 w-7"
+                                          aria-label="Marcar como leído"
+                                          title="Marcar como leído"
+                                          onClick={() => markRead(n.id)}
+                                        >
+                                          <Check className="h-4 w-4" />
+                                        </Button>
+                                      )}
+                                      <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        className="h-7 w-7"
+                                        aria-label="Eliminar notificación"
+                                        title="Eliminar notificación"
+                                        onClick={() => removeNotification(n.id)}
+                                      >
+                                        <X className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  ) : n.type === "gallery_upload" ? (
+                                    <div className="flex items-center gap-1">
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        className="h-7 px-2 text-xs"
+                                        asChild
+                                      >
+                                        <Link to="/galeria">Ver galería</Link>
+                                      </Button>
+                                      {!n.read && (
+                                        <Button
+                                          size="icon"
+                                          variant="ghost"
+                                          className="h-7 w-7"
+                                          aria-label="Marcar como leído"
+                                          title="Marcar como leído"
+                                          onClick={() => markRead(n.id)}
+                                        >
+                                          <Check className="h-4 w-4" />
+                                        </Button>
+                                      )}
+                                      <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        className="h-7 w-7"
+                                        aria-label="Eliminar notificación"
+                                        title="Eliminar notificación"
+                                        onClick={() => removeNotification(n.id)}
                                       >
                                         <X className="h-4 w-4" />
                                       </Button>

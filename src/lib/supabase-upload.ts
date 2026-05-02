@@ -5,14 +5,13 @@
 import { supabase } from "@/integrations/supabase/client";
 
 const NARRATIVAS_BUCKET = "narrativas";
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 /**
  * Subir imagen a Supabase Storage (narrativas bucket)
  * Retorna la URL pública del archivo
  */
 export async function uploadNarrativaImage(file: File): Promise<string> {
-  // Validar
   if (!file.type.startsWith("image/")) {
     throw new Error("El archivo debe ser una imagen");
   }
@@ -21,13 +20,11 @@ export async function uploadNarrativaImage(file: File): Promise<string> {
     throw new Error("La imagen no debe superar 5MB");
   }
 
-  // Generar nombre único
   const timestamp = Date.now();
   const random = Math.random().toString(36).substring(7);
   const extension = file.name.split(".").pop() || "jpg";
   const filename = `${timestamp}-${random}.${extension}`;
 
-  // Subir
   const { data, error } = await supabase.storage
     .from(NARRATIVAS_BUCKET)
     .upload(`narrativas/${filename}`, file);
@@ -36,10 +33,18 @@ export async function uploadNarrativaImage(file: File): Promise<string> {
     throw new Error(`Error al subir imagen: ${error.message}`);
   }
 
-  // Obtener URL pública
   const { data: publicData } = supabase.storage
     .from(NARRATIVAS_BUCKET)
     .getPublicUrl(data.path);
+
+  const { data: userData } = await supabase.auth.getUser();
+  if (userData?.user?.id) {
+    void (supabase as any).from("media_upload_events").insert({
+      uploader_id: userData.user.id,
+      media_type: "narrativa",
+      image_path: data.path,
+    });
+  }
 
   return publicData.publicUrl;
 }

@@ -122,17 +122,6 @@ async function sendNotificationToUser(args: {
   entityId: string;
   data: Record<string, unknown>;
 }) {
-  const { error: rpcError } = await supabase.rpc("create_notification", {
-    p_recipient: args.recipientId,
-    p_actor: args.actorId,
-    p_type: args.type,
-    p_entity_type: args.entityType,
-    p_entity_id: args.entityId,
-    p_data: args.data as Json,
-  });
-
-  if (!rpcError) return;
-
   const { error: insertError } = await supabase.from("notifications").insert({
     recipient_id: args.recipientId,
     actor_id: args.actorId,

@@ -19,8 +19,6 @@ type ProfileCandidate = {
   is_public: boolean;
 };
 
-type FollowAttemptResult = Awaited<ReturnType<typeof followUser>>;
-
 export default function TestDiagnostic() {
   const { user } = useUser();
   const [logs, setLogs] = useState<string[]>([]);
@@ -92,7 +90,6 @@ export default function TestDiagnostic() {
       addLog(`Candidates available: ${candidates.length}`);
 
       let targetUser: ProfileCandidate | null = null;
-      let selectedFollowResult: FollowAttemptResult | null = null;
       let notificationsBeforeCount = 0;
 
       for (const candidate of candidates) {
@@ -120,7 +117,6 @@ export default function TestDiagnostic() {
 
         if (!followError) {
           targetUser = candidate;
-          selectedFollowResult = followResult;
           notificationsBeforeCount = beforeCount;
           addLog(`Selected target: ${candidate.nombre_completo || candidate.user_id}`);
           addLog(`Target profile is_public: ${candidate.is_public}`);
@@ -176,15 +172,7 @@ export default function TestDiagnostic() {
         }
       }
 
-      if (selectedFollowResult?.notificationPersisted === true) {
-        addLog('Notification persistence report: OK');
-      } else if (selectedFollowResult?.notificationPersisted === false) {
-        addLog(`Warning: no se pudo confirmar persistencia de notificación en el flujo de follow (${selectedFollowResult.notificationErrorMessage || 'sin detalle'}).`);
-        addPreventiveHint(selectedFollowResult.notificationErrorMessage || '');
-        addLog('Sugerencia preventiva: revisar políticas RLS de notifications/create_notification para permitir inserción al crear follow.');
-      }
-
-      addLog('✓ Follow notification test complete');
+      addLog('✓ Follow notification test complete (notifications managed by DB triggers)');
     } catch (error) {
       addLog(`ERROR: ${error instanceof Error ? error.message : String(error)}`);
     } finally {

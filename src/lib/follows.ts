@@ -6,8 +6,6 @@ export type FollowStatus = "pending" | "accepted" | "blocked";
 export type FollowActionResult = {
   error: Error | null;
   followStatus?: FollowStatus;
-  notificationPersisted?: boolean;
-  notificationErrorMessage?: string;
 };
 
 const FOLLOW_RELATION_CACHE_KEY = "follow_relation_cache_v1";
@@ -255,61 +253,10 @@ export async function followUser(targetUserId: string): Promise<FollowActionResu
 
   writeFollowRelationCache(me, targetUserId, status);
 
-  const { data: actorProfile } = await supabase
-    .from("profiles")
-    .select("nombre_completo, username, avatar_url")
-    .eq("user_id", me)
-    .maybeSingle();
-
-  const display =
-    actorProfile?.nombre_completo || actorProfile?.username || me.slice(0, 8);
-  const notificationType = status === "pending" ? "follow_request" : "follow_accepted";
-  const notificationData = {
-    follower_id: me,
-    display,
-    username: actorProfile?.username || null,
-    avatar_url: actorProfile?.avatar_url || null,
-  };
-
-  const { error: rpcError } = await supabase.rpc("create_notification", {
-    p_recipient: targetUserId,
-    p_actor: me,
-    p_type: notificationType,
-    p_entity_type: "follow",
-    p_entity_id: `${me}:${targetUserId}`,
-    p_data: notificationData,
-  });
-
-  if (rpcError) {
-    const { error: insertError } = await supabase.from("notifications").insert({
-      recipient_id: targetUserId,
-      actor_id: me,
-      type: notificationType,
-      entity_type: "follow",
-      entity_id: `${me}:${targetUserId}`,
-      data: notificationData,
-    });
-
-    if (insertError) {
-      return {
-        error: null,
-        followStatus: status,
-        notificationPersisted: false,
-        notificationErrorMessage: String(insertError.message || rpcError.message || "Error de persistencia de notificación"),
-      };
-    }
-
-    return {
-      error: null,
-      followStatus: status,
-      notificationPersisted: true,
-    };
-  }
-
+  // Las notificaciones las crea el trigger DB handle_follows_notifications
   return {
     error: null,
     followStatus: status,
-    notificationPersisted: true,
   };
 }
 

@@ -134,8 +134,6 @@ export async function uploadImage(album: string, file: File): Promise<void> {
   if (isLocalBackend()) {
     const tokenizedForm = new FormData();
     tokenizedForm.append("files", file);
-    // Usamos fetch manualmente para enviar FormData con auth
-    // Reutilizamos apiFetch para token, pero apiFetch fuerza content-type json; mejor hacemos una pequeña función inline
     const token = await ensureLocalToken();
     const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8080";
     await fetch(
@@ -152,6 +150,9 @@ export async function uploadImage(album: string, file: File): Promise<void> {
   }
   await ensureAdminForMediaUpload();
 
+  const { data: userData } = await supabase.auth.getUser();
+  const uploaderId = userData?.user?.id;
+
   const ext = file.name.split(".").pop();
   const name = `${crypto.randomUUID()}.${ext}`;
   const path = `${album}/${name}`;
@@ -160,6 +161,14 @@ export async function uploadImage(album: string, file: File): Promise<void> {
     upsert: false,
   });
   if (error) throw error;
+
+  if (uploaderId) {
+    void (supabase as any).from("gallery_upload_events").insert({
+      uploader_id: uploaderId,
+      album_name: album,
+      image_path: path,
+    });
+  }
 }
 
 export async function deleteImage(imagePath: string): Promise<void> {

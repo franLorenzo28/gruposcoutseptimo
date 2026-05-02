@@ -81,6 +81,12 @@ export async function createThread(
       .from("thread-images")
       .getPublicUrl(path);
     imageUrl = pub.publicUrl;
+
+    void (supabase as any).from("media_upload_events").insert({
+      uploader_id: userId,
+      media_type: "thread_image",
+      image_path: path,
+    });
   }
 
   const { data, error } = await supabase

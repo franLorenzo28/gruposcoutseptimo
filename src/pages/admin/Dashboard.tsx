@@ -130,6 +130,7 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
   const [follows, setFollows] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
+  const [pendingEducators, setPendingEducators] = useState<any[]>([]);
   const [testUserNombre, setTestUserNombre] = useState("");
   const [testUserApellido, setTestUserApellido] = useState("");
   const [testUserEmail, setTestUserEmail] = useState("");
@@ -306,6 +307,7 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
         await fetchLocalDashboardData();
       } else {
         await fetchAdminData();
+        await fetchPendingEducators();
       }
     } catch (error: any) {
       toast({
@@ -406,6 +408,51 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
     };
   }, [users, events, groups, threads, threadComments, messages, groupMessages, follows, notifications, today, sevenDaysAgo]);
 
+  const totalPending = pendingUsers.length + pendingEducators.length;
+
+  async function fetchPendingEducators() {
+    if (isLocalBackend()) return;
+    const { data, error } = await supabase
+      .from("notifications")
+      .select("id, actor_id, recipient_id, type, entity_type, entity_id, data, created_at, read_at")
+      .eq("type", "message")
+      .contains("data", { kind: "educator_permission_request", status: "pending" })
+      .is("read_at", null)
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (error) {
+      console.warn("Error fetching pending educators:", error.message);
+      return;
+    }
+    setPendingEducators(data || []);
+  }
+
+  useEffect(() => {
+    if (isLocalBackend() || !currentAccess.canOpenAdminPanel) return;
+
+    const channel = supabase
+      .channel("admin-notifs-realtime")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "notifications", filter: `type=eq.message` },
+        () => {
+          void fetchPendingEducators();
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "notifications" },
+        () => {
+          void fetchPendingEducators();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [currentAccess.canOpenAdminPanel]);
+
   useEffect(() => {
     if (isLocalBackend()) {
       void fetchLocalDashboardData();
@@ -414,6 +461,7 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
 
     fetchData();
     fetchAdminData();
+    fetchPendingEducators();
   }, []);
 
   function formatDate(value?: string | null) {
@@ -815,7 +863,8 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
                 <Badge variant="outline">Usuarios: {stats.total}</Badge>
                 <Badge variant="outline">Admins: {stats.admins}</Badge>
                 {isLocalBackend() && <Badge variant="outline">Pendientes: {pendingUsers.length}</Badge>}
-                {!isLocalBackend() && pendingUsers.length > 0 && <Badge variant="destructive">{pendingUsers.length} pendiente{pendingUsers.length !== 1 ? "s" : ""}</Badge>}
+                {!isLocalBackend() && pendingUsers.length > 0 && <Badge variant="destructive">{pendingUsers.length} registro{pendingUsers.length !== 1 ? "s" : ""}</Badge>}
+                {!isLocalBackend() && pendingEducators.length > 0 && <Badge variant="secondary">{pendingEducators.length} educador{pendingEducators.length !== 1 ? "es" : ""}</Badge>}
               </div>
             </div>
             <p className="mt-3 text-xs text-muted-foreground">
@@ -912,7 +961,7 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
               <TabsTrigger value="requests" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 gap-1.5">
                 <UserCheck className="h-3.5 w-3.5" />
                 Solicitudes
-                {pendingUsers.length > 0 && <Badge variant="destructive" className="ml-1 h-4 px-1 text-[10px]">{pendingUsers.length}</Badge>}
+                {totalPending > 0 && <Badge variant="destructive" className="ml-1 h-4 px-1 text-[10px]">{totalPending}</Badge>}
               </TabsTrigger>
             )}
           </TabsList>
@@ -1099,7 +1148,113 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
             </div>
           </TabsContent>
 
-          <TabsContent value="users">
+
+          <TabsContent value="requests">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <UserCheck className="w-4 h-4" />
+                  Solicitudes Pendientes ({totalPending})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Registros Pendientes */}
+                <div>
+                  <h3 className="text-sm font-semibold mb-3">Registros de Usuario ({pendingUsers.length})</h3>
+                  <div className="grid gap-3 lg:grid-cols-2">
+                    {pendingUsers.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No hay cuentas pendientes.</p>
+                    ) : (
+                      pendingUsers.map((user) => (
+                        <div key={user.user_id} className="rounded-lg border bg-background/80 p-3 space-y-2">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div>
+                              <p className="font-medium text-sm">{user.nombre_completo || user.email || user.user_id}</p>
+                              <p className="text-xs text-muted-foreground">{user.email} · {user.account_status}</p>
+                            </div>
+                            <Badge variant="outline">{user.account_classification || "sin clasificación"}</Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {user.account_review_reason || "Sin motivo de revisión"}
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            <Button size="sm" onClick={() => handleReviewPendingUser(user.user_id, "activo")}>
+                              Aprobar
+                            </Button>
+                            <Button size="sm" variant="destructive" onClick={() => handleReviewPendingUser(user.user_id, "rechazado", "Rechazado por administración") }>
+                              Rechazar
+                            </Button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {/* Educadores Pendientes */}
+                <div>
+                  <h3 className="text-sm font-semibold mb-3">Permisos de Educador ({pendingEducators.length})</h3>
+                  <div className="grid gap-3 lg:grid-cols-2">
+                    {pendingEducators.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No hay solicitudes de educador.</p>
+                    ) : (
+                      pendingEducators.map((n: any) => {
+                        const d = n.data || {};
+                        const units = Array.isArray(d.requested_units) ? d.requested_units.join(", ") : "";
+                        return (
+                          <div key={n.id} className="rounded-lg border bg-background/80 p-3 space-y-2">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <div>
+                                <p className="font-medium text-sm">{d.requester_name || "Educador/a"}</p>
+                                <p className="text-xs text-muted-foreground">Unidades: {units}</p>
+                              </div>
+                              <Badge variant="secondary">Pendiente</Badge>
+                            </div>
+                            {d.note && (
+                              <p className="text-xs text-muted-foreground italic">
+                                "{d.note}"
+                              </p>
+                            )}
+                            <div className="flex flex-wrap gap-2 pt-2">
+                              <Button size="sm" onClick={async () => {
+                                await supabase.rpc("review_educator_permission_request", {
+                                  p_notification_id: n.id,
+                                  p_requester_id: n.actor_id,
+                                  p_approve: true,
+                                  p_units: d.requested_units || [],
+                                  p_note: "Aprobado por panel admin"
+                                });
+                                toast({ title: "Permisos aprobados" });
+                                await fetchPendingEducators();
+                                await fetchAdminData();
+                              }}>
+                                Aprobar
+                              </Button>
+                              <Button size="sm" variant="destructive" onClick={async () => {
+                                await supabase.rpc("review_educator_permission_request", {
+                                  p_notification_id: n.id,
+                                  p_requester_id: n.actor_id,
+                                  p_approve: false,
+                                  p_units: [],
+                                  p_note: "Rechazado por panel admin"
+                                });
+                                toast({ title: "Solicitud rechazada" });
+                                await fetchPendingEducators();
+                                await fetchAdminData();
+                              }}>
+                                Rechazar
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+\n          <TabsContent value="users">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3 md:gap-4 mb-4 sm:mb-6">
               <div className="relative w-full sm:max-w-md">
                 <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
