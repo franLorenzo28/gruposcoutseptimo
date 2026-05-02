@@ -1217,17 +1217,22 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
                             )}
                             <div className="flex flex-wrap gap-2 pt-2">
                               <Button size="sm" onClick={async () => {
-                                const { error } = await (supabase.rpc as any)("simple_review_educator_permission", {
-                                  p_requester_id: n.actor_id,
+                                const requesterId = n.actor_id;
+                                const units = d.requested_units || [];
+                                console.log("[Admin] Aprobando educador:", { requesterId, units, notificationId: n.id });
+                                const { data: rpcData, error } = await (supabase.rpc as any)("simple_review_educator_permission", {
+                                  p_requester_id: requesterId,
                                   p_approve: true,
-                                  p_units: d.requested_units || [],
+                                  p_units: units,
                                   p_note: "Aprobado por panel admin"
                                 });
                                 if (error) {
+                                  console.error("[Admin] Error aprobando:", error);
                                   toast({ title: "Error", description: error.message, variant: "destructive" });
                                   return;
                                 }
-                                toast({ title: "Permisos aprobados" });
+                                console.log("[Admin] RPC response:", rpcData);
+                                toast({ title: "Permisos aprobados", description: `Unidades asignadas: ${units.join(", ")}` });
                                 await fetchPendingEducators();
                                 await fetchAdminData();
                               }}>
