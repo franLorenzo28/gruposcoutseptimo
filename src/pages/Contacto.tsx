@@ -1,31 +1,4 @@
-﻿// --- Validación y sanitización ---
-function validateContact({ name, email, phone, message }: { name: string; email: string; phone?: string; message: string }) {
-  const errors: string[] = [];
-  // Nombre obligatorio, mínimo 3 caracteres, sin caracteres peligrosos
-  if (!name.trim()) errors.push("El nombre es obligatorio.");
-  if (name && name.length < 3) errors.push("El nombre debe tener al menos 3 caracteres.");
-  if (name && /[<>"']/.test(name)) errors.push("El nombre contiene caracteres inválidos.");
-  // Email obligatorio y formato válido
-  if (!email.trim()) errors.push("El email es obligatorio.");
-  if (email && !/^\S+@\S+\.\S+$/.test(email)) errors.push("El email no es válido.");
-  // Teléfono: opcional pero si existe debe ser numérico
-  if (phone && !/^\+?\d{7,15}$/.test(phone)) errors.push("El teléfono debe ser válido (solo números, puede incluir +).");
-  // Mensaje obligatorio y mínimo 10 caracteres
-  if (!message.trim()) errors.push("El mensaje es obligatorio.");
-  if (message && message.length < 10) errors.push("El mensaje debe tener al menos 10 caracteres.");
-  // Sanitización básica
-  return {
-    valid: errors.length === 0,
-    errors,
-    sanitized: {
-      name: name.trim().replace(/[<>"']/g, ""),
-      email: email.trim().toLowerCase(),
-      phone: phone ? phone.replace(/[^\d+]/g, "") : "",
-      message: message.trim().replace(/[<>"']/g, ""),
-    },
-  };
-}
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -37,6 +10,29 @@ import { useToast } from "@/hooks/use-toast";
 // Usa MapComponentEmbed si tienes problemas con billing de Google Cloud
 // import MapComponent from "../components/MapComponentEmbed";
 import MapComponent from "../components/MapComponentEmbed";
+
+// --- Validación y sanitización ---
+function validateContact({ name, email, phone, message }: { name: string; email: string; phone?: string; message: string }) {
+  const errors: string[] = [];
+  if (!name.trim()) errors.push("El nombre es obligatorio.");
+  if (name && name.length < 3) errors.push("El nombre debe tener al menos 3 caracteres.");
+  if (name && /[<>"']/.test(name)) errors.push("El nombre contiene caracteres inválidos.");
+  if (!email.trim()) errors.push("El email es obligatorio.");
+  if (email && !/^\S+@\S+\.\S+$/.test(email)) errors.push("El email no es válido.");
+  if (phone && !/^\+?\d{7,15}$/.test(phone)) errors.push("El teléfono debe ser válido (solo números, puede incluir +).");
+  if (!message.trim()) errors.push("El mensaje es obligatorio.");
+  if (message && message.length < 10) errors.push("El mensaje debe tener al menos 10 caracteres.");
+  return {
+    valid: errors.length === 0,
+    errors,
+    sanitized: {
+      name: name.trim().replace(/[<>"']/g, ""),
+      email: email.trim().toLowerCase(),
+      phone: phone ? phone.replace(/[^\d+]/g, "") : "",
+      message: message.trim().replace(/[<>"']/g, ""),
+    },
+  };
+}
 
 const Contacto = () => {
   const { toast } = useToast();
