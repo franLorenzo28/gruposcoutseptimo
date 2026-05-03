@@ -38,7 +38,8 @@ const EmailVerificationGuard = ({
   const resolveVerifiedToastKey = async () => {
     if (typeof window === "undefined") return null;
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user ?? null;
     if (!user) return null;
 
     const scope = (verifiedToastScope || featureName || "feature").toLowerCase();

@@ -186,14 +186,13 @@ export default function GrupoDetail() {
         const messagesData = await listGroupMessages(id);
         setMessages(messagesData);
       } else {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+        const { data: { session } } = await supabase.auth.getSession();
+        const user = session?.user ?? null;
         if (!user) {
           navigate("/auth");
           return;
         }
-        setCurrentUserId(user.id);
+        setCurrentUserId(user?.id);
 
         // Cargar grupo
         const { data: groupData, error: groupError } = await supabase

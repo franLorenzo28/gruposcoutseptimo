@@ -391,12 +391,12 @@ const Auth = () => {
           return;
         }
 
-        // Si no hay sesión, necesitamos acceso al token antes de llamar getUser()
-        // getUser() requiere una sesión válida, así que solo verificamos el token
+        // Si no hay sesión, intentamos usar el token del hash
+        // getSession es más seguro que getUser ya que no lanza error si no hay sesión
         if (accessToken && !session) {
           try {
-            const { data, error } = await supabase.auth.getUser(accessToken);
-            if (!error && data?.user) {
+            const { data: { session: sessionFromToken } } = await supabase.auth.getSession();
+            if (sessionFromToken?.user) {
               setTimeout(() => {
                 navigate("/", { replace: true });
               }, 100);
@@ -603,11 +603,14 @@ const Auth = () => {
     try {
       const fullName = `${pendingSignup.nombre} ${pendingSignup.apellido}`.trim();
       const redirectUrl = buildAuthRedirect("/");
-      console.log("DEBUG: Calling supabase.auth.signUp...");
-      const { error, data } = await supabase.auth.signUp({
-        email: pendingSignup.email,
-        password: pendingSignup.password,
-        options: {
+      
+      // Verificar si ya hay sesión activa (ej: login con Google)
+      const { data: { session: existingSession } } = await supabase.auth.getSession();
+      
+      if (existingSession?.user) {
+        // Ya hay sesión (OAuth), actualizar metadata del usuario
+        console.log("DEBUG: Session exists, updating user metadata...");
+        const { error: updateError } = await supabase.auth.updateUser({
           data: {
             nombre_completo: fullName,
             nombre: sanitizeText(pendingSignup.nombre),
@@ -616,29 +619,60 @@ const Auth = () => {
             rama: pendingSignup.rama || null,
             nombre_scout_relacionado: pendingSignup.nombreScoutRelacionado || null,
           },
-          emailRedirectTo: redirectUrl,
-        },
-      });
-      console.log("DEBUG: SignUp response - error:", error, "data:", data);
-      if (error) {
-        throw new Error(error.message);
-      }
+        });
+        
+        if (updateError) {
+          console.error("DEBUG: Update user error:", updateError);
+          throw new Error(updateError.message);
+        }
+        
+        toast({
+          title: "¡Registro completado!",
+          description: "Ya podés usar la app. Un admin debe aprobar tu acceso.",
+        });
+      } else {
+        // No hay sesión, hacer signUp normal con email/password
+        console.log("DEBUG: No session, calling supabase.auth.signUp...");
+        const { error, data } = await supabase.auth.signUp({
+          email: pendingSignup.email,
+          password: pendingSignup.password,
+          options: {
+            data: {
+              nombre_completo: fullName,
+              nombre: sanitizeText(pendingSignup.nombre),
+              apellido: sanitizeText(pendingSignup.apellido),
+              tipo_relacion: pendingSignup.tipoRelacion,
+              rama: pendingSignup.rama || null,
+              nombre_scout_relacionado: pendingSignup.nombreScoutRelacionado || null,
+            },
+            emailRedirectTo: redirectUrl,
+          },
+        });
+        console.log("DEBUG: SignUp response - error:", error, "data:", data);
+        if (error) {
+          throw new Error(error.message);
+        }
 
-      toast({
-        title: "¡Registro exitoso!",
-        description: `Te enviamos un correo a ${pendingSignup.email}. Luego de verificarlo, un admin debe aprobar tu acceso.`,
-      });
+        toast({
+          title: "¡Registro exitoso!",
+          description: `Te enviamos un correo a ${pendingSignup.email}. Luego de verificarlo, un admin debe aprobar tu acceso.`,
+        });
+      }
 
       // Notify admin via Edge Function (non-blocking)
       try {
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
         if (supabaseUrl) {
+          // Obtener userId según el flujo
+          const { data: { session: currentSession } } = await supabase.auth.getSession();
+          const userId = currentSession?.user?.id;
+          
           fetch(`${supabaseUrl}/functions/v1/notify-admin-signup`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               user: {
-                id: data.user?.id,
+                id: userId,
                 email: pendingSignup.email,
                 user_metadata: {
                   nombre: pendingSignup.nombre,

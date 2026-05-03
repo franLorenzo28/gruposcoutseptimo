@@ -34,9 +34,8 @@ export default function ConfiguracionNotificaciones() {
       return user?.user_id || user?.id || null;
     }
 
-    const {
-      data: { user: authUser },
-    } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
+    const authUser = session?.user ?? null;
     return authUser?.id || user?.user_id || user?.id || null;
   };
 

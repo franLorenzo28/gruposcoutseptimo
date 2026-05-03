@@ -83,8 +83,8 @@ async function ensureProfileExists(userId: string) {
     if (error) return;
     if (existing) return;
 
-    const { data: userData } = await supabase.auth.getUser();
-    const user = userData?.user;
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user ?? null;
     const userMetadata = user?.user_metadata || {};
     const nombreFallback =
       (userMetadata as any).nombre ||
@@ -254,8 +254,8 @@ const Perfil = () => {
       if (error && error.code !== "PGRST116") {
         throw error;
       }
-      const { data: userData } = await supabase.auth.getUser();
-      const user = userData?.user;
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user ?? null;
       const userMetadata = user?.user_metadata || {};
       const userNombre =
         (userMetadata as any).nombre || profile?.nombre_completo || "";

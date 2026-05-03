@@ -234,9 +234,8 @@ const Navigation = () => {
           }
           return;
         }
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+        const { data: { session } } = await supabase.auth.getSession();
+        const user = session?.user ?? null;
         if (!user) {
           setIsLoggedIn(false);
           setIsAdmin(false);
@@ -248,10 +247,10 @@ const Navigation = () => {
         const { data: profile } = await supabase
           .from("profiles")
           .select("nombre_completo, avatar_url, role, username, fecha_nacimiento")
-          .eq("user_id", user.id)
+          .eq("user_id", user?.id)
           .maybeSingle();
         if (profile) {
-          const emailFallback = user.email || null;
+          const emailFallback = user?.email || null;
           setUserName(((profile as any).nombre_completo || emailFallback) ?? null);
           setAvatarUrl((profile as any).avatar_url || null);
           const access = await getCurrentUserAdminAccess();

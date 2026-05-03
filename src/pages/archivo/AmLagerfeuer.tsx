@@ -37,9 +37,8 @@ const AmLagerfeuer = () => {
   }, []);
 
   const checkAdmin = async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user ?? null;
     if (!user) {
       setIsAdmin(false);
       return;
@@ -48,7 +47,7 @@ const AmLagerfeuer = () => {
     const { data: profile } = await supabase
       .from("profiles")
       .select("rol_adulto")
-      .eq("user_id", user.id)
+      .eq("user_id", user?.id)
       .single();
 
     setIsAdmin(profile?.rol_adulto === "admin");

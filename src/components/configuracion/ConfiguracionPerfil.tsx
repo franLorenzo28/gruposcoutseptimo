@@ -59,9 +59,8 @@ export default function ConfiguracionPerfil() {
             setCharCount(data.descripcion_personal?.length || 0);
           }
         } else {
-          const {
-            data: { user: authUser },
-          } = await supabase.auth.getUser();
+          const { data: { session } } = await supabase.auth.getSession();
+          const authUser = session?.user ?? null;
           const userId = authUser?.id || user?.user_id || user?.id;
           if (!userId) return;
 
@@ -103,9 +102,8 @@ export default function ConfiguracionPerfil() {
           }),
         });
       } else {
-        const {
-          data: { user: authUser },
-        } = await supabase.auth.getUser();
+        const { data: { session } } = await supabase.auth.getSession();
+        const authUser = session?.user ?? null;
         const userId = authUser?.id || user?.user_id || user?.id;
         if (!userId) {
           throw new Error("No se pudo identificar el usuario autenticado");

@@ -54,10 +54,9 @@ export default function TestDiagnostic() {
         return;
       }
 
-      const {
-        data: { user: authUser },
-      } = await supabase.auth.getUser();
-      const currentUserId = authUser?.id || user.id;
+      const { data: { session } } = await supabase.auth.getSession();
+      const authUser = session?.user ?? null;
+      const currentUserId = authUser?.id || user?.id;
 
       // Get a list of users to follow
       addLog('Fetching users list...');

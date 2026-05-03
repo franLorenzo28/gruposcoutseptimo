@@ -175,18 +175,19 @@ export default function Mensajes() {
 
   useEffect(() => {
     (async () => {
-      const { data: userData } = await supabase.auth.getUser();
-      if (userData.user) {
-        setCurrentUserId(userData.user.id);
+      const { data: { session } } = await supabase.auth.getSession();
+      const currentUser = session?.user ?? null;
+      if (currentUser) {
+        setCurrentUserId(currentUser.id);
         const { data: iFollow } = await supabase
           .from("follows")
           .select("followed_id")
-          .eq("follower_id", userData.user.id)
+          .eq("follower_id", currentUser.id)
           .eq("status", "accepted");
         const { data: followsMe } = await supabase
           .from("follows")
           .select("follower_id")
-          .eq("followed_id", userData.user.id)
+          .eq("followed_id", currentUser.id)
           .eq("status", "accepted");
         const iFollowSet = new Set((iFollow || []).map((f) => f.followed_id));
         const followsMeSet = new Set(

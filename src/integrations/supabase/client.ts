@@ -32,3 +32,9 @@ export const supabase = createClient<Database>(url, key, {
 
 export type { Database };
 
+// Helper para obtener usuario de forma segura (sin lanzar error si no hay sesión)
+export async function getCurrentUser() {
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.user ?? null;
+}
+
