@@ -284,21 +284,28 @@ const Auth = () => {
           setProcessingOAuth(true);
           setLoading(true);
           try {
+            console.log("DEBUG: Exchanging code for session...", code);
             const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
             if (exchangeError) {
-              console.error("Error al intercambiar código:", exchangeError);
+              console.error("DEBUG: Error al intercambiar código:", exchangeError);
+            } else {
+              console.log("DEBUG: Code exchanged successfully");
             }
           } catch (err) {
-            console.error("Error en exchangeCodeForSession:", err);
+            console.error("DEBUG: Error en exchangeCodeForSession:", err);
           }
+        } else {
+          console.log("DEBUG: No code in URL, checking for access token in hash...");
         }
 
         // Obtener la sesión actual (importante para callback de OAuth)
+        console.log("DEBUG: Getting session...");
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
-          console.error("Error al obtener sesión:", sessionError);
-          return;
+          console.error("DEBUG: Error al obtener sesión:", sessionError);
+        } else {
+          console.log("DEBUG: Session check complete, has session:", !!session?.user);
         }
 
         if (session?.user) {
