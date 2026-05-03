@@ -86,6 +86,7 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     setIsUserLoading(true);
+    console.log("DEBUG AppProviders: Fetching profile for user:", sessionUser.id, sessionUser.email);
 
     const { data: profile, error } = await querySilent(() => supabase
       .from("profiles")
@@ -94,12 +95,26 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
       .maybeSingle()
     );
 
+    console.log("DEBUG AppProviders: Profile result:", profile, "error:", error);
+
     if (error || !profile) {
-      // No profile yet - let them in (Google signups might not have trigger yet)
-      // Treat missing profile as active (not pending verification)
+      console.log("DEBUG AppProviders: No profile, treating as activo");
       setUser(sessionUser);
       setAccountStatus('activo');
       localStorage.setItem("adminUser", JSON.stringify(sessionUser));
+      setIsUserLoading(false);
+      return;
+    }
+
+    // Check if user was approved via Edge Function (metadata takes precedence)
+    const meta = sessionUser.user_metadata as Record<string, unknown> | undefined;
+    const approvedViaEdgeFunction = meta?.approved_at !== undefined && meta?.profile_complete === true;
+
+    if (approvedViaEdgeFunction) {
+      console.log("DEBUG AppProviders: User approved via Edge Function, bypassing profile status check");
+      const combinedUser = { ...sessionUser };
+      setUser(combinedUser);
+      setAccountStatus('activo');
       setIsUserLoading(false);
       return;
     }
@@ -108,10 +123,12 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
     const status = (profile.account_status && profile.account_status.trim() !== '') 
       ? profile.account_status 
       : 'activo';
+    console.log("DEBUG AppProviders: Account status:", status, "raw:", profile.account_status);
     setAccountStatus(status);
 
     // Block access if not approved
     if (status !== 'activo') {
+      console.log("DEBUG AppProviders: Status is not activo, signing out:", status);
       // User is pending or rejected - sign them out
       await supabase.auth.signOut();
       setUser(null);
@@ -123,6 +140,7 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
       return;
     }
 
+    console.log("DEBUG AppProviders: User approved, setting user");
     const combinedUser = { ...sessionUser, ...profile };
     setUser(combinedUser);
 

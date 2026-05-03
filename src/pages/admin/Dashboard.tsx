@@ -109,6 +109,20 @@ type PendingUser = {
   created_at: string | null;
 };
 
+type RegistrationRequest = {
+  id: string;
+  email: string;
+  nombre: string;
+  apellido: string;
+  tipo_relacion: string;
+  rama: string | null;
+  nombre_scout_relacionado: string | null;
+  provider: string;
+  status: string;
+  requested_at: string;
+  metadata: any;
+};
+
 export default function Dashboard({ currentAccess }: DashboardProps) {
   const [users, setUsers] = useState<any[]>([]);
   const [stats, setStats] = useState({ total: 0, admins: 0, registradosHoy: 0 });
@@ -130,6 +144,7 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
   const [follows, setFollows] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
+  const [registrationRequests, setRegistrationRequests] = useState<RegistrationRequest[]>([]);
   const [pendingEducators, setPendingEducators] = useState<any[]>([]);
   const [testUserNombre, setTestUserNombre] = useState("");
   const [testUserApellido, setTestUserApellido] = useState("");
@@ -220,6 +235,21 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
     }
 
     setLoadingAdmin(true);
+    
+    // Fetch registration_requests first (NEW TABLE)
+    const registrationRequestsRes = await supabase
+      .from("registration_requests")
+      .select("*")
+      .eq("status", "pending")
+      .order("requested_at", { ascending: false })
+      .limit(100);
+    
+    if (registrationRequestsRes.error) {
+      console.error("Error fetching registration_requests:", registrationRequestsRes.error);
+    } else {
+      console.log("Fetched registration requests:", registrationRequestsRes.data?.length || 0);
+    }
+    
     const [groupsRes, eventsRes, threadsRes, commentsRes, messagesRes, groupMessagesRes, pagesRes, followsRes, notificationsRes, pendingUsersRes] = await Promise.all([
       supabase.from("groups").select("*").order("created_at", { ascending: false }).limit(200),
       supabase.from("eventos").select("*").order("fecha_inicio", { ascending: false }).limit(200),
@@ -262,6 +292,10 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
     setFollows(followsRes.data || []);
     setNotifications(notificationsRes.data || []);
     setPendingUsers((pendingUsersRes.data || []) as unknown as PendingUser[]);
+    
+    // Store registration requests for the new registration flow
+    setRegistrationRequests((registrationRequestsRes.data || []) as unknown as RegistrationRequest[]);
+    
     setLoadingAdmin(false);
   }
 
@@ -285,9 +319,9 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
         }
       }
 
-      toast({
+toast({
         title: approveStatus === "activo" ? "Usuario aprobado" : "Usuario rechazado",
-        description: approveStatus === "activo" ? "La cuenta qued� activa." : "La cuenta fue rechazada.",
+        description: approveStatus === "activo" ? "La cuenta quedó activa." : "La cuenta fue rechazada.",
       });
 
       if (isLocalBackend()) {
@@ -301,6 +335,52 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
       toast({
         title: "No se pudo actualizar",
         description: error?.message || "Error al revisar el usuario.",
+        variant: "destructive",
+      });
+    }
+  }
+
+  async function handleApproveRegistration(requestId: string, action: "approve" | "reject", notes?: string) {
+    if (!currentAccess.canOpenAdminPanel) return;
+    
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      if (!supabaseUrl || !anonKey) {
+        throw new Error("Supabase credentials not configured");
+      }
+      
+      const response = await fetch(`${supabaseUrl}/functions/v1/approve-registration`, {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${anonKey}`,
+          "apikey": anonKey,
+        },
+        body: JSON.stringify({ request_id: requestId, action, admin_notes: notes }),
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok || result.error) {
+        const errorMsg = result.error || result.message || `Edge Function error: ${response.status}`;
+        console.error("Edge Function response:", result);
+        throw new Error(errorMsg);
+      }
+      
+      toast({
+        title: action === "approve" ? "Usuario aprobado" : "Solicitud rechazada",
+        description: action === "approve" 
+          ? "El usuario fue creado y recibirá un email de confirmación." 
+          : "La solicitud fue rechazada.",
+      });
+      
+      await fetchAdminData();
+    } catch (error: any) {
+      console.error("handleApproveRegistration error:", error);
+      toast({
+        title: "Error",
+        description: error?.message || "No se pudo procesar la solicitud.",
         variant: "destructive",
       });
     }
@@ -1184,11 +1264,63 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
                   <UserCheck className="w-4 h-4 text-primary" />
-                  Solicitudes Pendientes ({totalPending})
+                  Solicitudes de Registro ({registrationRequests.length + pendingUsers.length})
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Registros Pendientes */}
+                {/* NEW: Registration Requests (new flow) */}
+                <div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-1 h-5 bg-green-500 rounded-full" />
+                    <h3 className="text-sm font-bold">Nuevas Solicitudes ({registrationRequests.length})</h3>
+                  </div>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    {registrationRequests.length === 0 ? (
+                      <div className="col-span-full text-center py-8">
+                        <UserCheck className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
+                        <p className="text-sm text-muted-foreground">No hay solicitudes nuevas.</p>
+                      </div>
+                    ) : (
+                      registrationRequests.map((req) => (
+                        <div key={req.id} className="group relative overflow-hidden rounded-xl border border-green-500/30 bg-background/80 p-4 space-y-3 hover:shadow-lg hover:border-green-500/40 transition-all duration-300">
+                          <div className="absolute top-0 right-0 w-20 h-20 bg-green-500/5 rounded-bl-full" />
+                          <div className="relative">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <div>
+                                <p className="font-semibold text-sm">{req.nombre} {req.apellido}</p>
+                                <p className="text-xs text-muted-foreground mt-0.5">{req.email}</p>
+                              </div>
+                              <Badge variant="outline" className="border-green-500/30 text-green-600 bg-green-500/5">
+                                {req.provider === 'google' ? 'Google' : 'Email'}
+                              </Badge>
+                            </div>
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              <Badge variant="secondary" className="text-[11px]">{req.tipo_relacion}</Badge>
+                              {req.rama && <Badge variant="secondary" className="text-[11px]">{req.rama}</Badge>}
+                            </div>
+                            {req.nombre_scout_relacionado && (
+                              <p className="text-xs text-muted-foreground italic mt-2 p-2 rounded-lg bg-muted/30">
+                                Referencia: {req.nombre_scout_relacionado}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex flex-wrap gap-2 pt-2 border-t border-border/30">
+                            <Button size="sm" className="gap-1.5 bg-green-600 hover:bg-green-700 text-white" onClick={() => handleApproveRegistration(req.id, "approve")}>
+                              <UserCheck className="w-3.5 h-3.5" />
+                              Aprobar
+                            </Button>
+                            <Button size="sm" variant="destructive" onClick={() => handleApproveRegistration(req.id, "reject")}>
+                              <UserX className="w-3.5 h-3.5" />
+                              Rechazar
+                            </Button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {/* Legacy: Registros Pendientes (old flow) */}
                 <div>
                   <div className="flex items-center gap-2 mb-4">
                     <div className="w-1 h-5 bg-primary rounded-full" />

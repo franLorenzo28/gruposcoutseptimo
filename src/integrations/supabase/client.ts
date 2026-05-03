@@ -1,14 +1,9 @@
 /**
- * Supabase Client - Solo Cliente Real (Sin Mock)
- * Este archivo reemplaza completamente el anterior para evitar problemas
- * Cliente de Supabase para la app.
+ * Supabase Client with getUser fix
  */
 
-import { createClient } from "@supabase/supabase-js";
-// Configuración directa desde variables de entorno
-import type { Database } from "./types";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
-// Usar directamente las variables de entorno
 const url = import.meta.env.VITE_SUPABASE_URL;
 const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
@@ -17,24 +12,37 @@ if (!url || !key) {
   throw new Error("Supabase credentials missing");
 }
 
-// Crear cliente con logging deshabilitado para suprimir errores 403 esperados (RLS)
-export const supabase = createClient<Database>(url, key, {
+// Create client without the getUser issue
+const _supabase = createClient(url, key, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
   },
-  global: {
-    headers: {
-      'x-client-info': 'grupo-scout-septimo',
-    },
-  },
 });
 
-export type { Database };
+// Intercept getUser to use getSession instead - avoids "auth session missing" error
+const originalGetUser = _supabase.auth.getUser;
+Object.defineProperty(_supabase.auth, 'getUser', {
+  value: async function(jwt?: string) {
+    try {
+      const { data: { session } } = await _supabase.auth.getSession();
+      return { data: { user: session?.user ?? null }, error: null };
+    } catch (e) {
+      return { data: { user: null }, error: e };
+    };
+  },
+  writable: false,
+  configurable: false,
+});
 
-// Helper para obtener usuario de forma segura (sin lanzar error si no hay sesión)
+export const supabase = _supabase as unknown as SupabaseClient<any>;
+
+// Helper for safe user retrieval
 export async function getCurrentUser() {
-  const { data: { session } } = await supabase.auth.getSession();
-  return session?.user ?? null;
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.user ?? null;
+  } catch {
+    return null;
+  }
 }
-

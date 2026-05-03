@@ -269,10 +269,12 @@ const Auth = () => {
     // Verificar sesión actual y manejar callback de OAuth
     const checkSession = async () => {
       try {
-        if (whatsappGateRef.current) {
+        // Skip session check if WhatsApp gate is active OR there's pending signup data
+        if (showWhatsappContacts || whatsappGateRef.current || pendingSignup) {
           return;
         }
-        // Obtener accessToken del hash si existe
+        
+        // Rest of the code...
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         const accessToken = hashParams.get('access_token');
         
@@ -315,6 +317,19 @@ const Auth = () => {
             return;
           }
 
+          const meta = session.user.user_metadata as Record<string, unknown> | null;
+          const profileComplete = meta?.profile_complete === true;
+
+          // If user is approved and profile is complete, just log them in
+          if (profileComplete && isGoogleProvider(session.user)) {
+            console.log("DEBUG: Approved Google user logging in, redirecting to /");
+            localStorage.removeItem("oauth_intent");
+            setTimeout(() => {
+              navigate("/", { replace: true });
+            }, 100);
+            return;
+          }
+
           if (shouldPromptGoogleCompletion(session.user)) {
             setGoogleCompletionDraft(buildGoogleCompletionDraft(session.user));
             setNeedsGoogleCompletion(true);
@@ -331,8 +346,18 @@ const Auth = () => {
             return;
           }
 
-          // Validar intent de OAuth (login vs signup)
+          // Check for new registration signup intent
           const oauthIntent = localStorage.getItem("oauth_intent");
+
+          if (oauthIntent === "signup" && session.user.email) {
+            const nameFromMeta = meta?.full_name || meta?.name || "";
+            setRecentSignupName(nameFromMeta);
+            setShowWhatsappContacts(true);
+            setProcessingOAuth(false);
+            setLoading(false);
+            localStorage.removeItem("oauth_intent");
+            return;
+          }
 
           if (oauthIntent && !oauthProfileToastShownRef.current) {
             toast({
@@ -347,51 +372,8 @@ const Auth = () => {
             });
             oauthProfileToastShownRef.current = true;
           }
-
-          if (oauthIntent === "login" && session.user.email) {
-            const { data: isRegistered, error: regErr } = await (supabase as any).rpc("is_email_registered", {
-              p_email: session.user.email,
-            });
-
-            if (regErr) {
-              console.warn("No se pudo validar registro por RPC, se permite continuar OAuth login:", regErr);
-            } else if (!isRegistered) {
-              // No mostramos toast aquí: el RPC puede no reflejar de inmediato el estado real y generar falsos positivos.
-            }
-          }
-
-          if (oauthIntent === "signup" && session.user.email) {
-            const { data: isRegistered, error: regErr } = await (supabase as any).rpc("is_email_registered", {
-              p_email: session.user.email,
-            });
-
-            if (regErr) {
-              console.warn("No se pudo validar registro por RPC en signup OAuth:", regErr);
-            } else if (isRegistered) {
-              await supabase.auth.signOut();
-              localStorage.removeItem("oauth_intent");
-              toast({
-                title: "Ese correo ya está registrado",
-                description:
-                  "Ya existe una cuenta con ese correo. Iniciá sesión con Google en la pestaña de ingreso.",
-                variant: "destructive",
-              });
-              setProcessingOAuth(false);
-              setLoading(false);
-              return;
-            } else {
-              const meta = session.user.user_metadata as { full_name?: string; name?: string } | null;
-              const nameFromMeta = meta?.full_name || meta?.name || "";
-              setRecentSignupName(nameFromMeta);
-              setShowWhatsappContacts(true);
-              setProcessingOAuth(false);
-              setLoading(false);
-              localStorage.removeItem("oauth_intent");
-              return;
-            }
-          }
+          
           localStorage.removeItem("oauth_intent");
-          // Pequeño delay para asegurar que la sesión se persiste
           setTimeout(() => {
             navigate("/", { replace: true });
           }, 100);
@@ -425,17 +407,14 @@ const Auth = () => {
      const {
         data: { subscription: sub },
       } = supabase.auth.onAuthStateChange(async (event, session) => {
-        // Solo redirigir en eventos específicos de login exitoso
+        // Skip if WhatsApp gate is active OR there's pending signup
+        if (whatsappGateRef.current || showWhatsappContacts || pendingSignup) {
+          return;
+        }
+        
         if (event === "SIGNED_IN" && session?.user) {
-          if (whatsappGateRef.current) {
-            return;
-          }
-          if (needsGoogleCompletion || shouldPromptGoogleCompletion(session.user)) {
-            return;
-          }
           const pendingOauthIntent = localStorage.getItem("oauth_intent");
           if (pendingOauthIntent) {
-            // Durante callback OAuth dejamos que checkSession aplique reglas de login/signup.
             return;
           }
           setTimeout(() => {
@@ -453,7 +432,7 @@ const Auth = () => {
         subscription.unsubscribe();
       }
     };
-  }, [navigate, needsGoogleCompletion]);
+  }, [navigate, needsGoogleCompletion, showWhatsappContacts, pendingSignup]);
 
   const handleGoogleProfileCompletion = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -474,31 +453,25 @@ const Auth = () => {
     setCompletionSaving(true);
     setInlineMessage("");
     try {
-      const { error } = await supabase.auth.updateUser({
-        data: {
-          profile_complete: true,
-          nombre,
-          apellido,
-          nombre_completo: `${nombre} ${apellido}`.trim(),
-          tipo_relacion: googleCompletionDraft.tipo_relacion,
-          rama: googleCompletionDraft.rama.trim() || null,
-          nombre_scout_relacionado:
-            googleCompletionDraft.nombre_scout_relacionado.trim() || null,
-        },
+      // Skip updateUser and go directly to registration request flow
+      // This avoids "auth session missing" errors from unstable OAuth sessions
+      const fullName = `${nombre} ${apellido}`.trim();
+      
+      setPendingSignup({
+        nombre,
+        apellido,
+        email: emailValue,
+        password: '', // No password for Google users
+        tipoRelacion: googleCompletionDraft.tipo_relacion,
+        rama: googleCompletionDraft.rama.trim(),
+        nombreScoutRelacionado: googleCompletionDraft.nombre_scout_relacionado.trim(),
       });
-
-      if (error) throw error;
-
-      toast({
-        title: "Perfil completado",
-        description: "Ya podés entrar al sitio con tu cuenta de Google.",
-      });
-
-      localStorage.removeItem("oauth_intent");
-      setRecentSignupName(`${nombre} ${apellido}`.trim());
+      
+      setRecentSignupName(fullName);
       setShowWhatsappContacts(true);
       setNeedsGoogleCompletion(false);
       setProcessingOAuth(false);
+      localStorage.removeItem("oauth_intent");
     } catch (error) {
       const message = error instanceof Error ? error.message : "No se pudo completar el perfil";
       setInlineMessage(message);
@@ -606,80 +579,107 @@ const Auth = () => {
   const handleContactedAndSignup = async () => {
     if (!pendingSignup) return;
     setLoading(true);
-    console.log("DEBUG: Attempting signup with email:", pendingSignup.email);
+    console.log("DEBUG: Attempting registration request with email:", pendingSignup.email);
     try {
       const fullName = `${pendingSignup.nombre} ${pendingSignup.apellido}`.trim();
-      const redirectUrl = buildAuthRedirect("/");
       
-      // Verificar si ya hay sesión activa (ej: login con Google)
+      // Check if already has session (Google OAuth - user already in auth.users)
       const { data: { session: existingSession } } = await supabase.auth.getSession();
       
-      if (existingSession?.user) {
-        // Ya hay sesión (OAuth), actualizar metadata del usuario
-        console.log("DEBUG: Session exists, updating user metadata...");
-        const { error: updateError } = await supabase.auth.updateUser({
-          data: {
-            nombre_completo: fullName,
-            nombre: sanitizeText(pendingSignup.nombre),
-            apellido: sanitizeText(pendingSignup.apellido),
-            tipo_relacion: pendingSignup.tipoRelacion,
-            rama: pendingSignup.rama || null,
-            nombre_scout_relacionado: pendingSignup.nombreScoutRelacionado || null,
-          },
-        });
+      // Request data to save
+      const requestData = {
+        email: pendingSignup.email.toLowerCase().trim(),
+        password_hash: pendingSignup.password, // Will be hashed on backend
+        nombre: sanitizeText(pendingSignup.nombre),
+        apellido: sanitizeText(pendingSignup.apellido),
+        tipo_relacion: pendingSignup.tipoRelacion,
+        rama: pendingSignup.rama || null,
+        nombre_scout_relacionado: pendingSignup.nombreScoutRelacionado || null,
+        provider: existingSession?.user ? 'google' : 'email',
+        provider_id: existingSession?.user?.id || null,
+        status: 'pending',
+        metadata: existingSession?.user ? {
+          nombre_completo: fullName,
+          avatar_url: existingSession.user.user_metadata?.avatar_url,
+        } : {},
+      };
+      
+      console.log("DEBUG: Checking for existing registration request...");
+      
+      // Check if already has a request
+      const { data: existingRequest } = await supabase
+        .from("registration_requests")
+        .select("id, status")
+        .eq("email", requestData.email)
+        .maybeSingle();
+      
+      if (existingRequest) {
+        // Update existing request and reset status to pending
+        console.log("DEBUG: Updating existing request:", existingRequest.id, "status:", existingRequest.status);
+        const { error: updateError } = await supabase
+          .from("registration_requests")
+          .update({
+            nombre: requestData.nombre,
+            apellido: requestData.apellido,
+            tipo_relacion: requestData.tipo_relacion,
+            rama: requestData.rama,
+            nombre_scout_relacionado: requestData.nombre_scout_relacionado,
+            provider: requestData.provider,
+            provider_id: requestData.provider_id,
+            metadata: requestData.metadata,
+            status: 'pending',
+            reviewed_at: null,
+            reviewed_by: null,
+            admin_notes: null,
+          })
+          .eq("id", existingRequest.id);
         
         if (updateError) {
-          console.error("DEBUG: Update user error:", updateError);
+          console.error("DEBUG: Update error:", updateError);
           throw new Error(updateError.message);
         }
         
         toast({
-          title: "¡Registro completado!",
-          description: "Ya podés usar la app. Un admin debe aprobar tu acceso.",
+          title: "¡Solicitud actualizada!",
+          description: "Un admin revisará tu solicitud. Te avisaremos por mail cuando sea aprobada.",
         });
       } else {
-        // No hay sesión, hacer signUp normal con email/password
-        console.log("DEBUG: No session, calling supabase.auth.signUp...");
-        const { error, data } = await supabase.auth.signUp({
-          email: pendingSignup.email,
-          password: pendingSignup.password,
-          options: {
-            data: {
-              nombre_completo: fullName,
-              nombre: sanitizeText(pendingSignup.nombre),
-              apellido: sanitizeText(pendingSignup.apellido),
-              tipo_relacion: pendingSignup.tipoRelacion,
-              rama: pendingSignup.rama || null,
-              nombre_scout_relacionado: pendingSignup.nombreScoutRelacionado || null,
-            },
-            emailRedirectTo: redirectUrl,
-          },
-        });
-        console.log("DEBUG: SignUp response - error:", error, "data:", data);
-        if (error) {
-          throw new Error(error.message);
+        // Insert new request
+        console.log("DEBUG: Inserting new registration request...");
+        const { error: insertError } = await supabase
+          .from("registration_requests")
+          .insert(requestData);
+        
+        if (insertError) {
+          console.error("DEBUG: Insert error:", insertError);
+          // If already exists (race condition), show friendly message
+          if (insertError.code === '23505') {
+            throw new Error("Ya existe una solicitud con este correo. Esperá la aprobación.");
+          }
+          throw new Error(insertError.message);
         }
-
+        
+        console.log("DEBUG: Registration request saved successfully");
+        
         toast({
-          title: "¡Registro exitoso!",
-          description: `Te enviamos un correo a ${pendingSignup.email}. Luego de verificarlo, un admin debe aprobar tu acceso.`,
+          title: "¡Solicitud enviada!",
+          description: "Un admin revisará tu solicitud. Te avisaremos por mail cuando sea aprobada.",
         });
       }
-
+      
+      // Clear the pending signup state
+      setShowWhatsappContacts(false);
+      setPendingSignup(null);
+      
       // Notify admin via Edge Function (non-blocking)
       try {
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
         if (supabaseUrl) {
-          // Obtener userId según el flujo
-          const { data: { session: currentSession } } = await supabase.auth.getSession();
-          const userId = currentSession?.user?.id;
-          
           fetch(`${supabaseUrl}/functions/v1/notify-admin-signup`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               user: {
-                id: userId,
                 email: pendingSignup.email,
                 user_metadata: {
                   nombre: pendingSignup.nombre,
@@ -692,9 +692,9 @@ const Auth = () => {
             }),
           }).catch(() => {});
         }
-      } catch { /* Silent - notification is non-critical */ }
+      } catch { /* Silent */ }
 
-      // Clear form and pending data
+      // Clear form
       setEmail("");
       setPassword("");
       setSignupNombre("");
@@ -702,7 +702,12 @@ const Auth = () => {
       setSignupTipoRelacion("scout");
       setSignupRama("");
       setSignupNombreScoutRelacionado("");
-      setPendingSignup(null);
+      
+      // Redirect to home after a delay
+      setTimeout(() => {
+        navigate("/", { replace: true });
+      }, 2000);
+      
     } catch (error) {
       const message = error instanceof Error ? error.message : "Ocurrió un error inesperado";
       toast({

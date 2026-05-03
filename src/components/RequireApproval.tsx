@@ -22,6 +22,15 @@ export default function RequireApproval({ children }: RequireApprovalProps) {
       return;
     }
 
+    // Check if user was approved via Edge Function (metadata)
+    const meta = user.user_metadata as Record<string, unknown> | undefined;
+    if (meta?.approved_at && meta?.profile_complete) {
+      console.log("DEBUG RequireApproval: User approved via Edge Function, allowing access");
+      setChecking(false);
+      localStorage.removeItem("pendingAccountStatus");
+      return;
+    }
+
     // If account status is known and not approved, show pending screen
     if (accountStatus && accountStatus !== "activo") {
       const name = localStorage.getItem("pendingUserName") || user.email || "Usuario";
