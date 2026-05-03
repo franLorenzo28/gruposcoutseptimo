@@ -275,6 +275,23 @@ const Auth = () => {
         // Obtener accessToken del hash si existe
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         const accessToken = hashParams.get('access_token');
+        
+        // Si hay un código en la URL (callback de OAuth), intercambiarlo por sesión
+        const searchParams = new URLSearchParams(window.location.search);
+        const code = searchParams.get('code');
+        
+        if (code) {
+          setProcessingOAuth(true);
+          setLoading(true);
+          try {
+            const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+            if (exchangeError) {
+              console.error("Error al intercambiar código:", exchangeError);
+            }
+          } catch (err) {
+            console.error("Error en exchangeCodeForSession:", err);
+          }
+        }
 
         // Obtener la sesión actual (importante para callback de OAuth)
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();

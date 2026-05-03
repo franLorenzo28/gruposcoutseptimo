@@ -47,7 +47,8 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
 
   const refreshUser = async () => {
     try {
-      const { data: { user: sessionUser } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const sessionUser = session?.user ?? null;
       if (!sessionUser) {
         setUser(null);
         setAccountStatus(null);
