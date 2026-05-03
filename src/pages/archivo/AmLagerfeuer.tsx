@@ -290,7 +290,7 @@ const AmLagerfeuer = () => {
                 <p className="text-sm sm:text-base text-muted-foreground mb-4">
                   Si tenés fotos, videos o documentos de Am Lagerfeuers
                   históricos del grupo, ayúdanos a completar este repositorio.
-                  Contactá con los dirigentes para compartir tus archivos.
+                  Contactá con los educadores para compartir tus archivos.
                 </p>
               </CardContent>
             </Card>

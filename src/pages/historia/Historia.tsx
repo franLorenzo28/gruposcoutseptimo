@@ -42,11 +42,11 @@ const Historia = () => {
       ctaHref: "/archivo/locales",
     },
     {
-      year: "1990",
-      title: "Expansión de unidades",
+      year: "1994",
+      title: "Creación del LOBABI",
       description:
-        "Se consolida la propuesta de unidades del grupo, desde Manada hasta Rovers, para ofrecer una formación integral.",
-      place: "Comunidad y locales del grupo",
+        "Un evento que une manadas de distintos grupos compitiendo en carreras de bicicletas.",
+      place: "Parque Rivera",
     },
     {
       year: "2004",

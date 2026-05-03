@@ -112,7 +112,7 @@ const Jamboree2023 = () => {
               <div className="border-t border-border/30 pt-10 max-w-2xl ml-auto pr-4 sm:pr-16">
                 <h3 className="text-lg font-semibold text-foreground mb-4">Segundo Contingente - Pioneros</h3>
                 <p className="leading-relaxed text-xl">
-                  El 17 de febrero y fecha de comienzo del Jamboree arribaron al predio nuestro segundo contingente de Grupo con 16 Pioneros, 3 dirigentes y 2 de equipo de servicio (Dirigente y Comité de Padres). Nos encontramos con mucha alegría de encontrarnos juntos en un evento internacional.
+                  El 17 de febrero y fecha de comienzo del Jamboree arribaron al predio nuestro segundo contingente de Grupo con 16 Pioneros, 3 educadores y 2 de equipo de servicio (Educador y Comité de Padres). Nos encontramos con mucha alegría de encontrarnos juntos en un evento internacional.
                 </p>
               </div>
             </Reveal>

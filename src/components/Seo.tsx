@@ -95,7 +95,7 @@ const NOINDEX_PREFIXES = [
   "/cancionero",
   "/galeria",
   "/eventos",
-  "/dirigentes",
+  "/educadores",
   "/veteranos",
   "/test-diagnostic",
 ];
