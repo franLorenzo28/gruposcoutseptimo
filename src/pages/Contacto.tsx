@@ -7,9 +7,6 @@ import { Mail, Phone, MapPin, Clock } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
 import { PageGridBackground } from "@/components/PageGridBackground";
 import { useToast } from "@/hooks/use-toast";
-// Usa MapComponentEmbed si tienes problemas con billing de Google Cloud
-// import MapComponent from "../components/MapComponentEmbed";
-import MapComponent from "../components/MapComponentEmbed";
 
 // --- Validación y sanitización ---
 function validateContact({ name, email, phone, message }: { name: string; email: string; phone?: string; message: string }) {
@@ -254,7 +251,16 @@ const Contacto = () => {
                 <Card id="mapa" className="overflow-hidden shadow-xl border-2">
                   <CardContent className="p-0">
                     <div className="w-full h-64 sm:h-80 rounded-lg overflow-hidden">
-                      <MapComponent />
+                      <iframe
+                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2648.3856260251296!2d-56.093305184935744!3d-34.885120769042935!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x959f86c2eb358313%3A0xa36b089dc914381d!2sVolteadores%201753%2C%2011400%20Montevideo%2C%20Departamento%20de%20Montevideo!5e0!3m2!1ses-419!2suy!4v1777835715616!5m2!1ses-419!2suy"
+                        width="100%"
+                        height="100%"
+                        style={{ border: 0 }}
+                        allowFullScreen
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                        title="Ubicación del Grupo Scout Séptimo"
+                      />
                     </div>
                   </CardContent>
                 </Card>
