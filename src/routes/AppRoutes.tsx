@@ -79,12 +79,15 @@ function AppContent() {
   useEffect(() => {
     if (isUserLoading || !user) return;
     
-    const storedStatus = localStorage.getItem("pendingAccountStatus");
-    const currentStatus = storedStatus || accountStatus;
-    
-    if (currentStatus && currentStatus !== "activo") {
+    // Solo usar accountStatus fresco del provider, no del localStorage
+    // El localStorage puede tener valores obsoletos de sesiones anteriores
+    if (accountStatus && accountStatus !== "activo") {
       const name = localStorage.getItem("pendingUserName") || user.email || "Usuario";
-      setPendingInfo({ name, status: currentStatus });
+      setPendingInfo({ name, status: accountStatus });
+    } else {
+      // Limpiar valores pendientes del localStorage cuando está activo
+      localStorage.removeItem("pendingAccountStatus");
+      localStorage.removeItem("pendingUserName");
     }
   }, [user, accountStatus, isUserLoading]);
 
@@ -155,7 +158,7 @@ function AppContent() {
                 }
               />
               <Route path="/veteranos" element={<AdminGuard><Veteranos /></AdminGuard>} />
-              <Route path="/dirigentes" element={<AdminGuard><DirigEn /></AdminGuard>} />
+              <Route path="/educadores" element={<AdminGuard><DirigEn /></AdminGuard>} />
               <Route
                 path="/archivo/locales"
                 element={

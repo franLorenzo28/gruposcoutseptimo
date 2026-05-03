@@ -1,48 +1,9 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { UserCog, Shield, BookOpen, ArrowRight } from "lucide-react";
+import { UserCog, Construction, ArrowRight } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
 import { Link } from "react-router-dom";
-
-const DIRIGENTES_DATA = [
-  {
-    titulo: "Coordinador de Grupo",
-    nombre: "Cargo en proceso",
-    descripcion: "Coordina la propuesta educativa global del grupo.",
-    estado: "vacante" as const,
-  },
-  {
-    titulo: "Jefe de Manada",
-    nombre: "Cargo en proceso",
-    descripcion: "Lidera el equipo de lobatos.",
-    estado: "vacante" as const,
-  },
-  {
-    titulo: "Jefe de Tropa",
-    nombre: "Cargo en proceso",
-    descripcion: "Lidera el equipo de scouts.",
-    estado: "vacante" as const,
-  },
-  {
-    titulo: "Jefe de Pioneros",
-    nombre: "Cargo en proceso",
-    descripcion: "Lidera el equipo de jovenes pioneros.",
-    estado: "vacante" as const,
-  },
-  {
-    titulo: "Jefe de Rovers",
-    nombre: "Cargo en proceso", 
-    descripcion: "Lidera el equipo de jovenes adultos.",
-    estado: "vacante" as const,
-  },
-  {
-    titulo: "Secretario de Unidad",
-    nombre: "Cargo en proceso",
-    descripcion: "Gestiona documentacion y comunicacion.",
-    estado: "vacante" as const,
-  },
-];
 
 const DirigEn = () => {
   return (
@@ -63,7 +24,7 @@ const DirigEn = () => {
               <span className="block text-foreground">del Grupo Séptimo</span>
             </h1>
             <p className="mt-6 max-w-3xl text-base leading-8 tracking-[0.01em] text-muted-foreground sm:text-lg">
-              Adultos voluntarios que sostenido el proyecto educativo con compromiso, formacion y cercania.
+              Sección en construcción. Próximamente podrás ver aquí nuestro equipo de educadores.
             </p>
           </Reveal>
         </div>
@@ -72,39 +33,13 @@ const DirigEn = () => {
       <section className="py-14 sm:py-16 bg-background/70">
         <div className="container mx-auto px-4">
           <Reveal>
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {DIRIGENTES_DATA.map((cargo, idx) => (
-                <Card key={idx} className="card-hover border-border/50 bg-gradient-to-br from-card via-card to-card/80">
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                        <Shield className="h-5 w-5 text-primary" />
-                      </div>
-                      <Badge variant={cargo.estado === "vacante" ? "outline" : "default"} className="text-xs">
-                        {cargo.estado === "vacante" ? "Vacante" : "Activo"}
-                      </Badge>
-                    </div>
-                    <h3 className="text-lg font-bold mb-1">{cargo.titulo}</h3>
-                    <p className="text-sm text-muted-foreground mb-3">{cargo.descripcion}</p>
-                    <p className="text-xs text-primary/70">{cargo.nombre}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </Reveal>
-        </div>
-      </section>
-
-      <section className="py-12 bg-gradient-to-b from-background/70 to-muted/25">
-        <div className="container mx-auto px-4">
-          <Reveal>
             <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-accent/5">
               <CardContent className="p-8 text-center">
-                <BookOpen className="mx-auto h-12 w-12 text-primary mb-4" />
-                <h3 className="text-xl font-bold mb-2">Queres formar parte del equipo?</h3>
+                <Construction className="mx-auto h-12 w-12 text-primary mb-4" />
+                <Badge variant="secondary" className="mb-4">En Proceso</Badge>
+                <h3 className="text-xl font-bold mb-2">Estamos trabajando en esto</h3>
                 <p className="text-muted-foreground mb-6 max-w-xl mx-auto">
-                  El grupo siempre necesita adultos que accompagnen la propuesta educativa.
-                  Contactanos para conocer como podes participar.
+                  Pronto podrás conocer a nuestro equipo de educadores del Grupo Scout Séptimo.
                 </p>
                 <Link to="/contacto">
                   <Button className="gap-2">
