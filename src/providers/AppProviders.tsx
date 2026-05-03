@@ -95,14 +95,18 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
 
     if (error || !profile) {
       // No profile yet - let them in (Google signups might not have trigger yet)
+      // Treat missing profile as active (not pending verification)
       setUser(sessionUser);
-      setAccountStatus(null);
+      setAccountStatus('activo');
       localStorage.setItem("adminUser", JSON.stringify(sessionUser));
       setIsUserLoading(false);
       return;
     }
 
-    const status = profile.account_status ?? 'activo';
+    // Ensure status is always a valid value
+    const status = (profile.account_status && profile.account_status.trim() !== '') 
+      ? profile.account_status 
+      : 'activo';
     setAccountStatus(status);
 
     // Block access if not approved
