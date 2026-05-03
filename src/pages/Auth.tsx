@@ -612,6 +612,30 @@ const Auth = () => {
         description: `Te enviamos un correo a ${pendingSignup.email}. Luego de verificarlo, un admin debe aprobar tu acceso.`,
       });
 
+      // Notify admin via Edge Function (non-blocking)
+      try {
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+        if (supabaseUrl) {
+          fetch(`${supabaseUrl}/functions/v1/notify-admin-signup`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              user: {
+                id: data.user?.id,
+                email: pendingSignup.email,
+                user_metadata: {
+                  nombre: pendingSignup.nombre,
+                  apellido: pendingSignup.apellido,
+                  tipo_relacion: pendingSignup.tipoRelacion,
+                  rama: pendingSignup.rama,
+                  nombre_scout_relacionado: pendingSignup.nombreScoutRelacionado,
+                },
+              },
+            }),
+          }).catch(() => {});
+        }
+      } catch { /* Silent - notification is non-critical */ }
+
       // Clear form and pending data
       setEmail("");
       setPassword("");
