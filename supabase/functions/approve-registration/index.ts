@@ -220,95 +220,39 @@ serve(async (req) => {
         })
         .eq("id", request_id);
 
-      // Update or create profile (profile likely already exists from database trigger)
+      // Update profile (trigger already created it)
       if (newUserId) {
-        const { data: existingProfile } = await supabase
+        const fullName = `${request.nombre} ${request.apellido}`.trim();
+        console.log("Updating profile for user:", newUserId);
+        
+        const { error: updateError } = await supabase
           .from("profiles")
-          .select("id")
-          .eq("user_id", newUserId)
-          .maybeSingle();
-
-        if (existingProfile) {
-          // Update existing profile - set status to activo
-          console.log("Updating existing profile for user:", newUserId);
-          const { error: updateError } = await supabase
-            .from("profiles")
-            .update({
-              nombre_completo: `${request.nombre} ${request.apellido}`,
-              nombre: request.nombre,
-              apellido: request.apellido,
-              tipo_relacion: request.tipo_relacion,
-              rama: request.rama,
-              nombre_scout_relacionado: request.nombre_scout_relacionado,
-              account_status: "activo",
-              account_classification: null,
-              account_review_reason: null,
-              role: request.tipo_relacion === "educador" ? "educador" : "scout",
-            })
-            .eq("user_id", newUserId);
-          
-          if (updateError) {
-            console.error("Error updating profile:", updateError.message);
-          } else {
-            console.log("Profile updated successfully with activo status");
-          }
-        } else {
-          // Create new profile
-          console.log("Creating new profile for user:", newUserId);
-          const { error: insertError } = await supabase.from("profiles").insert({
-            user_id: newUserId,
-            nombre_completo: `${request.nombre} ${request.apellido}`,
-            nombre: request.nombre,
-            apellido: request.apellido,
-            tipo_relacion: request.tipo_relacion,
-            rama: request.rama,
-            nombre_scout_relacionado: request.nombre_scout_relacionado,
+          .update({
+            nombre_completo: fullName,
             account_status: "activo",
-            role: request.tipo_relacion === "educador" ? "educador" : "scout",
-          });
-          
-          if (insertError) {
-            console.error("Error creating profile:", insertError.message);
-          } else {
-            console.log("Profile created successfully");
-          }
+            account_classification: null,
+            account_review_reason: null,
+          })
+          .eq("user_id", newUserId);
+        
+        if (updateError) {
+          console.error("Error updating profile:", updateError.message);
+        } else {
+          console.log("Profile updated successfully with activo status");
         }
       }
 
-      // Send approval email via Resend
-      const resendKey = Deno.env.get("RESEND_API_KEY");
-      const fromEmail = Deno.env.get("FROM_EMAIL") || "Grupo Scout Séptimo <noreply@tudominio.com>";
-      
-      if (resendKey) {
-        const fullName = `${request.nombre} ${request.apellido}`;
-        
-        await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${resendKey}`,
-          },
-          body: JSON.stringify({
-            from: fromEmail,
-            to: [request.email],
-            subject: "Tu registro en Grupo Scout Séptimo fue aprobado",
-            html: `
-              <h2>¡Bienvenido a Grupo Scout Séptimo!</h2>
-              <p>Hola ${fullName},</p>
-              <p>Tu solicitud de registro ha sido aprobada por un admin.</p>
-              <p>Ya podés acceder a la plataforma con tu cuenta.</p>
-              <p>Si tenés alguna duda, escribinos por WhatsApp.</p>
-            `,
-            text: `¡Bienvenido! Tu registro fue aprobado. Ya podés acceder a la plataforma.`,
-          }),
-        });
-      }
+      // TODO: Enviar email de bienvenida cuando se configure un dominio en Resend
+      // Por ahora el usuario puede loguearse directamente después de ser aprobado.
+      // Para habilitar emails: verificar dominio en resend.com/domains
+      // y configurar SUPABASE_SECRETS: RESEND_API_KEY + FROM_EMAIL
+      console.log("Email sending skipped (no verified domain configured)");
 
       return new Response(JSON.stringify({ 
         ok: true, 
         action: "approved",
         userId: newUserId,
-        message: "User approved and created successfully",
+        message: "User approved successfully",
       }), {
         status: 200,
         headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -324,31 +268,6 @@ serve(async (req) => {
           admin_notes: admin_notes || "Rejected by admin",
         })
         .eq("id", request_id);
-
-      // Send rejection email via Resend
-      const resendKey = Deno.env.get("RESEND_API_KEY");
-      const fromEmail = Deno.env.get("FROM_EMAIL") || "Grupo Scout Séptimo <noreply@tudominio.com>";
-      
-      if (resendKey) {
-        await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${resendKey}`,
-          },
-          body: JSON.stringify({
-            from: fromEmail,
-            to: [request.email],
-            subject: "Tu registro en Grupo Scout Séptimo",
-            html: `
-              <h2>Hola,</h2>
-              <p>Lamentamos informarte que tu solicitud de registro no fue aprobada en esta oportunidad.</p>
-              <p>Si creés que hay un error, contactanos por WhatsApp.</p>
-            `,
-            text: `Tu solicitud no fue aprobada. Contactanos si creés que hay un error.`,
-          }),
-        });
-      }
 
       return new Response(JSON.stringify({ 
         ok: true, 
