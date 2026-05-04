@@ -26,7 +26,7 @@ const registerSchema = z.object({
   nombre: z.string().min(2).max(80),
   apellido: z.string().min(2).max(80),
   password: z.string().min(8),
-  tipo_relacion: z.string().min(2).max(80),
+  grupo_scout: z.string().min(2).max(80),
   rama: z.string().trim().max(80).optional().nullable(),
   nombre_scout_relacionado: z.string().trim().max(120).optional().nullable(),
   captcha_id: z.string().uuid(),
@@ -213,7 +213,7 @@ authRouter.post(
     if (!parse.success) {
       return res.status(400).json({ error: parse.error.flatten() });
     }
-    const { email, password, nombre, apellido, tipo_relacion, rama, nombre_scout_relacionado } = parse.data;
+    const { email, password, nombre, apellido, grupo_scout, rama, nombre_scout_relacionado } = parse.data;
 
     cleanupCaptchaChallenges();
     const captcha = captchaChallenges.get(parse.data.captcha_id);
@@ -237,7 +237,7 @@ authRouter.post(
       nombre,
       apellido,
       email,
-      tipo_relacion,
+      grupo_scout,
       rama,
       nombre_scout_relacionado,
     });
@@ -260,9 +260,9 @@ authRouter.post(
     
     // Insert profile (nombre_completo should be a proper name, not username)
     db.prepare(
-      `INSERT INTO profiles (user_id, nombre_completo, apellido, tipo_relacion, nombre_scout_relacionado, rama, is_public) 
+      `INSERT INTO profiles (user_id, nombre_completo, apellido, grupo_scout, nombre_scout_relacionado, rama, is_public) 
       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    ).run(id, nombre, apellido, tipo_relacion, nombre_scout_relacionado ?? null, rama ?? null, 0);
+    ).run(id, nombre, apellido, grupo_scout, nombre_scout_relacionado ?? null, rama ?? null, 0);
 
     // Generar token de verificación
     const { verificationToken } = createVerificationToken(id);
@@ -297,7 +297,7 @@ authRouter.post(
             user_id: id,
             display: fullName,
             email,
-            tipo_relacion,
+            grupo_scout,
             rama: rama ?? null,
             nombre_scout_relacionado: nombre_scout_relacionado ?? null,
             classification: registration.classification,

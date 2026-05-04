@@ -40,6 +40,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import type { AdminAccess } from "@/lib/admin-permissions";
+import { updateUserRole } from "@/lib/admin-permissions";
 
 type EducatorUnit = "manada" | "tropa" | "pioneros" | "rovers";
 
@@ -261,7 +262,7 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
       supabase.from("follows").select("*").order("created_at", { ascending: false }).limit(500),
       supabase.from("notifications").select("*").order("created_at", { ascending: false }).limit(500),
       supabase.from("profiles")
-        .select("user_id, email, nombre_completo, username, account_status, account_classification, account_review_reason, tipo_relacion, rama, nombre_scout_relacionado, rol_adulto, created_at")
+        .select("user_id, email, nombre_completo, username, account_status, account_classification, account_review_reason, tipo_relacion, rama, nombre_scout_relacionado, rol_adulto, role, created_at")
         .in("account_status", ["pendiente_email", "pendiente_aprobacion"])
         .order("created_at", { ascending: false })
         .limit(100),
@@ -803,8 +804,28 @@ toast({
         return;
       }
 
+      if (canManageRoles) {
+        try {
+          const roleToSet = editData.role || "user";
+          const currentRole = editUser.role || "user";
+          if (roleToSet !== currentRole) {
+            await updateUserRole({
+              userId: editUser.user_id,
+              newRole: roleToSet as "user" | "mod" | "admin",
+            });
+          }
+        } catch (err: any) {
+          toast({
+            title: "No se pudo cambiar el rol",
+            description: err?.message || "Error al actualizar el rol.",
+            variant: "destructive",
+          });
+          setSaving(false);
+          return;
+        }
+      }
+
       const payload = {
-        email: canEditIdentity ? editData.email || null : editUser.email || null,
         nombre_completo: canEditIdentity
           ? editData.nombre_completo || null
           : editUser.nombre_completo || null,
@@ -813,7 +834,6 @@ toast({
             ? String(editData.username).toLowerCase()
             : null
           : editUser.username || null,
-        role: roleToSave,
         rol_adulto: adultRoleToSave,
         rama_que_educa: ramaQueEduca,
       };
@@ -834,7 +854,13 @@ toast({
 
       setUsers((prev) => {
         const updated = prev.map((u) =>
-          u.user_id === editUser.user_id ? { ...u, ...payload } : u,
+          u.user_id === editUser.user_id
+            ? {
+                ...u,
+                ...payload,
+                role: canManageRoles ? editData.role || "user" : u.role,
+              }
+            : u,
         );
         computeStats(updated);
         return updated;
@@ -916,7 +942,7 @@ toast({
       return <Badge className="bg-red-600 hover:bg-red-700 text-white">Admin Supremo</Badge>;
     }
     if (role === "mod") {
-      return <Badge className="bg-amber-500 hover:bg-amber-600 text-white">Mod</Badge>;
+      return <Badge className="bg-violet-600 hover:bg-violet-700 text-white">Mod</Badge>;
     }
     return <Badge variant="secondary">User</Badge>;
   };
@@ -2005,12 +2031,19 @@ toast({
                   <SelectContent>
                     <SelectItem value="user">Usuario Normal</SelectItem>
                     <SelectItem value="mod">Moderador</SelectItem>
-                    <SelectItem value="admin">Admin Supremo</SelectItem>
+                    {currentAccess.isSuperAdmin && (
+                      <SelectItem value="admin">Admin Supremo</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
                 {!canManageRoles && (
                   <p className="mt-2 text-xs text-muted-foreground">
-                    Solo el admin supremo puede cambiar roles globales.
+                    Solo admin o moderador pueden cambiar roles.
+                  </p>
+                )}
+                {!currentAccess.isSuperAdmin && canManageRoles && editData.role === "admin" && (
+                  <p className="mt-2 text-xs text-destructive">
+                    Los moderadores no pueden asignar rol admin.
                   </p>
                 )}
               </div>

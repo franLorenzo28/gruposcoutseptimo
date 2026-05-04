@@ -392,7 +392,7 @@ export default function Mensajes() {
   };
 
   return (
-    <EmailVerificationGuard featureName="Mensajes">
+    <EmailVerificationGuard featureName="Mensajes" verifiedToastMode="once-per-login">
       <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/25 pb-4">
         <div className="mx-auto max-w-6xl px-3 py-2 sm:px-6 sm:py-6">
           <div className="h-[calc(100dvh-6.5rem)] max-h-[960px] overflow-hidden rounded-3xl border border-border/70 bg-card/55 shadow-xl backdrop-blur-sm sm:h-[calc(100dvh-8rem)]">

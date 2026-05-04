@@ -127,7 +127,8 @@ type GoogleCompletionDraft = {
   nombre: string;
   apellido: string;
   email: string;
-  tipo_relacion: string;
+  grupo: string;
+  otroGrupo: string;
   rama: string;
   nombre_scout_relacionado: string;
 };
@@ -164,8 +165,8 @@ function buildGoogleCompletionDraft(user: SupabaseUser): GoogleCompletionDraft {
     nombre: getMetadataString(user, "nombre") || split.nombre,
     apellido: getMetadataString(user, "apellido") || split.apellido,
     email: typeof user.email === "string" ? user.email : "",
-    tipo_relacion:
-      getMetadataString(user, "tipo_relacion") || GOOGLE_RELATION_DEFAULT,
+    grupo: getMetadataString(user, "grupo_scout") || "septimo",
+    otroGrupo: getMetadataString(user, "otro_grupo") || "",
     rama: getMetadataString(user, "rama"),
     nombre_scout_relacionado: getMetadataString(user, "nombre_scout_relacionado"),
   };
@@ -184,13 +185,15 @@ const Auth = () => {
     nombre: "",
     apellido: "",
     email: "",
-    tipo_relacion: GOOGLE_RELATION_DEFAULT,
+    grupo: "septimo",
+    otroGrupo: "",
     rama: "",
     nombre_scout_relacionado: "",
   });
   const [signupNombre, setSignupNombre] = useState("");
   const [signupApellido, setSignupApellido] = useState("");
-  const [signupTipoRelacion, setSignupTipoRelacion] = useState("scout");
+  const [signupGrupo, setSignupGrupo] = useState("septimo");
+  const [signupOtroGrupo, setSignupOtroGrupo] = useState("");
   const [signupRama, setSignupRama] = useState("");
   const [signupNombreScoutRelacionado, setSignupNombreScoutRelacionado] = useState("");
   const [showOptionalSignup, setShowOptionalSignup] = useState(false);
@@ -210,7 +213,8 @@ const Auth = () => {
     apellido: string;
     email: string;
     password: string;
-    tipoRelacion: string;
+    grupo: string;
+    otroGrupo: string;
     rama: string;
     nombreScoutRelacionado: string;
   } | null>(null);
@@ -462,7 +466,8 @@ const Auth = () => {
         apellido,
         email: emailValue,
         password: '', // No password for Google users
-        tipoRelacion: googleCompletionDraft.tipo_relacion,
+        grupo: googleCompletionDraft.grupo,
+        otroGrupo: googleCompletionDraft.otroGrupo.trim(),
         rama: googleCompletionDraft.rama.trim(),
         nombreScoutRelacionado: googleCompletionDraft.nombre_scout_relacionado.trim(),
       });
@@ -555,7 +560,8 @@ const Auth = () => {
         apellido: signupApellido.trim(),
         email: trimmedEmail,
         password: trimmedPassword,
-        tipoRelacion: signupTipoRelacion,
+        grupo: signupGrupo,
+        otroGrupo: signupOtroGrupo.trim(),
         rama: signupRama.trim(),
         nombreScoutRelacionado: signupNombreScoutRelacionado.trim(),
       });
@@ -592,7 +598,7 @@ const Auth = () => {
         password_hash: pendingSignup.password, // Will be hashed on backend
         nombre: sanitizeText(pendingSignup.nombre),
         apellido: sanitizeText(pendingSignup.apellido),
-        tipo_relacion: pendingSignup.tipoRelacion,
+        grupo_scout: pendingSignup.grupo === "otro" ? sanitizeText(pendingSignup.otroGrupo) : "septimo",
         rama: pendingSignup.rama || null,
         nombre_scout_relacionado: pendingSignup.nombreScoutRelacionado || null,
         provider: existingSession?.user ? 'google' : 'email',
@@ -621,7 +627,7 @@ const Auth = () => {
           .update({
             nombre: requestData.nombre,
             apellido: requestData.apellido,
-            tipo_relacion: requestData.tipo_relacion,
+            grupo_scout: requestData.grupo_scout,
             rama: requestData.rama,
             nombre_scout_relacionado: requestData.nombre_scout_relacionado,
             provider: requestData.provider,
@@ -684,7 +690,7 @@ const Auth = () => {
                 user_metadata: {
                   nombre: pendingSignup.nombre,
                   apellido: pendingSignup.apellido,
-                  tipo_relacion: pendingSignup.tipoRelacion,
+                  grupo_scout: pendingSignup.grupo === "otro" ? pendingSignup.otroGrupo : "septimo",
                   rama: pendingSignup.rama,
                   nombre_scout_relacionado: pendingSignup.nombreScoutRelacionado,
                 },
@@ -699,7 +705,8 @@ const Auth = () => {
       setPassword("");
       setSignupNombre("");
       setSignupApellido("");
-      setSignupTipoRelacion("scout");
+      setSignupGrupo("septimo");
+      setSignupOtroGrupo("");
       setSignupRama("");
       setSignupNombreScoutRelacionado("");
       
@@ -947,25 +954,41 @@ const Auth = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="google-profile-tipo-relacion">Tipo de relación</Label>
+                <Label htmlFor="google-profile-grupo">Grupo Scout</Label>
                 <Select
-                  value={googleCompletionDraft.tipo_relacion}
+                  value={googleCompletionDraft.grupo}
                   onValueChange={(value) => {
-                    setGoogleCompletionDraft((current) => ({ ...current, tipo_relacion: value }));
+                    setGoogleCompletionDraft((current) => ({ ...current, grupo: value }));
                     if (inlineMessage) setInlineMessage("");
                   }}
                 >
-                  <SelectTrigger id="google-profile-tipo-relacion" className="min-h-11">
-                    <SelectValue placeholder="Selecciona tu relación" />
+                  <SelectTrigger id="google-profile-grupo" className="min-h-11">
+                    <SelectValue placeholder="Selecciona tu grupo" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="scout">Scout</SelectItem>
-                    <SelectItem value="familia">Familiar</SelectItem>
-                    <SelectItem value="ex_integrante">Ex integrante</SelectItem>
-                    <SelectItem value="colaborador">Colaborador</SelectItem>
+                    <SelectItem value="septimo">Grupo Scout Séptimo</SelectItem>
+                    <SelectItem value="otro">Otro grupo scout</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+
+              {googleCompletionDraft.grupo === "otro" && (
+                <div className="space-y-2">
+                  <Label htmlFor="google-profile-otro-grupo">¿Cuál grupo?</Label>
+                  <Input
+                    id="google-profile-otro-grupo"
+                    type="text"
+                    placeholder="Ej: Grupo Scout Tercero"
+                    value={googleCompletionDraft.otroGrupo}
+                    onChange={(e) => {
+                      setGoogleCompletionDraft((current) => ({ ...current, otroGrupo: e.target.value }));
+                      if (inlineMessage) setInlineMessage("");
+                    }}
+                    required
+                    className="min-h-11"
+                  />
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="google-profile-rama">Rama o unidad</Label>
@@ -1251,25 +1274,41 @@ const Auth = () => {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="signup-tipo-relacion">Tipo de relación</Label>
+                    <Label htmlFor="signup-grupo">Grupo Scout</Label>
                     <Select
-                      value={signupTipoRelacion}
+                      value={signupGrupo}
                       onValueChange={(value) => {
-                        setSignupTipoRelacion(value);
+                        setSignupGrupo(value);
                         if (inlineMessage) setInlineMessage("");
                       }}
                     >
-                      <SelectTrigger id="signup-tipo-relacion" className="h-10">
-                        <SelectValue placeholder="Selecciona tu relación" />
+                      <SelectTrigger id="signup-grupo" className="h-10">
+                        <SelectValue placeholder="Selecciona tu grupo" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="scout">Scout</SelectItem>
-                        <SelectItem value="familia">Familiar</SelectItem>
-                        <SelectItem value="ex_integrante">Ex integrante</SelectItem>
-                        <SelectItem value="colaborador">Colaborador</SelectItem>
+                        <SelectItem value="septimo">Grupo Scout Séptimo</SelectItem>
+                        <SelectItem value="otro">Otro grupo scout</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
+
+                  {signupGrupo === "otro" && (
+                    <div className="space-y-1.5">
+                      <Label htmlFor="signup-otro-grupo">¿Cuál grupo?</Label>
+                      <Input
+                        id="signup-otro-grupo"
+                        type="text"
+                        placeholder="Ej: Grupo Scout Tercero"
+                        value={signupOtroGrupo}
+                        onChange={(e) => {
+                          setSignupOtroGrupo(e.target.value);
+                          if (inlineMessage) setInlineMessage("");
+                        }}
+                        required
+                        className="h-10"
+                      />
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div className="space-y-1.5">
@@ -1372,7 +1411,8 @@ const Auth = () => {
                       !signupNombre.trim() ||
                       !signupApellido.trim() ||
                       !email.trim() ||
-                      !password.trim()
+                      !password.trim() ||
+                      (signupGrupo === "otro" && !signupOtroGrupo.trim())
                     }
                   >
                     {loading ? "Registrando..." : "Registrarse"}

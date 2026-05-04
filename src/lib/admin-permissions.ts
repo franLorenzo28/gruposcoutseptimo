@@ -109,7 +109,7 @@ function buildAccess(args: {
     isMod,
     canOpenAdminPanel: isSuperAdmin || isMod,
     canManageEducators: isSuperAdmin || isMod,
-    canManageRoles: isSuperAdmin,
+    canManageRoles: isSuperAdmin || isMod,
     canDeleteUsers: isSuperAdmin,
   };
 }
@@ -366,6 +366,31 @@ export async function reviewUserRegistrationRequest(args: {
     p_requester_id: args.requesterId,
     p_approve: args.approve,
     p_note: note || null,
+  });
+
+  if (error) throw error;
+}
+
+export async function updateUserRole(args: {
+  userId: string;
+  newRole: "user" | "mod" | "admin";
+}): Promise<void> {
+  const access = await getCurrentUserAdminAccess();
+  if (!access.canManageRoles) {
+    throw new Error("No tienes permisos para cambiar roles.");
+  }
+
+  if (!access.isSuperAdmin && args.newRole === "admin") {
+    throw new Error("Los moderadores no pueden asignar rol admin.");
+  }
+
+  if (isLocalBackend()) {
+    throw new Error("Cambiar roles está disponible solo en Supabase.");
+  }
+
+  const { error } = await (supabase as any).rpc("update_user_role", {
+    p_user_id: args.userId,
+    p_new_role: args.newRole,
   });
 
   if (error) throw error;
