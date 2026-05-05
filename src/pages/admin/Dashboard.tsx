@@ -156,13 +156,24 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
   const canDeleteUsers = currentAccess.canDeleteUsers;
   const canEditIdentity = currentAccess.isSuperAdmin;
 
-  const roleOrder: Record<string, number> = { admin: 0, mod: 1, user: 2 };
+  function getUserSortOrder(u: any): number {
+    if (u.role === "admin") return 0;
+    if (u.role === "mod") return 1;
+    const normalized = normalizeRoleText(u.rol_adulto);
+    if (
+      normalized === "educador/a" ||
+      normalized === "educador" ||
+      normalized === "educadora"
+    )
+      return 2;
+    return 3;
+  }
 
   const sortedUsers = useMemo(() => {
     return [...users].sort((a, b) => {
-      const roleA = roleOrder[a.role] ?? 3;
-      const roleB = roleOrder[b.role] ?? 3;
-      if (roleA !== roleB) return roleA - roleB;
+      const orderA = getUserSortOrder(a);
+      const orderB = getUserSortOrder(b);
+      if (orderA !== orderB) return orderA - orderB;
       return (a.nombre_completo || "").localeCompare(b.nombre_completo || "");
     });
   }, [users]);
@@ -906,22 +917,51 @@ toast({
     if (!canDeleteUsers) {
       toast({
         title: "Sin permisos",
-        description: "Solo el admin supremo puede eliminar usuarios.",
+        description: "Solo administradores y moderadores pueden eliminar usuarios.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!currentAccess.isSuperAdmin && normalizeRole(users.find((u) => u.user_id === id)?.role) === "admin") {
+      toast({
+        title: "Sin permisos",
+        description: "Los moderadores no pueden eliminar administradores.",
         variant: "destructive",
       });
       return;
     }
     if (!window.confirm("¿Eliminar usuario? Esta acción no se puede deshacer.")) return;
     try {
-      const { error } = await supabase.from("profiles").delete().eq("user_id", id);
-      if (error) {
-        toast({
-          title: "No se pudo eliminar",
-          description: error.message,
-          variant: "destructive",
+      if (isLocalBackend()) {
+        const { error } = await supabase.from("profiles").delete().eq("user_id", id);
+        if (error) {
+          toast({ title: "No se pudo eliminar", description: error.message, variant: "destructive" });
+          return;
+        }
+      } else {
+        const { data: { session } } = await supabase.auth.getSession();
+        const baseUrl = import.meta.env.VITE_SUPABASE_URL || "";
+        const res = await fetch(`${baseUrl}/functions/v1/admin-delete-user`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session?.access_token || ""}`,
+            apikey: import.meta.env.VITE_SUPABASE_ANON_KEY || "",
+          },
+          body: JSON.stringify({ userId: id }),
         });
-        return;
+
+        const result = await res.json();
+        if (!res.ok) {
+          toast({
+            title: "No se pudo eliminar",
+            description: result.error || "Error al eliminar usuario",
+            variant: "destructive",
+          });
+          return;
+        }
       }
+
       setUsers((prev) => {
         const updated = prev.filter((u) => u.user_id !== id);
         computeStats(updated);
@@ -945,7 +985,14 @@ toast({
   
   function exportCSV() {
     const header = ["ID", "Email", "Nombre", "Username", "Rol", "Fecha de registro"];
-    const rows = sortedUsers.map((u) => [u.user_id, u.email, u.nombre_completo, u.username, u.role || "user", u.created_at?.slice(0, 10)]);
+    const rows = sortedUsers.map((u) => {
+      const normalized = normalizeRoleText(u.rol_adulto);
+      const role =
+        normalized === "educador/a" || normalized === "educador" || normalized === "educadora"
+          ? "educador/a"
+          : u.role || "user";
+      return [u.user_id, u.email, u.nombre_completo, u.username, role, u.created_at?.slice(0, 10)];
+    });
     const csv = [header, ...rows].map((r) => r.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv; charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -956,12 +1003,27 @@ toast({
     URL.revokeObjectURL(url);
   }
 
-  const getRoleBadge = (role: string) => {
+  const getRoleBadge = (role: string, rolAdulto?: string | null) => {
+    const normalized = normalizeRoleText(rolAdulto);
+    const isEducador =
+      normalized === "educador/a" ||
+      normalized === "educador" ||
+      normalized === "educadora";
+
     if (role === "admin") {
       return <Badge className="bg-red-600 hover:bg-red-700 text-white">Admin Supremo</Badge>;
     }
     if (role === "mod") {
       return <Badge className="bg-violet-600 hover:bg-violet-700 text-white">Mod</Badge>;
+    }
+    if (isEducador) {
+      return <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white">Educador/a</Badge>;
+    }
+    if (normalized === "miembro del comite") {
+      return <Badge variant="outline">Miembro del Comité</Badge>;
+    }
+    if (normalized === "padre/madre") {
+      return <Badge variant="outline">Padre/Madre</Badge>;
     }
     return <Badge variant="secondary">User</Badge>;
   };
@@ -1559,7 +1621,7 @@ toast({
                               <td className="p-2 sm:p-3 text-xs sm:text-sm truncate">{u.nombre_completo || "-"}</td>
                               <td className="p-2 sm:p-3 text-xs sm:text-sm text-muted-foreground truncate">{u.username || "-"}</td>
                               <td className="p-2 sm:p-3 text-xs sm:text-sm">
-                                {getRoleBadge(u.role || "user")}
+                                 {getRoleBadge(u.role || "user", u.rol_adulto)}
                               </td>
                               <td className="p-2 sm:p-3 text-right">
                                 <div className="flex gap-1 sm:gap-2 justify-end flex-wrap">
