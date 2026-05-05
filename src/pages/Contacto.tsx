@@ -7,6 +7,8 @@ import { Mail, Phone, MapPin, Clock, Loader2 } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
 import { PageGridBackground } from "@/components/PageGridBackground";
 import { useToast } from "@/hooks/use-toast";
+import emailjs from "@emailjs/browser";
+import { supabase } from "@/integrations/supabase/client";
 
 // --- Validación y sanitización ---
 function validateContact({ name, email, phone, message }: { name: string; email: string; phone?: string; message: string }) {
@@ -56,28 +58,20 @@ const Contacto = () => {
 
     setSending(true);
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-      if (!supabaseUrl || !anonKey) {
-        throw new Error("Configuración de servidor no disponible.");
-      }
-
-      const response = await fetch(`${supabaseUrl}/functions/v1/send-contact-form`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${anonKey}`,
-          "apikey": anonKey,
+      await emailjs.send(
+        "service_wiq2pwk",
+        "template_ofrt3il",
+        {
+          name: sanitized.name,
+          email: sanitized.email,
+          phone: sanitized.phone,
+          message: sanitized.message,
+          reply_to: sanitized.email,
+          from_name: sanitized.name,
+          avatar_url: avatarUrl,
         },
-        body: JSON.stringify(sanitized),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "No se pudo enviar el mensaje.");
-      }
+        "xJn0Mb0ukQ_M5UYIc"
+      );
 
       // Show success message
       toast({
@@ -87,6 +81,7 @@ const Contacto = () => {
       // Reset form
       setFormData({ name: "", email: "", phone: "", message: "" });
     } catch (err: any) {
+      console.error("EmailJS error:", err);
       toast({
         title: "Error al enviar",
         description: err?.message || "No se pudo enviar el mensaje. Intenta de nuevo más tarde.",
