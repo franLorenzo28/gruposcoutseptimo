@@ -1022,8 +1022,8 @@ toast({
     if (normalized === "miembro del comite") {
       return <Badge variant="outline">Miembro del Comité</Badge>;
     }
-    if (normalized === "padre/madre") {
-      return <Badge variant="outline">Padre/Madre</Badge>;
+    if (normalized === "familiar de scout") {
+      return <Badge variant="outline">Familiar</Badge>;
     }
     return <Badge variant="secondary">User</Badge>;
   };
@@ -2159,7 +2159,7 @@ toast({
                     <SelectItem value="none">Sin rol adulto</SelectItem>
                     <SelectItem value="Educador/a">Educador/a</SelectItem>
                     <SelectItem value="Miembro del Comite">Miembro del Comité</SelectItem>
-                    <SelectItem value="Padre/Madre">Padre/Madre</SelectItem>
+                    <SelectItem value="Familiar de Scout">Familiar de Scout</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
