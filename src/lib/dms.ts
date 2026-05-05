@@ -71,7 +71,7 @@ export async function sendDM(
     // Mensaje más claro ante fallo de política RLS
     if (error.message?.includes("row-level security")) {
       throw new Error(
-        "No autorizado para enviar mensaje (RLS). Verifica que la conversación se creó correctamente y eres participante."
+        "No autorizado para enviar mensaje. Verifica que la conversación se creó correctamente y eres participante."
       );
     }
     throw error;

@@ -1,4 +1,4 @@
-﻿// Sanitización básica para mostrar datos
+// Sanitización básica para mostrar datos
 function sanitizeText(text: string | null | undefined): string {
   if (!text) return "";
   return String(text).replace(/[<>"']/g, "");
@@ -34,6 +34,7 @@ import {
   unfollowUser,
   getFollowRelation,
 } from "@/lib/follows";
+import { getCurrentUserAdminAccess } from "@/lib/admin-permissions";
 
 type Tables = Database["public"]["Tables"];
 type Profile = Tables["profiles"]["Row"];
@@ -94,6 +95,7 @@ const PerfilView = () => {
   >([]);
   const [followStatus, setFollowStatus] = useState<"none" | "following" | "pending">("none");
   const [followLoading, setFollowLoading] = useState(false);
+  const [isAdminOrMod, setIsAdminOrMod] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -110,6 +112,14 @@ const PerfilView = () => {
         setViewingUserId(viewingId);
         const isOwn = viewingId === auth.id;
         setIsOwnProfile(isOwn);
+
+        // Check if current user is admin or mod (for bypassing private profile restrictions)
+        try {
+          const access = await getCurrentUserAdminAccess();
+          setIsAdminOrMod(access.canOpenAdminPanel);
+        } catch {
+          setIsAdminOrMod(false);
+        }
 
         // Vista unificada: nos quedamos en /perfil?userId=..., sin redirecciones
 
@@ -378,7 +388,8 @@ const PerfilView = () => {
   }
 
   // Construir bandera de vista restringida: perfil ajeno, no siguiendo y perfil no público
-  const isRestrictedView = !isOwnProfile && (
+  // Admin y mod pueden ver perfiles privados sin necesidad de seguir al usuario
+  const isRestrictedView = !isOwnProfile && !isAdminOrMod && (
     // si no hay perfil cargado, asumir privado (no accesible)
     !profile || !(profile as any).is_public
   ) && followStatus !== "following";

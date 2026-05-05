@@ -20,6 +20,8 @@ import {
   Layers,
   UserCheck,
   UserX,
+  Eye,
+  ArrowLeft,
 } from "lucide-react";
 import {
   Dialog,
@@ -150,6 +152,10 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
   const [editGroup, setEditGroup] = useState<any | null>(null);
   const [editEvent, setEditEvent] = useState<any | null>(null);
   const [editPage, setEditPage] = useState<any | null>(null);
+  const [adminChatMessages, setAdminChatMessages] = useState<any[]>([]);
+  const [adminChatConvId, setAdminChatConvId] = useState<string | null>(null);
+  const [adminChatParticipants, setAdminChatParticipants] = useState<{userId: string; name: string}[]>([]);
+  const [loadingAdminChat, setLoadingAdminChat] = useState(false);
   const { toast } = useToast();
   const canManageRoles = currentAccess.canManageRoles;
   const canManageEducators = currentAccess.canManageEducators;
@@ -561,6 +567,60 @@ toast({
     fetchData();
     fetchAdminData();
   }, []);
+
+  // Helper: resolve user_id to display name from loaded users array
+  function resolveUserName(userId: string): string {
+    const user = users.find((u) => u.user_id === userId);
+    if (user) {
+      return user.nombre_completo || user.username || user.email || userId.slice(0, 8);
+    }
+    return userId.slice(0, 8) + "…";
+  }
+
+  // Helper: get the other participant in a conversation (the receiver)
+  function getConversationReceiver(message: any): string {
+    const convMessages = messages.filter((m) => m.conversation_id === message.conversation_id);
+    const otherSender = convMessages.find((m) => m.sender_id !== message.sender_id);
+    if (otherSender) return resolveUserName(otherSender.sender_id);
+    return "—";
+  }
+
+  // Admin: load full conversation
+  async function loadAdminChat(conversationId: string) {
+    setLoadingAdminChat(true);
+    setAdminChatConvId(conversationId);
+    try {
+      // Load messages for this conversation
+      const { data: msgs, error: msgsError } = await supabase
+        .from("messages")
+        .select("*")
+        .eq("conversation_id", conversationId)
+        .order("created_at", { ascending: true });
+      if (msgsError) throw msgsError;
+      setAdminChatMessages(msgs || []);
+
+      // Try to load participants
+      const { data: participants } = await supabase
+        .from("conversation_participants" as any)
+        .select("user_id")
+        .eq("conversation_id", conversationId);
+      const parts = (participants || []).map((p: any) => ({
+        userId: p.user_id,
+        name: resolveUserName(p.user_id),
+      }));
+      setAdminChatParticipants(parts);
+    } catch (error: any) {
+      toast({
+        title: "Error al cargar conversación",
+        description: error?.message || "No se pudieron cargar los mensajes.",
+        variant: "destructive",
+      });
+      setAdminChatMessages([]);
+      setAdminChatParticipants([]);
+    } finally {
+      setLoadingAdminChat(false);
+    }
+  }
 
   function formatDate(value?: string | null) {
     if (!value) return "-";
@@ -1881,7 +1941,7 @@ toast({
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
                   <MessagesSquare className="w-4 h-4" />
-                  Mensajes ({messages.length})
+                  Mensajes Directos ({messages.length})
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -1892,30 +1952,48 @@ toast({
                     <table className="w-full text-xs sm:text-sm min-w-max">
                       <thead>
                         <tr className="border-b bg-muted/50 sticky top-0">
-                          <th className="text-left p-2 sm:p-3 text-xs hidden md:table-cell">Remitente</th>
+                          <th className="text-left p-2 sm:p-3 text-xs">Remitente</th>
+                          <th className="text-left p-2 sm:p-3 text-xs hidden md:table-cell">Receptor</th>
                           <th className="text-left p-2 sm:p-3 text-xs">Contenido</th>
-                          <th className="text-left p-2 sm:p-3 text-xs">Fecha</th>
+                          <th className="text-left p-2 sm:p-3 text-xs hidden sm:table-cell">Fecha</th>
                           <th className="text-right p-2 sm:p-3 text-xs">Acciones</th>
                         </tr>
                       </thead>
                       <tbody>
                         {messages.map((m) => (
                           <tr key={m.id} className="border-b hover:bg-muted/50">
-                            <td className="p-2 sm:p-3 text-xs text-muted-foreground hidden md:table-cell truncate">{m.sender_id}</td>
-                            <td className="p-2 sm:p-3 text-xs sm:text-sm truncate">{String(m.content).slice(0, 40)}...</td>
-                            <td className="p-2 sm:p-3 text-xs sm:text-sm">{formatDate(m.created_at)}</td>
+                            <td className="p-2 sm:p-3 text-xs sm:text-sm truncate max-w-[120px]" title={m.sender_id}>
+                              <span className="font-medium">{resolveUserName(m.sender_id)}</span>
+                            </td>
+                            <td className="p-2 sm:p-3 text-xs sm:text-sm text-muted-foreground hidden md:table-cell truncate max-w-[120px]">
+                              {getConversationReceiver(m)}
+                            </td>
+                            <td className="p-2 sm:p-3 text-xs sm:text-sm truncate max-w-[200px]">{String(m.content).slice(0, 50)}{String(m.content).length > 50 ? "…" : ""}</td>
+                            <td className="p-2 sm:p-3 text-xs sm:text-sm hidden sm:table-cell">{formatDate(m.created_at)}</td>
                             <td className="p-2 sm:p-3 text-right">
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={async () => {
-                                  const ok = await handleDeleteById("messages", "id", m.id);
-                                  if (ok) setMessages((prev) => prev.filter((x) => x.id !== m.id));
-                                }}
-                                className="text-xs h-8 px-2"
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </Button>
+                              <div className="flex gap-1 justify-end">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => loadAdminChat(m.conversation_id)}
+                                  className="text-xs h-8 px-2 gap-1"
+                                  title="Ver conversación completa"
+                                >
+                                  <Eye className="w-3 h-3" />
+                                  <span className="hidden sm:inline">Chat</span>
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={async () => {
+                                    const ok = await handleDeleteById("messages", "id", m.id);
+                                    if (ok) setMessages((prev) => prev.filter((x) => x.id !== m.id));
+                                  }}
+                                  className="text-xs h-8 px-2"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
+                              </div>
                             </td>
                           </tr>
                         ))}
@@ -2388,6 +2466,66 @@ toast({
             </Button>
             <Button onClick={savePage} disabled={saving} className="text-xs sm:text-sm w-full sm:w-auto">
               {saving ? "Guardando..." : "Guardar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Admin Chat Viewer Dialog */}
+      <Dialog open={!!adminChatConvId} onOpenChange={(open) => { if (!open) { setAdminChatConvId(null); setAdminChatMessages([]); setAdminChatParticipants([]); } }}>
+        <DialogContent className="max-w-xs sm:max-w-lg md:max-w-2xl w-11/12 max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessagesSquare className="w-4 h-4" />
+              Conversación completa
+            </DialogTitle>
+            {adminChatParticipants.length > 0 && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Participantes: {adminChatParticipants.map((p) => p.name).join(" ↔ ")}
+              </p>
+            )}
+          </DialogHeader>
+          <div className="flex-1 min-h-0 overflow-auto space-y-2 py-2 px-1">
+            {loadingAdminChat ? (
+              <div className="flex items-center justify-center py-12">
+                <p className="text-sm text-muted-foreground">Cargando mensajes…</p>
+              </div>
+            ) : adminChatMessages.length === 0 ? (
+              <div className="flex items-center justify-center py-12">
+                <p className="text-sm text-muted-foreground">No hay mensajes en esta conversación.</p>
+              </div>
+            ) : (
+              adminChatMessages.map((msg, idx) => {
+                const senderName = resolveUserName(msg.sender_id);
+                const prevMsg = idx > 0 ? adminChatMessages[idx - 1] : null;
+                const showDateSep = !prevMsg || new Date(msg.created_at).toDateString() !== new Date(prevMsg.created_at).toDateString();
+                return (
+                  <div key={msg.id}>
+                    {showDateSep && (
+                      <div className="flex justify-center py-2">
+                        <span className="rounded-full border border-border/70 bg-muted/80 px-3 py-1 text-[11px] font-medium text-muted-foreground">
+                          {new Date(msg.created_at).toLocaleDateString("es-ES", { day: "2-digit", month: "long", year: "numeric" })}
+                        </span>
+                      </div>
+                    )}
+                    <div className="rounded-lg border border-border/50 bg-background/80 p-3 space-y-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-semibold text-primary">{senderName}</span>
+                        <span className="text-[11px] text-muted-foreground">
+                          {new Date(msg.created_at).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                      </div>
+                      <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setAdminChatConvId(null); setAdminChatMessages([]); setAdminChatParticipants([]); }} className="text-xs sm:text-sm w-full sm:w-auto">
+              <ArrowLeft className="w-3 h-3 mr-1" />
+              Cerrar
             </Button>
           </DialogFooter>
         </DialogContent>
