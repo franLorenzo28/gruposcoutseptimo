@@ -1,9 +1,9 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import { Mail, Phone, MapPin, Clock } from "lucide-react";
+import { Mail, Phone, MapPin, Clock, Loader2 } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
 import { PageGridBackground } from "@/components/PageGridBackground";
 import { useToast } from "@/hooks/use-toast";
@@ -33,6 +33,7 @@ function validateContact({ name, email, phone, message }: { name: string; email:
 
 const Contacto = () => {
   const { toast } = useToast();
+  const [sending, setSending] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -40,10 +41,10 @@ const Contacto = () => {
     message: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     // Validar y sanear datos antes de enviar
-    const { valid, errors } = validateContact(formData);
+    const { valid, errors, sanitized } = validateContact(formData);
     if (!valid) {
       toast({
         title: "Error en el formulario",
@@ -52,13 +53,48 @@ const Contacto = () => {
       });
       return;
     }
-    // Show success message
-    toast({
-      title: "¡Mensaje enviado!",
-      description: "Nos pondremos en contacto contigo pronto.",
-    });
-    // Reset form
-    setFormData({ name: "", email: "", phone: "", message: "" });
+
+    setSending(true);
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      if (!supabaseUrl || !anonKey) {
+        throw new Error("Configuración de servidor no disponible.");
+      }
+
+      const response = await fetch(`${supabaseUrl}/functions/v1/send-contact-form`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${anonKey}`,
+          "apikey": anonKey,
+        },
+        body: JSON.stringify(sanitized),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "No se pudo enviar el mensaje.");
+      }
+
+      // Show success message
+      toast({
+        title: "¡Mensaje enviado!",
+        description: "Nos pondremos en contacto contigo pronto.",
+      });
+      // Reset form
+      setFormData({ name: "", email: "", phone: "", message: "" });
+    } catch (err: any) {
+      toast({
+        title: "Error al enviar",
+        description: err?.message || "No se pudo enviar el mensaje. Intenta de nuevo más tarde.",
+        variant: "destructive",
+      });
+    } finally {
+      setSending(false);
+    }
   };
 
   const contactInfo = [
@@ -200,10 +236,20 @@ const Contacto = () => {
                     type="submit"
                     size="lg"
                     variant="hero"
-                    className="w-full text-base sm:text-lg transition-all duration-300 hover:shadow-2xl hover:scale-105"
+                    disabled={sending}
+                    className="w-full text-base sm:text-lg transition-all duration-300 hover:shadow-2xl hover:scale-105 disabled:opacity-60 disabled:hover:scale-100"
                   >
-                    <Mail className="mr-2 w-4 h-4 sm:w-5 sm:h-5" />
-                    Enviar Mensaje
+                    {sending ? (
+                      <>
+                        <Loader2 className="mr-2 w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
+                        Enviando...
+                      </>
+                    ) : (
+                      <>
+                        <Mail className="mr-2 w-4 h-4 sm:w-5 sm:h-5" />
+                        Enviar Mensaje
+                      </>
+                    )}
                   </Button>
                 </form>
                 </CardContent>
