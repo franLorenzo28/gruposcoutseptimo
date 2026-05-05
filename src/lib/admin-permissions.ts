@@ -21,7 +21,7 @@ export type AdminAccess = {
   canDeleteUsers: boolean;
 };
 
-function normalizeRole(value: string | null | undefined): AppPowerRole {
+export function normalizeRole(value: string | null | undefined): AppPowerRole {
   const normalized = String(value || "")
     .trim()
     .toLowerCase()

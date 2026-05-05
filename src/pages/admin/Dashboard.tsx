@@ -29,24 +29,19 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import type { AdminAccess } from "@/lib/admin-permissions";
-import { updateUserRole } from "@/lib/admin-permissions";
+import { updateUserRole, normalizeRole } from "@/lib/admin-permissions";
 
 type EducatorUnit = "manada" | "tropa" | "pioneros" | "rovers";
 
 const EDUCATOR_UNIT_OPTIONS: Array<{ value: EducatorUnit; label: string }> = [
   { value: "manada", label: "Manada (Lobatos)" },
-  { value: "tropa", label: "Tropa (11-14 a�os)" },
+  { value: "tropa", label: "Tropa (11-14 años)" },
   { value: "pioneros", label: "Pioneros" },
   { value: "rovers", label: "Rovers" },
 ];
@@ -160,6 +155,17 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
   const canManageEducators = currentAccess.canManageEducators;
   const canDeleteUsers = currentAccess.canDeleteUsers;
   const canEditIdentity = currentAccess.isSuperAdmin;
+
+  const roleOrder: Record<string, number> = { admin: 0, mod: 1, user: 2 };
+
+  const sortedUsers = useMemo(() => {
+    return [...users].sort((a, b) => {
+      const roleA = roleOrder[a.role] ?? 3;
+      const roleB = roleOrder[b.role] ?? 3;
+      if (roleA !== roleB) return roleA - roleB;
+      return (a.nombre_completo || "").localeCompare(b.nombre_completo || "");
+    });
+  }, [users]);
 
   function computeStats(list: any[]) {
     const admins = list?.filter((u: any) => u.role === "admin").length || 0;
@@ -411,7 +417,7 @@ toast({
       });
       toast({
         title: "Usuario de test creado",
-        description: "La cuenta qued� disponible en el panel.",
+        description: "La cuenta quedó disponible en el panel.",
       });
       setTestUserNombre("");
       setTestUserApellido("");
@@ -622,7 +628,7 @@ toast({
         toast({ title: "No se pudo guardar", description: error.message, variant: "destructive" });
       } else {
         setPages((prev) => prev.map((p) => (p.id === editPage.id ? { ...p, ...payload } : p)));
-        toast({ title: "P�gina actualizada" });
+        toast({ title: "Página actualizada" });
         setEditPage(null);
       }
     } else {
@@ -631,14 +637,14 @@ toast({
         toast({ title: "No se pudo crear", description: error.message, variant: "destructive" });
       } else {
         setPages((prev) => [data, ...prev]);
-        toast({ title: "P�gina creada" });
+        toast({ title: "Página creada" });
         setEditPage(null);
       }
     }
     setSaving(false);
   }
 
-  const filtered = users.filter(
+  const filtered = sortedUsers.filter(
     (u) =>
       (u.email || "").toLowerCase().includes(search.toLowerCase()) ||
       (u.nombre_completo || "").toLowerCase().includes(search.toLowerCase()) ||
@@ -655,6 +661,7 @@ toast({
       role: u.role ?? "user",
       rol_adulto: u.rol_adulto ?? "",
       rama_que_educa: u.rama_que_educa ?? "",
+      educador_aprobado: (u as any).educador_aprobado ?? false,
       educator_units: parseEducatorUnits(u.rama_que_educa),
     });
     setUsernameStatus("idle");
@@ -682,7 +689,7 @@ toast({
 
     if (!usernameRegex.test(normalized)) {
       setUsernameStatus("invalid");
-      setUsernameMessage("Formato inv�lido: 3-30 caracteres, letras, n�meros, punto, guion o guion bajo.");
+      setUsernameMessage("Formato inválido: 3-30 caracteres, letras, números, punto, guion o guion bajo.");
       return;
     }
 
@@ -704,7 +711,7 @@ toast({
 
       if (data && data.user_id !== editUser.user_id) {
         setUsernameStatus("taken");
-        setUsernameMessage("Ese username ya est� en uso.");
+        setUsernameMessage("Ese username ya está en uso.");
         return;
       }
 
@@ -725,10 +732,18 @@ toast({
       });
       return;
     }
+    if (!currentAccess.isSuperAdmin && normalizeRole(editUser.role) === "admin") {
+      toast({
+        title: "Sin permisos",
+        description: "Los moderadores no pueden editar la información de un administrador.",
+        variant: "destructive",
+      });
+      return;
+    }
     if (canEditIdentity && (usernameStatus === "taken" || usernameStatus === "invalid")) {
       toast({
         title: "No se pudo guardar",
-        description: usernameMessage || "El username no es v�lido o ya est� en uso.",
+        description: usernameMessage || "El username no es válido o ya está en uso.",
         variant: "destructive",
       });
       return;
@@ -777,6 +792,7 @@ toast({
           body: JSON.stringify({
             enabled: isEducador,
             ramas: selectedUnits,
+            approved: editData.educador_aprobado ?? false,
           }),
         });
 
@@ -788,6 +804,7 @@ toast({
                   role: roleToSave,
                   rol_adulto: isEducador ? "Educador/a" : null,
                   rama_que_educa: ramaQueEduca,
+                  educador_aprobado: editData.educador_aprobado ?? false,
                 }
               : u,
           ),
@@ -826,6 +843,7 @@ toast({
       }
 
       const payload = {
+        email: canEditIdentity ? editData.email || null : editUser.email || null,
         nombre_completo: canEditIdentity
           ? editData.nombre_completo || null
           : editUser.nombre_completo || null,
@@ -836,6 +854,7 @@ toast({
           : editUser.username || null,
         rol_adulto: adultRoleToSave,
         rama_que_educa: ramaQueEduca,
+        educador_aprobado: editData.educador_aprobado ?? false,
       };
       const { error } = await supabase
         .from("profiles")
@@ -892,7 +911,7 @@ toast({
       });
       return;
     }
-    if (!window.confirm("�Eliminar usuario? Esta acci�n no se puede deshacer.")) return;
+    if (!window.confirm("¿Eliminar usuario? Esta acción no se puede deshacer.")) return;
     try {
       const { error } = await supabase.from("profiles").delete().eq("user_id", id);
       if (error) {
@@ -926,7 +945,7 @@ toast({
   
   function exportCSV() {
     const header = ["ID", "Email", "Nombre", "Username", "Rol", "Fecha de registro"];
-    const rows = users.map((u) => [u.user_id, u.email, u.nombre_completo, u.username, u.role || "user", u.created_at?.slice(0, 10)]);
+    const rows = sortedUsers.map((u) => [u.user_id, u.email, u.nombre_completo, u.username, u.role || "user", u.created_at?.slice(0, 10)]);
     const csv = [header, ...rows].map((r) => r.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv; charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -1027,7 +1046,7 @@ toast({
 
         <Tabs defaultValue="overview" className="w-full">
           <div className="flex justify-center mb-6">
-            <TabsList className="gap-1 overflow-x-auto rounded-xl border bg-background p-1 shadow-sm">
+            <TabsList className="gap-1 overflow-x-auto overflow-y-hidden rounded-xl border bg-background p-1 shadow-sm">
               <TabsTrigger value="overview" className="text-xs sm:text-sm px-3 py-1.5 gap-1.5 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 <Shield className="h-3.5 w-3.5" />
                 Resumen
@@ -1062,7 +1081,7 @@ toast({
               </TabsTrigger>
               <TabsTrigger value="pages" className="text-xs sm:text-sm px-3 py-1.5 gap-1.5 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 <FileText className="h-3.5 w-3.5" />
-                P�ginas
+                Páginas
               </TabsTrigger>
               {!isLocalBackend() && (
                 <TabsTrigger value="requests" className="text-xs sm:text-sm px-3 py-1.5 gap-1.5 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
@@ -1087,7 +1106,7 @@ toast({
                   <div className="grid gap-3 lg:grid-cols-2">
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium">Pendientes de revisi�n</p>
+                        <p className="text-sm font-medium">Pendientes de revisión</p>
                         <Badge variant="secondary">{pendingUsers.length}</Badge>
                       </div>
                       <div className="space-y-2 max-h-72 overflow-auto pr-1">
@@ -1099,18 +1118,18 @@ toast({
                               <div className="flex flex-wrap items-center justify-between gap-2">
                                 <div>
                                   <p className="font-medium text-sm">{user.nombre_completo || user.email || user.user_id}</p>
-                                  <p className="text-xs text-muted-foreground">{user.email} � {user.account_status}</p>
+                                  <p className="text-xs text-muted-foreground">{user.email} · {user.account_status}</p>
                                 </div>
-                                <Badge variant="outline">{user.account_classification || "sin clasificaci�n"}</Badge>
+                                <Badge variant="outline">{user.account_classification || "sin clasificación"}</Badge>
                               </div>
                               <p className="text-xs text-muted-foreground">
-                                {user.account_review_reason || "Sin motivo de revisi�n"}
+                                {user.account_review_reason || "Sin motivo de revisión"}
                               </p>
                               <div className="flex flex-wrap gap-2">
                                 <Button size="sm" onClick={() => handleReviewPendingUser(user.user_id, "activo")}>
                                   Aprobar
                                 </Button>
-                                <Button size="sm" variant="destructive" onClick={() => handleReviewPendingUser(user.user_id, "rechazado", "Rechazado por administraci�n") }>
+                                <Button size="sm" variant="destructive" onClick={() => handleReviewPendingUser(user.user_id, "rechazado", "Rechazado por administración") }>
                                   Rechazar
                                 </Button>
                               </div>
@@ -1129,14 +1148,14 @@ toast({
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="test-user-apellido">Apellido</Label>
-                          <Input id="test-user-apellido" value={testUserApellido} onChange={(e) => setTestUserApellido(e.target.value)} placeholder="Gonz�lez" />
+                          <Input id="test-user-apellido" value={testUserApellido} onChange={(e) => setTestUserApellido(e.target.value)} placeholder="González" />
                         </div>
                         <div className="space-y-2 sm:col-span-2">
                           <Label htmlFor="test-user-email">Email</Label>
                           <Input id="test-user-email" type="email" value={testUserEmail} onChange={(e) => setTestUserEmail(e.target.value)} placeholder="test@email.com" />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="test-user-password">Contrase�a</Label>
+                          <Label htmlFor="test-user-password">Contraseña</Label>
                           <Input id="test-user-password" type="text" value={testUserPassword} onChange={(e) => setTestUserPassword(e.target.value)} />
                         </div>
                         <div className="space-y-2">
@@ -1148,7 +1167,7 @@ toast({
                             <SelectContent>
                               <SelectItem value="activo">Activo</SelectItem>
                               <SelectItem value="pendiente_email">Pendiente email</SelectItem>
-                              <SelectItem value="pendiente_aprobacion">Pendiente aprobaci�n</SelectItem>
+                              <SelectItem value="pendiente_aprobacion">Pendiente aprobación</SelectItem>
                               <SelectItem value="rechazado">Rechazado</SelectItem>
                             </SelectContent>
                           </Select>
@@ -1167,7 +1186,7 @@ toast({
               <Card className="group relative overflow-hidden border-border/50 bg-gradient-to-br from-background to-muted/20 hover:shadow-lg transition-all duration-300">
                 <div className="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-bl-full" />
                 <CardHeader className="pb-2 relative">
-                  <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Actividad 7 d�as</CardTitle>
+                  <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Actividad 7 días</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">{extraStats.actividad7d}</p>
@@ -1209,14 +1228,14 @@ toast({
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               <Card className="border-border/50 bg-gradient-to-br from-background via-background to-muted/20">
                 <CardHeader>
-                  <CardTitle className="text-base sm:text-lg font-bold">Distribuci�n de perfiles</CardTitle>
+                  <CardTitle className="text-base sm:text-lg font-bold">Distribución de perfiles</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
                       <span className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                        P�blicos
+                        Públicos
                       </span>
                       <span className="font-semibold">{extraStats.publicProfiles}</span>
                     </div>
@@ -1253,7 +1272,7 @@ toast({
 
               <Card className="border-border/50 bg-gradient-to-br from-background via-background to-muted/20">
                 <CardHeader>
-                  <CardTitle className="text-base sm:text-lg font-bold">Pulso del d�a</CardTitle>
+                  <CardTitle className="text-base sm:text-lg font-bold">Pulso del día</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-3 gap-3">
@@ -1388,7 +1407,7 @@ toast({
                               <UserCheck className="w-3.5 h-3.5" />
                               Aprobar
                             </Button>
-                            <Button size="sm" variant="destructive" onClick={() => handleReviewPendingUser(user.user_id, "rechazado", "Rechazado por administraci�n") }>
+                            <Button size="sm" variant="destructive" onClick={() => handleReviewPendingUser(user.user_id, "rechazado", "Rechazado por administración") }>
                               <UserX className="w-3.5 h-3.5" />
                               Rechazar
                             </Button>
@@ -1544,12 +1563,13 @@ toast({
                               </td>
                               <td className="p-2 sm:p-3 text-right">
                                 <div className="flex gap-1 sm:gap-2 justify-end flex-wrap">
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleEdit(u)}
-                                    className="gap-1 text-xs h-8 px-2"
-                                  >
+                                   <Button
+                                     size="sm"
+                                     variant="outline"
+                                     onClick={() => handleEdit(u)}
+                                     disabled={!currentAccess.isSuperAdmin && normalizeRole(u.role) === "admin"}
+                                     className="gap-1 text-xs h-8 px-2"
+                                   >
                                     <Edit2 className="w-3 h-3" />
                                     <span className="hidden sm:inline">Editar</span>
                                   </Button>
@@ -1593,7 +1613,7 @@ toast({
                       <thead>
                         <tr className="border-b bg-muted/50 sticky top-0">
                           <th className="text-left p-2 sm:p-3 text-xs">Nombre</th>
-                          <th className="text-left p-2 sm:p-3 text-xs hidden md:table-cell">Descripci�n</th>
+                          <th className="text-left p-2 sm:p-3 text-xs hidden md:table-cell">Descripción</th>
                           <th className="text-left p-2 sm:p-3 text-xs hidden lg:table-cell">Creador</th>
                           <th className="text-left p-2 sm:p-3 text-xs">Creado</th>
                           <th className="text-right p-2 sm:p-3 text-xs">Acciones</th>
@@ -1651,7 +1671,7 @@ toast({
                     <table className="w-full text-xs sm:text-sm min-w-max">
                       <thead>
                         <tr className="border-b bg-muted/50 sticky top-0">
-                          <th className="text-left p-2 sm:p-3 text-xs">T�tulo</th>
+                          <th className="text-left p-2 sm:p-3 text-xs">Título</th>
                           <th className="text-left p-2 sm:p-3 text-xs">Inicio</th>
                           <th className="text-left p-2 sm:p-3 text-xs hidden sm:table-cell">Fin</th>
                           <th className="text-right p-2 sm:p-3 text-xs">Acciones</th>
@@ -1902,22 +1922,22 @@ toast({
             <Card>
               <CardHeader>
                 <CardTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-base sm:text-lg">
-                  <span className="flex items-center gap-2"><FileText className="w-4 h-4" />P�ginas ({pages.length})</span>
+                  <span className="flex items-center gap-2"><FileText className="w-4 h-4" />Páginas ({pages.length})</span>
                   <Button size="sm" onClick={() => setEditPage({ slug: "", title: "", content: "" })} className="text-xs w-full sm:w-auto">
-                    Nueva p�gina
+                    Nueva página
                   </Button>
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {loadingAdmin ? (
-                  <div className="py-8 text-xs sm:text-sm text-muted-foreground">Cargando p�ginas...</div>
+                  <div className="py-8 text-xs sm:text-sm text-muted-foreground">Cargando páginas...</div>
                 ) : (
                   <div className="overflow-x-auto -mx-2 sm:mx-0">
                     <table className="w-full text-xs sm:text-sm min-w-max">
                       <thead>
                         <tr className="border-b bg-muted/50 sticky top-0">
                           <th className="text-left p-2 sm:p-3 text-xs">Slug</th>
-                          <th className="text-left p-2 sm:p-3 text-xs hidden sm:table-cell">T�tulo</th>
+                          <th className="text-left p-2 sm:p-3 text-xs hidden sm:table-cell">Título</th>
                           <th className="text-left p-2 sm:p-3 text-xs">Actualizado</th>
                           <th className="text-right p-2 sm:p-3 text-xs">Acciones</th>
                         </tr>
@@ -2049,7 +2069,7 @@ toast({
               </div>
 
               <div>
-                <Label htmlFor="rol-adulto">Rol adulto (�rea de miembros)</Label>
+                <Label htmlFor="rol-adulto">Rol adulto (área de miembros)</Label>
                 <Select
                   value={editData.rol_adulto || "none"}
                   onValueChange={(value) => {
@@ -2076,7 +2096,7 @@ toast({
                   <SelectContent>
                     <SelectItem value="none">Sin rol adulto</SelectItem>
                     <SelectItem value="Educador/a">Educador/a</SelectItem>
-                    <SelectItem value="Miembro del Comite">Miembro del Comit�</SelectItem>
+                    <SelectItem value="Miembro del Comite">Miembro del Comité</SelectItem>
                     <SelectItem value="Padre/Madre">Padre/Madre</SelectItem>
                   </SelectContent>
                 </Select>
@@ -2085,42 +2105,62 @@ toast({
               {(normalizeRoleText(editData.rol_adulto) === "educador/a" ||
                 normalizeRoleText(editData.rol_adulto) === "educador" ||
                 normalizeRoleText(editData.rol_adulto) === "educadora") && (
-                <div>
-                  <Label>Unidades habilitadas para educador/a</Label>
-                  <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                    {EDUCATOR_UNIT_OPTIONS.map((option) => {
-                      const selected: EducatorUnit[] = Array.isArray(editData.educator_units)
-                        ? editData.educator_units
-                        : [];
-                      const isSelected = selected.includes(option.value);
+                <>
+                  <div>
+                    <Label>Unidades habilitadas para educador/a</Label>
+                    <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      {EDUCATOR_UNIT_OPTIONS.map((option) => {
+                        const selected: EducatorUnit[] = Array.isArray(editData.educator_units)
+                          ? editData.educator_units
+                          : [];
+                        const isSelected = selected.includes(option.value);
 
-                      return (
-                        <Button
-                          key={option.value}
-                          type="button"
-                          variant={isSelected ? "default" : "outline"}
-                          className="justify-start"
-                          onClick={() => {
-                            const nextUnits = isSelected
-                              ? selected.filter((unit) => unit !== option.value)
-                              : [...selected, option.value];
-                            setEditData({
-                              ...editData,
-                              educator_units: nextUnits,
-                              rama_que_educa: nextUnits.join(","),
-                            });
-                          }}
-                          disabled={saving || !canManageEducators}
-                        >
-                          {option.label}
-                        </Button>
-                      );
-                    })}
+                        return (
+                          <Button
+                            key={option.value}
+                            type="button"
+                            variant={isSelected ? "default" : "outline"}
+                            className="justify-start"
+                            onClick={() => {
+                              const nextUnits = isSelected
+                                ? selected.filter((unit) => unit !== option.value)
+                                : [...selected, option.value];
+                              setEditData({
+                                ...editData,
+                                educator_units: nextUnits,
+                                rama_que_educa: nextUnits.join(","),
+                              });
+                            }}
+                            disabled={saving || !canManageEducators}
+                          >
+                            {option.label}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      El usuario podrá gestionar y comunicarse como educador/a en las unidades seleccionadas.
+                    </p>
                   </div>
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    El usuario podr� gestionar y comunicarse como educador/a en las unidades seleccionadas.
-                  </p>
-                </div>
+
+                  <div className="mt-4 flex items-center justify-between rounded-lg border p-4">
+                    <div>
+                      <Label className="text-sm font-medium">Educador/a aprobado/a</Label>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {editData.educador_aprobado
+                          ? "Tiene acceso al dashboard de coordinador"
+                          : "Sin acceso al dashboard de coordinador"}
+                      </p>
+                    </div>
+                    <Switch
+                      checked={!!editData.educador_aprobado}
+                      onCheckedChange={(checked) =>
+                        setEditData({ ...editData, educador_aprobado: checked })
+                      }
+                      disabled={saving || !canManageEducators}
+                    />
+                  </div>
+                </>
               )}
             </div>
           )}
@@ -2154,7 +2194,7 @@ toast({
                 />
               </div>
               <div>
-                <Label htmlFor="group-desc">Descripci�n</Label>
+                <Label htmlFor="group-desc">Descripción</Label>
                 <Textarea
                   id="group-desc"
                   value={editGroup.description || ""}
@@ -2185,7 +2225,7 @@ toast({
           {editEvent && (
             <div className="space-y-3 sm:space-y-4">
               <div>
-                <Label htmlFor="event-title">T�tulo</Label>
+                <Label htmlFor="event-title">Título</Label>
                 <Input
                   id="event-title"
                   value={editEvent.titulo || ""}
@@ -2195,7 +2235,7 @@ toast({
                 />
               </div>
               <div>
-                <Label htmlFor="event-desc">Descripci�n</Label>
+                <Label htmlFor="event-desc">Descripción</Label>
                 <Textarea
                   id="event-desc"
                   value={editEvent.descripcion || ""}
@@ -2243,7 +2283,7 @@ toast({
       <Dialog open={!!editPage} onOpenChange={(open) => !open && !saving && setEditPage(null)}>
         <DialogContent className="max-w-xs sm:max-w-xl w-11/12 max-h-screen overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editPage?.id ? "Editar P�gina" : "Nueva P�gina"}</DialogTitle>
+            <DialogTitle>{editPage?.id ? "Editar Página" : "Nueva Página"}</DialogTitle>
           </DialogHeader>
           {editPage && (
             <div className="space-y-3 sm:space-y-4">
@@ -2258,7 +2298,7 @@ toast({
                 />
               </div>
               <div>
-                <Label htmlFor="page-title">T�tulo</Label>
+                <Label htmlFor="page-title">Título</Label>
                 <Input
                   id="page-title"
                   value={editPage.title || ""}

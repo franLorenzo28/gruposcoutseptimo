@@ -99,11 +99,13 @@ const DashboardCoordinador = () => {
 
       if (profileError) throw profileError;
 
-      // Verificar que sea educador
-      if (!profile || (profile.edad ?? 0) < 21 || profile.rol_adulto !== "Educador/a") {
+      // Verificar que sea educador aprobado
+      if (!profile || (profile.edad ?? 0) < 21 || profile.rol_adulto !== "Educador/a" || !(profile as any).educador_aprobado) {
         toast({
           title: "Acceso restringido",
-          description: "Solo educadores pueden acceder a este dashboard",
+          description: profile?.rol_adulto === "Educador/a"
+            ? "Tu cuenta de educador aún no ha sido aprobada por un administrador o moderador."
+            : "Solo educadores pueden acceder a este dashboard",
           variant: "destructive",
         });
         navigate("/perfil");

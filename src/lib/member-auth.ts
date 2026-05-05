@@ -97,6 +97,7 @@ export function resolveMemberAccessFromProfile(profile: {
   edad?: number | null;
   rol_adulto?: string | null;
   rama_que_educa?: string | null;
+  educador_aprobado?: boolean | null;
   seisena?: string | null;
   patrulla?: string | null;
   equipo_pioneros?: string | null;
@@ -140,6 +141,18 @@ export function resolveMemberAccessFromProfile(profile: {
       accessType: null,
       reason:
         "El area de miembros es exclusiva para beneficiarios y educadores. Tu rol actual no te permite acceder.",
+    };
+  }
+
+  if (!profile.educador_aprobado) {
+    return {
+      allowed: false,
+      rama: null,
+      allowedRamas: [],
+      isRamaAdmin: false,
+      accessType: null,
+      reason:
+        "Tu cuenta de educador aún no ha sido aprobada por un administrador o moderador.",
     };
   }
 

@@ -66,6 +66,7 @@ const deleteSchema = z.object({ email: z.string().email() });
 const grantEducatorSchema = z.object({
   enabled: z.boolean(),
   ramas: z.array(z.string()).optional(),
+  approved: z.boolean().optional().default(false),
 });
 
 function normalizeEducatorRamaToken(raw: string): string | null {
@@ -450,16 +451,17 @@ adminRouter.put("/users/:userId/educator-permissions", adminGate, (req: any, res
     return res.status(404).json({ error: "Usuario no encontrado" });
   }
 
-  const { enabled, ramas = [] } = parse.data;
+  const { enabled, ramas = [], approved = false } = parse.data;
 
   if (!enabled) {
     db.prepare(
       `
-      INSERT INTO profiles (user_id, rol_adulto, rama_que_educa, is_public)
-      VALUES (?, NULL, NULL, 0)
+      INSERT INTO profiles (user_id, rol_adulto, rama_que_educa, educador_aprobado, is_public)
+      VALUES (?, NULL, NULL, 0, 0)
       ON CONFLICT(user_id) DO UPDATE SET
         rol_adulto = NULL,
-        rama_que_educa = NULL
+        rama_que_educa = NULL,
+        educador_aprobado = 0
       `,
     ).run(userId);
 
@@ -468,6 +470,7 @@ adminRouter.put("/users/:userId/educator-permissions", adminGate, (req: any, res
       user_id: userId,
       rol_adulto: null,
       rama_que_educa: null,
+      educador_aprobado: false,
     });
   }
 
@@ -493,17 +496,18 @@ adminRouter.put("/users/:userId/educator-permissions", adminGate, (req: any, res
 
   db.prepare(
     `
-    INSERT INTO profiles (user_id, rol_adulto, rama_que_educa, is_public)
-    VALUES (?, ?, ?, 0)
+    INSERT INTO profiles (user_id, rol_adulto, rama_que_educa, educador_aprobado, is_public)
+    VALUES (?, ?, ?, ?, 0)
     ON CONFLICT(user_id) DO UPDATE SET
       rol_adulto = excluded.rol_adulto,
-      rama_que_educa = excluded.rama_que_educa
+      rama_que_educa = excluded.rama_que_educa,
+      educador_aprobado = excluded.educador_aprobado
     `,
-  ).run(userId, "Educador/a", canonicalRamas.join(","));
+  ).run(userId, "Educador/a", canonicalRamas.join(","), approved ? 1 : 0);
 
   const updated = db
-    .prepare("SELECT user_id, rol_adulto, rama_que_educa FROM profiles WHERE user_id = ?")
-    .get(userId) as { user_id: string; rol_adulto: string | null; rama_que_educa: string | null };
+    .prepare("SELECT user_id, rol_adulto, rama_que_educa, educador_aprobado FROM profiles WHERE user_id = ?")
+    .get(userId) as { user_id: string; rol_adulto: string | null; rama_que_educa: string | null; educador_aprobado: number };
 
   return res.json({ ok: true, ...updated });
 });

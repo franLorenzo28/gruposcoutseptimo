@@ -9,6 +9,7 @@ type ProfileRow = {
   fecha_nacimiento: string | null;
   rol_adulto: string | null;
   rama_que_educa: string | null;
+  educador_aprobado: number | null;
   seisena: string | null;
   patrulla: string | null;
   equipo_pioneros: string | null;
@@ -121,7 +122,7 @@ function getProfileRow(userId: string): ProfileRow | null {
   const row = db
     .prepare(
       `
-      SELECT user_id, fecha_nacimiento, rol_adulto, rama_que_educa,
+      SELECT user_id, fecha_nacimiento, rol_adulto, rama_que_educa, educador_aprobado,
              seisena, patrulla, equipo_pioneros, comunidad_rovers
       FROM profiles
       WHERE user_id = ?
@@ -136,7 +137,7 @@ function getUserAccessFromProfile(profile: ProfileRow): UserRamaAccess {
   const age = calculateAge(profile.fecha_nacimiento);
   const beneficiaryRama = age !== null && age < 21 ? deriveBeneficiaryRama(age) : null;
 
-  const hasEducatorRole = age !== null && age >= 21 && isEducatorRole(profile.rol_adulto);
+  const hasEducatorRole = age !== null && age >= 21 && isEducatorRole(profile.rol_adulto) && !!profile.educador_aprobado;
   const educatorRamas = hasEducatorRole ? inferEducatorRamas(profile) : [];
   const educatorRama = educatorRamas.length > 0 ? educatorRamas[0] : null;
 

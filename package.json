@@ -118,6 +118,7 @@
     "husky": "^9.1.7",
     "jsdom": "^29.1.1",
     "lint-staged": "^16.4.0",
+    "playwright": "^1.59.1",
     "postcss": "^8.5.13",
     "sharp": "^0.34.5",
     "supabase": "^2.98.0",

@@ -546,7 +546,7 @@ const PerfilView = () => {
                 )}
                 {isOwnProfile && (
                   <>
-                    {profile?.edad && profile.edad >= 21 && profile.rol_adulto === "Educador/a" && (
+                    {profile?.edad && profile.edad >= 21 && profile.rol_adulto === "Educador/a" && (profile as any).educador_aprobado === true && (
                       <Button
                         variant="default"
                         size="sm"

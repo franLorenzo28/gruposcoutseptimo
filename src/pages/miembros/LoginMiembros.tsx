@@ -101,6 +101,7 @@ export default function LoginMiembros() {
           edad: edadCalculada,
           rol_adulto: profile.rol_adulto,
           rama_que_educa: profile.rama_que_educa,
+          educador_aprobado: (profile as any).educador_aprobado,
           seisena: profile.seisena,
           patrulla: profile.patrulla,
           equipo_pioneros: profile.equipo_pioneros,
