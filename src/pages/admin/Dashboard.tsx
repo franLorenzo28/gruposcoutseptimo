@@ -1089,129 +1089,136 @@ toast({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/20 p-3 sm:p-5 md:p-8">
-      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 md:space-y-8">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5 p-3 sm:p-5 md:p-8 animate-in fade-in duration-500">
+      <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8 md:space-y-10">
         {/* Header */}
-        <Card className="border bg-card/80 shadow-sm">
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div className="space-y-1">
-                <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                  Panel de Admin
+        <Card className="relative overflow-hidden border-0 bg-background/60 backdrop-blur-xl shadow-lg ring-1 ring-border/50">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-transparent pointer-events-none" />
+          <div className="absolute -right-20 -top-20 w-64 h-64 bg-primary/10 blur-3xl rounded-full pointer-events-none" />
+          <CardContent className="p-6 sm:p-8 relative z-10">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="space-y-2">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold mb-2 ring-1 ring-primary/20">
+                  <Shield className="w-4 h-4" /> Centro de Control
+                </div>
+                <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-foreground">
+                  Panel de <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/60">Administración</span>
                 </h1>
-                <p className="text-sm text-muted-foreground">Gestiona usuarios, contenido y permisos del sistema.</p>
+                <p className="text-sm sm:text-base text-muted-foreground font-medium max-w-xl">
+                  Gestiona usuarios, contenido, métricas y configuración global del sistema desde un solo lugar.
+                </p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 {currentAccess.isSuperAdmin ? (
-                  <Badge className="bg-red-600 text-white">Admin Supremo</Badge>
+                  <Badge className="bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500/20 border-red-500/20 text-sm px-3 py-1 shadow-sm backdrop-blur-sm">Admin Supremo</Badge>
                 ) : currentAccess.isMod ? (
-                  <Badge className="bg-amber-500 text-white">Moderador</Badge>
+                  <Badge className="bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 border-amber-500/20 text-sm px-3 py-1 shadow-sm backdrop-blur-sm">Moderador</Badge>
                 ) : null}
-                <Badge variant="outline">Usuarios: {stats.total}</Badge>
-                <Badge variant="outline">Admins: {stats.admins}</Badge>
-                {isLocalBackend() && <Badge variant="outline">Pendientes: {pendingUsers.length}</Badge>}
-                {!isLocalBackend() && pendingUsers.length > 0 && <Badge variant="destructive">{pendingUsers.length} registro{pendingUsers.length !== 1 ? "s" : ""}</Badge>}
-                {!isLocalBackend() && pendingEducators.length > 0 && <Badge variant="secondary">{pendingEducators.length} educador{pendingEducators.length !== 1 ? "es" : ""}</Badge>}
+                <Badge variant="default" className="text-sm px-3 py-1 shadow-sm">Usuarios: {stats.total}</Badge>
+                {isLocalBackend() && <Badge variant="default" className="text-sm px-3 py-1 shadow-sm">Pendientes: {pendingUsers.length}</Badge>}
+                {!isLocalBackend() && pendingUsers.length > 0 && <Badge variant="destructive" className="text-sm px-3 py-1 shadow-sm animate-pulse">Pendientes: {pendingUsers.length}</Badge>}
+                {!isLocalBackend() && pendingEducators.length > 0 && <Badge variant="default" className="text-sm px-3 py-1 shadow-sm bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20">{pendingEducators.length} educador{pendingEducators.length !== 1 ? "es" : ""}</Badge>}
               </div>
             </div>
-            <p className="mt-3 text-xs text-muted-foreground">
+            <p className="mt-6 text-xs text-muted-foreground bg-muted/30 p-3 rounded-lg border inline-block">
               {currentAccess.isSuperAdmin
-                ? "Tienes control total: roles, permisos de educador y eliminación de usuarios."
-                : "Como mod puedes gestionar permisos de educador por unidad, sin control total de roles."}
+                ? "💡 Tienes control total: roles, permisos de educador y eliminación de usuarios."
+                : "💡 Como mod puedes gestionar permisos de educador por unidad, sin control total de roles."}
             </p>
           </CardContent>
         </Card>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4 mb-4 sm:mb-6 md:mb-8">
-          <Card className="border-l-4 border-l-blue-500 shadow-sm transition-shadow hover:shadow-md">
-            <CardHeader className="pb-2 sm:pb-3">
-              <CardTitle className="flex items-center gap-2 text-xs sm:text-sm md:text-base">
-                <Users className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500" />
-                Usuarios
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+          <Card className="relative overflow-hidden border-0 bg-background/60 backdrop-blur-sm shadow-md transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ring-1 ring-border">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 blur-2xl rounded-full -mr-16 -mt-16 pointer-events-none transition-all duration-500 group-hover:bg-blue-500/20" />
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <div className="p-2 rounded-lg bg-blue-500/10 text-blue-500">
+                  <Users className="w-4 h-4 sm:w-5 sm:h-5" />
+                </div>
+                Usuarios Totales
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl sm:text-3xl font-bold">{stats.total}</div>
-              <p className="text-xs text-muted-foreground mt-1">Registrados</p>
+              <div className="text-3xl sm:text-4xl font-black tracking-tight">{stats.total}</div>
+              <p className="text-xs text-muted-foreground font-medium mt-1">Cuentas registradas</p>
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-red-500 shadow-sm transition-shadow hover:shadow-md">
-            <CardHeader className="pb-2 sm:pb-3">
-              <CardTitle className="flex items-center gap-2 text-xs sm:text-sm md:text-base">
-                <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-red-500" />
-                <span className="hidden sm:inline">Administradores</span>
-                <span className="sm:hidden">Admins</span>
+          <Card className="relative overflow-hidden border-0 bg-background/60 backdrop-blur-sm shadow-md transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ring-1 ring-border">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 blur-2xl rounded-full -mr-16 -mt-16 pointer-events-none transition-all duration-500 group-hover:bg-red-500/20" />
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <div className="p-2 rounded-lg bg-red-500/10 text-red-500">
+                  <Shield className="w-4 h-4 sm:w-5 sm:h-5" />
+                </div>
+                Administradores
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl sm:text-3xl font-bold">{stats.admins}</div>
-              <p className="text-xs text-muted-foreground mt-1">Con rol admin</p>
+              <div className="text-3xl sm:text-4xl font-black tracking-tight">{stats.admins}</div>
+              <p className="text-xs text-muted-foreground font-medium mt-1">Personal con acceso</p>
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-green-500 sm:col-span-2 md:col-span-1 shadow-sm transition-shadow hover:shadow-md">
-            <CardHeader className="pb-2 sm:pb-3">
-              <CardTitle className="flex items-center gap-2 text-xs sm:text-sm md:text-base">
-                <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-green-500" />
-                <span className="hidden sm:inline">Registrados Hoy</span>
-                <span className="sm:hidden">Hoy</span>
+          <Card className="relative overflow-hidden border-0 bg-background/60 backdrop-blur-sm shadow-md transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ring-1 ring-border sm:col-span-2 md:col-span-1">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 blur-2xl rounded-full -mr-16 -mt-16 pointer-events-none transition-all duration-500 group-hover:bg-emerald-500/20" />
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-500">
+                  <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
+                </div>
+                Registrados Hoy
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl sm:text-3xl font-bold">{stats.registradosHoy}</div>
-              <p className="text-xs text-muted-foreground mt-1">Nuevos usuarios</p>
+              <div className="text-3xl sm:text-4xl font-black tracking-tight">{stats.registradosHoy}</div>
+              <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mt-1 flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Actividad reciente
+              </p>
             </CardContent>
           </Card>
         </div>
 
-        <Tabs defaultValue="overview" className="w-full">
-          <div className="flex justify-center mb-6">
-            <TabsList className="gap-1 overflow-x-auto overflow-y-hidden rounded-xl border bg-background p-1 shadow-sm">
-              <TabsTrigger value="overview" className="text-xs sm:text-sm px-3 py-1.5 gap-1.5 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                <Shield className="h-3.5 w-3.5" />
+        <Tabs defaultValue="overview" className="w-full mt-8">
+          <div className="flex justify-start sm:justify-center mb-8 pb-2 overflow-x-auto overflow-y-hidden custom-scrollbar">
+            <TabsList className="gap-2 rounded-2xl border-0 bg-background/60 backdrop-blur-md p-1.5 shadow-md ring-1 ring-border/50 h-auto">
+              <TabsTrigger value="overview" className="text-sm px-4 py-2 gap-2 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-300">
+                <Shield className="h-4 w-4" />
                 Resumen
               </TabsTrigger>
-              <TabsTrigger value="users" className="text-xs sm:text-sm px-3 py-1.5 gap-1.5 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                <Users className="h-3.5 w-3.5" />
+              <TabsTrigger value="users" className="text-sm px-4 py-2 gap-2 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-300">
+                <Users className="h-4 w-4" />
                 Usuarios
               </TabsTrigger>
-              <TabsTrigger value="groups" className="text-xs sm:text-sm px-3 py-1.5 gap-1.5 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                <Layers className="h-3.5 w-3.5" />
-                Grupos
-              </TabsTrigger>
-              <TabsTrigger value="events" className="text-xs sm:text-sm px-3 py-1.5 gap-1.5 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                <CalendarDays className="h-3.5 w-3.5" />
-                Eventos
-              </TabsTrigger>
-              <TabsTrigger value="threads" className="text-xs sm:text-sm px-3 py-1.5 gap-1.5 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                <MessageSquare className="h-3.5 w-3.5" />
-                Posts
-              </TabsTrigger>
-              <TabsTrigger value="comments" className="text-xs sm:text-sm px-3 py-1.5 gap-1.5 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                <MessageSquare className="h-3.5 w-3.5" />
-                Comentarios
-              </TabsTrigger>
-              <TabsTrigger value="messages" className="text-xs sm:text-sm px-3 py-1.5 gap-1.5 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                <MessagesSquare className="h-3.5 w-3.5" />
-                Msgs
-              </TabsTrigger>
-              <TabsTrigger value="groupMessages" className="text-xs sm:text-sm px-3 py-1.5 gap-1.5 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                <MessagesSquare className="h-3.5 w-3.5" />
-                Msgs Grupo
-              </TabsTrigger>
-              <TabsTrigger value="pages" className="text-xs sm:text-sm px-3 py-1.5 gap-1.5 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                <FileText className="h-3.5 w-3.5" />
-                Páginas
-              </TabsTrigger>
               {!isLocalBackend() && (
-                <TabsTrigger value="requests" className="text-xs sm:text-sm px-3 py-1.5 gap-1.5 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                  <UserCheck className="h-3.5 w-3.5" />
+                <TabsTrigger value="requests" className="text-sm px-4 py-2 gap-2 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-300">
+                  <UserCheck className="h-4 w-4" />
                   Solicitudes
-                  {totalPending > 0 && <Badge variant="destructive" className="ml-1 h-4 px-1 text-[10px]">{totalPending}</Badge>}
+                  {totalPending > 0 && <Badge variant="destructive" className="ml-1 h-5 px-1.5 text-[11px] font-bold rounded-full">{totalPending}</Badge>}
                 </TabsTrigger>
               )}
+              <TabsTrigger value="groups" className="text-sm px-4 py-2 gap-2 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-300">
+                <Layers className="h-4 w-4" />
+                Grupos
+              </TabsTrigger>
+              <TabsTrigger value="events" className="text-sm px-4 py-2 gap-2 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-300">
+                <CalendarDays className="h-4 w-4" />
+                Eventos
+              </TabsTrigger>
+              <TabsTrigger value="threads" className="text-sm px-4 py-2 gap-2 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-300">
+                <MessageSquare className="h-4 w-4" />
+                Posts
+              </TabsTrigger>
+              <TabsTrigger value="messages" className="text-sm px-4 py-2 gap-2 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-300">
+                <MessagesSquare className="h-4 w-4" />
+                Msgs
+              </TabsTrigger>
+              <TabsTrigger value="pages" className="text-sm px-4 py-2 gap-2 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-300">
+                <FileText className="h-4 w-4" />
+                Páginas
+              </TabsTrigger>
             </TabsList>
           </div>
 

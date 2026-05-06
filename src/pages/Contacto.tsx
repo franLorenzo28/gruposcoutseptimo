@@ -58,6 +58,24 @@ const Contacto = () => {
 
     setSending(true);
     try {
+      let avatarHtml = "";
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const { data: profile } = await supabase.from("profiles").select("avatar_url").eq("user_id", session.user.id).single();
+          if (profile?.avatar_url) {
+             let url = profile.avatar_url;
+             if (!url.startsWith("http")) {
+               const { data: pubData } = supabase.storage.from("avatars").getPublicUrl(url);
+               url = pubData.publicUrl;
+             }
+             avatarHtml = `<img src="${url}" alt="Foto de perfil" width="80" height="80" style="border-radius: 50%; object-fit: cover; border: 2px solid #2c3e50; display: block;" />`;
+          }
+        }
+      } catch (e) {
+        console.error("No se pudo obtener el avatar", e);
+      }
+
       await emailjs.send(
         "service_wiq2pwk",
         "template_ofrt3il",
@@ -68,7 +86,7 @@ const Contacto = () => {
           message: sanitized.message,
           reply_to: sanitized.email,
           from_name: sanitized.name,
-          avatar_url: avatarUrl,
+          avatar_html: avatarHtml,
         },
         "xJn0Mb0ukQ_M5UYIc"
       );
