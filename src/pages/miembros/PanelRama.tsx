@@ -21,59 +21,16 @@ import { PageGridBackground } from "@/components/PageGridBackground";
 import { RamaAdminSection } from "@/components/miembros/RamaAdminSection";
 import { DocumentsList } from "@/components/miembros/DocumentsList";
 import { RamaBroadcastChannel } from "@/components/miembros/RamaBroadcastChannel";
-
-type RamaPanelEvent = {
-  id: string;
-  titulo: string;
-  fecha: string;
-  hora: string;
-  lugar: string;
-  descripcion: string;
-};
-
-const ramaConfig: Record<
-  MiembroRama,
-  {
-    titulo: string;
-    lema: string;
-    reuniones: string[];
-    info: string[];
-  }
-> = {
-  rover: {
-    titulo: "Rover",
-    lema: "Servir",
-    reuniones: [
-      "Lunes 20:00 - 22:00",
-      "Sabado salida de servicio (segun agenda)",
-    ],
-    info: [
-      "Coordinacion de acciones solidarias",
-      "Preparacion de campamentos de servicio",
-    ],
-  },
-  pioneros: {
-    titulo: "Pioneros",
-    lema: "Explorar",
-    reuniones: ["Martes 19:00 - 21:00", "Sabado actividad al aire libre"],
-    info: ["Desafios de liderazgo", "Proyectos comunitarios de unidad"],
-  },
-  tropa: {
-    titulo: "Tropa",
-    lema: "Descubrir",
-    reuniones: ["Miercoles 18:30 - 20:30", "Domingo encuentro mensual"],
-    info: [
-      "Trabajo en equipo",
-      "Actividades de orientacion y naturaleza",
-    ],
-  },
-  lobatos: {
-    titulo: "Lobatos",
-    lema: "Siempre mejor",
-    reuniones: ["Sabado 15:00 - 17:00", "Fogon mensual con familias"],
-    info: ["Juego educativo", "Desarrollo de habilidades y valores"],
-  },
-};
+import {
+  getDefaultRamaContent,
+  getUpcomingRamaEvents,
+  ramaConfig,
+  readRamaContent,
+  readRamaEvents,
+  writeRamaContent,
+  writeRamaEvents,
+  type RamaPanelEvent,
+} from "@/app/internal/rama-storage";
 
 export default function PanelRama({ rama }: { rama: MiembroRama }) {
   const { session, logout } = useMemberAuth();
@@ -86,70 +43,30 @@ export default function PanelRama({ rama }: { rama: MiembroRama }) {
       ? [session.rama]
       : [];
   const isRamaAdmin = !!session?.isRamaAdmin && allowedRamas.includes(rama);
-
-  const defaultRamaContent = {
-    lema: config.lema,
-    reuniones: config.reuniones,
-    info: config.info,
-    avisos: [] as string[],
-  };
-
-  const parseStoredJson = <T,>(raw: string | null, fallback: T): T => {
-    if (!raw) return fallback;
-    try {
-      return JSON.parse(raw) as T;
-    } catch {
-      return fallback;
-    }
-  };
+  const defaultRamaContent = getDefaultRamaContent(rama);
 
   const [ramaContent, setRamaContent] = useState(() => {
-    if (typeof window === "undefined") return defaultRamaContent;
-    const stored = localStorage.getItem(`rama_${rama}_content`);
-    return parseStoredJson(stored, defaultRamaContent);
+    return readRamaContent(rama);
   });
 
   const [eventos, setEventos] = useState<RamaPanelEvent[]>(() => {
-    if (typeof window === "undefined") return [];
-    const stored = localStorage.getItem(`rama_${rama}_eventos`);
-    return parseStoredJson(stored, [] as RamaPanelEvent[]);
+    return readRamaEvents(rama);
   });
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const storedContent = localStorage.getItem(`rama_${rama}_content`);
-    const storedEventos = localStorage.getItem(`rama_${rama}_eventos`);
-    setRamaContent(parseStoredJson(storedContent, defaultRamaContent));
-    setEventos(parseStoredJson(storedEventos, [] as RamaPanelEvent[]));
-  }, [rama]);
+    setRamaContent(readRamaContent(rama));
+    setEventos(readRamaEvents(rama));
+  }, [rama, defaultRamaContent]);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem(`rama_${rama}_content`, JSON.stringify(ramaContent));
-    }
+    writeRamaContent(rama, ramaContent);
   }, [ramaContent, rama]);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem(`rama_${rama}_eventos`, JSON.stringify(eventos));
-    }
+    writeRamaEvents(rama, eventos);
   }, [eventos, rama]);
 
-  const eventosOrdenados = useMemo(() => {
-    const toTimestamp = (evento: RamaPanelEvent) => {
-      const value = new Date(`${evento.fecha}T${evento.hora || "00:00"}:00`).getTime();
-      return Number.isFinite(value) ? value : 0;
-    };
-    return [...eventos].sort((a, b) => toTimestamp(a) - toTimestamp(b));
-  }, [eventos]);
-
-  const eventosProximos = useMemo(() => {
-    const now = Date.now();
-    return eventosOrdenados.filter((evento) => {
-      const value = new Date(`${evento.fecha}T${evento.hora || "00:00"}:00`).getTime();
-      return Number.isFinite(value) && value >= now;
-    });
-  }, [eventosOrdenados]);
+  const eventosProximos = useMemo(() => getUpcomingRamaEvents(eventos), [eventos]);
 
   const handleSaveContent = (newContent: typeof ramaContent) => {
     setRamaContent(newContent);
@@ -279,7 +196,7 @@ export default function PanelRama({ rama }: { rama: MiembroRama }) {
 
                   <div className="grid gap-2">
                     <Button asChild variant="outline" className="justify-start rounded-xl border-border/80 bg-background/80">
-                      <Link to="/area-miembros">Area de miembros</Link>
+                      <Link to="/interno">Area de miembros</Link>
                     </Button>
                     {isRamaAdmin && (
                       <Button asChild variant="secondary" className="justify-start rounded-xl">

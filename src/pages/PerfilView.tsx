@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import UserAvatar from "@/components/UserAvatar";
 import { getProfile } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import { Settings, Check, X } from "lucide-react";
+import { Settings } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -24,8 +24,6 @@ import {
 import type { Database } from "@/integrations/supabase/types";
 import {
   getPendingRequestsForMe,
-  acceptFollow,
-  rejectFollow,
   getFollowersCount,
   getFollowingCount,
   getFollowersWithProfiles,
@@ -35,6 +33,7 @@ import {
   getFollowRelation,
 } from "@/lib/follows";
 import { getCurrentUserAdminAccess } from "@/lib/admin-permissions";
+import { useMemberAuth } from "@/context/MemberAuthContext";
 
 type Tables = Database["public"]["Tables"];
 type Profile = Tables["profiles"]["Row"];
@@ -48,18 +47,6 @@ const PerfilView = () => {
     username?: string | null;
   } | null>(null);
   const [viewedUserEmail, setViewedUserEmail] = useState(""); // Email del usuario que estamos viendo
-  const [pending, setPending] = useState<
-    {
-      follower_id: string;
-      created_at: string;
-      follower?: {
-        id: string;
-        nombre_completo: string | null;
-        avatar_url: string | null;
-        username?: string | null;
-      };
-    }[]
-  >([]);
   const [userId, setUserId] = useState<string>("");
   const [viewingUserId, setViewingUserId] = useState<string>("");
   const [isOwnProfile, setIsOwnProfile] = useState(true);
@@ -98,6 +85,20 @@ const PerfilView = () => {
   const [isAdminOrMod, setIsAdminOrMod] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const memberAuth = useMemberAuth();
+
+  const profileEdad = profile?.edad;
+  const profileRama = profileEdad && profileEdad >= 15 && profileEdad <= 17
+    ? "pioneros"
+    : profileEdad && profileEdad >= 18 && profileEdad <= 20
+    ? "rover"
+    : null;
+  const viewerIsEducadorOfProfileRama = !!(
+    profileRama &&
+    memberAuth.session?.accessType === "educador" &&
+    memberAuth.session?.allowedRamas?.includes(profileRama as any)
+  );
+  const canSeePpp = isOwnProfile || isAdminOrMod || viewerIsEducadorOfProfileRama;
 
   useEffect(() => {
     (async () => {
@@ -154,23 +155,7 @@ const PerfilView = () => {
         }
 
         if (isOwn) {
-          const { data: pend } = await getPendingRequestsForMe();
-          setPending(
-            pend
-              ? pend.map((x: any) => ({
-                  follower_id: String(x.follower_id),
-                  created_at: String(x.created_at),
-                  follower: x.follower
-                    ? {
-                        id: String(x.follower.user_id || x.follower.id),
-                        nombre_completo: x.follower.nombre_completo ?? null,
-                        avatar_url: x.follower.avatar_url ?? null,
-                        username: x.follower.username ?? null,
-                      }
-                    : undefined,
-                }))
-              : [],
-          );
+          await getPendingRequestsForMe();
         }
 
         const [{ count: fCount }, { count: gCount }] = await Promise.all([
@@ -203,45 +188,6 @@ const PerfilView = () => {
     })();
   }, [targetUserId]);
 
-  useEffect(() => {
-    if (!isOwnProfile) return;
-
-    let cancelled = false;
-    const refreshPending = async () => {
-      try {
-        const { data: pend } = await getPendingRequestsForMe();
-        if (cancelled) return;
-        setPending(
-          pend
-            ? pend.map((x: any) => ({
-                follower_id: String(x.follower_id),
-                created_at: String(x.created_at),
-                follower: x.follower
-                  ? {
-                      id: String(x.follower.user_id || x.follower.id),
-                      nombre_completo: x.follower.nombre_completo ?? null,
-                      avatar_url: x.follower.avatar_url ?? null,
-                      username: x.follower.username ?? null,
-                    }
-                  : undefined,
-              }))
-            : [],
-        );
-      } catch {
-        // Silencioso: no interrumpir vista de perfil
-      }
-    };
-
-    void refreshPending();
-    const timer = setInterval(() => {
-      void refreshPending();
-    }, 5000);
-
-    return () => {
-      cancelled = true;
-      clearInterval(timer);
-    };
-  }, [isOwnProfile]);
 
   // Lazy load lists when dialogs open
   useEffect(() => {
@@ -788,6 +734,32 @@ const PerfilView = () => {
                 </p>
               </div>
             )}
+
+            {canSeePpp && profile?.edad && profile?.edad >= 7 && profile?.edad <= 20 && (
+              <>
+                {profile?.adelanto && (
+                  <div className="bg-muted/50 rounded-lg p-3 sm:p-4">
+                    <h3 className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 flex items-center gap-1.5">
+                      Adelanto actual
+                    </h3>
+                    <p className="text-sm sm:text-base font-medium">
+                      {profile.adelanto}
+                    </p>
+                  </div>
+                )}
+                {profile?.promesa && (
+                  <div className="bg-muted/50 rounded-lg p-3 sm:p-4 border border-emerald-500/20">
+                    <h3 className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 flex items-center gap-1.5">
+                      Promesa de la unidad
+                    </h3>
+                    <p className="text-sm sm:text-base font-medium text-emerald-600 dark:text-emerald-400">
+                      Tiene la promesa
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
+
             {profile?.edad && profile?.edad >= 21 && profile?.rol_adulto === "Educador/a" && (profile as any).rama_que_educa && (
               <div className="bg-muted/50 rounded-lg p-3 sm:p-4">
                 <h3 className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">

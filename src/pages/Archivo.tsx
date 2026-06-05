@@ -12,9 +12,6 @@ import {
   ArrowLeft,
   ArrowRight,
   BookOpen,
-  Calendar,
-  FileText,
-  Image,
   Search,
   Sparkles,
 } from "lucide-react";
@@ -36,103 +33,33 @@ const sectionGroupMeta: Array<{
   description: string;
 }> = [
   {
-    key: "Memoria",
-    title: "Memoria histórica",
-    description: "Hechos, lugares y registros de etapas del grupo.",
-  },
-  {
     key: "Conocimiento",
     title: "Conocimiento scout",
-    description: "Conceptos, canciones y material formativo.",
-  },
-  {
-    key: "Comunidad",
-    title: "Personas y comunidad",
-    description: "Educadores, exintegrantes y red humana del grupo.",
-  },
-  {
-    key: "Visual",
-    title: "Archivo visual",
-    description: "Fotos y contenido multimedia de actividades.",
+    description: "Conceptos, material formativo y archivo histórico del grupo.",
   },
 ];
 
 const secciones: ArchiveSection[] = [
   {
-    title: "Cápsula del Tiempo",
-    description:
-      "Proyecto del 50 aniversario: cápsula enterrada en el Colegio Alemán para abrir en 2064.",
-    to: "/archivo/capsula-del-tiempo",
-    tag: "Memoria histórica",
-    group: "Memoria",
-    entries: "Evento 2014",
-    Icon: Calendar,
-  },
-  {
     title: "Scoutpedia",
     description:
-      "Definiciones, términos y contenidos enciclopédicos del historial scout.",
+      "Definiciones, términos, contenidos enciclopédicos y archivo histórico de Am Lagerfeuer del Grupo Scout.",
     to: "/archivo/scoutpedia",
     tag: "Historia y metodo",
     group: "Conocimiento",
     entries: "20+ entradas",
     Icon: BookOpen,
   },
-  {
-    title: "Compañía",
-    description:
-      "Historia, actividades y documentación específica de la Compañía.",
-    to: "/archivo/compania",
-    tag: "Unidad",
-    group: "Memoria",
-    entries: "En crecimiento",
-    Icon: FileText,
-  },
-  {
-    title: "Galería",
-    description:
-      "Fotos del grupo, campamentos y actividades para revivir cada etapa.",
-    to: "/galeria",
-    tag: "Multimedia",
-    group: "Visual",
-    entries: "Coleccion visual",
-    Icon: Image,
-  },
-  {
-    title: "Cancionero",
-    description:
-      "Canciones scouts organizadas por tipo: fogon, marcha y campamento.",
-    to: "/cancionero",
-    tag: "Cultura",
-    group: "Conocimiento",
-    entries: "En crecimiento",
-    Icon: BookOpen,
-  },
-  {
-    title: "Am Lagerfeuer",
-    description:
-      "Repositorio de PDFs de Am Lagerfeuer: registros, cantos e historia de cada edicion.",
-    to: "/archivo/am-lagerfeuer",
-    tag: "Repositorio PDF",
-    group: "Conocimiento",
-    entries: "Archivo histórico",
-    Icon: FileText,
-  },
 ];
 
 const actividadReciente = [
-  "Se creó la sección Cápsula del Tiempo",
   "Actualización de material histórico en Scoutpedia",
-  "Revisión y curaduría de documentos de Compañía",
-  "Nuevas fotos incorporadas en Galería",
+  "Archivo de ediciones de Am Lagerfeuer incorporado",
 ];
 
 const FILTERS: Array<{ key: "all" | ArchiveSection["group"]; label: string }> = [
   { key: "all", label: "Explorar todo" },
-  { key: "Memoria", label: "Memoria" },
   { key: "Conocimiento", label: "Conocimiento" },
-  { key: "Comunidad", label: "Comunidad" },
-  { key: "Visual", label: "Visual" },
 ];
 
 const Archivo = () => {

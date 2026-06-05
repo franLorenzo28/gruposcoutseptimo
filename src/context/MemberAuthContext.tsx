@@ -1,6 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import {
-  clearMemberSession,
+import { clearMemberSession,
   getStoredMemberSession,
   saveMemberSession,
   type MemberAccessType,
@@ -8,6 +7,9 @@ import {
   type MiembroRama,
 } from "@/lib/member-auth";
 import { getAuthUser } from "@/lib/backend";
+import { getProfile } from "@/lib/api";
+import { resolveMemberAccessFromProfile } from "@/lib/member-auth";
+import { supabase } from "@/integrations/supabase/client";
 
 interface LoginPayload {
   authUserId: string;
@@ -39,39 +41,86 @@ export function MemberAuthProvider({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     let active = true;
 
-    (async () => {
+    const checkAuth = async () => {
+      if (!active) return;
+      setIsCheckingAuth(true);
       try {
         const authUser = await getAuthUser();
         if (!active) return;
 
         if (!authUser?.id) {
           clearMemberSession();
-          setSession(null);
-          setIsCheckingAuth(false);
+          if (active) {
+            setSession(null);
+            setIsCheckingAuth(false);
+          }
           return;
         }
 
-        setSession((prev) => {
-          if (!prev) return prev;
-          if (prev.authUserId !== authUser.id) {
+        const storedSession = getStoredMemberSession();
+        
+        if (!storedSession || storedSession.authUserId !== authUser.id) {
+          // Si no hay sesion de miembro o no coincide con authUser, intentamos autologuear
+          try {
+            const profile = await getProfile(authUser.id).catch(() => null);
+            if (profile && profile.nombre_completo) {
+              const access = resolveMemberAccessFromProfile({
+                edad: (profile as any).edad,
+                rol_adulto: profile.rol_adulto,
+                rama_que_educa: profile.rama_que_educa,
+                educador_aprobado: (profile as any).educador_aprobado,
+                seisena: profile.seisena,
+                patrulla: profile.patrulla,
+                equipo_pioneros: profile.equipo_pioneros,
+                comunidad_rovers: profile.comunidad_rovers,
+              });
+
+              if (access.allowed && access.rama && access.accessType) {
+                const newSession: MemberSession = {
+                  authUserId: authUser.id,
+                  nombre: String(profile.nombre_completo || "").trim(),
+                  rama: access.rama,
+                  allowedRamas: access.allowedRamas.length > 0 ? access.allowedRamas : [access.rama],
+                  isRamaAdmin: access.isRamaAdmin,
+                  accessType: access.accessType,
+                  loggedAt: new Date().toISOString(),
+                };
+                saveMemberSession(newSession);
+                if (active) setSession(newSession);
+              } else {
+                clearMemberSession();
+                if (active) setSession(null);
+              }
+            } else {
+              clearMemberSession();
+              if (active) setSession(null);
+            }
+          } catch {
             clearMemberSession();
-            return null;
+            if (active) setSession(null);
           }
-          return prev;
-        });
+        } else {
+          // Ya hay sesión válida
+          if (active) setSession(storedSession);
+        }
       } catch {
         if (!active) return;
-        clearMemberSession();
-        setSession(null);
       } finally {
         if (active) {
           setIsCheckingAuth(false);
         }
       }
-    })();
+    };
+
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+      checkAuth();
+    });
 
     return () => {
       active = false;
+      subscription.unsubscribe();
     };
   }, []);
 

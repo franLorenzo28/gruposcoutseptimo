@@ -209,6 +209,7 @@ adminRouter.get("/dashboard-data", adminGate, (req: any, res: any) => {
         id,
         title as titulo,
         NULL as descripcion,
+        NULL as lugar,
         fecha_inicio,
         NULL as fecha_fin,
         created_at

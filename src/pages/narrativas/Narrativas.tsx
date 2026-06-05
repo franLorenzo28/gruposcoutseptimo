@@ -24,6 +24,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Plus, Search } from "lucide-react";
+import { InternalPageHeader } from "@/app/internal/components/InternalPageHeader";
 import { useToast } from "@/hooks/use-toast";
 
 type ViewMode = "list" | "view" | "edit";
@@ -214,37 +215,39 @@ export default function Narrativas() {
 
   if (viewMode === "edit") {
     return (
-      <div className="max-w-3xl mx-auto py-8 px-4">
-        <h1 className="text-3xl font-bold mb-6">
-          {selectedNarrativa ? "Editar Narrativa" : "Nueva Narrativa"}
-        </h1>
-        <NarrativaForm
-          narrativa={selectedNarrativa || undefined}
-          onSubmit={handleFormSubmit}
-          onCancel={() => {
-            setViewMode("list");
-            setSelectedNarrativa(null);
-          }}
-          isLoading={createMutation.isPending || updateMutation.isPending}
+      <section className="mx-auto flex w-full max-w-7xl flex-col gap-5 px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
+        <InternalPageHeader
+          eyebrow="Narrativas"
+          title={selectedNarrativa ? "Editar Narrativa" : "Nueva Narrativa"}
+          description={selectedNarrativa ? "Actualiza los datos de esta narrativa" : "Crea un nuevo relato histórico para el grupo"}
         />
-      </div>
+        <div className="max-w-3xl">
+          <NarrativaForm
+            narrativa={selectedNarrativa || undefined}
+            onSubmit={handleFormSubmit}
+            onCancel={() => {
+              setViewMode("list");
+              setSelectedNarrativa(null);
+            }}
+            isLoading={createMutation.isPending || updateMutation.isPending}
+          />
+        </div>
+      </section>
     );
   }
 
   // Vista de lista
   return (
-    <div className="max-w-5xl mx-auto py-8 px-4 space-y-8">
+    <section className="mx-auto flex w-full max-w-7xl flex-col gap-5 px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
       {/* Header */}
-      <div>
-        <h1 className="text-4xl font-bold text-foreground mb-2">Narrativas</h1>
-        <p className="text-muted-foreground">
-          Relatos históricos del séptimo. Cada narrativa cuenta un momento
-          importante del año.
-        </p>
-      </div>
+      <InternalPageHeader
+        eyebrow="Identidad y Grupo"
+        title="Narrativas"
+        description="Relatos históricos del séptimo. Cada narrativa cuenta un momento importante del año y de nuestra historia."
+      />
 
       {/* Barra de búsqueda y acciones */}
-      <div className="flex gap-4 flex-col sm:flex-row">
+      <div className="flex gap-4 flex-col sm:flex-row mb-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
@@ -318,6 +321,6 @@ export default function Narrativas() {
           </Accordion>
         </div>
       )}
-    </div>
+    </section>
   );
 }

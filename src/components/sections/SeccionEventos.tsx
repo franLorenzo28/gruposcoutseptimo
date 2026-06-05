@@ -445,7 +445,20 @@ const Events = () => {
             console.error("Error loading eventos from supabase:", error);
             setEvents(defaultEvents);
           } else if (data && data.length > 0) {
-            setEvents(data as EventItem[]);
+            setEvents(
+              (data as any[]).map((item: any) => ({
+                id: item.id,
+                title: item.titulo ?? item.title ?? "",
+                date: item.fecha_inicio ?? item.date ?? "",
+                location: item.lugar ?? item.location ?? "",
+                participants: item.participants ?? "",
+                type: item.type ?? "",
+                status: item.status ?? "Confirmado",
+                image: item.image,
+                href: item.href,
+                sort_order: item.sort_order,
+              })),
+            );
           } else {
             setEvents(defaultEvents);
           }
@@ -465,9 +478,22 @@ const Events = () => {
   const handleUpdate = useCallback(async (id: number, updates: Partial<EventItem>) => {
     if (isSupabaseMode) {
       try {
+        const dbPayload: Record<string, any> = {
+          updated_at: new Date().toISOString(),
+        };
+        if (updates.title !== undefined) { dbPayload.title = updates.title; dbPayload.titulo = updates.title; }
+        if (updates.location !== undefined) { dbPayload.location = updates.location; dbPayload.lugar = updates.location; }
+        if (updates.date !== undefined) { dbPayload.date = updates.date; dbPayload.fecha_inicio = updates.date; }
+        if (updates.participants !== undefined) dbPayload.participants = updates.participants;
+        if (updates.type !== undefined) dbPayload.type = updates.type;
+        if (updates.status !== undefined) dbPayload.status = updates.status;
+        if (updates.image !== undefined) dbPayload.image = updates.image;
+        if (updates.href !== undefined) dbPayload.href = updates.href;
+        if (updates.sort_order !== undefined) dbPayload.sort_order = updates.sort_order;
+
         const { error } = await (supabase as any)
           .from("eventos")
-          .update({ ...updates, updated_at: new Date().toISOString() })
+          .update(dbPayload)
           .eq("id", id);
         
         if (error) {
@@ -494,7 +520,18 @@ const Events = () => {
         await (supabase as any).from("eventos").delete().neq("id", "0");
         
         const { error } = await (supabase as any).from("eventos").insert(
-          defaultEvents.map((e) => ({ ...e, updated_at: new Date().toISOString() }))
+          defaultEvents.map((e) => ({
+            titulo: e.title,
+            lugar: e.location,
+            fecha_inicio: e.date,
+            participants: e.participants,
+            type: e.type,
+            status: e.status,
+            image: e.image ?? null,
+            href: e.href ?? null,
+            sort_order: e.sort_order ?? null,
+            updated_at: new Date().toISOString(),
+          })),
         );
         
         if (error) {

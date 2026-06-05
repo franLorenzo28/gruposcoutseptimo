@@ -85,6 +85,7 @@ export async function publishRamaBroadcast(
     .single();
 
   if (error || !inserted) {
+    console.error("Error al publicar difusion:", error);
     throw new Error(error?.message || "No se pudo enviar el mensaje.");
   }
 

@@ -21,9 +21,8 @@ const _supabase = createClient(url, key, {
 });
 
 // Intercept getUser to use getSession instead - avoids "auth session missing" error
-const originalGetUser = _supabase.auth.getUser;
 Object.defineProperty(_supabase.auth, 'getUser', {
-  value: async function(jwt?: string) {
+  value: async function() {
     try {
       const { data: { session } } = await _supabase.auth.getSession();
       return { data: { user: session?.user ?? null }, error: null };

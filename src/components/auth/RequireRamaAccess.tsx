@@ -16,7 +16,7 @@ export default function RequireRamaAccess({
   }
 
   if (!isAuthenticated || !session) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/interno/auth" replace />;
   }
 
   const allowedRamas = session.allowedRamas?.length
@@ -26,7 +26,7 @@ export default function RequireRamaAccess({
   if (!allowedRamas.includes(allowedRama)) {
     return (
       <Navigate
-        to={`/area-miembros/unidades/${session.rama}?acceso=denegado`}
+        to={`/interno/unidades/${session.rama}?acceso=denegado`}
         replace
       />
     );

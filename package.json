@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite --mode development",
-    "dev:server": "npm --prefix server run dev",
-    "dev:all": "concurrently -n web,api -c magenta,cyan \"npm:dev\" \"npm:dev:server\"",
+    "dev:server": "pnpm --prefix server run dev",
+    "dev:all": "concurrently -n web,api -c magenta,cyan \"pnpm:dev\" \"pnpm:dev:server\"",
     "build": "vite build --mode production",
     "build:dev": "vite build --mode development",
     "build:staging": "vite build --mode staging",
@@ -22,16 +22,16 @@
     "test": "vitest run",
     "type-check": "tsc --noEmit",
     "setup": "sh scripts/setup.sh",
-    "ci": "npm run type-check && npm run lint && npm run build",
+    "ci": "pnpm type-check && pnpm lint && pnpm build",
     "test:ci": "vitest run",
     "test:watch": "vitest",
     "node:use": "powershell -ExecutionPolicy Bypass -File scripts/use-node.ps1",
-    "prepare": "husky install",
-    "security:check": "npm audit --audit-level=moderate || node -e \"process.exit(0)\"",
-    "audit:report": "npm audit --json > artifacts/audit-report.json || node -e \"process.exit(0)\"",
+    "prepare": "husky",
+    "security:check": "pnpm audit --audit-level=moderate || node -e \"process.exit(0)\"",
+    "audit:report": "pnpm audit --json > artifacts/audit-report.json || node -e \"process.exit(0)\"",
     "clean": "rimraf dist",
     "generate:sitemap": "node scripts/generate-sitemap.js",
-    "prebuild": "npm run generate:sitemap && node scripts/validate-credentials.js"
+    "prebuild": "pnpm generate:sitemap && node scripts/validate-credentials.js"
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",

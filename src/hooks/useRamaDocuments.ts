@@ -73,7 +73,6 @@ export function useRamaDocuments(rama: string) {
       throw error;
     }
 
-    // Avoid opening 404 for stale DB rows whose storage object no longer exists.
     try {
       const probe = await fetch(data.signedUrl, { method: "HEAD" });
       if (!probe.ok) {

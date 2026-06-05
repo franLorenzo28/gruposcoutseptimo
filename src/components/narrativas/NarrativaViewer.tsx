@@ -43,9 +43,9 @@ export function NarrativaViewer({
     }
   };
   return (
-    <article className="max-w-3xl mx-auto py-8 px-4">
+    <article className="mx-auto flex w-full max-w-4xl flex-col gap-5 px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
       {/* Header con botón atrás */}
-      <div className="flex items-center gap-4 mb-8">
+      <div className="flex items-center gap-4">
         {onBack && (
           <Button
             variant="ghost"

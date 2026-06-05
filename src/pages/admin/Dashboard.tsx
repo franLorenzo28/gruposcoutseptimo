@@ -38,6 +38,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import type { AdminAccess } from "@/lib/admin-permissions";
 import { updateUserRole, normalizeRole } from "@/lib/admin-permissions";
+import type { AdminDashboardTab } from "@/app/routes/admin-tabs";
 
 type EducatorUnit = "manada" | "tropa" | "pioneros" | "rovers";
 
@@ -75,6 +76,8 @@ function parseEducatorUnits(raw: string | null | undefined): EducatorUnit[] {
 
 type DashboardProps = {
   currentAccess: AdminAccess;
+  initialTab?: AdminDashboardTab;
+  onTabChange?: (tab: AdminDashboardTab) => void;
 };
 
 type LocalDashboardPayload = {
@@ -88,23 +91,7 @@ type LocalDashboardPayload = {
   pages?: any[];
   follows?: any[];
   notifications?: any[];
-  pendingUsers?: any[];
-};
 
-type PendingUser = {
-  user_id: string;
-  email: string | null;
-  nombre_completo: string | null;
-  apellido: string | null;
-  username: string | null;
-  account_status: string | null;
-  account_classification: string | null;
-  account_review_reason: string | null;
-  tipo_relacion: string | null;
-  rama: string | null;
-  nombre_scout_relacionado: string | null;
-  email_verified_at: string | null;
-  created_at: string | null;
 };
 
 type RegistrationRequest = {
@@ -121,7 +108,11 @@ type RegistrationRequest = {
   metadata: any;
 };
 
-export default function Dashboard({ currentAccess }: DashboardProps) {
+export default function Dashboard({
+  currentAccess,
+  initialTab = "overview",
+  onTabChange,
+}: DashboardProps) {
   const [users, setUsers] = useState<any[]>([]);
   const [stats, setStats] = useState({ total: 0, admins: 0, registradosHoy: 0 });
   const [search, setSearch] = useState("");
@@ -141,7 +132,7 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
   const [pages, setPages] = useState<any[]>([]);
   const [follows, setFollows] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
-  const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
+
   const [registrationRequests, setRegistrationRequests] = useState<RegistrationRequest[]>([]);
   const [pendingEducators, setPendingEducators] = useState<any[]>([]);
   const [testUserNombre, setTestUserNombre] = useState("");
@@ -156,6 +147,7 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
   const [adminChatConvId, setAdminChatConvId] = useState<string | null>(null);
   const [adminChatParticipants, setAdminChatParticipants] = useState<{userId: string; name: string}[]>([]);
   const [loadingAdminChat, setLoadingAdminChat] = useState(false);
+  const [activeTab, setActiveTab] = useState<AdminDashboardTab>(initialTab);
   const { toast } = useToast();
   const canManageRoles = currentAccess.canManageRoles;
   const canManageEducators = currentAccess.canManageEducators;
@@ -228,7 +220,7 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
       setPages(payload.pages || []);
       setFollows(payload.follows || []);
       setNotifications(payload.notifications || []);
-      setPendingUsers((payload.pendingUsers || []) as PendingUser[]);
+
     } catch (error: any) {
       toast({
         title: "Error al cargar datos admin",
@@ -246,7 +238,6 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
       setPages([]);
       setFollows([]);
       setNotifications([]);
-      setPendingUsers([]);
     } finally {
       setLoading(false);
       setLoadingAdmin(false);
@@ -274,7 +265,7 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
       console.log("Fetched registration requests:", registrationRequestsRes.data?.length || 0);
     }
     
-    const [groupsRes, eventsRes, threadsRes, commentsRes, messagesRes, groupMessagesRes, pagesRes, followsRes, notificationsRes, pendingUsersRes] = await Promise.all([
+    const [groupsRes, eventsRes, threadsRes, commentsRes, messagesRes, groupMessagesRes, pagesRes, followsRes, notificationsRes] = await Promise.all([
       supabase.from("groups").select("*").order("created_at", { ascending: false }).limit(200),
       supabase.from("eventos").select("*").order("fecha_inicio", { ascending: false }).limit(200),
       supabase.from("threads").select("*").order("created_at", { ascending: false }).limit(200),
@@ -284,15 +275,9 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
       supabase.from("site_pages").select("*").order("updated_at", { ascending: false }),
       supabase.from("follows").select("*").order("created_at", { ascending: false }).limit(500),
       supabase.from("notifications").select("*").order("created_at", { ascending: false }).limit(500),
-      supabase.from("profiles")
-        .select("user_id, email, nombre_completo, username, account_status, account_classification, account_review_reason, tipo_relacion, rama, nombre_scout_relacionado, rol_adulto, role, created_at")
-        .in("account_status", ["pendiente_email", "pendiente_aprobacion"])
-        .order("created_at", { ascending: false })
-        .limit(100),
     ]);
 
     const criticalError = groupsRes.error || eventsRes.error || threadsRes.error;
-    const pendingError = pendingUsersRes.error && pendingUsersRes.error.code !== 'PGRST116' && !pendingUsersRes.error.message?.includes('does not exist') && !pendingUsersRes.error.message?.includes('column');
     
     if (criticalError) {
       toast({
@@ -300,10 +285,6 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
         description: criticalError.message,
         variant: "destructive",
       });
-    }
-
-    if (pendingError) {
-      console.warn("Error fetching pending users:", pendingUsersRes.error?.message);
     }
 
     setGroups(groupsRes.data || []);
@@ -315,53 +296,11 @@ export default function Dashboard({ currentAccess }: DashboardProps) {
     setPages(pagesRes.data || []);
     setFollows(followsRes.data || []);
     setNotifications(notificationsRes.data || []);
-    setPendingUsers((pendingUsersRes.data || []) as unknown as PendingUser[]);
     
     // Store registration requests for the new registration flow
     setRegistrationRequests((registrationRequestsRes.data || []) as unknown as RegistrationRequest[]);
     
     setLoadingAdmin(false);
-  }
-
-  async function handleReviewPendingUser(userId: string, approveStatus: "activo" | "rechazado", reason?: string) {
-    try {
-      if (isLocalBackend()) {
-        await apiFetch(`/admin/users/${userId}/review`, {
-          method: "POST",
-          body: JSON.stringify({ status: approveStatus, reason }),
-        });
-      } else {
-        const { error: rpcError } = await (supabase.rpc as any)("simple_review_user_registration", {
-          p_requester_id: userId,
-          p_approve: approveStatus === "activo",
-          p_note: reason || null,
-        });
-
-        if (rpcError) {
-          console.error("RPC simple_review error:", rpcError);
-          throw rpcError;
-        }
-      }
-
-toast({
-        title: approveStatus === "activo" ? "Usuario aprobado" : "Usuario rechazado",
-        description: approveStatus === "activo" ? "La cuenta quedó activa." : "La cuenta fue rechazada.",
-      });
-
-      if (isLocalBackend()) {
-        await fetchLocalDashboardData();
-      } else {
-        await fetchAdminData();
-        await fetchPendingEducators();
-      }
-    } catch (error: any) {
-      console.error("handleReviewPendingUser error:", error);
-      toast({
-        title: "No se pudo actualizar",
-        description: error?.message || "Error al revisar el usuario.",
-        variant: "destructive",
-      });
-    }
   }
 
   async function handleApproveRegistration(requestId: string, action: "approve" | "reject", notes?: string) {
@@ -500,7 +439,11 @@ toast({
     };
   }, [users, events, groups, threads, threadComments, messages, groupMessages, follows, notifications, today, sevenDaysAgo]);
 
-  const totalPending = pendingUsers.length + pendingEducators.length;
+  const totalPending = pendingEducators.length;
+
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
 
   async function fetchPendingEducators() {
     if (isLocalBackend()) return;
@@ -656,9 +599,13 @@ toast({
     if (error) {
       toast({ title: "No se pudo guardar", description: error.message, variant: "destructive" });
     } else {
-      setGroups((prev) => prev.map((g) => (g.id === editGroup.id ? { ...g, ...payload } : g)));
       toast({ title: "Grupo actualizado" });
       setEditGroup(null);
+      if (isLocalBackend()) {
+        await fetchLocalDashboardData();
+      } else {
+        await fetchAdminData();
+      }
     }
     setSaving(false);
   }
@@ -669,6 +616,7 @@ toast({
     const payload = {
       titulo: editEvent.titulo,
       descripcion: editEvent.descripcion || null,
+      lugar: editEvent.lugar || null,
       fecha_inicio: editEvent.fecha_inicio,
       fecha_fin: editEvent.fecha_fin || null,
     };
@@ -676,9 +624,13 @@ toast({
     if (error) {
       toast({ title: "No se pudo guardar", description: error.message, variant: "destructive" });
     } else {
-      setEvents((prev) => prev.map((e) => (e.id === editEvent.id ? { ...e, ...payload } : e)));
       toast({ title: "Evento actualizado" });
       setEditEvent(null);
+      if (isLocalBackend()) {
+        await fetchLocalDashboardData();
+      } else {
+        await fetchAdminData();
+      }
     }
     setSaving(false);
   }
@@ -698,9 +650,13 @@ toast({
       if (error) {
         toast({ title: "No se pudo guardar", description: error.message, variant: "destructive" });
       } else {
-        setPages((prev) => prev.map((p) => (p.id === editPage.id ? { ...p, ...payload } : p)));
         toast({ title: "Página actualizada" });
         setEditPage(null);
+        if (isLocalBackend()) {
+          await fetchLocalDashboardData();
+        } else {
+          await fetchAdminData();
+        }
       }
     } else {
       const { data, error } = await supabase.from("site_pages").insert(payload).select("*").single();
@@ -1115,9 +1071,7 @@ toast({
                   <Badge className="bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 border-amber-500/20 text-sm px-3 py-1 shadow-sm backdrop-blur-sm">Moderador</Badge>
                 ) : null}
                 <Badge variant="default" className="text-sm px-3 py-1 shadow-sm">Usuarios: {stats.total}</Badge>
-                {isLocalBackend() && <Badge variant="default" className="text-sm px-3 py-1 shadow-sm">Pendientes: {pendingUsers.length}</Badge>}
-                {!isLocalBackend() && pendingUsers.length > 0 && <Badge variant="destructive" className="text-sm px-3 py-1 shadow-sm animate-pulse">Pendientes: {pendingUsers.length}</Badge>}
-                {!isLocalBackend() && pendingEducators.length > 0 && <Badge variant="default" className="text-sm px-3 py-1 shadow-sm bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20">{pendingEducators.length} educador{pendingEducators.length !== 1 ? "es" : ""}</Badge>}
+                {pendingEducators.length > 0 && <Badge variant="default" className="text-sm px-3 py-1 shadow-sm bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20">{pendingEducators.length} educador{pendingEducators.length !== 1 ? "es" : ""}</Badge>}
               </div>
             </div>
             <p className="mt-6 text-xs text-muted-foreground bg-muted/30 p-3 rounded-lg border inline-block">
@@ -1181,43 +1135,56 @@ toast({
           </Card>
         </div>
 
-        <Tabs defaultValue="overview" className="w-full mt-8">
-          <div className="flex justify-start sm:justify-center mb-8 pb-2 overflow-x-auto overflow-y-hidden custom-scrollbar">
-            <TabsList className="gap-2 rounded-2xl border-0 bg-background/60 backdrop-blur-md p-1.5 shadow-md ring-1 ring-border/50 h-auto">
-              <TabsTrigger value="overview" className="text-sm px-4 py-2 gap-2 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-300">
-                <Shield className="h-4 w-4" />
-                Resumen
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => {
+            const nextTab = value as AdminDashboardTab;
+            setActiveTab(nextTab);
+            onTabChange?.(nextTab);
+          }}
+          className="w-full mt-8"
+        >
+          <div className="flex justify-start sm:justify-center mb-6 sm:mb-8 pb-2 overflow-x-auto overflow-y-hidden custom-scrollbar scrollbar-hide -mx-3 sm:mx-0 px-3 sm:px-0">
+            <TabsList className="gap-1 sm:gap-2 rounded-xl sm:rounded-2xl border-0 bg-background/60 backdrop-blur-md p-1 shadow-sm sm:p-1.5 sm:shadow-md ring-1 ring-border/50 h-auto">
+              <TabsTrigger value="overview" className="text-xs sm:text-sm px-2.5 sm:px-4 py-1.5 sm:py-2 gap-1 sm:gap-2 rounded-lg sm:rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-300">
+                <Shield className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Resumen</span>
+                <span className="sm:hidden">Inicio</span>
               </TabsTrigger>
-              <TabsTrigger value="users" className="text-sm px-4 py-2 gap-2 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-300">
-                <Users className="h-4 w-4" />
+              <TabsTrigger value="users" className="text-xs sm:text-sm px-2.5 sm:px-4 py-1.5 sm:py-2 gap-1 sm:gap-2 rounded-lg sm:rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-300">
+                <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 Usuarios
               </TabsTrigger>
               {!isLocalBackend() && (
-                <TabsTrigger value="requests" className="text-sm px-4 py-2 gap-2 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-300">
-                  <UserCheck className="h-4 w-4" />
-                  Solicitudes
-                  {totalPending > 0 && <Badge variant="destructive" className="ml-1 h-5 px-1.5 text-[11px] font-bold rounded-full">{totalPending}</Badge>}
+                <TabsTrigger value="requests" className="text-xs sm:text-sm px-2.5 sm:px-4 py-1.5 sm:py-2 gap-1 sm:gap-2 rounded-lg sm:rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-300">
+                  <UserCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline">Solicitudes</span>
+                  <span className="sm:hidden">Revs</span>
+                  {totalPending > 0 && <Badge variant="destructive" className="ml-0.5 h-4 sm:h-5 px-1 sm:px-1.5 text-[10px] sm:text-[11px] font-bold rounded-full">{totalPending}</Badge>}
                 </TabsTrigger>
               )}
-              <TabsTrigger value="groups" className="text-sm px-4 py-2 gap-2 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-300">
-                <Layers className="h-4 w-4" />
+              <TabsTrigger value="groups" className="text-xs sm:text-sm px-2.5 sm:px-4 py-1.5 sm:py-2 gap-1 sm:gap-2 rounded-lg sm:rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-300">
+                <Layers className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 Grupos
               </TabsTrigger>
-              <TabsTrigger value="events" className="text-sm px-4 py-2 gap-2 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-300">
-                <CalendarDays className="h-4 w-4" />
+              <TabsTrigger value="events" className="text-xs sm:text-sm px-2.5 sm:px-4 py-1.5 sm:py-2 gap-1 sm:gap-2 rounded-lg sm:rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-300">
+                <CalendarDays className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 Eventos
               </TabsTrigger>
-              <TabsTrigger value="threads" className="text-sm px-4 py-2 gap-2 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-300">
-                <MessageSquare className="h-4 w-4" />
-                Posts
+              <TabsTrigger value="threads" className="text-xs sm:text-sm px-2.5 sm:px-4 py-1.5 sm:py-2 gap-1 sm:gap-2 rounded-lg sm:rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-300">
+                <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Posts</span>
+                <span className="sm:hidden">Publi</span>
               </TabsTrigger>
-              <TabsTrigger value="messages" className="text-sm px-4 py-2 gap-2 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-300">
-                <MessagesSquare className="h-4 w-4" />
-                Msgs
+              <TabsTrigger value="messages" className="text-xs sm:text-sm px-2.5 sm:px-4 py-1.5 sm:py-2 gap-1 sm:gap-2 rounded-lg sm:rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-300">
+                <MessagesSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Msgs</span>
+                <span className="sm:hidden">Chat</span>
               </TabsTrigger>
-              <TabsTrigger value="pages" className="text-sm px-4 py-2 gap-2 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-300">
-                <FileText className="h-4 w-4" />
-                Páginas
+              <TabsTrigger value="pages" className="text-xs sm:text-sm px-2.5 sm:px-4 py-1.5 sm:py-2 gap-1 sm:gap-2 rounded-lg sm:rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-300">
+                <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Páginas</span>
+                <span className="sm:hidden">Pág</span>
               </TabsTrigger>
             </TabsList>
           </div>
@@ -1233,41 +1200,7 @@ toast({
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid gap-3 lg:grid-cols-2">
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium">Pendientes de revisión</p>
-                        <Badge variant="secondary">{pendingUsers.length}</Badge>
-                      </div>
-                      <div className="space-y-2 max-h-72 overflow-auto pr-1">
-                        {pendingUsers.length === 0 ? (
-                          <p className="text-sm text-muted-foreground">No hay cuentas pendientes en este momento.</p>
-                        ) : (
-                          pendingUsers.slice(0, 6).map((user) => (
-                            <div key={user.user_id} className="rounded-lg border bg-background/80 p-3 space-y-2">
-                              <div className="flex flex-wrap items-center justify-between gap-2">
-                                <div>
-                                  <p className="font-medium text-sm">{user.nombre_completo || user.email || user.user_id}</p>
-                                  <p className="text-xs text-muted-foreground">{user.email} · {user.account_status}</p>
-                                </div>
-                                <Badge variant="outline">{user.account_classification || "sin clasificación"}</Badge>
-                              </div>
-                              <p className="text-xs text-muted-foreground">
-                                {user.account_review_reason || "Sin motivo de revisión"}
-                              </p>
-                              <div className="flex flex-wrap gap-2">
-                                <Button size="sm" onClick={() => handleReviewPendingUser(user.user_id, "activo")}>
-                                  Aprobar
-                                </Button>
-                                <Button size="sm" variant="destructive" onClick={() => handleReviewPendingUser(user.user_id, "rechazado", "Rechazado por administración") }>
-                                  Rechazar
-                                </Button>
-                              </div>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    </div>
-
+                      
                     <div className="space-y-3 rounded-xl border bg-background/80 p-4">
                       <p className="text-sm font-medium">Crear usuario de test</p>
                       <div className="grid gap-3 sm:grid-cols-2">
@@ -1438,7 +1371,7 @@ toast({
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
                   <UserCheck className="w-4 h-4 text-primary" />
-                  Solicitudes de Registro ({registrationRequests.length + pendingUsers.length})
+                  Solicitudes de Registro ({registrationRequests.length})
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -1494,59 +1427,6 @@ toast({
                   </div>
                 </div>
 
-                {/* Legacy: Registros Pendientes (old flow) */}
-                <div>
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="w-1 h-5 bg-primary rounded-full" />
-                    <h3 className="text-sm font-bold">Registros de Usuario ({pendingUsers.length})</h3>
-                  </div>
-                  <div className="grid gap-3 md:grid-cols-2">
-                    {pendingUsers.length === 0 ? (
-                      <div className="col-span-full text-center py-8">
-                        <UserCheck className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
-                        <p className="text-sm text-muted-foreground">No hay cuentas pendientes.</p>
-                      </div>
-                    ) : (
-                      pendingUsers.map((user) => (
-                        <div key={user.user_id} className="group relative overflow-hidden rounded-xl border border-border/50 bg-background/80 p-4 space-y-3 hover:shadow-lg hover:border-primary/20 transition-all duration-300">
-                          <div className="absolute top-0 right-0 w-20 h-20 bg-primary/5 rounded-bl-full" />
-                          <div className="relative">
-                            <div className="flex flex-wrap items-center justify-between gap-2">
-                              <div>
-                                <p className="font-semibold text-sm">{user.nombre_completo || user.email || user.user_id}</p>
-                                <p className="text-xs text-muted-foreground mt-0.5">{user.email}</p>
-                              </div>
-                              <Badge variant="outline" className="border-amber-500/30 text-amber-600 bg-amber-500/5">
-                                {user.account_status === 'pendiente_aprobacion' ? 'Email verificado' : user.account_status}
-                              </Badge>
-                            </div>
-                            {user.account_classification && (
-                              <Badge variant="secondary" className="mt-2 text-[11px]">
-                                {user.account_classification}
-                              </Badge>
-                            )}
-                            {user.account_review_reason && (
-                              <p className="text-xs text-muted-foreground italic mt-2 p-2 rounded-lg bg-muted/30">
-                                {user.account_review_reason}
-                              </p>
-                            )}
-                          </div>
-                          <div className="flex flex-wrap gap-2 pt-2 border-t border-border/30">
-                            <Button size="sm" className="gap-1.5 bg-green-600 hover:bg-green-700 text-white" onClick={() => handleReviewPendingUser(user.user_id, "activo")}>
-                              <UserCheck className="w-3.5 h-3.5" />
-                              Aprobar
-                            </Button>
-                            <Button size="sm" variant="destructive" onClick={() => handleReviewPendingUser(user.user_id, "rechazado", "Rechazado por administración") }>
-                              <UserX className="w-3.5 h-3.5" />
-                              Rechazar
-                            </Button>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-
                 {/* Educadores Pendientes */}
                 <div className="pt-6 border-t border-border/30">
                   <div className="flex items-center gap-2 mb-4">
@@ -1588,7 +1468,7 @@ toast({
                               <Button size="sm" className="gap-1.5 bg-green-600 hover:bg-green-700 text-white" onClick={async () => {
                                 const requesterId = n.actor_id;
                                 const units = d.requested_units || [];
-                                const { data: rpcData, error } = await (supabase.rpc as any)("simple_review_educator_permission", {
+                                const { error } = await (supabase.rpc as any)("simple_review_educator_permission", {
                                   p_requester_id: requesterId,
                                   p_approve: true,
                                   p_units: units,
@@ -1801,6 +1681,7 @@ toast({
                       <thead>
                         <tr className="border-b bg-muted/50 sticky top-0">
                           <th className="text-left p-2 sm:p-3 text-xs">Título</th>
+                          <th className="text-left p-2 sm:p-3 text-xs hidden md:table-cell">Lugar</th>
                           <th className="text-left p-2 sm:p-3 text-xs">Inicio</th>
                           <th className="text-left p-2 sm:p-3 text-xs hidden sm:table-cell">Fin</th>
                           <th className="text-right p-2 sm:p-3 text-xs">Acciones</th>
@@ -1810,6 +1691,7 @@ toast({
                         {events.map((e) => (
                           <tr key={e.id} className="border-b hover:bg-muted/50">
                             <td className="p-2 sm:p-3 font-medium text-xs sm:text-sm truncate">{e.titulo}</td>
+                            <td className="p-2 sm:p-3 text-xs sm:text-sm hidden md:table-cell text-muted-foreground">{e.lugar || "—"}</td>
                             <td className="p-2 sm:p-3 text-xs sm:text-sm">{formatDate(e.fecha_inicio)}</td>
                             <td className="p-2 sm:p-3 text-xs sm:text-sm hidden sm:table-cell">{formatDate(e.fecha_fin)}</td>
                             <td className="p-2 sm:p-3 text-right">
@@ -2389,6 +2271,17 @@ toast({
                   onChange={(e) => setEditEvent({ ...editEvent, descripcion: e.target.value })}
                   className="mt-1"
                   disabled={saving}
+                />
+              </div>
+              <div>
+                <Label htmlFor="event-lugar">Lugar</Label>
+                <Input
+                  id="event-lugar"
+                  value={editEvent.lugar || ""}
+                  onChange={(e) => setEditEvent({ ...editEvent, lugar: e.target.value })}
+                  className="mt-1"
+                  disabled={saving}
+                  placeholder="Ej: Sede del Grupo"
                 />
               </div>
               <div>

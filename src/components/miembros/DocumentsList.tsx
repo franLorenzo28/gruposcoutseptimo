@@ -12,11 +12,10 @@ export function DocumentsList({ rama }: DocumentsListProps) {
   const { documents, isLoading, error, getDownloadUrl } = useRamaDocuments(rama);
   const [downloading, setDownloading] = useState<string | null>(null);
 
-  const handleDownload = async (docId: string, _docName: string) => {
+  const handleDownload = async (docId: string) => {
     try {
       setDownloading(docId);
       const url = await getDownloadUrl(docId);
-      // Abrir en nueva ventana o descargar
       window.open(url, "_blank");
     } catch (err) {
       console.error("Error downloading document:", err);
@@ -46,7 +45,7 @@ export function DocumentsList({ rama }: DocumentsListProps) {
 
   if (documents.length === 0) {
     return (
-      <div className="text-center py-8 text-sm text-muted-foreground">
+      <div className="py-8 text-center text-sm text-muted-foreground">
         <p>No hay documentos disponibles aún</p>
       </div>
     );
@@ -57,12 +56,12 @@ export function DocumentsList({ rama }: DocumentsListProps) {
       {documents.map((doc) => (
         <div
           key={doc.id}
-          className="flex items-center justify-between rounded-lg border border-border/50 bg-card p-4 hover:bg-accent/50 transition-colors"
+          className="flex items-center justify-between rounded-lg border border-border/50 bg-card p-4 transition-colors hover:bg-accent/50"
         >
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <File className="h-5 w-5 text-primary flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="font-medium truncate text-sm">{doc.nombre}</p>
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            <File className="h-5 w-5 flex-shrink-0 text-primary" />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium">{doc.nombre}</p>
               <p className="text-xs text-muted-foreground">
                 {(doc.tamaño / 1024 / 1024).toFixed(2)} MB • {new Date(doc.created_at).toLocaleDateString("es-AR")}
               </p>
@@ -71,7 +70,7 @@ export function DocumentsList({ rama }: DocumentsListProps) {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => handleDownload(doc.id, doc.nombre)}
+            onClick={() => handleDownload(doc.id)}
             disabled={downloading === doc.id}
             className="ml-2 flex-shrink-0 gap-2"
           >

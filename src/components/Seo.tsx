@@ -80,6 +80,7 @@ const ROUTE_SEO: Record<string, SeoEntry> = {
 };
 
 const NOINDEX_PREFIXES = [
+  "/interno",
   "/area-miembros",
   "/dashboard",
   "/admin",

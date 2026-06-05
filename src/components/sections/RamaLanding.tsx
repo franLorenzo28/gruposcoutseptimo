@@ -59,7 +59,7 @@ export default function RamaLanding({
                     </Link>
                   </Button>
                   <Button asChild variant="outline">
-                    <Link to="/area-miembros">Area de miembros</Link>
+                    <Link to="/interno">Area de miembros</Link>
                   </Button>
                 </div>
               </div>

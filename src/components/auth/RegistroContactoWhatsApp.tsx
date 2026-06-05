@@ -10,11 +10,6 @@ type WhatsAppContact = {
 
 type RegistroContactoWhatsAppProps = {
   nombreCompleto?: string;
-  userId?: string;
-  userEmail?: string;
-  tipoRelacion?: string;
-  rama?: string;
-  nombreScoutRelacionado?: string;
   onBack?: () => void;
   onContacted?: () => void;
 };
@@ -41,11 +36,6 @@ const buildWhatsAppUrl = (phone: string, message: string) => {
 
 export default function RegistroContactoWhatsApp({
   nombreCompleto,
-  userId,
-  userEmail,
-  tipoRelacion,
-  rama,
-  nombreScoutRelacionado,
   onBack,
   onContacted,
 }: RegistroContactoWhatsAppProps) {

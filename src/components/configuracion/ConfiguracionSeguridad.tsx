@@ -1,4 +1,4 @@
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -139,7 +139,11 @@ export default function ConfiguracionSeguridad() {
     }
   };
 
-  const passwordValue = form.watch("password_nueva");
+  const passwordValue = useWatch({
+    control: form.control,
+    name: "password_nueva",
+    defaultValue: "",
+  });
   const hasUpperCase = /[A-Z]/.test(passwordValue);
   const hasLowerCase = /[a-z]/.test(passwordValue);
   const hasNumber = /[0-9]/.test(passwordValue);

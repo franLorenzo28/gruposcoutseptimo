@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -43,7 +43,7 @@ function getOAuthSafety() {
     (import.meta.env.VITE_APP_URL as string | undefined)?.trim() || "";
 
   // En desarrollo siempre usamos el origen actual (localhost o IP LAN)
-  // para evitar que OAuth redirija accidentalmente al dominio de producción.
+  // para evitar que OAuth redirija accidentalmente al dominio de producci�n.
   if (!import.meta.env.PROD) {
     return { safe: true, baseUrl: window.location.origin, reason: "", warning: "" };
   }
@@ -83,7 +83,7 @@ function getOAuthSafety() {
       baseUrl: window.location.origin,
       reason: "",
       warning:
-        "Estás usando un dominio vercel.app sin VITE_APP_URL. Configura un dominio canónico para estabilizar callbacks OAuth.",
+      "Estás usando un dominio vercel.app sin VITE_APP_URL. Configura un dominio canónico para estabilizar callbacks OAuth.",
     };
   }
 
@@ -132,8 +132,6 @@ type GoogleCompletionDraft = {
   rama: string;
   nombre_scout_relacionado: string;
 };
-
-const GOOGLE_RELATION_DEFAULT = "scout";
 
 function getMetadataRecord(user: SupabaseUser): Record<string, unknown> {
   return (user.user_metadata || {}) as Record<string, unknown>;
@@ -270,7 +268,7 @@ const Auth = () => {
   }, [toast]);
 
   useEffect(() => {
-    // Verificar sesión actual y manejar callback de OAuth
+    // Verificar sesi�n actual y manejar callback de OAuth
     const checkSession = async () => {
       try {
         // Skip session check if WhatsApp gate is active OR there's pending signup data
@@ -282,7 +280,7 @@ const Auth = () => {
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         const accessToken = hashParams.get('access_token');
         
-        // Si hay un código en la URL (callback de OAuth), intercambiarlo por sesión
+        // Si hay un c�digo en la URL (callback de OAuth), intercambiarlo por sesi�n
         const searchParams = new URLSearchParams(window.location.search);
         const code = searchParams.get('code');
         
@@ -293,7 +291,7 @@ const Auth = () => {
             console.log("DEBUG: Exchanging code for session...", code);
             const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
             if (exchangeError) {
-              console.error("DEBUG: Error al intercambiar código:", exchangeError);
+              console.error("DEBUG: Error al intercambiar c�digo:", exchangeError);
             } else {
               console.log("DEBUG: Code exchanged successfully");
             }
@@ -304,12 +302,12 @@ const Auth = () => {
           console.log("DEBUG: No code in URL, checking for access token in hash...");
         }
 
-        // Obtener la sesión actual (importante para callback de OAuth)
+        // Obtener la sesi�n actual (importante para callback de OAuth)
         console.log("DEBUG: Getting session...");
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
-          console.error("DEBUG: Error al obtener sesión:", sessionError);
+          console.error("DEBUG: Error al obtener sesi�n:", sessionError);
         } else {
           console.log("DEBUG: Session check complete, has session:", !!session?.user);
         }
@@ -329,7 +327,7 @@ const Auth = () => {
             console.log("DEBUG: Approved Google user logging in, redirecting to /");
             localStorage.removeItem("oauth_intent");
             setTimeout(() => {
-              navigate("/", { replace: true });
+              navigate("/interno/dashboard", { replace: true });
             }, 100);
             return;
           }
@@ -343,8 +341,18 @@ const Auth = () => {
             return;
           }
 
-          const isAuthRoute = window.location.pathname === "/auth";
+          const isAuthRoute = window.location.pathname === "/auth" || window.location.pathname === "/interno/auth" || window.location.pathname.startsWith("/interno/auth");
           if (isAuthRoute && !accessToken) {
+            // Solo redirigir si también hay sesión de miembro guardada
+            const memberSession = localStorage.getItem("grupo7_member_session");
+            if (memberSession) {
+              localStorage.removeItem("oauth_intent");
+              setTimeout(() => {
+                navigate("/interno/dashboard", { replace: true });
+              }, 100);
+              return;
+            }
+            // Sin sesión de miembro → mostrar formulario de auth
             setProcessingOAuth(false);
             setLoading(false);
             return;
@@ -354,7 +362,12 @@ const Auth = () => {
           const oauthIntent = localStorage.getItem("oauth_intent");
 
           if (oauthIntent === "signup" && session.user.email) {
-            const nameFromMeta = meta?.full_name || meta?.name || "";
+            const nameFromMeta =
+              typeof meta?.full_name === "string"
+                ? meta.full_name
+                : typeof meta?.name === "string"
+                  ? meta.name
+                  : "";
             setRecentSignupName(nameFromMeta);
             setShowWhatsappContacts(true);
             setProcessingOAuth(false);
@@ -369,7 +382,7 @@ const Auth = () => {
               description:
                 "Tip: completa o actualiza tu perfil para que la comunidad te conozca mejor.",
               action: (
-                <ToastAction altText="Ir a editar perfil" onClick={() => navigate("/perfil")}>
+                <ToastAction altText="Ir a editar perfil" onClick={() => navigate("/interno/perfil")}>
                   Editar perfil
                 </ToastAction>
               ),
@@ -379,7 +392,7 @@ const Auth = () => {
           
           localStorage.removeItem("oauth_intent");
           setTimeout(() => {
-            navigate("/", { replace: true });
+            navigate("/interno/dashboard", { replace: true });
           }, 100);
           return;
         }
@@ -391,7 +404,7 @@ const Auth = () => {
             const { data: { session: sessionFromToken } } = await supabase.auth.getSession();
             if (sessionFromToken?.user) {
               setTimeout(() => {
-                navigate("/", { replace: true });
+                navigate("/interno/dashboard", { replace: true });
               }, 100);
             }
           } catch (err) {
@@ -399,13 +412,13 @@ const Auth = () => {
           }
         }
       } catch (error) {
-        console.error("Error inesperado al verificar sesión:", error);
+        console.error("Error inesperado al verificar sesi�n:", error);
       }
     };
 
     checkSession();
 
-    // Suscribirse a cambios de autenticación
+    // Suscribirse a cambios de autenticaci�n
     let subscription: any;
     try {
      const {
@@ -422,7 +435,7 @@ const Auth = () => {
             return;
           }
           setTimeout(() => {
-            navigate("/", { replace: true });
+            navigate("/interno/dashboard", { replace: true });
           }, 200);
         }
       });
@@ -490,7 +503,7 @@ const Auth = () => {
     }
   };
 
-  // Validar si el email está registrado (para login con Google)
+  // Validar si el email est� registrado (para login con Google)
   useEffect(() => {
     const trimmed = email.trim().toLowerCase();
     if (!trimmed) {
@@ -712,7 +725,7 @@ const Auth = () => {
       
       // Redirect to home after a delay
       setTimeout(() => {
-        navigate("/", { replace: true });
+        navigate("/interno/dashboard", { replace: true });
       }, 2000);
       
     } catch (error) {
@@ -745,7 +758,7 @@ const Auth = () => {
         throw new Error("La contraseña es obligatoria.");
       }
 
-      // Evita que un intent OAuth viejo bloquee la navegación post-login normal.
+      // Evita que un intent OAuth viejo bloquee la navegaci�n post-login normal.
       localStorage.removeItem("oauth_intent");
 
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -777,7 +790,7 @@ const Auth = () => {
           });
         }
       } else {
-        // Verificar si el usuario está verificado
+        // Verificar si el usuario est� verificado
         if (data?.user && !data.user.confirmed_at) {
           toast({
             title: "Correo no verificado",
@@ -792,7 +805,7 @@ const Auth = () => {
             description: "Has iniciado sesión correctamente.",
           });
           setTimeout(() => {
-            navigate("/", { replace: true });
+            navigate("/interno/dashboard", { replace: true });
           }, 450);
           return;
         }
@@ -824,7 +837,7 @@ const Auth = () => {
 
     setLoading(true);
     try {
-      const redirectUrl = buildAuthRedirect("/auth/callback");
+      const redirectUrl = buildAuthRedirect("/interno/auth/callback");
 
       localStorage.setItem("oauth_intent", intent);
 
@@ -869,11 +882,6 @@ const Auth = () => {
       {showWhatsappContacts ? (
         <RegistroContactoWhatsApp
           nombreCompleto={recentSignupName}
-          userId={pendingSignup ? undefined : undefined}
-          userEmail={pendingSignup?.email}
-          tipoRelacion={pendingSignup?.tipoRelacion}
-          rama={pendingSignup?.rama}
-          nombreScoutRelacionado={pendingSignup?.nombreScoutRelacionado}
           onBack={() => {
             setShowWhatsappContacts(false);
             setPendingSignup(null);
@@ -1207,7 +1215,7 @@ const Auth = () => {
                         </svg>
                         Iniciar sesión con Google
                       </Button>
-                      {checkingEmail && <p className="text-xs text-muted-foreground mt-2">Verificando correo…</p>}
+                      {checkingEmail && <p className="text-xs text-muted-foreground mt-2">Verificando correo...</p>}
                       {googleLoginAllowed && !checkingEmail && email.trim() !== "" && (
                         <p className="text-xs text-foreground/80 mt-2">Correo encontrado. Puedes entrar con Google de forma rápida.</p>
                       )}

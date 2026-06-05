@@ -6,9 +6,10 @@ const getFallbackPath = (pathname: string): string => {
   if (pathname.startsWith("/archivo/scoutpedia")) return "/archivo";
   if (pathname.startsWith("/archivo/")) return "/archivo";
   if (pathname.startsWith("/eventos/")) return "/eventos";
-  if (pathname.startsWith("/area-miembros/")) return "/area-miembros";
-  if (pathname.startsWith("/unidades/")) return "/area-miembros";
-  if (pathname.startsWith("/ramas/")) return "/area-miembros";
+  if (pathname.startsWith("/interno/")) return "/interno";
+  if (pathname.startsWith("/area-miembros/")) return "/interno";
+  if (pathname.startsWith("/unidades/")) return "/interno";
+  if (pathname.startsWith("/ramas/")) return "/interno";
   return "/";
 };
 

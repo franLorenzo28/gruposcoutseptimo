@@ -1,4 +1,4 @@
-﻿import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { ArrowRight, Users, Hand, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Reveal } from "@/components/Reveal";
@@ -79,15 +79,26 @@ const Hero = () => {
             {/* CTA Buttons */}
             <Reveal>
               <div className="flex flex-col sm:flex-row gap-4 pt-2">
-                <Link to="/auth" className="group" onClick={handleJoinClick}>
+                <Link to="/interno" className="group">
                   <Button
                     size="lg"
                     variant="hero"
                     className="text-base sm:text-lg w-full sm:w-auto whitespace-normal text-center leading-tight transition-all duration-300 hover:shadow-2xl hover:scale-110"
+                    aria-label="Entrar a la Plataforma Interna"
+                  >
+                    Plataforma Interna
+                    <ArrowRight className="ml-2 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
+                  </Button>
+                </Link>
+
+                <Link to="/auth" className="group" onClick={handleJoinClick}>
+                  <Button
+                    size="lg"
+                    variant="heroSecondary"
+                    className="text-base sm:text-lg w-full sm:w-auto whitespace-normal text-center leading-tight transition-all duration-300 hover:shadow-xl hover:scale-110"
                     aria-label="Únete al Grupo Scout Séptimo"
                   >
                     Únete al Grupo
-                    <ArrowRight className="ml-2 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
                   </Button>
                 </Link>
 
@@ -96,8 +107,8 @@ const Hero = () => {
                     document.getElementById("historia")?.scrollIntoView({ behavior: "smooth" });
                   }}
                   size="lg"
-                  variant="heroSecondary"
-                  className="group text-base sm:text-lg w-full sm:w-auto whitespace-normal text-center leading-tight transition-all duration-300 hover:shadow-xl hover:scale-110"
+                  variant="outline"
+                  className="group border-white/40 text-white bg-transparent hover:bg-white/10 hover:text-white text-base sm:text-lg w-full sm:w-auto whitespace-normal text-center leading-tight transition-all duration-300 hover:shadow-xl hover:scale-110"
                   aria-label="Conoce nuestra historia de 61 años"
                 >
                   <Users className="mr-2 transition-transform duration-300 group-hover:scale-110" aria-hidden="true" />

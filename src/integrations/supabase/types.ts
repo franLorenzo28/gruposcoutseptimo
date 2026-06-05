@@ -435,6 +435,7 @@ export type Database = {
           account_classification: string | null
           account_review_reason: string | null
           account_status: string | null
+          adelanto: string | null
           avatar_url: string | null
           comunidad_rovers: string | null
           created_at: string
@@ -449,8 +450,10 @@ export type Database = {
           nombre_completo: string
           notification_preferences: Json | null
           patrulla: string | null
+          ppp_url: string | null
           privacy_preferences: Json | null
           profesion_ocupacion: string | null
+          promesa: boolean | null
           rama_que_educa: string | null
           rol_adulto: string | null
           role: string | null
@@ -465,6 +468,7 @@ export type Database = {
           account_classification?: string | null
           account_review_reason?: string | null
           account_status?: string | null
+          adelanto?: string | null
           avatar_url?: string | null
           comunidad_rovers?: string | null
           created_at?: string
@@ -479,8 +483,10 @@ export type Database = {
           nombre_completo: string
           notification_preferences?: Json | null
           patrulla?: string | null
+          ppp_url?: string | null
           privacy_preferences?: Json | null
           profesion_ocupacion?: string | null
+          promesa?: boolean | null
           rama_que_educa?: string | null
           rol_adulto?: string | null
           role?: string | null
@@ -495,6 +501,7 @@ export type Database = {
           account_classification?: string | null
           account_review_reason?: string | null
           account_status?: string | null
+          adelanto?: string | null
           avatar_url?: string | null
           comunidad_rovers?: string | null
           created_at?: string
@@ -509,8 +516,10 @@ export type Database = {
           nombre_completo?: string
           notification_preferences?: Json | null
           patrulla?: string | null
+          ppp_url?: string | null
           privacy_preferences?: Json | null
           profesion_ocupacion?: string | null
+          promesa?: boolean | null
           rama_que_educa?: string | null
           rol_adulto?: string | null
           role?: string | null
@@ -557,7 +566,7 @@ export type Database = {
           rama: string
           storage_path: string
           subido_por: string | null
-          tama├▒o: number
+          tamaño: number
           updated_at: string | null
         }
         Insert: {
@@ -569,7 +578,7 @@ export type Database = {
           rama: string
           storage_path: string
           subido_por?: string | null
-          tama├▒o?: number
+          tamaño?: number
           updated_at?: string | null
         }
         Update: {
@@ -581,7 +590,7 @@ export type Database = {
           rama?: string
           storage_path?: string
           subido_por?: string | null
-          tama├▒o?: number
+          tamaño?: number
           updated_at?: string | null
         }
         Relationships: []

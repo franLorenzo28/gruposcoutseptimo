@@ -1,0 +1,53 @@
+import { Navigate, type RouteObject } from "react-router-dom";
+import { AdminGuard } from "@/components/AdminGuard";
+import {
+  Archivo,
+  ArchivoScoutpedia,
+  Bauen,
+  Contacto,
+  DirigEn,
+  Eventos,
+  Historia,
+  Inicio,
+  Locales,
+  Manada,
+  MovimientoScout,
+  Pioneros,
+  Rovers,
+  Staff,
+  Tropa,
+  Veteranos,
+  Comite,
+} from "@/app/routes/lazy-pages";
+import { PublicSiteLayout } from "@/app/layouts/PublicSiteLayout";
+
+export const publicRoutes: RouteObject = {
+  element: <PublicSiteLayout />,
+  children: [
+    { index: true, element: <Inicio /> },
+    { path: "linea-temporal", element: <Navigate to="/historia" replace /> },
+    { path: "historia", element: <Historia /> },
+    { path: "bauen", element: <Bauen /> },
+    { path: "movimiento-scout", element: <MovimientoScout /> },
+    { path: "archivo", element: <Archivo /> },
+    { path: "archivo/scoutpedia", element: <ArchivoScoutpedia /> },
+    { path: "veteranos", element: <AdminGuard><Veteranos /></AdminGuard> },
+    { path: "educadores", element: <AdminGuard><DirigEn /></AdminGuard> },
+    { path: "archivo/locales", element: <Locales /> },
+    { path: "locales", element: <Navigate to="/archivo/locales" replace /> },
+    { path: "contacto", element: <Contacto /> },
+    { path: "eventos", element: <Eventos /> },
+    { path: "unidades/manada", element: <Manada /> },
+    { path: "unidades/tropa", element: <Tropa /> },
+    { path: "unidades/pioneros", element: <Pioneros /> },
+    { path: "unidades/rovers", element: <Rovers /> },
+    { path: "unidades/staff", element: <Staff /> },
+    { path: "unidades/comite", element: <Comite /> },
+    { path: "ramas/manada", element: <Navigate to="/unidades/manada" replace /> },
+    { path: "ramas/tropa", element: <Navigate to="/unidades/tropa" replace /> },
+    { path: "ramas/pioneros", element: <Navigate to="/unidades/pioneros" replace /> },
+    { path: "ramas/rovers", element: <Navigate to="/unidades/rovers" replace /> },
+    { path: "ramas/staff", element: <Navigate to="/unidades/staff" replace /> },
+    { path: "ramas/comite", element: <Navigate to="/unidades/comite" replace /> },
+  ],
+};

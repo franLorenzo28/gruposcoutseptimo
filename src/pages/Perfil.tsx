@@ -10,6 +10,8 @@ type ProfileFormData = {
   patrulla: string;
   equipo_pioneros: string;
   comunidad_rovers: string;
+  adelanto: string;
+  promesa: boolean;
   rol_adulto: string;
   rama_que_educa: string | null;
   password: string;
@@ -52,6 +54,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import UserAvatar from "@/components/UserAvatar";
 import AvatarCropDialog from "@/components/AvatarCropDialog";
 import { ArrowLeft, Save, Upload, X, Mail, AlertCircle, Settings } from "lucide-react";
@@ -123,6 +126,8 @@ const Perfil = () => {
     patrulla: string;
     equipo_pioneros: string;
     comunidad_rovers: string;
+    adelanto: string;
+    promesa: boolean;
     rol_adulto: string;
     rama_que_educa: string | null;
     password: string;
@@ -140,6 +145,8 @@ const Perfil = () => {
     patrulla: "",
     equipo_pioneros: "",
     comunidad_rovers: "",
+    adelanto: "",
+    promesa: false,
     rol_adulto: "",
     rama_que_educa: null,
     password: "",
@@ -174,6 +181,8 @@ const Perfil = () => {
       formData.patrulla !== originalData.patrulla ||
       formData.equipo_pioneros !== originalData.equipo_pioneros ||
       formData.comunidad_rovers !== originalData.comunidad_rovers ||
+      formData.adelanto !== originalData.adelanto ||
+      formData.promesa !== originalData.promesa ||
       formData.rol_adulto !== originalData.rol_adulto ||
       formData.rama_que_educa !== originalData.rama_que_educa ||
       formData.username !== originalData.username
@@ -274,6 +283,8 @@ const Perfil = () => {
           patrulla: (profile as any).patrulla || "",
           equipo_pioneros: (profile as any).equipo_pioneros || "",
           comunidad_rovers: (profile as any).comunidad_rovers || "",
+          adelanto: (profile as any).adelanto || "",
+          promesa: (profile as any).promesa || false,
           rol_adulto: (profile as any).rol_adulto || "",
           rama_que_educa: (profile as any).rama_que_educa || null,
           password: "",
@@ -506,6 +517,11 @@ const Perfil = () => {
 
       if (sanitized.edad >= 18 && sanitized.edad <= 20) {
         profileData.comunidad_rovers = sanitized.comunidad_rovers || null;
+      }
+
+      if (sanitized.edad >= 7 && sanitized.edad <= 20) {
+        profileData.adelanto = sanitized.adelanto || null;
+        profileData.promesa = !!sanitized.promesa;
       }
 
       if (sanitized.edad >= 21) {
@@ -979,6 +995,37 @@ const Perfil = () => {
                     className="bg-background"
                   />
                 </div>
+              )}
+
+              {formData.edad >= 7 && formData.edad <= 20 && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="adelanto">Adelanto actual</Label>
+                    <Input
+                      id="adelanto"
+                      name="adelanto"
+                      value={formData.adelanto}
+                      onChange={handleChange}
+                      placeholder="Ej: Ciudadano Activo, Servicio, etc."
+                      className="bg-background"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Adelanto que estás trabajando actualmente en tu progresión personal.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3 pt-1">
+                    <Switch
+                      id="promesa"
+                      checked={formData.promesa}
+                      onCheckedChange={(checked) =>
+                        setFormData((prev) => ({ ...prev, promesa: checked }))
+                      }
+                    />
+                    <Label htmlFor="promesa" className="cursor-pointer">
+                      Tengo la promesa de la unidad
+                    </Label>
+                  </div>
+                </>
               )}
 
               {formData.edad >= 21 && (

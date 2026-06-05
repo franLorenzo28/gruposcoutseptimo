@@ -26,7 +26,7 @@ All colors MUST be HSL.
     --secondary-foreground: 222 30% 10%;
 
     --muted: 220 14% 89%;
-    --muted-foreground: 220 12% 38%;
+    --muted-foreground: 220 12% 35%;
 
     --accent: 45 96% 55%;
     --accent-foreground: 222 30% 10%;
@@ -40,8 +40,8 @@ All colors MUST be HSL.
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
 
-  --border: 220 14% 82%;
-  --input: 220 14% 82%;
+  --border: 220 14% 65%;
+  --input: 220 14% 58%;
     --ring: 0 92% 52%;
 
     --radius: 0.75rem;
@@ -102,7 +102,7 @@ All colors MUST be HSL.
     --secondary-foreground: 222 30% 10%;
 
     --muted: 222 17% 19%;
-    --muted-foreground: 215 14% 74%;
+    --muted-foreground: 215 12% 70%;
 
     --accent: 45 96% 62%;
     --accent-foreground: 222 30% 10%;
@@ -116,8 +116,8 @@ All colors MUST be HSL.
     --destructive: 0 70% 46%;
     --destructive-foreground: 0 0% 98%;
 
-  --border: 222 14% 24%;
-  --input: 222 14% 24%;
+  --border: 222 12% 34%;
+  --input: 222 12% 42%;
     --ring: 0 90% 58%;
     
     --sidebar-background: 222 27% 8%;
@@ -138,6 +138,7 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    font-family: 'DM Sans', system-ui, sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1;
     font-size: clamp(0.95rem, 0.2vw + 0.9rem, 1.05rem);
     line-height: 1.65;
@@ -154,6 +155,7 @@ All colors MUST be HSL.
   
   h1, h2, h3, h4, h5, h6 {
     @apply font-bold;
+    font-family: 'Fraunces', serif;
     color: hsl(var(--foreground));
     text-wrap: balance;
   }
@@ -192,6 +194,16 @@ All colors MUST be HSL.
   :focus-visible {
     outline: 2px solid hsl(var(--ring));
     outline-offset: 2px;
+  }
+
+  #main-content {
+    scroll-margin-top: 80px;
+  }
+
+  section[id],
+  article[id],
+  div[id] {
+    scroll-margin-top: 80px;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -270,12 +282,6 @@ All colors MUST be HSL.
     100% { transform: translate3d(0,0,0) scale(1); }
   }
 
-  @keyframes gradientShift {
-    0% { background-position: 0% 0%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 0%; }
-  }
-
   @keyframes floatY {
     0% { transform: translate3d(0, 0, 0); }
     50% { transform: translate3d(0, -8px, 0); }
@@ -294,21 +300,9 @@ All colors MUST be HSL.
     100% { opacity: 0.18; }
   }
 
-  @keyframes pulseGlow {
-    0% { box-shadow: 0 0 0 hsla(0 0% 0% / 0); }
-    50% { box-shadow: 0 0 28px hsla(0 0% 0% / 0.28); }
-    100% { box-shadow: 0 0 0 hsla(0 0% 0% / 0); }
-  }
-
   @keyframes shimmer {
     0% { background-position: -200% 0; }
     100% { background-position: 200% 0; }
-  }
-
-  @keyframes slideRight {
-    0% { transform: translate3d(0, 0, 0); opacity: 0.6; }
-    50% { transform: translate3d(48px, 0, 0); opacity: 1; }
-    100% { transform: translate3d(0, 0, 0); opacity: 0.6; }
   }
 
   @keyframes pageIn {
@@ -329,12 +323,6 @@ All colors MUST be HSL.
   @keyframes titleIn {
     0% { opacity: 0; transform: translate3d(0, 8px, 0); letter-spacing: 0.02em; }
     100% { opacity: 1; transform: translate3d(0, 0, 0); letter-spacing: 0; }
-  }
-
-  @keyframes underlineSweep {
-    0% { background-position: 0% 0%; opacity: 0.5; }
-    50% { background-position: 100% 0%; opacity: 1; }
-    100% { background-position: 0% 0%; opacity: 0.5; }
   }
 
   @keyframes revealUp {
@@ -360,11 +348,6 @@ All colors MUST be HSL.
   @keyframes fadeInDown {
     0% { transform: translateY(-10px); opacity: 0; }
     100% { transform: translateY(0); opacity: 1; }
-  }
-
-  @keyframes rotate360 {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
   }
 
   @keyframes rotate360Reverse {
@@ -403,26 +386,6 @@ All colors MUST be HSL.
 
   .drift-slow {
     animation: driftX 14s ease-in-out infinite;
-  }
-
-  .glow-pulse {
-    animation: glowPulse 8s ease-in-out infinite;
-  }
-
-  .animate-slide-right {
-    animation: slideRight 2.4s ease-in-out infinite;
-  }
-
-  .underline-sweep {
-    background-image: linear-gradient(90deg, transparent 0%, hsl(var(--primary)) 50%, transparent 100%);
-    background-size: 200% 100%;
-    animation: underlineSweep 2.6s ease-in-out infinite;
-  }
-
-  .underline-sweep-neutral {
-    background-image: linear-gradient(90deg, transparent 0%, hsl(var(--foreground) / 0.6) 50%, transparent 100%);
-    background-size: 200% 100%;
-    animation: underlineSweep 2.8s ease-in-out infinite;
   }
 
   .reveal-up {
@@ -568,10 +531,6 @@ All colors MUST be HSL.
     animation: fadeInDown 600ms ease-out;
   }
 
-  .animate-rotate-360 {
-    animation: rotate360 2s linear infinite;
-  }
-
   .animate-reverse {
     animation: rotate360Reverse 1.5s linear infinite;
   }
@@ -594,10 +553,6 @@ All colors MUST be HSL.
     .float-slow,
     .float-medium,
     .drift-slow,
-    .glow-pulse,
-    .animate-slide-right,
-    .underline-sweep,
-    .underline-sweep-neutral,
     .page-enter,
     .page-animate > *,
     .page-animate section,
@@ -615,7 +570,6 @@ All colors MUST be HSL.
     .animate-slide-in-left,
     .animate-slide-in-right,
     .animate-fade-in-down,
-    .animate-rotate-360,
     .animate-pulse-subtle,
     .animate-glow {
       animation: none !important;
@@ -634,8 +588,5 @@ All colors MUST be HSL.
     animation-delay: 4s;
   }
 
-  .animate-gradient-slow {
-    background-size: 200% 200%;
-    animation: gradientShift 60s ease-in-out infinite;
-  }
+
 }

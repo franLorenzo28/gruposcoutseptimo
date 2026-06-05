@@ -11,7 +11,7 @@ export default function AreaMiembros() {
 
   return (
     <PageGridBackground>
-      <section className="container mx-auto px-4 py-10 sm:py-14 space-y-8">
+      <section className="container mx-auto space-y-8 px-4 py-10 sm:py-14">
         <Reveal>
           <div className="mx-auto grid max-w-6xl gap-6 rounded-3xl border border-border/70 bg-card/80 p-6 shadow-xl backdrop-blur-sm sm:p-8 lg:grid-cols-[1.2fr_0.8fr]">
             <div>
@@ -37,9 +37,12 @@ export default function AreaMiembros() {
                   </p>
                   <div className="flex flex-wrap gap-3">
                     <Button asChild>
-                      <Link to={`/area-miembros/unidades/${session.rama}`}>Ir al panel de unidad</Link>
+                      <Link to="/interno/dashboard">Ir al dashboard interno</Link>
                     </Button>
-                    <Button variant="outline" onClick={logout}>
+                    <Button asChild variant="outline">
+                      <Link to={`/interno/unidades/${session.rama}`}>Abrir panel de unidad</Link>
+                    </Button>
+                    <Button variant="ghost" onClick={logout}>
                       Cerrar sesión
                     </Button>
                   </div>
@@ -49,7 +52,7 @@ export default function AreaMiembros() {
                   <p className="text-sm text-muted-foreground">Aún no confirmaste acceso interno.</p>
                   <div className="flex flex-wrap gap-3">
                     <Button asChild>
-                      <Link to="/login">Confirmar ingreso</Link>
+                      <Link to="/interno/auth">Confirmar ingreso</Link>
                     </Button>
                     <Button asChild variant="outline">
                       <Link to="/contacto">Solicitar acceso</Link>
@@ -66,7 +69,7 @@ export default function AreaMiembros() {
             <CardContent className="space-y-3 p-5 sm:p-6">
               <h2 className="text-lg font-bold">Cómo funciona esta área</h2>
               <p className="text-sm text-muted-foreground">
-                Al confirmar ingreso, el sistema valida tu perfil y te asigna una única unidad. Dentro del panel de unidad encontrarás documentos, avisos oficiales y herramientas internas según tu permiso.
+                Al confirmar ingreso, el sistema valida tu perfil y te asigna una única unidad. Desde el dashboard interno puedes entrar a documentos, agenda, anuncios y al panel operativo de tu rama.
               </p>
               <p className="text-sm text-muted-foreground">
                 Si eres educador/a, tendrás funciones de gestión para tu unidad. Si eres beneficiario, verás el contenido de tu unidad en modo lectura.
@@ -78,4 +81,3 @@ export default function AreaMiembros() {
     </PageGridBackground>
   );
 }
-
