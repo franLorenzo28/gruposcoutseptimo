@@ -210,9 +210,14 @@ const FooterNew = () => {
 
         {/* Bottom Bar */}
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-sm text-muted-foreground text-center md:text-left flex items-center gap-1.5">
-            © {currentYear} Grupo Scout Séptimo de Montevideo.
-          </p>
+          <div className="text-sm text-muted-foreground text-center md:text-left flex flex-col gap-1">
+            <p className="flex items-center gap-1.5">
+              © {currentYear} Grupo Scout Séptimo de Montevideo.
+            </p>
+            <p className="text-xs text-muted-foreground/60">
+              Hecha y diseñada por Francisco Lorenzo
+            </p>
+          </div>
 
           <div className="flex flex-wrap justify-center gap-6 text-sm">
             <button className="hover:text-primary transition-colors duration-300 hover:underline underline-offset-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary" tabIndex={0} aria-label="Política de Privacidad">
