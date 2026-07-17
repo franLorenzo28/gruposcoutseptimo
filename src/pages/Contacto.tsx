@@ -183,10 +183,11 @@ const Contacto = () => {
                   className="space-y-4 sm:space-y-6"
                 >
                   <div className="space-y-2">
-                    <label className="block text-sm font-semibold">
+                    <label htmlFor="contact-name" className="block text-sm font-semibold">
                       Nombre completo *
                     </label>
                     <Input
+                      id="contact-name"
                       type="text"
                       value={formData.name}
                       onChange={(e) =>
@@ -199,10 +200,11 @@ const Contacto = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="block text-sm font-semibold">
+                    <label htmlFor="contact-email" className="block text-sm font-semibold">
                       Email *
                     </label>
                     <Input
+                      id="contact-email"
                       type="email"
                       value={formData.email}
                       onChange={(e) =>
@@ -215,10 +217,11 @@ const Contacto = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="block text-sm font-semibold">
+                    <label htmlFor="contact-phone" className="block text-sm font-semibold">
                       Teléfono
                     </label>
                     <Input
+                      id="contact-phone"
                       type="tel"
                       value={formData.phone}
                       onChange={(e) =>
@@ -230,10 +233,11 @@ const Contacto = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="block text-sm font-semibold">
+                    <label htmlFor="contact-message" className="block text-sm font-semibold">
                       Mensaje *
                     </label>
                     <Textarea
+                      id="contact-message"
                       value={formData.message}
                       onChange={(e) =>
                         setFormData({ ...formData, message: e.target.value })

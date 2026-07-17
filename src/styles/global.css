@@ -7,6 +7,10 @@ All colors MUST be HSL.
 */
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
   :root {
     /* Core palette: background, surface and card */
     --background: 220 18% 97%;
@@ -194,6 +198,12 @@ All colors MUST be HSL.
   :focus-visible {
     outline: 2px solid hsl(var(--ring));
     outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
   }
 
   #main-content {

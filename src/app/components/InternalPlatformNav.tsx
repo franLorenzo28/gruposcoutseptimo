@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  MessageCircle,
   Settings,
   Shield,
   Upload,
@@ -35,6 +36,8 @@ import ThemeToggle from "@/components/ThemeToggle";
 import UserAvatar from "@/components/UserAvatar";
 import { cn } from "@/lib/utils";
 import { useMemberAuth } from "@/context/MemberAuthContext";
+import { useNotifications } from "@/context/Notifications";
+import { NotificationsPopover } from "@/components/layout/NotificationsPanel";
 import { supabase } from "@/integrations/supabase/client";
 import logoImage from "@/assets/grupo-scout-logo.png";
 
@@ -47,6 +50,7 @@ interface InternalNavLink {
 const primaryLinks: InternalNavLink[] = [
   { to: "/interno/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/interno/usuarios", label: "Comuni 7", icon: User2 },
+  { to: "/interno/mensajes", label: "Mensajes", icon: MessageCircle },
   { to: "/interno/documentos", label: "Documentos", icon: FolderOpen },
   { to: "/interno/anuncios", label: "Anuncios", icon: BellRing },
   { to: "/interno/agenda", label: "Agenda", icon: CalendarDays },
@@ -66,6 +70,16 @@ export function InternalPlatformNav() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
   const { isAuthenticated, session, logout } = useMemberAuth();
+  const {
+    notifications,
+    unreadCount,
+    markAllRead,
+    markRead,
+    removeNotification,
+    loadMore,
+    hasMore,
+    loadingMore,
+  } = useNotifications();
 
   const handleLogout = useCallback(async () => {
     await supabase.auth.signOut();
@@ -222,6 +236,35 @@ export function InternalPlatformNav() {
 
                 <ThemeToggle />
 
+                {isAuthenticated && (
+                  <NotificationsPopover
+                    notifications={notifications}
+                    unreadCount={unreadCount}
+                    hasMore={hasMore}
+                    loadingMore={loadingMore}
+                    onMarkAllRead={markAllRead}
+                    onMarkRead={markRead}
+                    onRemove={removeNotification}
+                    onLoadMore={loadMore}
+                    align="end"
+                  >
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="relative h-9 w-9 text-white/60 hover:text-white hover:bg-white/10"
+                      aria-label="Notificaciones"
+                      title="Notificaciones"
+                    >
+                      <BellRing className="h-4.5 w-4.5" />
+                      {unreadCount > 0 && (
+                        <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
+                          {unreadCount > 9 ? "9+" : unreadCount}
+                        </span>
+                      )}
+                    </Button>
+                  </NotificationsPopover>
+                )}
+
                 {isAuthenticated ? (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -271,6 +314,34 @@ export function InternalPlatformNav() {
             {/* Mobile Menu Button */}
             <div className="ml-auto flex items-center gap-2 xl:hidden">
               <ThemeToggle />
+              {isAuthenticated && (
+                <NotificationsPopover
+                  notifications={notifications}
+                  unreadCount={unreadCount}
+                  hasMore={hasMore}
+                  loadingMore={loadingMore}
+                  onMarkAllRead={markAllRead}
+                  onMarkRead={markRead}
+                  onRemove={removeNotification}
+                  onLoadMore={loadMore}
+                  align="end"
+                >
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="relative h-9 w-9 text-white/60 hover:text-white hover:bg-white/10"
+                    aria-label="Notificaciones"
+                    title="Notificaciones"
+                  >
+                    <BellRing className="h-4.5 w-4.5" />
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
+                        {unreadCount > 9 ? "9+" : unreadCount}
+                      </span>
+                    )}
+                  </Button>
+                </NotificationsPopover>
+              )}
               <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                 <SheetTrigger asChild>
                   <Button

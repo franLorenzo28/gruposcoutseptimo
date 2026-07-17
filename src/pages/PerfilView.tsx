@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import UserAvatar from "@/components/UserAvatar";
 import { getProfile } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import { Settings } from "lucide-react";
+import { MessageCircle, Settings } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -499,6 +499,18 @@ const PerfilView = () => {
                     ) : (
                       "Seguir"
                     )}
+                  </Button>
+                )}
+                {!isOwnProfile && followStatus === "following" && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => navigate(`/interno/mensajes?userId=${encodeURIComponent(viewingUserId)}`)}
+                    className="gap-1.5 flex-1 sm:flex-none text-xs sm:text-sm"
+                    aria-label={`Enviar mensaje a ${profile?.nombre_completo || "este usuario"}`}
+                  >
+                    <MessageCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    Mensaje
                   </Button>
                 )}
                 {isOwnProfile && (

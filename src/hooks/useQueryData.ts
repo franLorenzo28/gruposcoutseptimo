@@ -24,7 +24,9 @@ export function useProfiles() {
   return useQuery({
     queryKey: ["profiles"],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("list_profiles_directory");
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("user_id, nombre_completo, username, avatar_url, is_public, edad, rama_que_educa, seisena, patrulla, equipo_pioneros, comunidad_rovers, rol_adulto");
       if (error) throw error;
       return data || [];
     },
@@ -123,22 +125,99 @@ export function usePresence(userIds: string[], enabled: boolean = true) {
 // MENSAJES / CONVERSATIONS
 // ============================================================================
 
+export type ConversationSummary = {
+  id: string;
+  last_message_at: string | null;
+  other_user_id: string;
+  last_message_content: string | null;
+  last_message_sender_id: string | null;
+};
+
 export function useConversations(userId: string | null) {
   return useQuery({
     queryKey: ["conversations", userId],
-    queryFn: async () => {
+    queryFn: async (): Promise<ConversationSummary[]> => {
       if (!userId) throw new Error("User ID required");
-      // @ts-ignore - conversations table not in generated types
-      const { data, error } = await (supabase as any)
+
+      const { data: participantRows, error: participantError } = await supabase
+        .from("conversation_participants")
+        .select("conversation_id")
+        .eq("user_id", userId);
+      if (participantError) throw participantError;
+
+      const conversationIds = (participantRows || []).map((row) => row.conversation_id);
+      if (conversationIds.length === 0) return [];
+
+      const { data: conversations, error: conversationsError } = await supabase
         .from("conversations")
-        .select("*")
-        .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
-        .order("updated_at", { ascending: false });
-      if (error) throw error;
-      return data || [];
+        .select("id, last_message_at, created_at")
+        .in("id", conversationIds)
+        .order("last_message_at", { ascending: false, nullsFirst: false });
+      if (conversationsError) throw conversationsError;
+
+      const { data: allParticipants, error: allParticipantsError } = await supabase
+        .from("conversation_participants")
+        .select("conversation_id, user_id")
+        .in("conversation_id", conversationIds);
+      if (allParticipantsError) throw allParticipantsError;
+
+      const otherUserByConversation = new Map<string, string>();
+      for (const participant of allParticipants || []) {
+        if (participant.user_id !== userId) {
+          otherUserByConversation.set(participant.conversation_id, participant.user_id);
+        }
+      }
+
+      const { data: recentMessages, error: messagesError } = await supabase
+        .from("messages")
+        .select("conversation_id, content, sender_id, created_at")
+        .in("conversation_id", conversationIds)
+        .order("created_at", { ascending: false });
+      if (messagesError) throw messagesError;
+
+      const lastMessageByConversation = new Map<
+        string,
+        { content: string; sender_id: string; created_at: string }
+      >();
+      for (const message of recentMessages || []) {
+        if (!lastMessageByConversation.has(message.conversation_id)) {
+          lastMessageByConversation.set(message.conversation_id, {
+            content: message.content,
+            sender_id: message.sender_id,
+            created_at: message.created_at,
+          });
+        }
+      }
+
+      const summaries: ConversationSummary[] = [];
+      for (const conversation of conversations || []) {
+        const otherUserId = otherUserByConversation.get(conversation.id);
+        if (!otherUserId) continue;
+
+        const lastMessage = lastMessageByConversation.get(conversation.id);
+        summaries.push({
+          id: conversation.id,
+          last_message_at:
+            lastMessage?.created_at ??
+            conversation.last_message_at ??
+            conversation.created_at,
+          other_user_id: otherUserId,
+          last_message_content: lastMessage?.content ?? null,
+          last_message_sender_id: lastMessage?.sender_id ?? null,
+        });
+      }
+
+      summaries.sort(
+        (a, b) =>
+          new Date(b.last_message_at || 0).getTime() -
+          new Date(a.last_message_at || 0).getTime(),
+      );
+
+      return summaries;
     },
     enabled: !!userId,
     staleTime: 30 * 1000,
+    refetchInterval: 30 * 1000,
   });
 }
 

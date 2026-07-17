@@ -73,7 +73,7 @@ type Profile = RamaProfileFields & {
   username?: string | null;
 };
 
-const ENABLE_RAMA_FILTER = false;
+const ENABLE_RAMA_FILTER = true;
 
 const Usuarios = () => {
   const [activeTab, setActiveTab] = useState<string>("personas");
@@ -720,7 +720,6 @@ const Usuarios = () => {
                 <Select
                   value={ENABLE_RAMA_FILTER ? ramaFilter : "all"}
                   onValueChange={(value) => setRamaFilter(value as RamaKey | "all")}
-                  disabled={!ENABLE_RAMA_FILTER}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Todas las unidades" />
@@ -742,11 +741,6 @@ const Usuarios = () => {
                     </SelectItem>
                   </SelectContent>
                 </Select>
-                {!ENABLE_RAMA_FILTER && (
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    Filtro por unidad temporalmente deshabilitado.
-                  </p>
-                )}
                   </div>
 
               {/* Filtro por visibilidad */}
@@ -1434,7 +1428,7 @@ const Usuarios = () => {
                             <Button
                               size="sm"
                               className="flex-1"
-                              onClick={() => navigate(`/grupos/${group.id}`)}
+                              onClick={() => navigate(`/interno/grupos/${group.id}`)}
                               disabled={isGroupLeaving}
                             >
                               Abrir

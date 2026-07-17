@@ -1,4 +1,5 @@
 ﻿import { useEffect, useMemo, useState, useRef, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,6 +13,12 @@ import {
 } from "@/components/ui/popover";
 import EmailVerificationGuard from "@/components/EmailVerificationGuard";
 import UserAvatar from "@/components/UserAvatar";
+import { useMemberAuth } from "@/context/MemberAuthContext";
+import {
+  getEducatorRamaKeys,
+  getRamaContactUserIds,
+} from "@/lib/rama-contacts";
+import { useConversations } from "@/hooks/useQueryData";
 
 interface ProfileLite {
   user_id: string;
@@ -70,9 +77,11 @@ const EMOJIS = [
 ];
 
 export default function Mensajes() {
+  const [searchParams] = useSearchParams();
+  const targetUserId = searchParams.get("userId");
   const [directory, setDirectory] = useState<ProfileLite[]>([]);
   const [mutualFollows, setMutualFollows] = useState<Set<string>>(new Set());
-  const [ramaContactIds, _setRamaContactIds] = useState<Set<string>>(new Set());
+  const [ramaContactIds, setRamaContactIds] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
   const [selectedUser, setSelectedUser] = useState<ProfileLite | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -82,7 +91,22 @@ export default function Mensajes() {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const notifiedMessageIdsRef = useRef<Set<string>>(new Set());
   const initializedConversationRef = useRef<Set<string>>(new Set());
+  const autoOpenedTargetRef = useRef<string | null>(null);
   const { toast } = useToast();
+  const { session: memberSession } = useMemberAuth();
+  const { data: conversations = [] } = useConversations(currentUserId || null);
+
+  const enrichedConversations = useMemo(() => {
+    return conversations.map((conv) => {
+      const other = directory.find((u) => u.user_id === conv.other_user_id);
+      return {
+        ...conv,
+        otherName: other?.nombre_completo || other?.username || "Scout",
+        otherUsername: other?.username || null,
+        otherAvatar: other?.avatar_url || null,
+      };
+    });
+  }, [conversations, directory]);
 
   const backToMainMenu = useCallback(() => {
     setConversationId(null);
@@ -199,7 +223,10 @@ export default function Mensajes() {
         });
         setMutualFollows(mutuals);
       }
-      const { data, error } = await supabase.rpc("list_profiles_directory");
+
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("user_id, nombre_completo, username, avatar_url, is_public, edad, rama_que_educa, seisena, patrulla, equipo_pioneros, comunidad_rovers");
       if (error) {
         console.error(error);
       } else {
@@ -211,9 +238,27 @@ export default function Mensajes() {
             avatar_url: r.avatar_url ?? null,
           })),
         );
+
+        if (memberSession?.accessType === "educador" && memberSession.allowedRamas.length > 0) {
+          const allowedRamaKeys = getEducatorRamaKeys(memberSession.allowedRamas);
+          const ramaIds = getRamaContactUserIds(
+            (data as any[]).map((r) => ({
+              user_id: String(r.user_id),
+              edad: r.edad ?? undefined,
+              rama_que_educa: r.rama_que_educa ?? undefined,
+              seisena: r.seisena ?? undefined,
+              patrulla: r.patrulla ?? undefined,
+              equipo_pioneros: r.equipo_pioneros ?? undefined,
+              comunidad_rovers: r.comunidad_rovers ?? undefined,
+            })),
+            currentUser?.id ?? "",
+            allowedRamaKeys,
+          );
+          setRamaContactIds(ramaIds);
+        }
       }
     })();
-  }, []);
+  }, [memberSession]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -238,7 +283,7 @@ export default function Mensajes() {
       .slice(0, 10);
   }, [search, directory, currentUserId, mutualFollows, ramaContactIds]);
 
-  const startConversationWithUser = async (user: ProfileLite) => {
+  const startConversationWithUser = useCallback(async (user: ProfileLite) => {
     setSelectedUser(user);
     try {
       const { data, error } = await supabase.rpc(
@@ -251,7 +296,26 @@ export default function Mensajes() {
     } catch (e: any) {
       toast({ title: "Error", description: e.message, variant: "destructive" });
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    if (!targetUserId || !currentUserId || directory.length === 0) return;
+    if (autoOpenedTargetRef.current === targetUserId) return;
+
+    const target = directory.find((user) => user.user_id === targetUserId);
+    autoOpenedTargetRef.current = targetUserId;
+
+    if (!target) {
+      toast({
+        title: "Usuario no disponible",
+        description: "No se pudo abrir el chat con este usuario.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    void startConversationWithUser(target);
+  }, [currentUserId, directory, startConversationWithUser, targetUserId, toast]);
 
   useEffect(() => {
     if (!conversationId) return;
@@ -418,53 +482,116 @@ export default function Mensajes() {
                   />
                 </div>
 
-                <div className="flex-1 space-y-1 overflow-auto px-3 pb-3 sm:px-4">
-                  {filtered.length === 0 ? (
-                    <div className="rounded-2xl border border-dashed border-border/70 p-4 text-xs text-muted-foreground">
-                      {mutualFollows.size === 0 && ramaContactIds.size === 0
-                        ? "No tienes contactos habilitados aún. Necesitas seguimiento mutuo o permisos de educador de unidad."
-                        : "No hay resultados para esa búsqueda."}
-                    </div>
-                  ) : (
-                    filtered.map((u) => {
-                      const isActive = selectedUser?.user_id === u.user_id;
-                      const isRamaDirect =
-                        ramaContactIds.has(u.user_id) && !mutualFollows.has(u.user_id);
-                      const displayName = u.nombre_completo || u.username || "Scout";
-                      return (
-                        <button
-                          key={u.user_id}
-                          className={`group flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition-all ${
-                            isActive
-                              ? "border-primary/45 bg-primary/10"
-                              : "border-transparent hover:border-border/70 hover:bg-muted/55"
-                          }`}
-                          onClick={() => {
-                            void startConversationWithUser(u);
-                          }}
-                        >
-                          <UserAvatar
-                            avatarUrl={u.avatar_url || null}
-                            userName={displayName}
-                            size="md"
-                            clickable={false}
-                            className="shrink-0"
-                          />
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-semibold">{displayName}</p>
-                            <p className="truncate text-xs text-muted-foreground">
-                              {u.username ? `@${u.username}` : "sin usuario"}
-                            </p>
-                            {isRamaDirect && (
-                              <p className="mt-1 text-[11px] font-medium text-primary">
-                                Contacto directo de unidad
+                <div className="flex-1 space-y-3 overflow-auto px-3 pb-3 sm:px-4">
+                  {/* Conversaciones recientes */}
+                  {!search && enrichedConversations.length > 0 && (
+                    <div>
+                      <p className="px-1 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        Recientes
+                      </p>
+                      <div className="space-y-0.5">
+                        {enrichedConversations.slice(0, 8).map((conv) => (
+                          <button
+                            key={conv.id}
+                            className={`group flex w-full items-center gap-3 rounded-2xl border p-2.5 text-left transition-all ${
+                              conversationId === conv.id
+                                ? "border-primary/45 bg-primary/10"
+                                : "border-transparent hover:border-border/70 hover:bg-muted/55"
+                            }`}
+                            onClick={() => {
+                              const user = directory.find(
+                                (u) => u.user_id === conv.other_user_id,
+                              );
+                              if (user) void startConversationWithUser(user);
+                            }}
+                          >
+                            <UserAvatar
+                              avatarUrl={conv.otherAvatar}
+                              userName={conv.otherName}
+                              size="md"
+                              clickable={false}
+                              className="shrink-0"
+                            />
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-semibold">
+                                {conv.otherName}
                               </p>
+                              <p className="truncate text-xs text-muted-foreground">
+                                {conv.last_message_content
+                                  ? conv.last_message_sender_id === currentUserId
+                                    ? `Tú: ${conv.last_message_content}`
+                                    : conv.last_message_content
+                                  : "Sin mensajes aún"}
+                              </p>
+                            </div>
+                            {conv.last_message_at && (
+                              <span className="shrink-0 text-[10px] text-muted-foreground">
+                                {new Date(conv.last_message_at).toLocaleTimeString("es-UY", {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </span>
                             )}
-                          </div>
-                        </button>
-                      );
-                    })
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   )}
+
+                  {/* Contactos */}
+                  <div>
+                    <p className="px-1 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      Contactos
+                    </p>
+                    <div className="space-y-0.5">
+                    {filtered.length === 0 ? (
+                      <div className="rounded-2xl border border-dashed border-border/70 p-4 text-xs text-muted-foreground">
+                        {mutualFollows.size === 0 && ramaContactIds.size === 0
+                          ? "No tienes contactos habilitados aún. Necesitas seguimiento mutuo o permisos de educador de unidad."
+                          : "No hay resultados para esa búsqueda."}
+                      </div>
+                    ) : (
+                      filtered.map((u) => {
+                        const isActive = selectedUser?.user_id === u.user_id;
+                        const isRamaDirect =
+                          ramaContactIds.has(u.user_id) && !mutualFollows.has(u.user_id);
+                        const displayName = u.nombre_completo || u.username || "Scout";
+                        return (
+                          <button
+                            key={u.user_id}
+                            className={`group flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition-all ${
+                              isActive
+                                ? "border-primary/45 bg-primary/10"
+                                : "border-transparent hover:border-border/70 hover:bg-muted/55"
+                            }`}
+                            onClick={() => {
+                              void startConversationWithUser(u);
+                            }}
+                          >
+                            <UserAvatar
+                              avatarUrl={u.avatar_url || null}
+                              userName={displayName}
+                              size="md"
+                              clickable={false}
+                              className="shrink-0"
+                            />
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-semibold">{displayName}</p>
+                              <p className="truncate text-xs text-muted-foreground">
+                                {u.username ? `@${u.username}` : "sin usuario"}
+                              </p>
+                              {isRamaDirect && (
+                                <p className="mt-1 text-[11px] font-medium text-primary">
+                                  Contacto directo de unidad
+                                </p>
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })
+                    )}
+                    </div>
+                  </div>
                 </div>
 
                 <div className="border-t border-border/60 p-3 text-center text-xs text-muted-foreground sm:p-4">

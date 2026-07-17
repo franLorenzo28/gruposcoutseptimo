@@ -144,7 +144,9 @@ export function resolveMemberAccessFromProfile(profile: {
     };
   }
 
-  if (!profile.educador_aprobado) {
+  // Older profiles may not have this column populated. Only an explicit
+  // rejection should prevent access for backwards compatibility.
+  if (profile.educador_aprobado === false) {
     return {
       allowed: false,
       rama: null,

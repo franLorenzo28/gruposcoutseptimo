@@ -133,6 +133,7 @@ const Navigation = () => {
   return (
     <>
       <nav
+        aria-label="Navegación principal"
         className={cn(
           "fixed top-0 left-0 right-0 z-50 text-white transition-all duration-300 backdrop-blur-sm supports-[backdrop-filter]:backdrop-blur-sm bg-slate-950/82 dark:bg-slate-950/82 supports-[backdrop-filter]:bg-slate-950/70 border-b border-white/10",
           isScrolled && "shadow-md",
@@ -156,9 +157,9 @@ const Navigation = () => {
                 <div className="absolute inset-0 bg-muted/40 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
               <div className="hidden xl:block">
-                <h1 className="whitespace-nowrap text-base xl:text-lg font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent leading-none">
+                <span className="whitespace-nowrap text-base xl:text-lg font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent leading-none">
                   Grupo Scout Séptimo
-                </h1>
+                </span>
                 <p className="whitespace-nowrap text-xs text-white/70 mt-1">
                   Montevideo, Uruguay
                 </p>
@@ -185,6 +186,7 @@ const Navigation = () => {
                         "hover:bg-white/10 hover:text-primary",
                         active ? "text-white nav-link-underline--active" : "text-white/80",
                       )}
+                      aria-current={active ? "page" : undefined}
                     >
                       <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
                         {Icon && <Icon className="h-3.5 w-3.5" />}
@@ -280,6 +282,7 @@ const Navigation = () => {
                     className="xl:hidden"
                     aria-label={isMobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
                     aria-expanded={isMobileMenuOpen}
+                    aria-controls="mobile-navigation"
                     title={isMobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
                   >
                     {isMobileMenuOpen ? (
@@ -296,7 +299,7 @@ const Navigation = () => {
                   <SheetHeader className="shrink-0 border-b px-6 py-4 pr-12">
                     <SheetTitle className="text-left">Menú</SheetTitle>
                   </SheetHeader>
-                  <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 pb-6">
+                  <div id="mobile-navigation" className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 pb-6">
                     <div className="flex flex-col gap-6 mt-6">
                       {navSections.map((section) => (
                         <div key={section.label} className="space-y-2">

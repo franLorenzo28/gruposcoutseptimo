@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "next-themes";
@@ -44,40 +44,10 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<SupabaseUserWithProfile | null>(null);
   const [accountStatus, setAccountStatus] = useState<string | null>(null);
   const [isUserLoading, setIsUserLoading] = useState(true);
+  const requestId = useRef(0);
 
-  const refreshUser = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const sessionUser = session?.user ?? null;
-      if (!sessionUser) {
-        setUser(null);
-        setAccountStatus(null);
-        return;
-      }
-
-      const { data: profile } = await querySilent(() => supabase
-        .from("profiles")
-        .select("*")
-        .eq("user_id", sessionUser.id)
-        .maybeSingle()
-      );
-
-      if (profile) {
-        const combinedUser = { ...sessionUser, ...profile } as unknown as SupabaseUserWithProfile;
-        setUser(combinedUser);
-        setAccountStatus(profile.account_status ?? null);
-        try {
-          localStorage.setItem("adminUser", JSON.stringify(combinedUser));
-        } catch {
-          // noop
-        }
-      }
-    } catch (error) {
-      if (import.meta.env.DEV) console.error("Error refreshing user:", error);
-    }
-  };
-
-  async function fetchUserAndProfile(sessionUser: any) {
+  const fetchUserAndProfile = useCallback(async (sessionUser: User | null) => {
+    const currentRequest = ++requestId.current;
     if (!sessionUser) {
       setUser(null);
       setAccountStatus(null);
@@ -86,7 +56,6 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     setIsUserLoading(true);
-    console.log("DEBUG AppProviders: Fetching profile for user:", sessionUser.id, sessionUser.email);
 
     const { data: profile, error } = await querySilent(() => supabase
       .from("profiles")
@@ -95,13 +64,16 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
       .maybeSingle()
     );
 
-    console.log("DEBUG AppProviders: Profile result:", profile, "error:", error);
+    if (currentRequest !== requestId.current) return;
 
     if (error || !profile) {
-      console.log("DEBUG AppProviders: No profile, treating as activo");
       setUser(sessionUser);
-      setAccountStatus('activo');
-      localStorage.setItem("adminUser", JSON.stringify(sessionUser));
+      setAccountStatus("activo");
+      try {
+        localStorage.setItem("adminUser", JSON.stringify(sessionUser));
+      } catch {
+        // App still works when storage is unavailable.
+      }
       setIsUserLoading(false);
       return;
     }
@@ -111,7 +83,6 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
     const approvedViaEdgeFunction = meta?.approved_at !== undefined && meta?.profile_complete === true;
 
     if (approvedViaEdgeFunction) {
-      console.log("DEBUG AppProviders: User approved via Edge Function, bypassing profile status check");
       const combinedUser = { ...sessionUser };
       setUser(combinedUser);
       setAccountStatus('activo');
@@ -123,12 +94,10 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
     const status = (profile.account_status && profile.account_status.trim() !== '') 
       ? profile.account_status 
       : 'activo';
-    console.log("DEBUG AppProviders: Account status:", status, "raw:", profile.account_status);
     setAccountStatus(status);
 
     // Block access if not approved
     if (status !== 'activo') {
-      console.log("DEBUG AppProviders: Status is not activo, signing out:", status);
       // User is pending or rejected - sign them out
       await supabase.auth.signOut();
       setUser(null);
@@ -140,7 +109,6 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
       return;
     }
 
-    console.log("DEBUG AppProviders: User approved, setting user");
     const combinedUser = { ...sessionUser, ...profile };
     setUser(combinedUser);
 
@@ -151,7 +119,16 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     setIsUserLoading(false);
-  }
+  }, []);
+
+  const refreshUser = useCallback(async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      await fetchUserAndProfile(session?.user ?? null);
+    } catch (error) {
+      if (import.meta.env.DEV) console.error("Error refreshing user:", error);
+    }
+  }, [fetchUserAndProfile]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -186,7 +163,7 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
     return () => {
       subscription?.unsubscribe();
     };
-  }, []);
+  }, [fetchUserAndProfile]);
 
   return (
     <SupabaseUserContext.Provider value={{ user, isUserLoading, accountStatus, refreshUser }}>

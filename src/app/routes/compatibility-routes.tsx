@@ -1,10 +1,15 @@
-import { Navigate, useLocation, type RouteObject } from "react-router-dom";
+import { Navigate, useLocation, useParams, type RouteObject } from "react-router-dom";
 import { TestDiagnostic } from "@/app/routes/lazy-pages";
 
 function PreserveRedirect({ to }: { to: string }) {
   const location = useLocation();
 
   return <Navigate to={`${to}${location.search}${location.hash}`} replace />;
+}
+
+function GroupDetailRedirect() {
+  const { id } = useParams();
+  return <Navigate to={`/interno/grupos/${id}`} replace />;
 }
 
 export const compatibilityRoutes: RouteObject[] = [
@@ -25,6 +30,8 @@ export const compatibilityRoutes: RouteObject[] = [
   { path: "perfil/editar", element: <PreserveRedirect to="/interno/perfil/editar" /> },
   { path: "configuracion", element: <PreserveRedirect to="/interno/configuracion" /> },
   { path: "mensajes", element: <PreserveRedirect to="/interno/mensajes" /> },
+  { path: "usuarios", element: <PreserveRedirect to="/interno/usuarios" /> },
+  { path: "grupos/:id", element: <GroupDetailRedirect /> },
   { path: "dashboard-coordinador", element: <Navigate to="/interno/dashboard-coordinador" replace /> },
   { path: "admin-panel", element: <Navigate to="/admin" replace /> },
   { path: "test-diagnostic", element: <TestDiagnostic /> },

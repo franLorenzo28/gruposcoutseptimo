@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { InternalPageHeader } from "@/app/internal/components/InternalPageHeader";
 import { useMemberAuth } from "@/context/MemberAuthContext";
 import { getUpcomingRamaEvents, ramaConfig, readRamaEvents } from "@/app/internal/rama-storage";
-import { BookOpen, CalendarDays, CalendarHeart, FolderOpen, Megaphone, ShieldCheck, Users, UploadCloud } from "lucide-react";
+import { BookOpen, CalendarDays, CalendarHeart, FolderOpen, Megaphone, MessageCircle, ShieldCheck, Users, UploadCloud } from "lucide-react";
 
 export default function InternalDashboardPage() {
   const { session } = useMemberAuth();
@@ -67,6 +67,12 @@ export default function InternalDashboardPage() {
       title: "Miembros",
       description: "Directorio de miembros y roles en la comunidad.",
       icon: Users,
+    },
+    {
+      to: "/interno/mensajes",
+      title: "Mensajes",
+      description: "Conversaciones directas con otros scouts y educadores.",
+      icon: MessageCircle,
     },
     {
       to: "/interno/galeria",

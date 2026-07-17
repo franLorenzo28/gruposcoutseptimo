@@ -52,6 +52,17 @@ describe("member auth access rules", () => {
     expect(result.isRamaAdmin).toBe(true);
   });
 
+  it("rechaza de forma explícita a un educador no aprobado", () => {
+    const result = resolveMemberAccessFromProfile({
+      edad: 30,
+      rol_adulto: "Educador/a",
+      educador_aprobado: false,
+      rama_que_educa: "tropa",
+    });
+    expect(result.allowed).toBe(false);
+    expect(result.reason).toContain("aprobada");
+  });
+
   it("mapea ramas de educador a ramas de miembros", () => {
     expect(mapEducatorRamaToMiembroRama("manada")).toBe("lobatos");
     expect(mapEducatorRamaToMiembroRama("tropa")).toBe("tropa");

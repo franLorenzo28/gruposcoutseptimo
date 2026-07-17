@@ -178,7 +178,7 @@ export default function GrupoDetail() {
             description: "No eres miembro de este grupo",
             variant: "destructive",
           });
-          navigate("/usuarios");
+          navigate("/interno/usuarios");
           return;
         }
         setUserRole(mine.role);
@@ -218,7 +218,7 @@ export default function GrupoDetail() {
             description: "No eres miembro de este grupo",
             variant: "destructive",
           });
-          navigate("/usuarios");
+          navigate("/interno/usuarios");
           return;
         }
 
@@ -307,7 +307,7 @@ export default function GrupoDetail() {
     try {
       await leaveGroup(id);
       toast({ title: "Has salido del grupo" });
-      navigate("/usuarios");
+      navigate("/interno/usuarios");
     } catch (e: any) {
       toast({ title: "Error", description: e.message, variant: "destructive" });
     }
@@ -318,7 +318,7 @@ export default function GrupoDetail() {
     try {
       await deleteGroupDeep(id);
       toast({ title: "Grupo eliminado" });
-      navigate("/usuarios");
+      navigate("/interno/usuarios");
     } catch (e: any) {
       toast({ title: "Error", description: e.message, variant: "destructive" });
     } finally {
@@ -442,7 +442,7 @@ export default function GrupoDetail() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate("/usuarios")}
+            onClick={() => navigate("/interno/usuarios")}
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
