@@ -68,18 +68,14 @@ const FooterNew = () => {
 
   const quickLinks = [
     { to: "/", label: "Inicio" },
-    { to: "/narrativas", label: "Narrativas" },
-    { to: "/usuarios", label: "Comuni 7" },
     { to: "/historia", label: "Historia" },
+    { to: "/movimiento-scout", label: "Movimiento Scout" },
     { to: "/archivo", label: "Archivo" },
+    { to: "/archivo/scoutpedia", label: "Scoutpedia" },
     { to: "/eventos", label: "Eventos" },
-    { to: "/cancionero", label: "Cancionero" },
-    { to: "/galeria", label: "Galeria" },
+    { to: "/bauen", label: "Bauen" },
     { to: "/contacto", label: "Contacto" },
   ].filter((link) => {
-    if (link.to === "/usuarios") {
-      return isLoggedIn;
-    }
     return isLoggedIn || !isRestrictedForGuest(link.to);
   });
 
