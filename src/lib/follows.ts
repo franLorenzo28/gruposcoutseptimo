@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { isLocalBackend, apiFetch } from "@/lib/backend";
+import { createFollowNotification, createFollowAcceptedNotification } from "@/lib/notifications";
 
 export type FollowStatus = "pending" | "accepted" | "blocked";
 
@@ -253,7 +254,27 @@ export async function followUser(targetUserId: string): Promise<FollowActionResu
 
   writeFollowRelationCache(me, targetUserId, status);
 
-  // Las notificaciones las crea el trigger DB handle_follows_notifications
+  void (async () => {
+    try {
+      const { data: myProfile } = await supabase
+        .from("profiles")
+        .select("nombre_completo, username, avatar_url")
+        .eq("user_id", me)
+        .maybeSingle();
+      await createFollowNotification({
+        followerId: me,
+        followedId: targetUserId,
+        status,
+        followerDisplayName:
+          myProfile?.nombre_completo || myProfile?.username || "Scout",
+        followerUsername: myProfile?.username ?? null,
+        followerAvatarUrl: myProfile?.avatar_url ?? null,
+      });
+    } catch (e) {
+      console.warn("Failed to create follow notification:", e);
+    }
+  })();
+
   return {
     error: null,
     followStatus: status,
@@ -300,12 +321,36 @@ export async function acceptFollow(followerId: string) {
   }
   const me = await getMyUserId();
   if (!me) return { error: new Error("No autenticado") } as const;
-  return supabase
+  const result = await supabase
     .from("follows")
     .update({ status: "accepted", accepted_at: new Date().toISOString() })
     .eq("followed_id", me)
     .eq("follower_id", followerId)
     .eq("status", "pending");
+
+  if (!result.error) {
+    void (async () => {
+      try {
+        const { data: myProfile } = await supabase
+          .from("profiles")
+          .select("nombre_completo, username, avatar_url")
+          .eq("user_id", me)
+          .maybeSingle();
+        await createFollowAcceptedNotification({
+          followerId,
+          followedId: me,
+          followedDisplayName:
+            myProfile?.nombre_completo || myProfile?.username || "Scout",
+          followedUsername: myProfile?.username ?? null,
+          followedAvatarUrl: myProfile?.avatar_url ?? null,
+        });
+      } catch (e) {
+        console.warn("Failed to create follow accepted notification:", e);
+      }
+    })();
+  }
+
+  return result;
 }
 
 export async function rejectFollow(followerId: string) {

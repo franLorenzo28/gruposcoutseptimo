@@ -71,13 +71,6 @@ function notificationMessageFromPayload(payload: {
     };
   }
 
-  if (payload.type === "thread_new") {
-    return {
-      title: "Nuevo hilo",
-      description: `${String(data.display || "Un miembro")} publico un hilo nuevo.`,
-    };
-  }
-
   if (payload.type === "group_invite") {
     return {
       title: "Nuevo grupo",

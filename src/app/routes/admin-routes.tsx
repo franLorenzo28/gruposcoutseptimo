@@ -4,7 +4,7 @@ import { AdminGuard } from "@/components/AdminGuard";
 import { AdminPanel } from "@/app/routes/lazy-pages";
 import { AdminPlatformLayout } from "@/app/layouts/AdminPlatformLayout";
 
-function AdminSectionRoute({ tab }: { tab: "overview" | "users" | "requests" | "groups" | "events" | "threads" | "messages" | "pages" }) {
+function AdminSectionRoute({ tab }: { tab: "overview" | "users" | "requests" | "groups" | "events" | "messages" | "pages" }) {
   return (
     <RequireApproval>
       <AdminGuard>
@@ -26,7 +26,6 @@ export const adminRoutes: RouteObject = {
     { path: "solicitudes", element: <AdminSectionRoute tab="requests" /> },
     { path: "grupos", element: <AdminSectionRoute tab="groups" /> },
     { path: "eventos", element: <AdminSectionRoute tab="events" /> },
-    { path: "publicaciones", element: <AdminSectionRoute tab="threads" /> },
     { path: "mensajes", element: <AdminSectionRoute tab="messages" /> },
     { path: "paginas", element: <AdminSectionRoute tab="pages" /> },
   ],

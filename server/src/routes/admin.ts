@@ -220,14 +220,6 @@ adminRouter.get("/dashboard-data", adminGate, (req: any, res: any) => {
     )
     .all();
 
-  const threads = db
-    .prepare("SELECT * FROM threads ORDER BY datetime(created_at) DESC LIMIT 200")
-    .all();
-
-  const threadComments = db
-    .prepare("SELECT * FROM thread_comments ORDER BY datetime(created_at) DESC LIMIT 200")
-    .all();
-
   const messages = db
     .prepare("SELECT * FROM dm_messages ORDER BY datetime(created_at) DESC LIMIT 200")
     .all();
@@ -248,8 +240,6 @@ adminRouter.get("/dashboard-data", adminGate, (req: any, res: any) => {
     users,
     groups,
     events,
-    threads,
-    threadComments,
     messages,
     groupMessages,
     pages: [],

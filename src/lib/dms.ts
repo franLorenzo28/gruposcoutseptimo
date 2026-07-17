@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { createDMNotification } from "@/lib/notifications";
 
 export type Conversation = {
   id: string;
@@ -76,6 +77,37 @@ export async function sendDM(
     }
     throw error;
   }
+
+  void (async () => {
+    try {
+      const { data: participants } = await supabase
+        .from("conversation_participants")
+        .select("user_id")
+        .eq("conversation_id", conversationId);
+      const recipientId = participants?.find((p) => p.user_id !== sender_id)?.user_id;
+      if (!recipientId) return;
+
+      const { data: senderProfile } = await supabase
+        .from("profiles")
+        .select("nombre_completo, username, avatar_url")
+        .eq("user_id", sender_id)
+        .maybeSingle();
+
+      await createDMNotification({
+        senderId: sender_id,
+        recipientId,
+        conversationId,
+        messageId: data.id,
+        content,
+        senderDisplayName:
+          senderProfile?.nombre_completo || senderProfile?.username || "Scout",
+        senderUsername: senderProfile?.username ?? null,
+        senderAvatarUrl: senderProfile?.avatar_url ?? null,
+      });
+    } catch (e) {
+      console.warn("Failed to create DM notification:", e);
+    }
+  })();
 
   return data as DMMessage;
 }

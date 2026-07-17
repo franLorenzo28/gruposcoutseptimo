@@ -1,4 +1,4 @@
-﻿import { useEffect, useState, useMemo, ReactNode } from "react";
+﻿import { useEffect, useState, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { getAuthUser } from "@/lib/backend";
@@ -7,7 +7,6 @@ import UserAvatar from "@/components/UserAvatar";
 import EmailVerificationGuard from "@/components/EmailVerificationGuard";
 import {
   useProfiles,
-  useThreads,
   useGroups,
   type PresenceStatus,
 } from "@/hooks/useQueryData";
@@ -42,20 +41,11 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  createThread,
-  listComments,
-  addComment,
-  deleteThread,
-  isAdmin,
-  type ThreadWithAuthor,
-  type Thread,
-} from "@/lib/threads";
-import {
   createGroup,
   joinGroup,
   leaveGroup,
 } from "@/lib/groups";
-import { Trash2, Image as ImageIcon, X } from "lucide-react";
+import { Image as ImageIcon, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   RAMA_LABEL,
@@ -77,12 +67,10 @@ const ENABLE_RAMA_FILTER = true;
 
 const Usuarios = () => {
   const [activeTab, setActiveTab] = useState<string>("personas");
-  const shouldLoadThreads = activeTab === "hilos";
   const shouldLoadGroups = activeTab === "grupos";
 
   // React Query hooks (reemplazan useState + useEffect)
   const { data: profiles = [], isLoading: loadingProfiles } = useProfiles();
-  const { data: threadsData = [], isLoading: loadingThreads, refetch: refetchThreads } = useThreads(shouldLoadThreads);
   const { data: groupsData = [], isLoading: loadingGroups, refetch: refetchGroups } = useGroups(shouldLoadGroups);
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -90,14 +78,6 @@ const Usuarios = () => {
   const [visibilityFilter, setVisibilityFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("name");
   const [currentUserId, setCurrentUserId] = useState<string>("");
-  const [newThreadText, setNewThreadText] = useState("");
-  const [newThreadFile, setNewThreadFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [posting, setPosting] = useState(false);
-  const [openThreadId, setOpenThreadId] = useState<string | null>(null);
-  const [threadComments, setThreadComments] = useState<any[]>([]);
-  const [newCommentText, setNewCommentText] = useState("");
-  const [userEmail, setUserEmail] = useState<string>("");
 
   // Estados para grupos
   const [showCreateGroup, setShowCreateGroup] = useState(false);
@@ -119,21 +99,7 @@ const Usuarios = () => {
 
   const loading =
     loadingProfiles ||
-    (activeTab === "hilos" && loadingThreads) ||
     (activeTab === "grupos" && loadingGroups);
-
-  const profileById = useMemo(() => {
-    const map = new Map<string, Profile>();
-    profiles.forEach((profile: Profile) => {
-      map.set(profile.user_id, profile);
-    });
-    return map;
-  }, [profiles]);
-
-  const currentUserProfile = useMemo(
-    () => profileById.get(currentUserId) || null,
-    [profileById, currentUserId],
-  );
 
   const [supabasePresenceById, setSupabasePresenceById] = useState<
     Map<string, PresenceStatus>
@@ -224,25 +190,11 @@ const Usuarios = () => {
           return;
         }
         setCurrentUserId(auth.id);
-        setUserEmail(auth.email || "");
       } catch (err) {
         console.error("Error cargando usuario:", err);
       }
     })();
   }, [navigate]);
-
-  // Enriquecer threads con datos del autor (useMemo para evitar recalcular)
-  const threads = useMemo(() => {
-    return threadsData.map((thread: Thread) => {
-      const author = profileById.get(thread.author_id);
-      return {
-        ...thread,
-        author_name: author?.nombre_completo,
-        author_username: author?.username,
-        author_avatar: author?.avatar_url,
-      };
-    });
-  }, [threadsData, profileById]);
 
   const groups = groupsData;
 
@@ -305,136 +257,6 @@ const Usuarios = () => {
 
     return sorted;
   }, [profiles, debouncedSearchTerm, ramaFilter, visibilityFilter, sortBy]);
-
-  const submitThread = async () => {
-    if (!newThreadText.trim() && !newThreadFile) return;
-
-    // Validación de longitud
-    if (newThreadText.length > 500) {
-      toast({
-        title: "Contenido muy largo",
-        description: "El hilo no puede exceder 500 caracteres",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      setPosting(true);
-      const thread = await createThread(
-        newThreadText.trim(),
-        newThreadFile || undefined,
-      );
-
-      // Enriquecer con datos del autor actual
-      const author = profiles.find((p: Profile) => p.user_id === currentUserId);
-      void ({
-        ...thread,
-        author_name: author?.nombre_completo,
-        author_username: author?.username,
-        author_avatar: author?.avatar_url,
-      } as ThreadWithAuthor);
-
-      // Refrescar threads con React Query
-      await refetchThreads();
-      setNewThreadText("");
-      setNewThreadFile(null);
-      setImagePreview(null);
-
-      toast({
-        title: "Hilo publicado",
-        description: "Tu hilo se ha publicado correctamente",
-      });
-    } catch (e: any) {
-      toast({
-        title: "Error",
-        description: e.message || "No se pudo publicar el hilo",
-        variant: "destructive",
-      });
-    } finally {
-      setPosting(false);
-    }
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // Validación de tipo
-      const validTypes = [
-        "image/jpeg",
-        "image/jpg",
-        "image/png",
-        "image/gif",
-        "image/webp",
-      ];
-      if (!validTypes.includes(file.type)) {
-        toast({
-          title: "Tipo de archivo no válido",
-          description: "Solo se permiten imágenes (JPG, PNG, GIF, WEBP)",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Validación de tamaño
-      const maxSize = 5 * 1024 * 1024; // 5MB
-      if (file.size > maxSize) {
-        toast({
-          title: "Archivo muy grande",
-          description: "La imagen no puede superar 5MB",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      setNewThreadFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const removeImage = () => {
-    setNewThreadFile(null);
-    setImagePreview(null);
-  };
-
-  const openThread = async (threadId: string) => {
-    setOpenThreadId(threadId);
-    try {
-      const comments = await listComments(threadId);
-      setThreadComments(comments);
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const sendComment = async () => {
-    if (!openThreadId || !newCommentText.trim()) return;
-    try {
-      const c = await addComment(openThreadId, newCommentText.trim());
-      setThreadComments((prev) => [...prev, c]);
-      setNewCommentText("");
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const handleDeleteThread = async (threadId: string) => {
-    if (!confirm("¿Estás seguro de eliminar este hilo?")) return;
-    try {
-      await deleteThread(threadId);
-      await refetchThreads(); // Refrescar con React Query
-      toast({
-        title: "Hilo eliminado",
-        description: "El hilo se eliminó correctamente",
-      });
-    } catch (e: any) {
-      toast({ title: "Error", description: e.message, variant: "destructive" });
-    }
-  };
 
   // Funciones para grupos
   const handleGroupCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -569,28 +391,7 @@ const Usuarios = () => {
     }
   };
 
-  // Renderizado con resaltado de menciones @usuario
-  const renderWithMentions = (text: string): ReactNode[] => {
-    const parts: ReactNode[] = [];
-    const regex = /@([A-Za-z0-9_]{3,32})/g;
-    let lastIndex = 0;
-    let match: RegExpExecArray | null;
-    while ((match = regex.exec(text)) !== null) {
-      if (match.index > lastIndex) {
-        parts.push(<span key={"t" + match.index}>{text.slice(lastIndex, match.index)}</span>);
-      }
-      parts.push(
-        <span key={"m" + match.index} className="text-primary font-semibold">
-          @{match[1]}
-        </span>
-      );
-      lastIndex = match.index + match[0].length;
-    }
-    if (lastIndex < text.length) {
-      parts.push(<span key="end">{text.slice(lastIndex)}</span>);
-    }
-    return parts;
-  };
+  // Renderizado con resaltado de menciones @usuario (removed — was only for threads)
 
   return (
     <EmailVerificationGuard
@@ -632,16 +433,11 @@ const Usuarios = () => {
             </Badge>
           </div>
 
-          <div className="grid grid-cols-3 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
             <div className="group relative overflow-hidden rounded-xl border border-border/40 bg-gradient-to-br from-primary/5 to-background p-4 backdrop-blur-xs hover:border-primary/40 transition-all">
               <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               <p className="relative text-xs font-semibold uppercase tracking-wider text-muted-foreground">Personas</p>
               <p className="relative text-2xl font-bold text-primary mt-2">{profiles.length}</p>
-            </div>
-            <div className="group relative overflow-hidden rounded-xl border border-border/40 bg-gradient-to-br from-blue-500/5 to-background p-4 backdrop-blur-xs hover:border-blue-500/40 transition-all">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              <p className="relative text-xs font-semibold uppercase tracking-wider text-muted-foreground">Hilos</p>
-              <p className="relative text-2xl font-bold text-blue-500 mt-2">{shouldLoadThreads ? threads.length : "-"}</p>
             </div>
             <div className="group relative overflow-hidden rounded-xl border border-border/40 bg-gradient-to-br from-green-500/5 to-background p-4 backdrop-blur-xs hover:border-green-500/40 transition-all">
               <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -691,7 +487,6 @@ const Usuarios = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="mb-5 sm:mb-6 h-auto w-full justify-start gap-1.5 rounded-lg border border-border/50 bg-card/60 p-1.5 backdrop-blur-xs">
             <TabsTrigger value="personas" className="text-xs sm:text-sm rounded-md px-3 sm:px-4 py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">Personas</TabsTrigger>
-            <TabsTrigger value="hilos" className="text-xs sm:text-sm rounded-md px-3 sm:px-4 py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">Hilos</TabsTrigger>
             <TabsTrigger value="grupos" className="text-xs sm:text-sm rounded-md px-3 sm:px-4 py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">Grupos</TabsTrigger>
           </TabsList>
 
@@ -987,257 +782,6 @@ const Usuarios = () => {
                 })}
               </div>
             )}
-          </TabsContent>
-
-          <TabsContent value="hilos">
-            <Card className="mb-6 border-border/70 bg-card/85 backdrop-blur-sm shadow-sm">
-              <CardContent className="p-4">
-                <div className="flex gap-3">
-                  <UserAvatar
-                    avatarUrl={currentUserProfile?.avatar_url || null}
-                    userName={currentUserProfile?.nombre_completo || null}
-                    size="md"
-                    className="flex-shrink-0"
-                  />
-                  <div className="flex-1 space-y-3">
-                    <Textarea
-                      placeholder="¿Qué está pasando?"
-                      value={newThreadText}
-                      onChange={(e) => setNewThreadText(e.target.value)}
-                      className="min-h-[100px] resize-none border-0 focus-visible:ring-0 p-0 text-base"
-                      maxLength={500}
-                    />
-
-                    {newThreadText.length > 0 && (
-                      <div
-                        className={`text-xs text-right ${
-                          newThreadText.length > 450
-                            ? "text-destructive font-semibold"
-                            : "text-muted-foreground"
-                        }`}
-                      >
-                        {newThreadText.length}/500
-                      </div>
-                    )}
-
-                    {imagePreview && (
-                      <div className="relative inline-block">
-                        <img
-                          src={imagePreview}
-                          alt="Preview"
-                          className="rounded-xl max-h-64 object-cover border"
-                          loading="lazy"
-                          decoding="async"
-                        />
-                        <Button
-                          variant="destructive"
-                          size="icon"
-                          className="absolute top-2 right-2 h-8 w-8 rounded-full"
-                          onClick={removeImage}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    )}
-
-                    <div className="flex items-center justify-between pt-2 border-t">
-                      <label className="cursor-pointer">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleFileChange}
-                          className="hidden"
-                        />
-                        <div className="flex items-center gap-2 text-primary hover:bg-muted/30 px-3 py-2 rounded-full transition-colors">
-                          <ImageIcon className="h-5 w-5" />
-                          <span className="text-sm font-medium">Imagen</span>
-                        </div>
-                      </label>
-
-                      <Button
-                        onClick={submitThread}
-                        disabled={
-                          posting || (!newThreadText.trim() && !newThreadFile)
-                        }
-                        className="rounded-full px-6"
-                      >
-                        {posting ? "Publicando..." : "Publicar"}
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <div className="space-y-4">
-              {threads.map((t: ThreadWithAuthor) => {
-                const isThreadAuthor = t.author_id === currentUserId;
-                const canDelete = isThreadAuthor || isAdmin(userEmail);
-
-                return (
-                  <Card
-                    key={t.id}
-                    className="border-border/70 bg-card/85 backdrop-blur-sm hover:bg-muted/30 transition-colors"
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex gap-3">
-                        <UserAvatar
-                          avatarUrl={t.author_avatar || null}
-                          userName={t.author_name || null}
-                          size="md"
-                          className="flex-shrink-0"
-                        />
-
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-1">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-sm sm:text-[0.95rem] font-semibold hover:underline cursor-pointer">
-                                {t.author_name || "Scout"}
-                              </span>
-                              {t.author_username && (
-                                <span className="text-sm text-muted-foreground">
-                                  @{t.author_username}
-                                </span>
-                              )}
-                              <span className="text-sm text-muted-foreground">
-                                ·{" "}
-                                {new Date(t.created_at).toLocaleDateString(
-                                  "es-ES",
-                                  {
-                                    month: "short",
-                                    day: "numeric",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  },
-                                )}
-                              </span>
-                            </div>
-                            {canDelete && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeleteThread(t.id)}
-                                className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </div>
-
-                          <div className="text-base whitespace-pre-wrap mb-3">
-                            {renderWithMentions(t.content)}
-                          </div>
-
-                          {t.image_url && (
-                            <div className="rounded-xl border overflow-hidden mb-3">
-                              <img
-                                src={t.image_url}
-                                alt="imagen del hilo"
-                                className="w-full max-h-96 object-cover"
-                                loading="lazy"
-                                decoding="async"
-                              />
-                            </div>
-                          )}
-
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => openThread(t.id)}
-                                className="text-muted-foreground hover:text-primary"
-                              >
-                                💬 Comentarios
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-lg">
-                              <DialogHeader>
-                                <DialogTitle>Comentarios</DialogTitle>
-                              </DialogHeader>
-                              <div className="space-y-3 max-h-[50vh] overflow-auto">
-                                {threadComments.length === 0 ? (
-                                  <div className="text-sm text-muted-foreground text-center py-8">
-                                    Sé el primero en comentar
-                                  </div>
-                                ) : (
-                                  threadComments.map((c) => {
-                                    const commentAuthor = profiles.find(
-                                      (p: Profile) => p.user_id === c.author_id,
-                                    );
-                                    return (
-                                      <div
-                                        key={c.id}
-                                        className="flex gap-3 border-b pb-3 last:border-0"
-                                      >
-                                        <UserAvatar
-                                          avatarUrl={
-                                            commentAuthor?.avatar_url || null
-                                          }
-                                          userName={
-                                            commentAuthor?.nombre_completo ||
-                                            null
-                                          }
-                                          size="sm"
-                                          className="flex-shrink-0"
-                                        />
-                                        <div className="flex-1 min-w-0">
-                                          <div className="flex items-center gap-2 mb-1">
-                                            <span className="font-medium text-sm">
-                                              {commentAuthor?.nombre_completo ||
-                                                "Scout"}
-                                            </span>
-                                            {commentAuthor?.username && (
-                                              <span className="text-xs text-muted-foreground">
-                                                @{commentAuthor.username}
-                                              </span>
-                                            )}
-                                            <span className="text-xs text-muted-foreground">
-                                              ·{" "}
-                                              {new Date(
-                                                c.created_at,
-                                              ).toLocaleDateString("es-ES", {
-                                                month: "short",
-                                                day: "numeric",
-                                                hour: "2-digit",
-                                                minute: "2-digit",
-                                              })}
-                                            </span>
-                                          </div>
-                                          <div className="text-sm whitespace-pre-wrap">
-                                            {renderWithMentions(c.content)}
-                                          </div>
-                                        </div>
-                                      </div>
-                                    );
-                                  })
-                                )}
-                              </div>
-                              <div className="flex gap-2 pt-2 border-t">
-                                <Input
-                                  placeholder="Escribe un comentario"
-                                  value={newCommentText}
-                                  onChange={(e) =>
-                                    setNewCommentText(e.target.value)
-                                  }
-                                  onKeyDown={(e) => {
-                                    if (e.key === "Enter") {
-                                      e.preventDefault();
-                                      sendComment();
-                                    }
-                                  }}
-                                />
-                                <Button onClick={sendComment}>Enviar</Button>
-                              </div>
-                            </DialogContent>
-                          </Dialog>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
           </TabsContent>
 
           <TabsContent value="grupos">

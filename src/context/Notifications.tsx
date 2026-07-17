@@ -25,8 +25,6 @@ export type AppNotification = {
     | "message"
     | "follow_request"
     | "follow_accepted"
-    | "thread_comment"
-    | "thread_new"
     | "mention"
     | "group_invite"
     | "gallery_upload"
@@ -167,7 +165,6 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
     if (r.type === "message" && kind) {
       if (kind === "rama_broadcast") mappedType = "rama_broadcast";
       else if (kind === "follow_accepted") mappedType = "follow_accepted";
-      else if (kind === "thread_new") mappedType = "thread_new";
       else if (kind === "group_invite") mappedType = "group_invite";
       else if (kind === "gallery_upload") mappedType = "gallery_upload";
     }
@@ -337,8 +334,6 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
               ? `${d.count} fotos nuevas en ${d.album || "Galería"}`
               : `Nueva foto en ${d.album || "Galería"}`,
           );
-        } else if (notif.type === "thread_comment") {
-          notifyViaPush("Nuevo comentario en tu hilo", (d.content || "").slice(0, 80));
         } else if (notif.type === "mention") {
           notifyViaPush("Te mencionaron", `${actor} ${(d.content || "").slice(0, 70)}`.trim());
         }

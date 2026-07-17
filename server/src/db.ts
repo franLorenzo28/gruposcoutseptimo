@@ -154,26 +154,6 @@ db.exec(`
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
-  -- Threads (muro simple)
-  CREATE TABLE IF NOT EXISTS threads (
-    id TEXT PRIMARY KEY,
-    author_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    content TEXT NOT NULL,
-    image_url TEXT,
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
-  );
-
-  CREATE TABLE IF NOT EXISTS thread_comments (
-    id TEXT PRIMARY KEY,
-    thread_id TEXT NOT NULL REFERENCES threads(id) ON DELETE CASCADE,
-    author_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    content TEXT NOT NULL,
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
-  );
-
-  CREATE INDEX IF NOT EXISTS idx_threads_created ON threads(created_at DESC);
-  CREATE INDEX IF NOT EXISTS idx_thread_comments_thread ON thread_comments(thread_id, created_at);
-
   -- Narrativas (relatos históricos por año)
   CREATE TABLE IF NOT EXISTS narrativas (
     id TEXT PRIMARY KEY,

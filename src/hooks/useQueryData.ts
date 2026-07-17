@@ -54,44 +54,6 @@ export function useProfile(userId: string | null) {
 }
 
 // ============================================================================
-// THREADS (Comuni 7)
-// ============================================================================
-
-export function useThreads(enabled: boolean = true) {
-  return useQuery({
-    queryKey: ["threads"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("threads")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data || [];
-    },
-    staleTime: 1 * 60 * 1000, // 1 minuto (más dinámico)
-    enabled,
-  });
-}
-
-export function useThreadComments(threadId: string | null) {
-  return useQuery({
-    queryKey: ["thread-comments", threadId],
-    queryFn: async () => {
-      if (!threadId) throw new Error("Thread ID required");
-      const { data, error } = await supabase
-        .from("thread_comments")
-        .select("*")
-        .eq("thread_id", threadId)
-        .order("created_at", { ascending: true });
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!threadId,
-    staleTime: 30 * 1000, // 30 segundos
-  });
-}
-
-// ============================================================================
 // GROUPS
 // ============================================================================
 

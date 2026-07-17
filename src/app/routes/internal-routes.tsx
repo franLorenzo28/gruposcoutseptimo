@@ -179,9 +179,9 @@ export const internalRoutes: RouteObject = {
     {
       path: "mensajes",
       element: (
-        <RequireApproval>
+        <RequireMemberAuth>
           <Mensajes />
-        </RequireApproval>
+        </RequireMemberAuth>
       ),
     },
     {

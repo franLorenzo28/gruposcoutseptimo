@@ -4,7 +4,6 @@ export const adminTabRouteMap = {
   requests: "/admin/solicitudes",
   groups: "/admin/grupos",
   events: "/admin/eventos",
-  threads: "/admin/publicaciones",
   messages: "/admin/mensajes",
   pages: "/admin/paginas",
 } as const;

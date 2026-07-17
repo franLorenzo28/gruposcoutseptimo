@@ -14,7 +14,6 @@ import {
   Shield,
   Clock,
   CalendarDays,
-  MessageSquare,
   MessagesSquare,
   FileText,
   Layers,
@@ -84,8 +83,6 @@ type LocalDashboardPayload = {
   users?: any[];
   groups?: any[];
   events?: any[];
-  threads?: any[];
-  threadComments?: any[];
   messages?: any[];
   groupMessages?: any[];
   pages?: any[];
@@ -125,8 +122,6 @@ export default function Dashboard({
   const [loadingAdmin, setLoadingAdmin] = useState(true);
   const [groups, setGroups] = useState<any[]>([]);
   const [events, setEvents] = useState<any[]>([]);
-  const [threads, setThreads] = useState<any[]>([]);
-  const [threadComments, setThreadComments] = useState<any[]>([]);
   const [messages, setMessages] = useState<any[]>([]);
   const [groupMessages, setGroupMessages] = useState<any[]>([]);
   const [pages, setPages] = useState<any[]>([]);
@@ -213,8 +208,6 @@ export default function Dashboard({
       computeStats(localUsers);
       setGroups(payload.groups || []);
       setEvents(payload.events || []);
-      setThreads(payload.threads || []);
-      setThreadComments(payload.threadComments || []);
       setMessages(payload.messages || []);
       setGroupMessages(payload.groupMessages || []);
       setPages(payload.pages || []);
@@ -231,8 +224,6 @@ export default function Dashboard({
       computeStats([]);
       setGroups([]);
       setEvents([]);
-      setThreads([]);
-      setThreadComments([]);
       setMessages([]);
       setGroupMessages([]);
       setPages([]);
@@ -265,11 +256,9 @@ export default function Dashboard({
       console.log("Fetched registration requests:", registrationRequestsRes.data?.length || 0);
     }
     
-    const [groupsRes, eventsRes, threadsRes, commentsRes, messagesRes, groupMessagesRes, pagesRes, followsRes, notificationsRes] = await Promise.all([
+    const [groupsRes, eventsRes, messagesRes, groupMessagesRes, pagesRes, followsRes, notificationsRes] = await Promise.all([
       supabase.from("groups").select("*").order("created_at", { ascending: false }).limit(200),
       supabase.from("eventos").select("*").order("fecha_inicio", { ascending: false }).limit(200),
-      supabase.from("threads").select("*").order("created_at", { ascending: false }).limit(200),
-      supabase.from("thread_comments").select("*").order("created_at", { ascending: false }).limit(200),
       supabase.from("messages").select("*").order("created_at", { ascending: false }).limit(200),
       supabase.from("group_messages").select("*").order("created_at", { ascending: false }).limit(200),
       supabase.from("site_pages").select("*").order("updated_at", { ascending: false }),
@@ -277,7 +266,7 @@ export default function Dashboard({
       supabase.from("notifications").select("*").order("created_at", { ascending: false }).limit(500),
     ]);
 
-    const criticalError = groupsRes.error || eventsRes.error || threadsRes.error;
+    const criticalError = groupsRes.error || eventsRes.error;
     
     if (criticalError) {
       toast({
@@ -289,8 +278,6 @@ export default function Dashboard({
 
     setGroups(groupsRes.data || []);
     setEvents(eventsRes.data || []);
-    setThreads(threadsRes.data || []);
-    setThreadComments(commentsRes.data || []);
     setMessages(messagesRes.data || []);
     setGroupMessages(groupMessagesRes.data || []);
     setPages(pagesRes.data || []);
@@ -408,11 +395,7 @@ export default function Dashboard({
       return !!created && Number.isFinite(created.getTime()) && created >= sevenDaysAgo;
     }).length;
 
-    const postsConImagen = threads.filter((t) => !!t.image_url).length;
-
     const actividad7d =
-      threads.filter((t) => t?.created_at && new Date(t.created_at) >= sevenDaysAgo).length +
-      threadComments.filter((c) => c?.created_at && new Date(c.created_at) >= sevenDaysAgo).length +
       messages.filter((m) => m?.created_at && new Date(m.created_at) >= sevenDaysAgo).length +
       groupMessages.filter((m) => m?.created_at && new Date(m.created_at) >= sevenDaysAgo).length;
 
@@ -421,7 +404,6 @@ export default function Dashboard({
 
     const registrosHoy = users.filter((u) => u?.created_at?.startsWith(today)).length;
     const mensajesHoy = messages.filter((m) => m?.created_at?.startsWith(today)).length;
-    const publicacionesHoy = threads.filter((t) => t?.created_at?.startsWith(today)).length;
 
     return {
       usersWithUsername,
@@ -429,15 +411,13 @@ export default function Dashboard({
       privateProfiles,
       eventsProximos,
       activeGroups,
-      postsConImagen,
       actividad7d,
       followPendientes,
       notificationsSinLeer,
       registrosHoy,
       mensajesHoy,
-      publicacionesHoy,
     };
-  }, [users, events, groups, threads, threadComments, messages, groupMessages, follows, notifications, today, sevenDaysAgo]);
+  }, [users, events, groups, messages, groupMessages, follows, notifications, today, sevenDaysAgo]);
 
   const totalPending = pendingEducators.length;
 
@@ -1171,11 +1151,6 @@ export default function Dashboard({
                 <CalendarDays className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 Eventos
               </TabsTrigger>
-              <TabsTrigger value="threads" className="text-xs sm:text-sm px-2.5 sm:px-4 py-1.5 sm:py-2 gap-1 sm:gap-2 rounded-lg sm:rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-300">
-                <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                <span className="hidden sm:inline">Posts</span>
-                <span className="sm:hidden">Publi</span>
-              </TabsTrigger>
               <TabsTrigger value="messages" className="text-xs sm:text-sm px-2.5 sm:px-4 py-1.5 sm:py-2 gap-1 sm:gap-2 rounded-lg sm:rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-300">
                 <MessagesSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 <span className="hidden sm:inline">Msgs</span>
@@ -1337,16 +1312,11 @@ export default function Dashboard({
                   <CardTitle className="text-base sm:text-lg font-bold">Pulso del día</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 gap-3">
                     <div className="relative group rounded-xl border border-border/50 bg-gradient-to-br from-background to-primary/5 p-4 hover:shadow-md transition-all duration-300">
                       <div className="absolute top-2 right-2 w-8 h-8 bg-primary/5 rounded-full" />
                       <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Registros</p>
                       <p className="text-2xl sm:text-3xl font-black mt-1 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">{extraStats.registrosHoy}</p>
-                    </div>
-                    <div className="relative group rounded-xl border border-border/50 bg-gradient-to-br from-background to-blue-500/5 p-4 hover:shadow-md transition-all duration-300">
-                      <div className="absolute top-2 right-2 w-8 h-8 bg-blue-500/5 rounded-full" />
-                      <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Posts</p>
-                      <p className="text-2xl sm:text-3xl font-black mt-1 bg-gradient-to-r from-blue-600 to-blue-500/70 bg-clip-text text-transparent">{extraStats.publicacionesHoy}</p>
                     </div>
                     <div className="relative group rounded-xl border border-border/50 bg-gradient-to-br from-background to-green-500/5 p-4 hover:shadow-md transition-all duration-300">
                       <div className="absolute top-2 right-2 w-8 h-8 bg-green-500/5 rounded-full" />
@@ -1356,8 +1326,7 @@ export default function Dashboard({
                   </div>
                   <div className="mt-4 pt-4 border-t border-border/30 rounded-lg bg-muted/20 p-3">
                     <p className="text-xs text-muted-foreground">
-                      <span className="font-medium text-foreground">Grupos recientes (7 días):</span> {extraStats.activeGroups} · 
-                      <span className="font-medium text-foreground">Posts con imagen:</span> {extraStats.postsConImagen}
+                      <span className="font-medium text-foreground">Grupos recientes (7 días):</span> {extraStats.activeGroups}
                     </p>
                   </div>
                 </CardContent>
@@ -1712,108 +1681,6 @@ export default function Dashboard({
                                   <Trash2 className="w-3 h-3" />
                                 </Button>
                               </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="threads">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-                  <MessageSquare className="w-4 h-4" />
-                  Publicaciones ({threads.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {loadingAdmin ? (
-                  <div className="py-8 text-xs sm:text-sm text-muted-foreground">Cargando publicaciones...</div>
-                ) : (
-                  <div className="overflow-x-auto -mx-2 sm:mx-0">
-                    <table className="w-full text-xs sm:text-sm min-w-max">
-                      <thead>
-                        <tr className="border-b bg-muted/50 sticky top-0">
-                          <th className="text-left p-2 sm:p-3 text-xs hidden md:table-cell">Autor</th>
-                          <th className="text-left p-2 sm:p-3 text-xs">Contenido</th>
-                          <th className="text-left p-2 sm:p-3 text-xs">Fecha</th>
-                          <th className="text-right p-2 sm:p-3 text-xs">Acciones</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {threads.map((t) => (
-                          <tr key={t.id} className="border-b hover:bg-muted/50">
-                            <td className="p-2 sm:p-3 text-xs text-muted-foreground hidden md:table-cell truncate">{t.author_id}</td>
-                            <td className="p-2 sm:p-3 text-xs sm:text-sm truncate">{String(t.content).slice(0, 40)}...</td>
-                            <td className="p-2 sm:p-3 text-xs sm:text-sm">{formatDate(t.created_at)}</td>
-                            <td className="p-2 sm:p-3 text-right">
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={async () => {
-                                  const ok = await handleDeleteById("threads", "id", t.id);
-                                  if (ok) setThreads((prev) => prev.filter((x) => x.id !== t.id));
-                                }}
-                                className="text-xs h-8 px-2"
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </Button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="comments">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-                  <MessageSquare className="w-4 h-4" />
-                  Comentarios ({threadComments.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {loadingAdmin ? (
-                  <div className="py-8 text-xs sm:text-sm text-muted-foreground">Cargando comentarios...</div>
-                ) : (
-                  <div className="overflow-x-auto -mx-2 sm:mx-0">
-                    <table className="w-full text-xs sm:text-sm min-w-max">
-                      <thead>
-                        <tr className="border-b bg-muted/50 sticky top-0">
-                          <th className="text-left p-2 sm:p-3 text-xs hidden md:table-cell">Autor</th>
-                          <th className="text-left p-2 sm:p-3 text-xs">Contenido</th>
-                          <th className="text-left p-2 sm:p-3 text-xs">Fecha</th>
-                          <th className="text-right p-2 sm:p-3 text-xs">Acciones</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {threadComments.map((c) => (
-                          <tr key={c.id} className="border-b hover:bg-muted/50">
-                            <td className="p-2 sm:p-3 text-xs text-muted-foreground hidden md:table-cell truncate">{c.author_id}</td>
-                            <td className="p-2 sm:p-3 text-xs sm:text-sm truncate">{String(c.content).slice(0, 40)}...</td>
-                            <td className="p-2 sm:p-3 text-xs sm:text-sm">{formatDate(c.created_at)}</td>
-                            <td className="p-2 sm:p-3 text-right">
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={async () => {
-                                  const ok = await handleDeleteById("thread_comments", "id", c.id);
-                                  if (ok) setThreadComments((prev) => prev.filter((x) => x.id !== c.id));
-                                }}
-                                className="text-xs h-8 px-2"
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </Button>
                             </td>
                           </tr>
                         ))}
