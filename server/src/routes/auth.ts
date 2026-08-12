@@ -140,6 +140,10 @@ authRouter.get("/captcha", (_req: any, res: any) => {
 });
 
 authRouter.post("/local-bridge", async (req: any, res: any) => {
+  if (process.env.NODE_ENV === "production") {
+    return res.status(404).json({ error: "Endpoint no disponible" });
+  }
+
   const parse = bridgeSchema.safeParse(req.body);
   if (!parse.success) {
     return res.status(400).json({ error: parse.error.flatten() });
@@ -354,13 +358,20 @@ authRouter.post(
   } catch (error: any) {
     console.error("Error al registrar usuario:", error);
     res.status(500).json({
-      error: error.message || "Error al registrar usuario. Intenta de nuevo."
+      error: "Error al registrar usuario. Intenta de nuevo."
     });
   }
   },
 );
 
-authRouter.post("/login", (req: any, res: any) => {
+authRouter.post(
+  "/login",
+  rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    message: "Demasiados intentos de inicio de sesión. Intenta más tarde.",
+  }),
+  (req: any, res: any) => {
   const parse = loginSchema.safeParse(req.body);
   if (!parse.success)
     return res.status(400).json({ error: parse.error.flatten() });
@@ -403,7 +414,8 @@ authRouter.post("/login", (req: any, res: any) => {
       account_status: normalizedStatus,
     } 
   });
-});
+  },
+);
 
 // GET /auth/verify?token=xxx - Verificar email
 authRouter.get("/verify", (req: any, res: any) => {
@@ -460,7 +472,15 @@ authRouter.get("/verify", (req: any, res: any) => {
 });
 
 // POST /auth/resend-verification - Reenviar email de verificación
-authRouter.post("/resend-verification", authMiddleware, async (req: any, res: any) => {
+authRouter.post(
+  "/resend-verification",
+  authMiddleware,
+  rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 3,
+    message: "Demasiados reenvíos de verificación. Intenta más tarde.",
+  }),
+  async (req: any, res: any) => {
   const userId = req.user.id;
 
   const user = db.prepare("SELECT email, email_verified_at, account_status FROM users WHERE id = ?").get(userId) as any;
@@ -488,4 +508,5 @@ authRouter.post("/resend-verification", authMiddleware, async (req: any, res: an
     console.error("Error al reenviar email:", error);
     res.status(500).json({ error: "No se pudo enviar el email" });
   }
-});
+  },
+);

@@ -3,6 +3,8 @@ import multer from "multer";
 import path from "node:path";
 import fs from "node:fs";
 import { authMiddleware } from "../auth";
+import { rateLimit, rateLimitPresets } from "../middleware/rate-limit";
+import { randomUUID } from "node:crypto";
 
 const uploadDir = path.join(process.cwd(), "server", "uploads");
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
@@ -13,8 +15,14 @@ const ALLOWED_MIMES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 const storage = multer.diskStorage({
   destination: (_req: any, _file: any, cb: any) => cb(null, uploadDir),
   filename: (_req: any, file: any, cb: any) => {
-    const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    const ext = path.extname(file.originalname);
+    const extensionByMime: Record<string, string> = {
+      "image/jpeg": ".jpg",
+      "image/png": ".png",
+      "image/webp": ".webp",
+      "image/gif": ".gif",
+    };
+    const unique = randomUUID();
+    const ext = extensionByMime[file.mimetype] || path.extname(file.originalname).toLowerCase();
     cb(null, `${unique}${ext}`);
   },
 });
@@ -29,7 +37,8 @@ const fileFilter = (_req: any, file: any, cb: any) => {
 
 const upload = multer({ 
   storage, 
-  fileFilter
+  fileFilter,
+  limits: { fileSize: 5 * 1024 * 1024 },
 });
 
 export const uploadsRouter = Router();
@@ -37,6 +46,7 @@ export const uploadsRouter = Router();
 uploadsRouter.post(
   "/image",
   authMiddleware,
+  rateLimit(rateLimitPresets.upload),
   upload.single("file"),
   (req: any, res: any) => {
     const file = (req as any).file as any | undefined;

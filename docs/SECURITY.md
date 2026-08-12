@@ -41,6 +41,12 @@ Si accidentalmente commiteaste una API key:
 
 ## 🛡️ Mejores Prácticas
 
+### Backend local
+- `JWT_SECRET` debe tener al menos 32 caracteres en producción.
+- `ORIGIN` debe contener únicamente los orígenes permitidos, separados por comas.
+- El endpoint `/auth/local-bridge` no está disponible en producción.
+- Las operaciones administrativas y de escritura deben validarse en el servidor, no solo en el frontend.
+
 ### En Desarrollo:
 ```bash
 # Copia el ejemplo

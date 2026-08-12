@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { db } from "../db";
 import { authMiddleware } from "../auth";
+import { requireLocalAdmin } from "../middleware/require-admin";
 import { z } from "zod";
 import { randomUUID } from "node:crypto";
 
@@ -25,7 +26,7 @@ const upsertSchema = z.object({
 });
 
 // Crear evento
-eventsRouter.post("/", authMiddleware, (req: any, res: any) => {
+eventsRouter.post("/", requireLocalAdmin, (req: any, res: any) => {
   const me = (req as any).user.id as string;
   const parse = upsertSchema.safeParse(req.body);
   if (!parse.success)
@@ -52,7 +53,7 @@ eventsRouter.post("/", authMiddleware, (req: any, res: any) => {
 });
 
 // Actualizar evento
-eventsRouter.put("/:id", authMiddleware, (req: any, res: any) => {
+eventsRouter.put("/:id", requireLocalAdmin, (req: any, res: any) => {
   const id = String(req.params.id);
   const parse = upsertSchema.safeParse(req.body);
   if (!parse.success)
@@ -76,7 +77,7 @@ eventsRouter.put("/:id", authMiddleware, (req: any, res: any) => {
 });
 
 // Eliminar evento
-eventsRouter.delete("/:id", authMiddleware, (req: any, res: any) => {
+eventsRouter.delete("/:id", requireLocalAdmin, (req: any, res: any) => {
   const id = String(req.params.id);
   db.prepare(`DELETE FROM events WHERE id = ?`).run(id);
   res.json({ ok: true });

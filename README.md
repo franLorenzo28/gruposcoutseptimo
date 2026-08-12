@@ -13,7 +13,7 @@ Frontend principal con React + TypeScript + Vite, diseño con TailwindCSS y shad
 
 ### Resumen
 
-- Stack frontend: React 18, TypeScript, Vite, React Router, TailwindCSS, shadcn/ui.
+- Stack frontend: React 19, TypeScript, Vite, React Router, TailwindCSS, shadcn/ui.
 - Estado de datos: modo dual (Supabase o backend local según variable de entorno).
 - Backend opcional: Express + TypeScript en [server](server).
 - Deploy principal: Vercel.
@@ -23,13 +23,13 @@ Frontend principal con React + TypeScript + Vite, diseño con TailwindCSS y shad
 ### Requisitos
 
 - Node.js 20
-- npm
+- pnpm 9+
 
 ### Instalación
 
 ```bash
-npm install
-cd server && npm install
+pnpm install
+pnpm --dir server install
 ```
 
 ### Variables de entorno
@@ -58,31 +58,31 @@ Notas:
 ### Frontend
 
 ```bash
-npm run dev
-npm run build
-npm run preview
+pnpm dev
+pnpm build
+pnpm preview
 ```
 
 ### Backend
 
 ```bash
-npm run dev:server
+pnpm dev:server
 ```
 
 ### Both
 
 ```bash
-npm run dev:all
+pnpm dev:all
 ```
 
 ### Quality
 
 ```bash
-npm run type-check
-npm run lint
-npm run test
-npm run ci
-npm run security:check
+pnpm type-check
+pnpm lint
+pnpm test
+pnpm ci
+pnpm security:check
 ```
 
 ### Estructura del proyecto
@@ -129,7 +129,7 @@ npm run security:check
 
 - No subir `.env*` reales al repositorio.
 - Revisar [docs/SECURITY.md](docs/SECURITY.md) antes de deploy.
-- Ejecutar `npm run security:check` previo a publicar.
+- Ejecutar `pnpm security:check` previo a publicar.
 
 ### Deploy
 
@@ -154,7 +154,7 @@ Main frontend built with React + TypeScript + Vite, styled with TailwindCSS and 
 
 ### Summary
 
-- Frontend stack: React 18, TypeScript, Vite, React Router, TailwindCSS, shadcn/ui.
+- Frontend stack: React 19, TypeScript, Vite, React Router, TailwindCSS, shadcn/ui.
 - Data mode: dual mode (Supabase or local backend based on environment variables).
 - Optional backend: Express + TypeScript in [server](server).
 - Main deployment target: Vercel.
@@ -164,13 +164,13 @@ Main frontend built with React + TypeScript + Vite, styled with TailwindCSS and 
 #### Requirements
 
 - Node.js 20
-- npm
+- pnpm 9+
 
 #### Install
 
 ```bash
-npm install
-cd server && npm install
+pnpm install
+pnpm --dir server install
 ```
 
 #### Environment variables
@@ -199,31 +199,31 @@ Notes:
 #### Frontend
 
 ```bash
-npm run dev
-npm run build
-npm run preview
+pnpm dev
+pnpm build
+pnpm preview
 ```
 
 #### Backend
 
 ```bash
-npm run dev:server
+pnpm dev:server
 ```
 
 #### Both
 
 ```bash
-npm run dev:all
+pnpm dev:all
 ```
 
 #### Quality
 
 ```bash
-npm run type-check
-npm run lint
-npm run test
-npm run ci
-npm run security:check
+pnpm type-check
+pnpm lint
+pnpm test
+pnpm ci
+pnpm security:check
 ```
 
 ### Project Structure
@@ -270,7 +270,7 @@ npm run security:check
 
 - Do not commit real `.env*` files.
 - Review [docs/SECURITY.md](docs/SECURITY.md) before deployment.
-- Run `npm run security:check` before publishing.
+- Run `pnpm security:check` before publishing.
 
 ### Deploy
 

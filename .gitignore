@@ -66,10 +66,9 @@ grafana_data/
 *.dump
 backup-*
 
-# Package manager locks not used in this repo
+# Keep the lockfile used by the project
 bun.lockb
 yarn.lock
-pnpm-lock.yaml
 
 
 #config --global user.name

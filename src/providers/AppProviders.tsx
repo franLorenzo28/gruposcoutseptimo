@@ -67,10 +67,13 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
     if (currentRequest !== requestId.current) return;
 
     if (error || !profile) {
+      // No asumir acceso activo cuando falta el perfil o la consulta falla.
+      // La autorización debe ser fail-closed hasta poder comprobar el estado.
       setUser(sessionUser);
-      setAccountStatus("activo");
+      setAccountStatus("pendiente_aprobacion");
       try {
-        localStorage.setItem("adminUser", JSON.stringify(sessionUser));
+        localStorage.setItem("pendingAccountStatus", "pendiente_aprobacion");
+        localStorage.setItem("pendingUserName", sessionUser.email || "Usuario");
       } catch {
         // App still works when storage is unavailable.
       }

@@ -24,8 +24,21 @@ import { createSocket } from "./socket";
 
 const app = express();
 app.set("etag", false);
-app.use(cors({ origin: process.env.ORIGIN || true }));
-app.use(express.json({ limit: "5mb" }));
+const allowedOrigins = (process.env.ORIGIN || "http://localhost:5173,http://127.0.0.1:5173")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+    callback(new Error("Origen no permitido"));
+  },
+}));
+app.use(express.json({ limit: "1mb" }));
 app.use(morgan("dev"));
 
 // Static uploads

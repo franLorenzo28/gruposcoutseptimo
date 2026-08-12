@@ -1,6 +1,12 @@
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";
+const configuredSecret = process.env.JWT_SECRET?.trim();
+
+if (process.env.NODE_ENV === "production" && (!configuredSecret || configuredSecret.length < 32)) {
+  throw new Error("JWT_SECRET debe estar configurado y tener al menos 32 caracteres en producción");
+}
+
+const JWT_SECRET = configuredSecret || "local-development-secret-change-me";
 
 export type AuthPayload = {
   userId: string;
