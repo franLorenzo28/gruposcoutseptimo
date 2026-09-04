@@ -1,4 +1,4 @@
-import { Navigate, type RouteObject } from "react-router-dom";
+import { Navigate, useParams, type RouteObject } from "react-router-dom";
 import RequireApproval from "@/components/RequireApproval";
 import RequireMemberAuth from "@/components/auth/RequireMemberAuth";
 import {
@@ -7,6 +7,10 @@ import {
   DashboardCoordinador,
   InternalAnnouncementsPage,
   InternalCalendarPage,
+  InternalFormsPage,
+  InternalLibraryPage,
+  InternalPlanningPage,
+  InternalRamaRoute,
   Galeria,
   Jamborees,
   Jamboree1981,
@@ -16,7 +20,6 @@ import {
   ArchivoCapsulaTiempo,
   InternalDashboardPage,
   InternalDocumentsPage,
-  InternalPlanningPage,
   InternalUploadsPage,
   Mensajes,
   Narrativas,
@@ -31,6 +34,11 @@ import { useMemberAuth } from "@/context/MemberAuthContext";
 function InternalDashboardRedirect() {
   const { isAuthenticated } = useMemberAuth();
   return isAuthenticated ? <InternalDashboardPage /> : <Navigate to="/interno/auth" replace />;
+}
+
+function InternalRamaParamRedirect() {
+  const { rama } = useParams();
+  return <Navigate to={`/interno/unidades/${rama || ""}`} replace />;
 }
 
 export const internalRoutes: RouteObject = {
@@ -88,6 +96,23 @@ export const internalRoutes: RouteObject = {
         </RequireMemberAuth>
       ),
     },
+    { path: "uploads", element: <Navigate to="/interno/subidas" replace /> },
+    {
+      path: "biblioteca",
+      element: (
+        <RequireMemberAuth>
+          <InternalLibraryPage />
+        </RequireMemberAuth>
+      ),
+    },
+    {
+      path: "formularios",
+      element: (
+        <RequireMemberAuth>
+          <InternalFormsPage />
+        </RequireMemberAuth>
+      ),
+    },
     {
       path: "planificacion",
       element: (
@@ -96,6 +121,15 @@ export const internalRoutes: RouteObject = {
         </RequireMemberAuth>
       ),
     },
+    {
+      path: "unidades/:rama",
+      element: (
+        <RequireMemberAuth>
+          <InternalRamaRoute />
+        </RequireMemberAuth>
+      ),
+    },
+    { path: "ramas/:rama", element: <InternalRamaParamRedirect /> },
     {
       path: "galeria",
       element: (

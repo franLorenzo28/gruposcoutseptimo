@@ -1,21 +1,33 @@
 import { Navigate, type RouteObject } from "react-router-dom";
 import { AdminGuard } from "@/components/AdminGuard";
+import RequireAuthenticatedUser from "@/components/auth/RequireAuthenticatedUser";
 import {
+  AmLagerfeuer,
   Archivo,
+  ArchivoCapsulaTiempo,
+  ArchivoCompania,
   ArchivoScoutpedia,
   Bauen,
+  Cancionero,
   Contacto,
   DirigEn,
   Eventos,
+  Galeria,
   Historia,
   Inicio,
+  Jamborees,
+  Jamboree1981,
+  Jamboree2014,
+  Jamboree2023,
   Locales,
   Manada,
   MovimientoScout,
+  PerfilPublic,
   Pioneros,
   Rovers,
   Staff,
   Tropa,
+  VerificarEmail,
   Veteranos,
   Comite,
 } from "@/app/routes/lazy-pages";
@@ -31,12 +43,94 @@ export const publicRoutes: RouteObject = {
     { path: "movimiento-scout", element: <MovimientoScout /> },
     { path: "archivo", element: <Archivo /> },
     { path: "archivo/scoutpedia", element: <ArchivoScoutpedia /> },
+    {
+      path: "archivo/compania",
+      element: (
+        <RequireAuthenticatedUser featureName="Compañía">
+          <ArchivoCompania />
+        </RequireAuthenticatedUser>
+      ),
+    },
+    {
+      path: "archivo/capsula-del-tiempo",
+      element: (
+        <RequireAuthenticatedUser featureName="Cápsula del Tiempo">
+          <ArchivoCapsulaTiempo />
+        </RequireAuthenticatedUser>
+      ),
+    },
+    {
+      path: "archivo/capsula-tiempo",
+      element: <Navigate to="/archivo/capsula-del-tiempo" replace />,
+    },
+    {
+      path: "archivo/am-lagerfeuer",
+      element: (
+        <RequireAuthenticatedUser featureName="Am Lagerfeuer">
+          <AmLagerfeuer />
+        </RequireAuthenticatedUser>
+      ),
+    },
+    {
+      path: "am-lagerfeuer",
+      element: <Navigate to="/archivo/am-lagerfeuer" replace />,
+    },
+    {
+      path: "cancionero",
+      element: (
+        <RequireAuthenticatedUser featureName="Cancionero">
+          <Cancionero />
+        </RequireAuthenticatedUser>
+      ),
+    },
+    {
+      path: "galeria",
+      element: (
+        <RequireAuthenticatedUser featureName="Galería">
+          <Galeria />
+        </RequireAuthenticatedUser>
+      ),
+    },
+    { path: "verificar-email", element: <VerificarEmail /> },
+    { path: "perfil-public/:id", element: <PerfilPublic /> },
     { path: "veteranos", element: <AdminGuard><Veteranos /></AdminGuard> },
     { path: "educadores", element: <AdminGuard><DirigEn /></AdminGuard> },
     { path: "archivo/locales", element: <Locales /> },
     { path: "locales", element: <Navigate to="/archivo/locales" replace /> },
     { path: "contacto", element: <Contacto /> },
     { path: "eventos", element: <Eventos /> },
+    {
+      path: "eventos/jamborees",
+      element: (
+        <RequireAuthenticatedUser featureName="Jamborees">
+          <Jamborees />
+        </RequireAuthenticatedUser>
+      ),
+    },
+    {
+      path: "eventos/jamboree-1981",
+      element: (
+        <RequireAuthenticatedUser featureName="Jamboree 1981">
+          <Jamboree1981 />
+        </RequireAuthenticatedUser>
+      ),
+    },
+    {
+      path: "eventos/jamboree-2014",
+      element: (
+        <RequireAuthenticatedUser featureName="Jamboree 2014">
+          <Jamboree2014 />
+        </RequireAuthenticatedUser>
+      ),
+    },
+    {
+      path: "eventos/jamboree-2023",
+      element: (
+        <RequireAuthenticatedUser featureName="Jamboree 2023">
+          <Jamboree2023 />
+        </RequireAuthenticatedUser>
+      ),
+    },
     { path: "unidades/manada", element: <Manada /> },
     { path: "unidades/tropa", element: <Tropa /> },
     { path: "unidades/pioneros", element: <Pioneros /> },
@@ -51,3 +145,4 @@ export const publicRoutes: RouteObject = {
     { path: "ramas/comite", element: <Navigate to="/unidades/comite" replace /> },
   ],
 };
+

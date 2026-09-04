@@ -39,7 +39,11 @@ export const InternalDocumentsPage = lazy(() => import("@/app/internal/pages/Int
 export const InternalAnnouncementsPage = lazy(() => import("@/app/internal/pages/InternalAnnouncementsPage"));
 export const InternalCalendarPage = lazy(() => import("@/app/internal/pages/InternalCalendarPage"));
 export const InternalUploadsPage = lazy(() => import("@/app/internal/pages/InternalUploadsPage"));
+export const InternalFormsPage = lazy(() => import("@/app/internal/pages/InternalFormsPage"));
+export const InternalLibraryPage = lazy(() => import("@/app/internal/pages/InternalLibraryPage"));
 export const InternalPlanningPage = lazy(() => import("@/app/internal/pages/InternalPlanningPage"));
+export const InternalRamaRoute = lazy(() => import("@/app/internal/pages/InternalRamaRoute"));
+export const PanelRama = lazy(() => import("@/pages/miembros/PanelRama"));
 export const Manada = lazy(() => import("@/pages/ramas/manada"));
 export const Tropa = lazy(() => import("@/pages/ramas/tropa"));
 export const Pioneros = lazy(() => import("@/pages/ramas/pioneros"));

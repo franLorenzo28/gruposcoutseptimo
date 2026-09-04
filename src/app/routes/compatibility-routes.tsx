@@ -34,5 +34,11 @@ export const compatibilityRoutes: RouteObject[] = [
   { path: "grupos/:id", element: <GroupDetailRedirect /> },
   { path: "dashboard-coordinador", element: <Navigate to="/interno/dashboard-coordinador" replace /> },
   { path: "admin-panel", element: <Navigate to="/admin" replace /> },
+  { path: "uploads", element: <Navigate to="/interno/subidas" replace /> },
+  { path: "biblioteca", element: <Navigate to="/interno/biblioteca" replace /> },
+  { path: "formularios", element: <Navigate to="/interno/formularios" replace /> },
+  { path: "planificacion", element: <Navigate to="/interno/planificacion" replace /> },
+  { path: "capsula-del-tiempo", element: <Navigate to="/archivo/capsula-del-tiempo" replace /> },
+  { path: "capsula-tiempo", element: <Navigate to="/archivo/capsula-del-tiempo" replace /> },
   { path: "test-diagnostic", element: <TestDiagnostic /> },
 ];

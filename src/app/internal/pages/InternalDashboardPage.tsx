@@ -5,7 +5,20 @@ import { Card, CardContent } from "@/components/ui/card";
 import { InternalPageHeader } from "@/app/internal/components/InternalPageHeader";
 import { useMemberAuth } from "@/context/MemberAuthContext";
 import { getUpcomingRamaEvents, ramaConfig, readRamaEvents } from "@/app/internal/rama-storage";
-import { BookOpen, CalendarDays, CalendarHeart, FolderOpen, Megaphone, MessageCircle, ShieldCheck, Users, UploadCloud } from "lucide-react";
+import {
+  BookOpen,
+  CalendarCheck,
+  CalendarDays,
+  CalendarHeart,
+  ClipboardList,
+  FolderOpen,
+  Library,
+  Megaphone,
+  MessageCircle,
+  ShieldCheck,
+  Users,
+  UploadCloud,
+} from "lucide-react";
 
 export default function InternalDashboardPage() {
   const { session } = useMemberAuth();
@@ -32,8 +45,26 @@ export default function InternalDashboardPage() {
     {
       to: "/interno/agenda",
       title: "Agenda",
-      description: "Calendario operativo y prximos encuentros.",
+      description: "Calendario operativo y próximos encuentros.",
       icon: CalendarDays,
+    },
+    {
+      to: "/interno/planificacion",
+      title: "Planificación",
+      description: "Ciclo de programa y actividades educativas de unidad.",
+      icon: CalendarCheck,
+    },
+    {
+      to: "/interno/biblioteca",
+      title: "Biblioteca Scout",
+      description: "Manuales, guías metodológicas y recursos pedagógicos.",
+      icon: Library,
+    },
+    {
+      to: "/interno/formularios",
+      title: "Formularios",
+      description: "Inscripciones, fichas médicas y autorizaciones.",
+      icon: ClipboardList,
     },
     {
       to: "/interno/subidas",
@@ -44,13 +75,13 @@ export default function InternalDashboardPage() {
     {
       to: "/interno/capsula-tiempo",
       title: "Cápsula del Tiempo",
-      description: "Archivos histricos y recuerdos especiales.",
+      description: "Archivos históricos y recuerdos especiales.",
       icon: FolderOpen,
     },
     {
       to: "/interno/am-lagerfeuer",
       title: "Am Lagerfeuer",
-      description: "Nuestra publicación oficial histrica.",
+      description: "Nuestra publicación oficial histórica.",
       icon: BookOpen,
     },
     {
@@ -193,9 +224,11 @@ export default function InternalDashboardPage() {
               </div>
               <div className="flex flex-wrap gap-2">
                 {allowedRamas.map((rama) => (
-                  <Badge key={rama} className="rounded-full bg-primary/10 text-primary hover:bg-primary/10">
-                    {ramaConfig[rama].titulo}
-                  </Badge>
+                  <Link key={rama} to={`/interno/unidades/${rama}`}>
+                    <Badge className="rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors cursor-pointer">
+                      {ramaConfig[rama].titulo} &rarr;
+                    </Badge>
+                  </Link>
                 ))}
               </div>
             </CardContent>

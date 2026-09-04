@@ -6,8 +6,10 @@ import {
   CalendarDays,
   CalendarCheck,
   ChevronDown,
+  ClipboardList,
   FolderOpen,
   LayoutDashboard,
+  Library,
   LogOut,
   Menu,
   MessageCircle,
@@ -61,6 +63,8 @@ const primaryLinks: InternalNavLink[] = [
 const secondaryLinks: InternalNavLink[] = [
   { to: "/interno/narrativas", label: "Narrativas", icon: BookOpen },
   { to: "/interno/planificacion", label: "Planificación", icon: CalendarCheck },
+  { to: "/interno/biblioteca", label: "Biblioteca", icon: Library },
+  { to: "/interno/formularios", label: "Formularios", icon: ClipboardList },
 ];
 
 const allLinks = [...primaryLinks, ...secondaryLinks];
