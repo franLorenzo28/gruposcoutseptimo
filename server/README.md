@@ -1,204 +1,60 @@
-# 🔧 Backend Scout - Servidor Express + TypeScript
+# API del Grupo Scout Séptimo
 
-## Descripción
+Backend Fastify + TypeScript. Supabase continúa proporcionando PostgreSQL, Auth, Storage y Realtime; esta API concentra validación, autorización y reglas de negocio.
 
-API REST del proyecto Scout con soporte para:
+## Requisitos
 
-- **Autenticación**: JWT, bcrypt
-- **Base de datos**: PostgreSQL o SQLite
-- **Upload**: Gestión de imágenes con Multer
-- **Monitoreo**: Métricas Prometheus
-- **WebSockets**: Comunicación en tiempo real
+- Node.js 22 o superior
+- pnpm 9.15.4
+- Un proyecto Supabase
 
----
+## Desarrollo
 
-## 🚀 Instalación
+Desde la raíz del repositorio:
 
 ```bash
-npm install
+pnpm install --frozen-lockfile
+copy server/.env.example server/.env
+pnpm dev:server
 ```
 
----
+Configura como mínimo `SUPABASE_URL` y `SUPABASE_PUBLISHABLE_KEY` en `server/.env`. En desarrollo la API puede iniciar sin esas variables, pero `/ready` responderá 503. En producción son obligatorias.
 
-## 📝 Variables de Entorno
-
-Crea un archivo `.env` basado en `.env.example`:
-
-```env
-# Servidor
-PORT=8080
-NODE_ENV=development
-ORIGIN=http://localhost:5173
-
-# Base de datos (PostgreSQL)
-DB_TYPE=postgres
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=scoutdb
-DB_USER=scoutuser
-DB_PASSWORD=tu_password_seguro
-
-# O usar SQLite para desarrollo
-# DB_TYPE=sqlite
-
-# JWT y Autenticación
-JWT_SECRET=your-super-secret-jwt-key-change-in-production
-ADMIN_EMAILS=tu-email@ejemplo.com
-ADMIN_SECRET=admin-secret-key
-
-# Email Service (Verificación de correo)
-SMTP_HOST=mailhog                    # Desarrollo: mailhog | Producción: smtp.gmail.com
-SMTP_PORT=1025                       # Desarrollo: 1025 | Producción: 587
-FROM_EMAIL=noreply@scout-local.dev   # Email remitente
-APP_URL=http://localhost:5173        # URL de tu frontend
-# SMTP_USER=                         # Solo si tu SMTP requiere autenticación
-# SMTP_PASS=                         # Solo si tu SMTP requiere autenticación
-```
-
-**Nota:** Para desarrollo local con emails, consulta [EMAIL_SERVICE_GUIDE.md](../EMAIL_SERVICE_GUIDE.md)
-
----
-
-## 🏃 Ejecución
-
-### Desarrollo (con hot-reload)
+## Comandos
 
 ```bash
-npm run dev
+pnpm --dir server run dev
+pnpm --dir server run type-check
+pnpm --dir server run test
+pnpm --dir server run build
+pnpm --dir server run ci
 ```
 
-### Producción
+## Endpoints base
+
+- `GET /health`: liveness del proceso.
+- `GET /ready`: disponibilidad de Supabase Auth y del acceso Data API a `profiles`.
+- `GET /docs`: Swagger UI, solo en desarrollo.
+
+Las rutas de negocio del servidor Express anterior permanecen en `src/routes/` únicamente como código legado para migrar en las próximas fases; no están montadas en el nuevo punto de entrada.
+
+## Seguridad incluida
+
+- CORS por lista explícita de orígenes.
+- Cabeceras de seguridad con Helmet.
+- Límite global de peticiones y de tamaño del body.
+- IDs de request propagables mediante `x-request-id`.
+- Logs JSON con credenciales y tokens redactados.
+- Errores con contrato consistente, sin filtrar detalles internos en respuestas 5xx.
+- Hook `app.authenticate` que valida bearer tokens mediante `supabase.auth.getUser(token)`.
+- Cierre ordenado ante `SIGINT` y `SIGTERM`.
+
+## Docker
+
+La imagen usa Node 22 y debe construirse con la raíz del repositorio como contexto:
 
 ```bash
-npm run build
-npm start
+docker build -f server/Dockerfile .
 ```
 
----
-
-## (Legacy) Docker
-
-Las instrucciones Docker fueron removidas del flujo activo. Si necesitas levantar contenedores, recupera los archivos desde el historial Git (commit anterior a la limpieza) o crea nuevos compose adaptados.
-
----
-
-## 📊 Endpoints
-
-### Autenticación
-
-- `POST /auth/register` - Registrar usuario
-- `POST /auth/login` - Login
-- `GET /auth/me` - Usuario actual
-
-### Perfiles
-
-- `GET /api/profiles/:userId` - Obtener perfil
-- `PUT /api/profiles/:userId` - Actualizar perfil
-- `GET /api/profiles/username/:username` - Buscar por username
-
-### Galería
-
-- `GET /api/gallery` - Listar imágenes
-- `POST /api/gallery` - Subir imagen
-- `DELETE /api/gallery/:id` - Eliminar imagen
-
-### Monitoreo
-
-- `GET /health` - Health check
-- `GET /metrics` - Métricas Prometheus
-
----
-
-## 🗄️ Base de Datos
-
-### PostgreSQL (Producción)
-
-El servidor se conecta automáticamente a PostgreSQL cuando `DB_TYPE=postgres`.
-
-**Schema**: Ver `db/init.sql` para la estructura completa.
-
-### SQLite (Desarrollo)
-
-Útil para desarrollo rápido sin configurar PostgreSQL.
-
-**Archivo**: `data/app.db`
-
----
-
-## 📈 Monitoreo
-
-El servidor expone métricas en `/metrics` para Prometheus:
-
-**Métricas disponibles**:
-
-- `http_requests_total` - Total de peticiones HTTP
-- `http_request_duration_ms` - Latencia de requests
-- `process_cpu_percent` - Uso de CPU
-- `process_memory_bytes` - Uso de memoria
-- `db_query_duration_ms` - Duración de queries
-- `active_connections` - Conexiones activas
-
-**Acceso**: http://localhost:8080/metrics
-
----
-
-## 🔒 Seguridad
-
-- **JWT**: Autenticación con tokens
-- **bcrypt**: Hash de contraseñas (10 rounds)
-- **CORS**: Configurado para origen específico
-- **Validación**: Zod para validar inputs
-
----
-
-## 📁 Estructura
-
-```
-server/
-├── src/
-│   ├── index.ts          # Punto de entrada
-│   ├── db.ts             # Conexión SQLite
-│   ├── db-adapter.ts     # Adaptador PostgreSQL/SQLite
-│   ├── metrics.ts        # Métricas Prometheus
-│   └── types/
-├── db/
-│   └── init.sql          # Schema PostgreSQL
-├── data/                 # SQLite databases
-├── uploads/              # Archivos subidos
-└── package.json
-```
-
----
-
-## 🛠️ Solución de problemas en Windows (npm install falla)
-
-Este proyecto usa `better-sqlite3` (módulo nativo). Si falla la instalación:
-
-1. **Node.js**: Asegúrate de tener Node.js 18+ (recomendado 20.x LTS)
-2. **Build Tools**: Instala Visual Studio Build Tools con C++ Desktop workload
-3. **Python**: Instala Python 3.x y agrégalo al PATH
-4. **Configuración NPM**:
-   ```powershell
-   npm config set msvs_version 2022
-   ```
-5. **Reintentar**: `npm install`
-
-**Alternativa fácil**: Usa Docker/Compose, que compila dentro del contenedor.
-
----
-
-## 📚 Tecnologías
-
-- **Runtime**: Node.js 20
-- **Lenguaje**: TypeScript
-- **Framework**: Express
-- **DB**: PostgreSQL (pg) / SQLite (better-sqlite3)
-- **Auth**: JWT, bcrypt
-- **Upload**: Multer
-- **Validación**: Zod
-- **Monitoreo**: prom-client
-- **WebSockets**: Socket.io
-
----
-
-Desarrollado para **Grupo Scout** 🏕️
+Consulta `docs/backend/ARCHITECTURE.md` y `docs/backend/SUPABASE_INVENTORY.md` para las decisiones y riesgos detectados.

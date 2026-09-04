@@ -1,75 +1,35 @@
 import "dotenv/config";
-import express from "express";
-import cors from "cors";
-import morgan from "morgan";
-import http from "node:http";
-import path from "node:path";
 
-import { authRouter } from "./routes/auth";
-import { profilesRouter } from "./routes/profiles";
-import { groupsRouter } from "./routes/groups";
-import { uploadsRouter } from "./routes/uploads";
-import { followsRouter } from "./routes/follows";
-import { galleryRouter } from "./routes/gallery";
-import { eventsRouter } from "./routes/events";
-import { dmsRouter } from "./routes/dms";
-import { narrativasRouter } from "./routes/narrativas";
-import { adminRouter } from "./routes/admin";
-import { usersRouter } from "./routes/users";
-import { notificationsRouter } from "./routes/notifications";
-import { presenceRouter } from "./routes/presence";
-import { ramaDocumentosRouter } from "./routes/rama-documentos";
-import "./db"; // ensure DB initialized
-import { createSocket } from "./socket";
+import { buildApp } from "./app.js";
+import { loadEnvironment } from "./config/environment.js";
 
-const app = express();
-app.set("etag", false);
-const allowedOrigins = (process.env.ORIGIN || "http://localhost:5173,http://127.0.0.1:5173")
-  .split(",")
-  .map((origin) => origin.trim())
-  .filter(Boolean);
+async function start(): Promise<void> {
+  const config = loadEnvironment();
+  const app = await buildApp({ config });
+  let shuttingDown = false;
 
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-      return;
+  const shutdown = async (signal: NodeJS.Signals): Promise<void> => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    app.log.info({ signal }, "graceful shutdown started");
+
+    try {
+      await app.close();
+      app.log.info("server stopped");
+      process.exitCode = 0;
+    } catch (error: unknown) {
+      app.log.error({ err: error }, "graceful shutdown failed");
+      process.exitCode = 1;
     }
-    callback(new Error("Origen no permitido"));
-  },
-}));
-app.use(express.json({ limit: "1mb" }));
-app.use(morgan("dev"));
+  };
 
-// Static uploads
-const uploadsPath = path.join(process.cwd(), "server", "uploads");
-app.use("/uploads", express.static(uploadsPath));
+  process.once("SIGINT", () => void shutdown("SIGINT"));
+  process.once("SIGTERM", () => void shutdown("SIGTERM"));
 
-// API routes
-app.use("/auth", authRouter);
-app.use("/profiles", profilesRouter);
-app.use("/groups", groupsRouter);
-app.use("/upload", uploadsRouter);
-app.use("/follows", followsRouter);
-app.use("/dms", dmsRouter);
-app.use("/gallery", galleryRouter);
-app.use("/events", eventsRouter);
-app.use("/narrativas", narrativasRouter);
-app.use("/admin", adminRouter);
-app.use("/users", usersRouter);
-app.use("/notifications", notificationsRouter);
-app.use("/presence", presenceRouter);
-app.use("/ramas", ramaDocumentosRouter);
-app.use("/unidades", ramaDocumentosRouter);
+  await app.listen({ host: config.HOST, port: config.PORT });
+}
 
-// Health
-app.get("/health", (_req: any, res: any) => res.json({ ok: true }));
-
-const port = Number(process.env.PORT || 4000);
-const server = http.createServer(app);
-const io = createSocket(server);
-app.set("io", io);
-
-server.listen(port, () => {
-  console.log(`API local sin Supabase escuchando en http://localhost:${port}`);
+start().catch((error: unknown) => {
+  console.error("No se pudo iniciar la API.", error);
+  process.exitCode = 1;
 });

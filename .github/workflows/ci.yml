@@ -24,31 +24,14 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'pnpm'
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Type check
-        run: pnpm run type-check
-
-      - name: Lint
-        run: pnpm run lint
-
-      - name: Tests
-        run: pnpm run test
-
-      - name: Build
+      - name: Frontend and backend quality gates
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-        run: pnpm run build
-
-      - name: Install backend dependencies
-        working-directory: server
-        run: pnpm install --no-frozen-lockfile
-
-      - name: Build backend
-        working-directory: server
-        run: pnpm run build
+        run: pnpm run ci

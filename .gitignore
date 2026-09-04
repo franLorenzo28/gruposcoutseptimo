@@ -9,6 +9,7 @@ lerna-debug.log*
 
 # Dependencies
 node_modules
+.pnpm-store/
 
 # Build outputs and caches
 dist/
@@ -50,10 +51,10 @@ supabase/.temp/
 supabase/.branches/
 
 # Server data and uploads
-server/data/*.db
-server/data/*.db-*
-server/uploads/*
-!server/uploads/.gitkeep
+server/data/
+server/server/data/
+server/uploads/
+server/server/uploads/
 
 # Docker volumes
 postgres_data/
@@ -63,6 +64,8 @@ grafana_data/
 
 # Backups and dumps
 *.sql
+!supabase/migrations/*.sql
+!supabase/legacy/*.sql
 *.dump
 backup-*
 

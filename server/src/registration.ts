@@ -13,7 +13,8 @@ export interface RegistrationProfileInput {
   nombre: string;
   apellido: string;
   email: string;
-  tipo_relacion: string;
+  tipo_relacion?: string;
+  grupo_scout?: string | null;
   rama?: string | null;
   nombre_scout_relacionado?: string | null;
 }

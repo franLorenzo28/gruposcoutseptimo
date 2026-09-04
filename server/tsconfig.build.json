@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "sourceMap": true,
+    "declaration": false
+  },
+  "files": ["src/index.ts"],
+  "include": [],
+  "exclude": ["src/**/*.test.ts"]
+}

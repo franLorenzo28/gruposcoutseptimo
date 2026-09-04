@@ -3,6 +3,9 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
   "packageManager": "pnpm@9.15.4",
   "scripts": {
     "dev": "vite --mode development",
@@ -23,7 +26,9 @@
     "test": "vitest run",
     "type-check": "tsc --noEmit",
     "setup": "sh scripts/setup.sh",
-    "ci": "pnpm type-check && pnpm lint && pnpm build",
+    "ci": "pnpm check:migrations && pnpm type-check && pnpm lint && pnpm test && pnpm build && pnpm --dir server run ci",
+    "test:server": "pnpm --dir server run test",
+    "check:migrations": "node scripts/validate-supabase-migrations.mjs",
     "test:ci": "vitest run",
     "test:watch": "vitest",
     "node:use": "powershell -ExecutionPolicy Bypass -File scripts/use-node.ps1",

@@ -1,33 +1,40 @@
-FROM node:20-slim
+FROM node:22-slim AS build
 
 WORKDIR /app
 
-# Build deps for native modules like better-sqlite3
-RUN apt-get update \
- && apt-get install -y --no-install-recommends python3 make g++ \
- && rm -rf /var/lib/apt/lists/*
+RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 
-# Ensure node-gyp uses python3
-ENV npm_config_python=/usr/bin/python3
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY server/package.json ./server/package.json
 
-COPY package.json package-lock.json* pnpm-lock.yaml* yarn.lock* ./
+RUN pnpm install --frozen-lockfile --filter gruposcoutseptimo-server... --ignore-scripts
 
-# Prefer npm ci when lockfile exists
-RUN if [ -f package-lock.json ]; then npm ci; \
-    elif [ -f pnpm-lock.yaml ]; then npm i -g pnpm && pnpm i --frozen-lockfile; \
-    elif [ -f yarn.lock ]; then corepack enable && yarn install --frozen-lockfile; \
-    else npm install; fi
+COPY server/tsconfig.json server/tsconfig.build.json ./server/
+COPY server/src ./server/src
 
-COPY tsconfig.json ./
-COPY src ./src
+RUN pnpm --dir server run build
 
-RUN npm run build
+FROM node:22-slim AS runtime
 
-# Create runtime dirs
-RUN mkdir -p server/data server/uploads
+WORKDIR /app
 
-ENV NODE_ENV=production
+RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY server/package.json ./server/package.json
+
+RUN pnpm install --prod --frozen-lockfile --filter gruposcoutseptimo-server... --ignore-scripts
+
+COPY --from=build /app/server/dist ./server/dist
+
+RUN chown -R node:node /app
+
+ENV NODE_ENV=production \
+    HOST=0.0.0.0 \
+    PORT=8080
 
 EXPOSE 8080
 
-CMD ["node", "dist/index.js"]
+USER node
+
+CMD ["node", "server/dist/index.js"]
