@@ -55,7 +55,7 @@ export const healthRoutes: FastifyPluginAsyncZod<HealthRouteOptions> = async (
             authReason: checks.auth.reason,
             databaseReason: checks.database.reason,
           },
-          "Supabase readiness check failed",
+          "dependency readiness check failed",
         );
       }
 

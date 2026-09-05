@@ -9,6 +9,7 @@ import {
 import { loadEnvironment, type EnvironmentConfig } from "./config/environment.js";
 import {
   createSupabaseReadinessProbe,
+  createPostgresReadinessProbe,
   type ReadinessProbe,
 } from "./integrations/supabase/readiness.js";
 import { healthRoutes } from "./modules/health/health.routes.js";
@@ -25,14 +26,17 @@ import { installErrorHandlers } from "./plugins/error-handler.js";
 import { registerOpenApi } from "./plugins/openapi.js";
 import { registerSecurityPlugins } from "./plugins/security.js";
 import { installSupabaseClient } from "./plugins/supabase.js";
+import { installPostgresPool } from "./plugins/postgres.js";
 import { authRoutes } from "./modules/auth/auth.routes.js";
 import { createAuthMailer, type AuthMailer } from "./modules/auth/auth-mailer.js";
+import { createGoogleOAuthClient, type GoogleOAuthClient } from "./modules/auth/google-oauth.js";
 
 export interface BuildAppOptions {
   config?: EnvironmentConfig;
   logger?: boolean;
   readinessProbe?: ReadinessProbe;
   authMailer?: AuthMailer;
+  googleOAuthClient?: GoogleOAuthClient | null;
 }
 
 const acceptedRequestId = /^[A-Za-z0-9._:-]{1,128}$/;
@@ -40,6 +44,9 @@ const acceptedRequestId = /^[A-Za-z0-9._:-]{1,128}$/;
 export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyInstance> {
   const config = options.config ?? loadEnvironment();
   const authMailer = options.authMailer ?? createAuthMailer(config);
+  const googleOAuthClient = options.googleOAuthClient === undefined
+    ? createGoogleOAuthClient(config)
+    : options.googleOAuthClient;
   const logger =
     options.logger === false
       ? false
@@ -55,6 +62,8 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
               "req.body.access_token",
               "req.body.refresh_token",
               "SUPABASE_SERVICE_ROLE_KEY",
+              "DATABASE_URL",
+              "SMTP_PASSWORD",
               "password",
               "token",
             ],
@@ -80,15 +89,18 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   });
 
   installErrorHandlers(app);
+  const database = installPostgresPool(app, config);
   installSupabaseClient(app, config);
   installAuthentication(app, config);
   installAuthorization(app, config);
 
   await registerSecurityPlugins(app, config);
   await registerOpenApi(app, config);
-  await app.register(authRoutes, { config, authMailer });
+  await app.register(authRoutes, { config, authMailer, googleOAuthClient });
   await app.register(healthRoutes, {
-    readinessProbe: options.readinessProbe ?? createSupabaseReadinessProbe(config),
+    readinessProbe: options.readinessProbe ?? (database
+      ? createPostgresReadinessProbe(config, database)
+      : createSupabaseReadinessProbe(config)),
   });
   await app.register(registrationRoutes, { config, authMailer });
   await app.register(profileRoutes);

@@ -18,10 +18,14 @@ async function setup(created: boolean, production = true, mailFails = false) {
   const authMailer = vi.fn(async () => { if (mailFails) throw new Error("SMTP secret must not be exposed"); });
   const rpc = vi.fn(async () => ({ data: { created, user_id: "user-id" }, error: null }));
   app = await buildApp({ config: loadEnvironment({ ...localConfig, NODE_ENV: production ? "production" : "test" }), logger: false, authMailer });
-  const from = vi.fn(() => { throw new Error("Unexpected non-transactional write"); });
+  const auditInsert = vi.fn(async () => ({ error: null }));
+  const from = vi.fn((table: string) => {
+    if (table === "app_auth_audit_events") return { insert: auditInsert };
+    throw new Error("Unexpected non-transactional write");
+  });
   app.supabaseAdmin = { rpc, from } as unknown as NonNullable<FastifyInstance["supabaseAdmin"]>;
   const externalAuth = vi.spyOn(app, "createPublicSupabase").mockImplementation(() => { throw new Error("Supabase Auth must not run"); });
-  return { rpc, authMailer, externalAuth, from };
+  return { rpc, authMailer, externalAuth, from, auditInsert };
 }
 
 describe("local registration HTTP boundary", () => {
@@ -42,7 +46,8 @@ describe("local registration HTTP boundary", () => {
     expect(kind).toBe("verification");
     expect(hashSessionToken(token)).toBe(args.p_token_hash);
     expect(externalAuth).not.toHaveBeenCalled();
-    expect(from).not.toHaveBeenCalled();
+    expect(from).toHaveBeenCalledTimes(1);
+    expect(from).toHaveBeenCalledWith("app_auth_audit_events");
   });
 
   it("does not resend verification or overwrite existing accounts on duplicate signup", async () => {

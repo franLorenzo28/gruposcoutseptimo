@@ -84,4 +84,23 @@ describe("loadEnvironment", () => {
       }),
     ).toThrow("JWT_SECRET es obligatorio");
   });
+
+  it("exige configurar juntas todas las credenciales de Google OAuth local", () => {
+    expect(() => loadEnvironment({
+      NODE_ENV: "test", AUTH_MODE: "local",
+      SUPABASE_URL: "https://example.supabase.co", SUPABASE_SERVICE_ROLE_KEY: "service-key",
+      JWT_SECRET: "a-secret-with-at-least-32-characters-long", GOOGLE_CLIENT_ID: "client-id",
+    })).toThrow("Google OAuth requiere CLIENT_ID, CLIENT_SECRET y REDIRECT_URI juntos");
+  });
+
+  it("exige HTTPS para el callback de Google en producción", () => {
+    expect(() => loadEnvironment({
+      NODE_ENV: "production", AUTH_MODE: "local", APP_URL: "https://app.example.com",
+      SUPABASE_URL: "https://example.supabase.co", SUPABASE_SERVICE_ROLE_KEY: "service-key",
+      JWT_SECRET: "a-secret-with-at-least-32-characters-long",
+      SMTP_HOST: "smtp.example.com", SMTP_FROM: "noreply@example.com",
+      GOOGLE_CLIENT_ID: "client-id", GOOGLE_CLIENT_SECRET: "client-secret",
+      GOOGLE_REDIRECT_URI: "http://api.example.com/v1/auth/google/callback",
+    })).toThrow("GOOGLE_REDIRECT_URI debe usar HTTPS");
+  });
 });

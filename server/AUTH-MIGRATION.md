@@ -15,7 +15,10 @@ Endpoints locales:
 - `POST /v1/auth/request-password-reset` crea un reset de un solo uso. La entrega
   por correo queda pendiente; sólo en desarrollo/test se devuelve `reset_token`.
 - `POST /v1/auth/password-reset` con `{ token, password }` actualiza el hash con bcrypt.
-- `GET /v1/auth/google` devuelve `501`: es el contrato reservado para Google OAuth.
+- `GET /v1/auth/google` inicia Google OAuth local con `state`, `nonce` y cookie de navegador.
+- `GET /v1/auth/google/callback` valida Google y entrega un ticket opaco de un solo uso.
+- `POST /v1/auth/google/exchange` canjea tickets de cuentas activas por una sesión local.
+- `POST /v1/registration-requests/oauth/local` completa el perfil y la solicitud de alta de Google.
 
 La migración no borra ni modifica `auth.users`. Los UUID existentes se copian a
 `app_users` y quedan con `password_reset_required=true`, porque los hashes de

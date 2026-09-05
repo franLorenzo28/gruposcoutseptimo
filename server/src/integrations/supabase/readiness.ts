@@ -17,6 +17,10 @@ export interface ReadinessProbe {
   check(): Promise<SupabaseReadinessChecks>;
 }
 
+export interface PostgreSqlQuery {
+  query(text: string): Promise<unknown>;
+}
+
 export type FetchImplementation = (
   input: string | URL | Request,
   init?: RequestInit,
@@ -90,6 +94,39 @@ export function createSupabaseReadinessProbe(
       } finally {
         inFlight = null;
       }
+    },
+  };
+}
+
+export function createPostgresReadinessProbe(
+  config: EnvironmentConfig,
+  database: PostgreSqlQuery,
+): ReadinessProbe {
+  let cached: { value: SupabaseReadinessChecks; expiresAt: number } | null = null;
+  let inFlight: Promise<SupabaseReadinessChecks> | null = null;
+
+  return {
+    async check() {
+      if (cached && cached.expiresAt > Date.now()) return cached.value;
+      if (inFlight) return inFlight;
+      inFlight = (async () => {
+        const startedAt = Date.now();
+        let databaseCheck: DependencyCheck;
+        try {
+          await database.query("select 1");
+          databaseCheck = { status: "up", latencyMs: Date.now() - startedAt };
+        } catch {
+          databaseCheck = { status: "down", latencyMs: Date.now() - startedAt, reason: "No se pudo ejecutar SELECT 1" };
+        }
+        const auth: DependencyCheck = config.AUTH_MODE === "local" && config.JWT_SECRET
+          ? { status: "up", latencyMs: 0 }
+          : { status: "not_configured", latencyMs: 0 };
+        const value = { auth, database: databaseCheck };
+        cached = { value, expiresAt: Date.now() + config.READINESS_CACHE_MS };
+        return value;
+      })();
+      try { return await inFlight; }
+      finally { inFlight = null; }
     },
   };
 }

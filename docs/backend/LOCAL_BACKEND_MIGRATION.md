@@ -40,7 +40,7 @@ Storage, pero exige streaming, limites de tamano y una estrategia de backup.
 
 ## Implementado
 
-### Autenticacion local inicial
+### Autenticacion local y registro
 
 - Migracion `supabase/migrations/20260905010000_create_local_auth_tables.sql`.
 - Tablas `public.app_users` y `public.app_sessions`.
@@ -54,6 +54,35 @@ Storage, pero exige streaming, limites de tamano y una estrategia de backup.
   - `POST /v1/auth/request-password-reset`
   - `POST /v1/auth/password-reset`
 - Configuracion `AUTH_MODE=local` y `JWT_SECRET`.
+- Registro local transaccional sin `supabase.auth.signUp`.
+- Creacion coordinada de `app_users`, `profiles` y `registration_requests`.
+- Verificacion de correo y recuperacion de contraseña mediante tokens de un solo uso.
+- Envio SMTP desde Fastify; los enlaces solo se devuelven en desarrollo.
+- Aprobacion local sincronizada entre `app_users` y `profiles`.
+- Revocacion de todas las sesiones al restablecer la contraseña o rechazar la cuenta.
+- Migracion `20260905063132_complete_local_registration.sql`, con compatibilidad temporal para altas de Supabase.
+- Migracion `20260905170600_add_local_google_oauth.sql`, separada del historial
+  ya aplicado de registro.
+- Migracion `20260905173500_add_local_auth_audit.sql` con eventos de seguridad
+  solo para servidor, correo hasheado y sin secretos.
+- Endpoints adicionales:
+  - `POST /v1/auth/request-verification`
+  - `POST /v1/auth/resend-verification`
+  - `POST /v1/auth/verify-email`
+  - `POST /v1/auth/change-password`
+  - `POST /v1/auth/logout-all`
+  - `GET /v1/auth/google`
+  - `GET /v1/auth/google/callback`
+  - `POST /v1/auth/google/ticket`
+  - `POST /v1/auth/google/exchange`
+  - `POST /v1/registration-requests/oauth/local`
+- Google OAuth local con `state`, cookie `HttpOnly`, `nonce` OIDC y callback de Fastify.
+- Vinculacion de una identidad Google por correo verificado sin reemplazar la
+  contraseña local ni el UUID existente.
+- Tickets opacos, cortos y de un solo uso para entregar el resultado al
+  frontend sin colocar el JWT local en la URL.
+- Auditoria de login, verificacion, reset, OAuth, revocacion de sesiones,
+  solicitudes de registro y decisiones administrativas.
 
 ### Adaptacion inicial del frontend
 
@@ -62,28 +91,53 @@ Storage, pero exige streaming, limites de tamano y una estrategia de backup.
 - `AppProviders` puede cargar la sesion local y el perfil desde Fastify.
 - `MemberAuthContext` deja de depender del listener de Supabase en modo local.
 - El cierre de sesion local revoca la sesion del backend.
+- El registro, la verificacion y la recuperacion local ya usan Fastify.
+- Existe una pantalla local para solicitar y consumir enlaces de recuperacion.
+- El login y el registro con Google usan el callback local de Fastify.
+- El registro Google conserva la pantalla de datos scout y crea la solicitud
+  administrativa despues de completar el perfil.
 
 ### Validacion actual
 
 - Frontend: type-check, lint y tests existentes pasan.
 - Backend: type-check, tests y build pasan.
+- La migracion de registro se prueba sobre PostgreSQL embebido: atomicidad,
+  duplicados, expiracion y uso unico de tokens, OAuth, vinculacion de identidad,
+  aprobacion, permisos y rollback.
+- El flujo HTTP de Google se prueba desde el inicio hasta el alta o la emision
+  de una sesion local, incluyendo rechazo de `state` incorrecto.
 
-Esto es solamente el primer corte de infraestructura. Todavia no habilita la
-opcion 1 completa.
+### Conexion PostgreSQL inicial
+
+- El backend acepta `DATABASE_URL` y crea un pool `pg` con limites y timeouts.
+- `/ready` ejecuta `SELECT 1` cuando la conexion directa esta configurada.
+- El pool se cierra durante el apagado ordenado del proceso.
+- Autenticacion, registro, autorizacion y perfiles ya prefieren SQL directo.
+- El directorio y los lotes de perfiles excluyen perfiles privados también en
+  la ruta de compatibilidad con Data API.
+- Los modulos de negocio siguen usando temporalmente la Data API hasta migrar
+  sus repositorios.
+
+### Identidad de tablas de negocio
+
+- La migracion `20260905180000_retarget_remaining_identity_fks.sql` mueve las
+  FKs publicas restantes de `auth.users` a `app_users` conservando UUIDs y
+  reglas de borrado/actualizacion.
+- La prueba PostgreSQL confirma que un usuario local puede ser autor de datos
+  de negocio sin crear una fila nueva en Supabase Auth.
+
+Este corte completa los flujos locales de email/contraseña y Google OAuth, junto
+con su auditoria inicial. La autenticacion todavia no esta lista para activarse
+porque faltan la eliminacion de dependencias de identidad de Supabase y pruebas
+sobre un backup reciente del esquema real.
 
 ## Pendientes de implementacion
 
-### 1. Completar autenticacion propia
+### 1. Completar el endurecimiento de autenticacion
 
-- Implementar registro local sin `supabase.auth.signUp`.
-- Crear y actualizar perfiles durante el registro desde Fastify.
-- Migrar la aprobacion de cuentas para actualizar `app_users` y `profiles`.
-- Enviar por correo los tokens de verificacion y reset; no devolver tokens en produccion.
-- Implementar recuperacion, cambio de contraseña y revocacion global de sesiones.
-- Implementar Google OAuth con `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` y callback propio.
-- Manejar correctamente cuentas Google existentes y vincularlas por email.
 - Eliminar dependencias de `auth.users`, `auth.uid()` y `auth.jwt()` en triggers, RPC y politicas.
-- Crear auditoria de login, reset, OAuth y cambios administrativos.
+- Probar email/contraseña y Google OAuth contra una restauracion reciente antes
+  de habilitar `AUTH_MODE=local` fuera de desarrollo.
 
 ### 2. Migrar el frontend fuera de Supabase
 
@@ -130,11 +184,7 @@ estado final de "Supabase solo base de datos".
 
 Pendiente:
 
-- Añadir `DATABASE_URL` para PostgreSQL.
-- Usar `pg` como dependencia de runtime.
-- Crear pool, transacciones, timeouts y repositorios parametrizados.
-- Migrar los modulos de perfiles, contenido, grupos, social, admin y media a SQL directo.
-- Cambiar `/ready` para validar `SELECT 1` en PostgreSQL.
+- Migrar los modulos de contenido, grupos, social, admin y media a SQL directo.
 - Retirar `app.supabaseAdmin` del runtime cuando todos los modulos esten migrados.
 
 ### 4. Migrar el esquema y las referencias de identidad
@@ -143,9 +193,6 @@ Las migraciones existentes contienen referencias a `auth.users` y funciones
 que dependen de la identidad de Supabase. Hay que crear migraciones nuevas,
 sin reescribir historicas, para:
 
-- Reemplazar FKs hacia `auth.users` por FKs hacia `app_users`.
-- Actualizar `registration_requests`, `narrativas`, `messages`,
-  `notifications`, `conversation_participants`, documentos, uploads y grupos.
 - Reescribir triggers de creacion de perfil y notificaciones.
 - Sustituir funciones RPC que usan `auth.uid()`.
 - Revisar RLS y `GRANT`; la autorizacion principal pasara a Fastify.
@@ -218,7 +265,7 @@ La `SERVICE_ROLE_KEY` no debe formar parte de la configuracion del frontend.
 ## Orden recomendado
 
 1. Aplicar la migracion de tablas locales en un entorno de prueba restaurado desde backup.
-2. Completar registro, reset, verificacion, aprobacion y Google OAuth.
+2. Auditar registro, reset, verificacion, aprobacion y Google OAuth sobre el esquema restaurado.
 3. Cambiar todas las lecturas y mutaciones del frontend a Fastify.
 4. Migrar el acceso Fastify de Data API a `pg`/`DATABASE_URL`.
 5. Migrar identidad y FKs desde `auth.users` hacia `app_users`.
@@ -243,6 +290,8 @@ La migracion se considera completa cuando:
 
 ## Estado de activacion
 
-No activar todavia en produccion. El primer corte de autenticacion local esta
-implementado, pero registro, Google OAuth, media bytea, migracion de esquema,
-Realtime y varios accesos directos del frontend siguen pendientes.
+No activar todavia en produccion. Los flujos locales de email/contraseña y
+Google OAuth estan implementados, pero faltan media `bytea`, la migracion
+completa del esquema, Realtime y varios accesos directos del frontend.
+Antes de aplicar la nueva migracion se debe probar contra un backup reciente del
+esquema remoto y registrar exactamente `GOOGLE_REDIRECT_URI` en Google Cloud.

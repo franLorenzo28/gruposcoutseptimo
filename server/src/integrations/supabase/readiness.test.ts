@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { loadEnvironment } from "../../config/environment.js";
-import { createSupabaseReadinessProbe } from "./readiness.js";
+import { createPostgresReadinessProbe, createSupabaseReadinessProbe } from "./readiness.js";
 
 const config = loadEnvironment({
   NODE_ENV: "test",
@@ -57,5 +57,26 @@ describe("Supabase readiness probe", () => {
     await probe.check();
 
     expect(fetchImplementation).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("PostgreSQL readiness probe", () => {
+  it("usa SELECT 1 y no consulta Auth externo en modo local", async () => {
+    const query = vi.fn(async () => ({ rows: [{ "?column?": 1 }] }));
+    const probe = createPostgresReadinessProbe(loadEnvironment({
+      NODE_ENV: "test", AUTH_MODE: "local", SUPABASE_URL: "https://example.supabase.co",
+      SUPABASE_SERVICE_ROLE_KEY: "service-key", JWT_SECRET: "a-secret-with-at-least-32-characters-long",
+      DATABASE_URL: "postgresql://api:secret@localhost/app", DATABASE_SSL: "disable",
+    }), { query });
+    await expect(probe.check()).resolves.toMatchObject({ auth: { status: "up" }, database: { status: "up" } });
+    expect(query).toHaveBeenCalledOnce();
+    expect(query).toHaveBeenCalledWith("select 1");
+  });
+
+  it("marca PostgreSQL caído sin filtrar el error de conexión", async () => {
+    const probe = createPostgresReadinessProbe(config, { query: vi.fn(async () => { throw new Error("password=secret"); }) });
+    await expect(probe.check()).resolves.toMatchObject({
+      database: { status: "down", reason: "No se pudo ejecutar SELECT 1" },
+    });
   });
 });

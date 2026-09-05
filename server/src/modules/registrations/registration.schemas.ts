@@ -19,6 +19,10 @@ export const emailRegistrationSchema = registrationProfileSchema.extend({
   password: z.string().min(8).max(128).refine((value) => Buffer.byteLength(value, "utf8") <= 72, "La contraseña no puede superar 72 bytes."),
 });
 
+export const localOAuthRegistrationSchema = registrationProfileSchema.extend({
+  ticket: z.string().regex(/^[a-f0-9]{64}$/),
+});
+
 export const registrationListQuerySchema = z.object({
   status: z.enum(["pending", "approved", "rejected"]).default("pending"),
   limit: z.coerce.number().int().min(1).max(100).default(50),

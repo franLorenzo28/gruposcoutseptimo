@@ -21,7 +21,7 @@ import logoImage from "@/assets/grupo-scout-logo.png";
 import PageLoader from "@/components/ui/PageLoader";
 import { PageGridBackground } from "@/components/PageGridBackground";
 import RegistroContactoWhatsApp from "@/components/auth/RegistroContactoWhatsApp";
-import { apiFetch, isLocalBackend, saveLocalAccessToken } from "@/lib/backend";
+import { apiFetch, getBackendUrl, isLocalBackend, saveLocalAccessToken } from "@/lib/backend";
 
 function isVercelAppHost(hostname: string): boolean {
   return hostname.endsWith(".vercel.app");
@@ -205,6 +205,7 @@ const Auth = () => {
   const [authTab, setAuthTab] = useState<"login" | "signup">("login");
   const [inlineMessage, setInlineMessage] = useState<string>("");
   const [signupVerificationUrl, setSignupVerificationUrl] = useState<string | null>(null);
+  const [localOAuthTicket, setLocalOAuthTicket] = useState<string | null>(null);
   const [loginRedirecting, setLoginRedirecting] = useState(false);
   const [showWhatsappContacts, setShowWhatsappContacts] = useState(false);
   const [recentSignupName, setRecentSignupName] = useState("");
@@ -225,6 +226,59 @@ const Auth = () => {
   const isLogin = authTab === "login";
   const oauthSafety = useMemo(() => getOAuthSafety(), []);
   const oauthProfileToastShownRef = useRef(false);
+  const localOAuthStartedRef = useRef(false);
+  const oauthAvailable = isLocalBackend() || oauthSafety.safe;
+
+  useEffect(() => {
+    if (!isLocalBackend()) return;
+    const hash = new URLSearchParams(window.location.hash.substring(1));
+    const oauthError = hash.get("oauth_error");
+    const ticket = hash.get("oauth_ticket") || sessionStorage.getItem("grupo7_google_oauth_ticket");
+    if (!oauthError && !ticket) return;
+    if (localOAuthStartedRef.current) return;
+    localOAuthStartedRef.current = true;
+    window.history.replaceState({}, "", window.location.pathname);
+    if (oauthError) {
+      sessionStorage.removeItem("grupo7_google_oauth_ticket");
+      setInlineMessage({
+        account_not_found: "No existe una cuenta con ese correo. Usa Registrarse para solicitar acceso.",
+        account_pending_approval: "La cuenta está pendiente de aprobación.",
+        account_rejected: "La solicitud de acceso fue rechazada.",
+        access_denied: "Cancelaste el acceso con Google.",
+      }[oauthError] || "No se pudo completar el acceso con Google. Intenta nuevamente.");
+      return;
+    }
+    sessionStorage.setItem("grupo7_google_oauth_ticket", ticket!);
+    setProcessingOAuth(true);
+    void apiFetch<{ intent: "login" | "signup"; email: string; user_metadata: Record<string, unknown> }>(
+      "/v1/auth/google/ticket", { method: "POST", auth: "none", body: JSON.stringify({ ticket }) },
+    ).then(async (info) => {
+      if (info.intent === "login") {
+        const session = await apiFetch<{ access_token: string }>("/v1/auth/google/exchange", {
+          method: "POST", auth: "none", body: JSON.stringify({ ticket }),
+        });
+        saveLocalAccessToken(session.access_token);
+        sessionStorage.removeItem("grupo7_google_oauth_ticket");
+        window.location.replace("/interno/dashboard");
+        return;
+      }
+      const metadata = info.user_metadata || {};
+      const fullName = String(metadata.name || metadata.full_name || "").trim();
+      const [first = "", ...rest] = fullName.split(/\s+/);
+      setLocalOAuthTicket(ticket);
+      setGoogleCompletionDraft((current) => ({
+        ...current,
+        nombre: String(metadata.given_name || first),
+        apellido: String(metadata.family_name || rest.join(" ")),
+        email: info.email,
+      }));
+      setAuthTab("signup");
+      setNeedsGoogleCompletion(true);
+    }).catch((error) => {
+      sessionStorage.removeItem("grupo7_google_oauth_ticket");
+      setInlineMessage(error instanceof Error ? error.message : "La sesión de Google expiró.");
+    }).finally(() => setProcessingOAuth(false));
+  }, [navigate]);
 
   useEffect(() => {
     whatsappGateRef.current = showWhatsappContacts || whatsappGateActive;
@@ -569,6 +623,7 @@ const Auth = () => {
     setLoading(true);
     try {
       const existingSession = isLocalBackend() ? null : (await supabase.auth.getSession()).data.session;
+      const isLocalGoogleSignup = isLocalBackend() && Boolean(localOAuthTicket) && !pendingSignup.password;
       const profileData = {
         nombre: sanitizeText(pendingSignup.nombre),
         apellido: sanitizeText(pendingSignup.apellido),
@@ -582,6 +637,14 @@ const Auth = () => {
           method: "POST",
           body: JSON.stringify(profileData),
         });
+      } else if (isLocalBackend() && localOAuthTicket && !pendingSignup.password) {
+        await apiFetch("/v1/registration-requests/oauth/local", {
+          method: "POST",
+          auth: "none",
+          body: JSON.stringify({ ...profileData, ticket: localOAuthTicket }),
+        });
+        sessionStorage.removeItem("grupo7_google_oauth_ticket");
+        setLocalOAuthTicket(null);
       } else {
         const result = await apiFetch<{ verificationUrl?: string }>("/v1/registration-requests", {
           method: "POST",
@@ -597,7 +660,9 @@ const Auth = () => {
 
       toast({
         title: "¡Solicitud enviada!",
-        description: "Confirma tu correo. Un admin revisará la solicitud sin acceder a tu contraseña.",
+        description: isLocalGoogleSignup
+          ? "Google verificó tu correo. Un admin revisará la solicitud."
+          : "Confirma tu correo. Un admin revisará la solicitud sin acceder a tu contraseña.",
       });
 
       setShowWhatsappContacts(false);
@@ -665,10 +730,6 @@ const Auth = () => {
             auth: "none",
             body: JSON.stringify({ email: trimmedEmail, password: trimmedPassword }),
           });
-          if (!response.user.email_confirmed_at) {
-            setInlineMessage("Confirma tu correo antes de continuar. Puedes solicitar otro enlace abajo.");
-            return;
-          }
           saveLocalAccessToken(response.access_token);
           data = response;
           localLogin = true;
@@ -746,7 +807,9 @@ const Auth = () => {
 
   const handleGoogleSignIn = async (intent: "login" | "signup") => {
     if (isLocalBackend()) {
-      setInlineMessage("El acceso con Google aún no está disponible. Usa tu correo y contraseña.");
+      sessionStorage.removeItem("grupo7_google_oauth_ticket");
+      setLoading(true);
+      window.location.assign(getBackendUrl(`/v1/auth/google?intent=${intent}`));
       return;
     }
     if (!oauthSafety.safe) {
@@ -1133,7 +1196,7 @@ const Auth = () => {
                         variant="outline"
                         className="w-full h-10 bg-background/90 hover:bg-background"
                         onClick={() => handleGoogleSignIn("login")}
-                        disabled={loading || !oauthSafety.safe}
+                        disabled={loading || !oauthAvailable}
                       >
                         <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                           <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -1148,10 +1211,10 @@ const Auth = () => {
                         <p className="text-xs text-foreground/80 mt-2">Correo encontrado. Puedes entrar con Google de forma rápida.</p>
                       )}
                       {!googleLoginAllowed && email.trim() !== "" && !checkingEmail && (
-                        <p className="text-xs text-muted-foreground mt-2">Si ese correo no está registrado, al iniciar sesión con Google se creará tu cuenta automáticamente.</p>
+                        <p className="text-xs text-muted-foreground mt-2">El correo escrito no es válido; Google usará el correo de la cuenta que elijas.</p>
                       )}
-                      {!oauthSafety.safe && <p className="text-xs text-destructive mt-2">{oauthSafety.reason}</p>}
-                      {oauthSafety.warning && <p className="text-xs text-muted-foreground mt-2">{oauthSafety.warning}</p>}
+                      {!oauthAvailable && <p className="text-xs text-destructive mt-2">{oauthSafety.reason}</p>}
+                      {!isLocalBackend() && oauthSafety.warning && <p className="text-xs text-muted-foreground mt-2">{oauthSafety.warning}</p>}
                   </>
                 </form>
               </TabsContent>
@@ -1162,7 +1225,7 @@ const Auth = () => {
                   variant="outline"
                   className="w-full h-10 bg-background/90 hover:bg-background mb-3"
                   onClick={() => handleGoogleSignIn("signup")}
-                  disabled={loading || !oauthSafety.safe}
+                  disabled={loading || !oauthAvailable}
                 >
                   <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -1354,8 +1417,8 @@ const Auth = () => {
                     {loading ? "Registrando..." : "Registrarse"}
                   </Button>
 
-                  {!oauthSafety.safe && <p className="text-xs text-destructive mt-2">{oauthSafety.reason}</p>}
-                  {oauthSafety.warning && <p className="text-xs text-muted-foreground mt-2">{oauthSafety.warning}</p>}
+                  {!oauthAvailable && <p className="text-xs text-destructive mt-2">{oauthSafety.reason}</p>}
+                  {!isLocalBackend() && oauthSafety.warning && <p className="text-xs text-muted-foreground mt-2">{oauthSafety.warning}</p>}
                 </form>
               </TabsContent>
             </Tabs>

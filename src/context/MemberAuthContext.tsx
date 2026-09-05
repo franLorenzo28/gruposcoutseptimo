@@ -6,7 +6,7 @@ import { clearMemberSession,
   type MemberSession,
   type MiembroRama,
 } from "@/lib/member-auth";
-import { getAuthUser } from "@/lib/backend";
+import { getAuthUser, LOCAL_AUTH_CHANGED_EVENT } from "@/lib/backend";
 import { getProfile } from "@/lib/api";
 import { resolveMemberAccessFromProfile } from "@/lib/member-auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -116,8 +116,11 @@ export function MemberAuthProvider({ children }: { children: React.ReactNode }) 
     checkAuth();
 
     if (isLocalBackend()) {
+      const handleLocalAuthChange = () => { void checkAuth(); };
+      window.addEventListener(LOCAL_AUTH_CHANGED_EVENT, handleLocalAuthChange);
       return () => {
         active = false;
+        window.removeEventListener(LOCAL_AUTH_CHANGED_EVENT, handleLocalAuthChange);
       };
     }
 

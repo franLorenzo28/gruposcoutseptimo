@@ -8,6 +8,7 @@ import type { EnvironmentConfig } from "../config/environment.js";
 import { AppError } from "../core/errors.js";
 
 import { hashSessionToken, localUserFromRow, type LocalUserRow } from "../modules/auth/local-auth.js";
+import { LocalAuthRepository } from "../modules/auth/local-auth.repository.js";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -34,7 +35,7 @@ async function authenticateLocal(
   accessToken: string,
   config: EnvironmentConfig,
 ): Promise<void> {
-  if (!config.JWT_SECRET || !app.supabaseAdmin) {
+  if (!config.JWT_SECRET || (!app.db && !app.supabaseAdmin)) {
     throw new AppError(503, "LOCAL_AUTH_NOT_CONFIGURED", "La autenticación local no está disponible.");
   }
 
@@ -49,29 +50,21 @@ async function authenticateLocal(
     throw new AppError(401, "AUTH_TOKEN_INVALID", "El token de acceso no es válido.");
   }
 
-  const { data: session, error: sessionError } = await app.supabaseAdmin
-    .from("app_sessions")
-    .select("id,user_id,expires_at,revoked_at")
-    .eq("id", claims.jti)
-    .eq("user_id", claims.sub)
-    .eq("token_hash", hashSessionToken(accessToken))
-    .maybeSingle();
-
-  if (sessionError) {
-    request.log.error({ code: sessionError.code }, "local auth session lookup failed");
+  const repository = new LocalAuthRepository(app);
+  let session;
+  try { session = await repository.findSession(claims.jti, claims.sub, hashSessionToken(accessToken)); }
+  catch (error) {
+    request.log.error({ err: error }, "local auth session lookup failed");
     throw new AppError(503, "LOCAL_AUTH_DATABASE_UNAVAILABLE", "No se pudo validar la sesión.");
   }
   if (!session || session.revoked_at || new Date(session.expires_at).getTime() <= Date.now()) {
     throw new AppError(401, "AUTH_TOKEN_INVALID", "El token de acceso no es válido.");
   }
 
-  const { data: row, error: userError } = await app.supabaseAdmin
-    .from("app_users")
-    .select("id,email,email_verified_at,account_status,app_metadata,user_metadata,password_reset_required")
-    .eq("id", claims.sub)
-    .maybeSingle();
-  if (userError) {
-    request.log.error({ code: userError.code }, "local auth user lookup failed");
+  let row;
+  try { row = await repository.findUserById(claims.sub); }
+  catch (error) {
+    request.log.error({ err: error }, "local auth user lookup failed");
     throw new AppError(503, "LOCAL_AUTH_DATABASE_UNAVAILABLE", "No se pudo validar la cuenta.");
   }
   if (!row) throw new AppError(401, "AUTH_TOKEN_INVALID", "El token de acceso no es válido.");

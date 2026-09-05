@@ -7,8 +7,11 @@ import bcrypt from "bcryptjs";
 import type { EnvironmentConfig } from "../../config/environment.js";
 import { hashSessionToken } from "../auth/local-auth.js";
 import { authActionUrl, type AuthMailer } from "../auth/auth-mailer.js";
+import { recordAuthAudit } from "../auth/auth-audit.js";
+import { LocalAuthRepository } from "../auth/local-auth.repository.js";
 import {
   emailRegistrationSchema,
+  localOAuthRegistrationSchema,
   registrationDecisionSchema,
   registrationIdParamsSchema,
   registrationListQuerySchema,
@@ -60,17 +63,15 @@ export async function registrationRoutes(app: FastifyInstance, options: { config
     },
     async (request, reply) => {
       if (options.config.AUTH_MODE === "local") {
-        const admin = requireAdminClient(app);
         const { password, ...profile } = request.body;
         const token = randomBytes(32).toString("hex");
-        const { data, error } = await admin.rpc("create_local_registration", {
-          p_email: profile.email,
-          p_password_hash: await bcrypt.hash(password, 12),
-          p_profile: profile,
-          p_token_hash: hashSessionToken(token),
-        });
-        if (error) {
-          request.log.error({ code: error.code }, "local registration failed");
+        let data;
+        try {
+          data = await new LocalAuthRepository(app).createRegistration(
+            profile.email, await bcrypt.hash(password, 12), profile, hashSessionToken(token),
+          );
+        } catch (error) {
+          request.log.error({ err: error }, "local registration failed");
           throw new AppError(503, "REGISTRATION_UNAVAILABLE", "No se pudo procesar la solicitud.");
         }
         // Duplicate requests never replace credentials or issue verification links.
@@ -82,6 +83,11 @@ export async function registrationRoutes(app: FastifyInstance, options: { config
             request.log.error({ userId: data.user_id }, "registration verification email delivery failed");
           }
         }
+        await recordAuthAudit(app, request, {
+          eventType: "registration_requested", success: true,
+          subjectUserId: data?.user_id ?? null, email: profile.email,
+          details: { provider: "email", created: Boolean(data?.created) },
+        });
         return reply.status(202).send({ data: {
           ...publicAccepted,
           ...(data?.created && options.config.NODE_ENV !== "production"
@@ -152,6 +158,32 @@ export async function registrationRoutes(app: FastifyInstance, options: { config
   );
 
   api.post(
+    "/v1/registration-requests/oauth/local",
+    {
+      config: { rateLimit: { max: 5, timeWindow: "15 minutes" } },
+      schema: { body: localOAuthRegistrationSchema },
+    },
+    async (request, reply) => {
+      if (options.config.AUTH_MODE !== "local") throw new AppError(404, "ROUTE_NOT_FOUND", "La ruta no está disponible.");
+      const { ticket, ...profile } = request.body;
+      try {
+        const result = await new LocalAuthRepository(app).completeGoogleRegistration(hashSessionToken(ticket), profile);
+        await recordAuthAudit(app, request, {
+          eventType: "registration_requested", success: true,
+          subjectUserId: result.user_id ?? null, details: { provider: "google" },
+        });
+        return reply.status(202).send({ data: { ...publicAccepted, status: result.status } });
+      } catch (error) {
+        if (error instanceof Error && error.message.includes("oauth_ticket_invalid")) {
+          throw new AppError(400, "OAUTH_TICKET_INVALID", "La sesión de Google no es válida o ha expirado.");
+        }
+        request.log.error({ err: error }, "local Google registration failed");
+        throw new AppError(503, "REGISTRATION_UNAVAILABLE", "No se pudo procesar la solicitud.");
+      }
+    },
+  );
+
+  api.post(
     "/v1/registration-requests/oauth",
     {
       preHandler: app.authenticate,
@@ -215,6 +247,18 @@ export async function registrationRoutes(app: FastifyInstance, options: { config
       schema: { querystring: registrationListQuerySchema },
     },
     async (request) => {
+      if (app.db) {
+        const values: unknown[] = [request.query.status, request.query.limit];
+        const beforeClause = request.query.before ? "and requested_at < $3" : "";
+        if (request.query.before) values.push(request.query.before);
+        const { rows } = await app.db.query(`
+          select id, auth_user_id, email, nombre, apellido, tipo_relacion, grupo_scout,
+            rama, nombre_scout_relacionado, provider, status, requested_at, reviewed_at,
+            reviewed_by, admin_notes, metadata
+          from public.registration_requests where status = $1 ${beforeClause}
+          order by requested_at desc limit $2`, values);
+        return { data: rows };
+      }
       const admin = requireAdminClient(app);
       let query = admin
         .from("registration_requests")
@@ -236,13 +280,29 @@ export async function registrationRoutes(app: FastifyInstance, options: { config
       schema: { params: registrationIdParamsSchema, body: registrationDecisionSchema },
     },
     async (request) => {
-      const admin = requireAdminClient(app);
-      const { data, error } = await admin.rpc(options.config.AUTH_MODE === "local" ? "review_local_registration" : "review_registration_request_v2", {
-        p_request_id: request.params.id,
-        p_action: request.body.action,
-        p_reviewer_id: request.authUser!.id,
-        p_admin_notes: request.body.admin_notes,
-      });
+      let data: { user_id?: string | null; status?: string } | null;
+      let decisionError: unknown = null;
+      if (options.config.AUTH_MODE === "local") {
+        try {
+          data = await new LocalAuthRepository(app).reviewRegistration(
+            request.params.id, request.body.action, request.authUser!.id, request.body.admin_notes,
+          );
+        } catch (error) {
+          data = null;
+          decisionError = error;
+        }
+      } else {
+        const admin = requireAdminClient(app);
+        const result = await admin.rpc("review_registration_request_v2", {
+          p_request_id: request.params.id, p_action: request.body.action,
+          p_reviewer_id: request.authUser!.id, p_admin_notes: request.body.admin_notes,
+        });
+        data = result.data as typeof data;
+        decisionError = result.error;
+      }
+      const error = decisionError instanceof Error
+        ? { message: decisionError.message, code: "DATABASE_ERROR" }
+        : decisionError as { message: string; code?: string } | null;
       if (error) {
         const message = error.message.toLowerCase();
         if (message.includes("email_not_verified")) {
@@ -257,8 +317,9 @@ export async function registrationRoutes(app: FastifyInstance, options: { config
         request.log.error({ code: error.code }, "registration decision failed");
         throw new AppError(503, "REGISTRATION_DECISION_FAILED", "No se pudo revisar la solicitud.");
       }
-      const result = data as { user_id?: string | null; status?: string } | null;
+      const result = data;
       if (options.config.AUTH_MODE !== "local" && result?.user_id && result.status) {
+        const admin = requireAdminClient(app);
         const { data: target } = await admin.auth.admin.getUserById(result.user_id);
         if (target.user) {
           const { error: metadataError } = await admin.auth.admin.updateUserById(result.user_id, {
@@ -275,6 +336,13 @@ export async function registrationRoutes(app: FastifyInstance, options: { config
             request.log.error({ userId: result.user_id }, "auth metadata mirror failed");
           }
         }
+      }
+      if (options.config.AUTH_MODE === "local") {
+        await recordAuthAudit(app, request, {
+          eventType: "registration_reviewed", success: true,
+          subjectUserId: result?.user_id ?? null,
+          details: { action: request.body.action, status: result?.status ?? null },
+        });
       }
       return { data };
     },

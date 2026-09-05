@@ -2,6 +2,11 @@ import { supabase } from "@/integrations/supabase/client";
 
 const API_BASE = (import.meta.env.VITE_API_BASE || "http://localhost:4000").replace(/\/$/, "");
 const LOCAL_ACCESS_TOKEN_KEY = "grupo7_local_access_token";
+export const LOCAL_AUTH_CHANGED_EVENT = "grupo7:local-auth-changed";
+
+export function getBackendUrl(path: string): string {
+  return `${API_BASE}${path.startsWith("/") ? path : `/${path}`}`;
+}
 
 type ApiAuthMode = "none" | "optional" | "required";
 
@@ -52,6 +57,7 @@ function getStoredLocalAccessToken(): string | null {
 
 export function saveLocalAccessToken(token: string): void {
   window.localStorage.setItem(LOCAL_ACCESS_TOKEN_KEY, token);
+  window.dispatchEvent(new Event(LOCAL_AUTH_CHANGED_EVENT));
 }
 
 async function parseResponse(response: Response): Promise<unknown> {
@@ -82,7 +88,7 @@ export async function apiFetch<T = any>(
     }
     if (token) headers.set("Authorization", `Bearer ${token}`);
 
-    return fetch(`${API_BASE}${path.startsWith("/") ? path : `/${path}`}`, {
+    return fetch(getBackendUrl(path), {
       ...init,
       headers,
       signal: controller.signal,
@@ -148,6 +154,7 @@ export function resetLocalBackendAuth(): void {
   } catch {
     // Storage may be unavailable in private browsing contexts.
   }
+  if (typeof window !== "undefined") window.dispatchEvent(new Event(LOCAL_AUTH_CHANGED_EVENT));
 }
 
 export async function ensureLocalToken(): Promise<string> {

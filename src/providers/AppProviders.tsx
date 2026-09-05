@@ -7,7 +7,7 @@ import type { User } from "@supabase/supabase-js";
 import type { Profile } from "@/types/profile";
 import { querySilent } from "@/lib/supabase-logger";
 import { NotificationsProvider } from "@/context/Notifications";
-import { apiFetch, getAuthUser, isLocalBackend, resetLocalBackendAuth } from "@/lib/backend";
+import { apiFetch, getAuthUser, isLocalBackend, LOCAL_AUTH_CHANGED_EVENT, resetLocalBackendAuth } from "@/lib/backend";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -189,7 +189,9 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     if (isLocalBackend()) {
       void fetchLocalUser();
-      return;
+      const handleLocalAuthChange = () => { void fetchLocalUser(); };
+      window.addEventListener(LOCAL_AUTH_CHANGED_EVENT, handleLocalAuthChange);
+      return () => window.removeEventListener(LOCAL_AUTH_CHANGED_EVENT, handleLocalAuthChange);
     }
 
     supabase.auth.getSession().then(({ data: { session } }) => {

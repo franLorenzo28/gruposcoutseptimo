@@ -40,6 +40,10 @@ const rawEnvironmentSchema = z
     SUPABASE_SERVICE_ROLE_KEY: optionalString,
     SUPABASE_TIMEOUT_MS: z.coerce.number().int().min(250).max(30_000).default(3_000),
     READINESS_CACHE_MS: z.coerce.number().int().min(0).max(60_000).default(5_000),
+    DATABASE_URL: optionalString,
+    DATABASE_SSL: z.enum(["disable", "require", "verify-full"]).default("verify-full"),
+    DATABASE_POOL_MAX: z.coerce.number().int().min(1).max(50).default(10),
+    DATABASE_TIMEOUT_MS: z.coerce.number().int().min(250).max(30_000).default(5_000),
     JWT_SECRET: z.string().trim().min(32).optional(),
     JWT_ACCESS_TTL: z
       .string()
@@ -57,6 +61,7 @@ const rawEnvironmentSchema = z
     GOOGLE_CLIENT_ID: optionalString,
     GOOGLE_CLIENT_SECRET: optionalString,
     GOOGLE_REDIRECT_URI: z.url().optional(),
+    GOOGLE_OAUTH_TTL_MINUTES: z.coerce.number().int().min(5).max(30).default(10),
     ADMIN_USER_IDS: csv.pipe(z.array(z.uuid())),
     ADMIN_EMAILS: csv.transform((emails) => emails.map((email) => email.toLowerCase())),
   })
@@ -94,6 +99,14 @@ const rawEnvironmentSchema = z
     }
 
     if (environment.AUTH_MODE === "local") {
+      const googleValues = [environment.GOOGLE_CLIENT_ID, environment.GOOGLE_CLIENT_SECRET, environment.GOOGLE_REDIRECT_URI];
+      if (googleValues.some(Boolean) && !googleValues.every(Boolean)) {
+        context.addIssue({ code: "custom", path: ["GOOGLE_CLIENT_ID"], message: "Google OAuth requiere CLIENT_ID, CLIENT_SECRET y REDIRECT_URI juntos." });
+      }
+      if (environment.NODE_ENV === "production" && environment.GOOGLE_REDIRECT_URI
+        && !environment.GOOGLE_REDIRECT_URI.startsWith("https://")) {
+        context.addIssue({ code: "custom", path: ["GOOGLE_REDIRECT_URI"], message: "GOOGLE_REDIRECT_URI debe usar HTTPS en producción." });
+      }
       if (Boolean(environment.SMTP_HOST) !== Boolean(environment.SMTP_FROM)) {
         context.addIssue({ code: "custom", path: ["SMTP_HOST"], message: "SMTP_HOST y SMTP_FROM deben configurarse juntos." });
       }

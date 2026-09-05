@@ -29,7 +29,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Activity, AlertCircle, Lock, MailCheck, Shield, Smartphone, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { deleteMyAccount } from "@/lib/api";
-import { apiFetch, getAuthUser, isLocalBackend } from "@/lib/backend";
+import { apiFetch, getAuthUser, isLocalBackend, resetLocalBackendAuth } from "@/lib/backend";
 import {
   parseEducatorUnits,
   requestEducatorPermissions,
@@ -90,6 +90,7 @@ export default function ConfiguracionSeguridad() {
   const [loadingEmailVerification, setLoadingEmailVerification] = useState(true);
   const [sendingVerificationEmail, setSendingVerificationEmail] = useState(false);
   const [lastVerificationLink, setLastVerificationLink] = useState<string | null>(null);
+  const [closingSessions, setClosingSessions] = useState(false);
   const allowDeleteAccount = true;
 
   const form = useForm<PasswordFormValues>({
@@ -106,8 +107,21 @@ export default function ConfiguracionSeguridad() {
       setIsLoading(true);
 
       if (isLocalBackend()) {
-        // Para backend local, usar la API Express (no implementado aún)
-        throw new Error("Cambio de contraseña disponible solo en Supabase");
+        await apiFetch("/v1/auth/change-password", {
+          method: "POST",
+          body: JSON.stringify({
+            current_password: data.password_actual,
+            new_password: data.password_nueva,
+          }),
+        });
+        resetLocalBackendAuth();
+        form.reset();
+        toast({
+          title: "Contraseña actualizada",
+          description: "Cerramos todas tus sesiones. Inicia sesión con la nueva contraseña.",
+        });
+        navigate("/interno/auth", { replace: true });
+        return;
       } else {
         // Para Supabase, usar updateUser que maneja la seguridad internamente
         // Nota: Supabase no valida la contraseña actual en updateUser,
@@ -263,21 +277,12 @@ export default function ConfiguracionSeguridad() {
     try {
       setSendingVerificationEmail(true);
 
-      if (isLocalBackend()) {
-        await apiFetch("/auth/resend-verification", { method: "POST" });
-        setLastVerificationLink(null);
-        toast({
-          title: "Email enviado",
-          description: "Revisa tu bandeja para verificar tu cuenta.",
-        });
-      } else {
-        const result = await sendVerificationEmail();
-        setLastVerificationLink(result.verificationUrl || null);
-        toast({
-          title: "Email enviado",
-          description: result.message || "Revisa tu bandeja para verificar tu cuenta.",
-        });
-      }
+      const result = await sendVerificationEmail();
+      setLastVerificationLink(result.verificationUrl || null);
+      toast({
+        title: "Email enviado",
+        description: result.message || "Revisa tu bandeja para verificar tu cuenta.",
+      });
     } catch (error: any) {
       toast({
         title: "Error",
@@ -341,14 +346,11 @@ export default function ConfiguracionSeguridad() {
       setDeletingAccount(true);
       await deleteMyAccount();
 
-      try {
-        await supabase.auth.signOut();
-      } catch {
-        // noop
-      }
+      if (isLocalBackend()) resetLocalBackendAuth();
+      else await supabase.auth.signOut().catch(() => undefined);
 
       toast({ title: "Cuenta eliminada" });
-      navigate("/auth");
+      navigate("/interno/auth", { replace: true });
     } catch (err: any) {
       toast({
         title: "Error",
@@ -357,6 +359,20 @@ export default function ConfiguracionSeguridad() {
       });
     } finally {
       setDeletingAccount(false);
+    }
+  };
+
+  const handleCloseAllSessions = async () => {
+    try {
+      setClosingSessions(true);
+      await apiFetch("/v1/auth/logout-all", { method: "POST" });
+      resetLocalBackendAuth();
+      toast({ title: "Sesiones cerradas", description: "Inicia sesión nuevamente para continuar." });
+      navigate("/interno/auth", { replace: true });
+    } catch (error) {
+      toast({ title: "Error", description: error instanceof Error ? error.message : "No se pudieron cerrar las sesiones.", variant: "destructive" });
+    } finally {
+      setClosingSessions(false);
     }
   };
 
@@ -440,8 +456,14 @@ export default function ConfiguracionSeguridad() {
                 <Smartphone className="h-4 w-4" /> Sesiones activas
               </SectionBlockTitle>
               <SectionBlockDescription>Gestiona dispositivos con acceso</SectionBlockDescription>
-              <Button variant="outline" disabled size="sm" className="w-full mt-2">
-                Ver sesiones
+              <Button
+                variant="outline"
+                disabled={!isLocalBackend() || closingSessions}
+                size="sm"
+                className="w-full mt-2"
+                onClick={handleCloseAllSessions}
+              >
+                {closingSessions ? "Cerrando…" : "Cerrar todas las sesiones"}
               </Button>
             </SectionBlock>
 

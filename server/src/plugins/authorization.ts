@@ -42,19 +42,27 @@ export function installAuthorization(app: FastifyInstance, config: EnvironmentCo
       if (!request.authUser) {
         throw new AppError(401, "AUTH_REQUIRED", "Debes iniciar sesión.");
       }
-      if (!app.supabaseAdmin) {
-        throw new AppError(503, "ADMIN_DATABASE_NOT_CONFIGURED", "El servicio de autorización no está disponible.");
-      }
-
-      const { data, error } = await app.supabaseAdmin
-        .from("profiles")
-        .select("account_status")
-        .eq("user_id", request.authUser.id)
-        .maybeSingle();
-
-      if (error) {
-        request.log.error({ code: error.code }, "account status lookup failed");
-        throw new AppError(503, "AUTHORIZATION_UNAVAILABLE", "No se pudo comprobar el estado de la cuenta.");
+      let data: { account_status: string | null } | null;
+      if (app.db) {
+        try {
+          const result = await app.db.query<{ account_status: string | null }>(
+            "select account_status from public.profiles where user_id = $1 limit 1", [request.authUser.id],
+          );
+          data = result.rows[0] ?? null;
+        } catch {
+          throw new AppError(503, "AUTHORIZATION_UNAVAILABLE", "No se pudo comprobar el estado de la cuenta.");
+        }
+      } else {
+        if (!app.supabaseAdmin) {
+          throw new AppError(503, "ADMIN_DATABASE_NOT_CONFIGURED", "El servicio de autorización no está disponible.");
+        }
+        const result = await app.supabaseAdmin.from("profiles").select("account_status")
+          .eq("user_id", request.authUser.id).maybeSingle();
+        if (result.error) {
+          request.log.error({ code: result.error.code }, "account status lookup failed");
+          throw new AppError(503, "AUTHORIZATION_UNAVAILABLE", "No se pudo comprobar el estado de la cuenta.");
+        }
+        data = result.data;
       }
       if (!data || data.account_status !== "activo") {
         throw new AppError(403, "ACCOUNT_NOT_ACTIVE", "La cuenta todavía no está habilitada.", {
