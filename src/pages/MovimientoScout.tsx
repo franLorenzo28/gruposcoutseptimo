@@ -199,7 +199,7 @@ const MovimientoScout = () => {
         `}
       </style>
 
-      <PageGridBackground className="max-h-screen overflow-y-auto snap-y snap-mandatory scroll-smooth">
+      <PageGridBackground className="theme-readable-page max-h-screen overflow-y-auto snap-y snap-mandatory scroll-smooth">
         {/* Dot Navigation */}
         <nav
           className="fixed right-4 md:right-8 top-1/2 -translate-y-1/2 z-40 hidden md:flex flex-col gap-3"

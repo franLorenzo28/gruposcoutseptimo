@@ -164,8 +164,18 @@ export default function GrupoDetail() {
       }
       setCurrentUserId(auth.id);
 
-      const [groupData, membersData, messagesData] = await Promise.all([
-        apiFetch<any>(`/groups/${id}`),
+      const groupData = isLocalBackend()
+        ? await apiFetch<any>(`/groups/${id}`)
+        : await (async () => {
+            const { data, error } = await supabase
+              .from("groups")
+              .select("*")
+              .eq("id", id)
+              .single();
+            if (error) throw error;
+            return data;
+          })();
+      const [membersData, messagesData] = await Promise.all([
         listGroupMembers(id),
         listGroupMessages(id),
       ]);
@@ -317,10 +327,15 @@ export default function GrupoDetail() {
         return;
       }
 
-      const profiles = await apiFetch<any[]>("/profiles/batch", {
-        method: "POST",
-        body: JSON.stringify({ ids: candidates }),
-      });
+      const profiles = isLocalBackend()
+        ? await apiFetch<any[]>("/profiles/batch", {
+            method: "POST",
+            body: JSON.stringify({ ids: candidates }),
+          })
+        : ((await supabase
+            .from("profiles")
+            .select("user_id, nombre_completo, username, avatar_url")
+            .in("user_id", candidates)).data || []);
 
       setMutuals(
         profiles.map((p) => ({
@@ -551,12 +566,17 @@ export default function GrupoDetail() {
                           const u = usernameToAdd.trim().replace(/^@/, "");
                           if (!u) return;
                           try {
-                            const profiles = await apiFetch<any[]>(
-                              `/profiles/directory?q=${encodeURIComponent(u)}&limit=20`,
-                            );
-                            const prof = profiles.find(
-                              (profile) => String(profile.username || "").toLowerCase() === u.toLowerCase(),
-                            );
+                            const prof = isLocalBackend()
+                              ? ((await apiFetch<any[]>(
+                                  `/profiles/directory?q=${encodeURIComponent(u)}&limit=20`,
+                                )).find(
+                                  (profile) => String(profile.username || "").toLowerCase() === u.toLowerCase(),
+                                ))
+                              : (await supabase
+                                  .from("profiles")
+                                  .select("user_id, nombre_completo, username, avatar_url")
+                                  .eq("username", u)
+                                  .maybeSingle()).data;
                             if (!prof) {
                               toast({
                                 title: "No encontrado",

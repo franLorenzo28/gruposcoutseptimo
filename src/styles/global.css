@@ -291,6 +291,20 @@ All colors MUST be HSL.
     content-visibility: auto;
     contain-intrinsic-size: 1px 720px;
   }
+
+  /* These editorial pages use white text over a dark visual language in dark mode. */
+  html:not(.dark) .theme-readable-page [class~="text-white"] {
+    color: hsl(var(--foreground)) !important;
+  }
+
+  html:not(.dark) .theme-readable-page [class*="text-white/"] {
+    color: hsl(var(--muted-foreground)) !important;
+  }
+
+  html:not(.dark) .theme-readable-page [class*="text-white/9"],
+  html:not(.dark) .theme-readable-page [class*="text-white/8"] {
+    color: hsl(var(--foreground)) !important;
+  }
 }
 
 /* Background animations */

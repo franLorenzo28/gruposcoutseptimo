@@ -25,6 +25,7 @@ import { installErrorHandlers } from "./plugins/error-handler.js";
 import { registerOpenApi } from "./plugins/openapi.js";
 import { registerSecurityPlugins } from "./plugins/security.js";
 import { installSupabaseClient } from "./plugins/supabase.js";
+import { authRoutes } from "./modules/auth/auth.routes.js";
 
 export interface BuildAppOptions {
   config?: EnvironmentConfig;
@@ -45,6 +46,11 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
             paths: [
               "req.headers.authorization",
               "req.headers.apikey",
+              "req.body.password",
+              "req.body.token",
+              "req.body.reset_token",
+              "req.body.access_token",
+              "req.body.refresh_token",
               "SUPABASE_SERVICE_ROLE_KEY",
               "password",
               "token",
@@ -72,11 +78,12 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
 
   installErrorHandlers(app);
   installSupabaseClient(app, config);
-  installAuthentication(app);
+  installAuthentication(app, config);
   installAuthorization(app, config);
 
   await registerSecurityPlugins(app, config);
   await registerOpenApi(app, config);
+  await app.register(authRoutes, { config });
   await app.register(healthRoutes, {
     readinessProbe: options.readinessProbe ?? createSupabaseReadinessProbe(config),
   });

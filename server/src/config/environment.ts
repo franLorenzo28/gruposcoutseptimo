@@ -15,6 +15,7 @@ const csv = z
 const rawEnvironmentSchema = z
   .object({
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+    AUTH_MODE: z.enum(["supabase", "local"]).default("supabase"),
     HOST: z.string().trim().min(1).default("0.0.0.0"),
     PORT: z.coerce.number().int().min(1).max(65_535).default(4000),
     LOG_LEVEL: z
@@ -39,6 +40,16 @@ const rawEnvironmentSchema = z
     SUPABASE_SERVICE_ROLE_KEY: optionalString,
     SUPABASE_TIMEOUT_MS: z.coerce.number().int().min(250).max(30_000).default(3_000),
     READINESS_CACHE_MS: z.coerce.number().int().min(0).max(60_000).default(5_000),
+    JWT_SECRET: z.string().trim().min(32).optional(),
+    JWT_ACCESS_TTL: z
+      .string()
+      .trim()
+      .regex(/^\d+(?:[smhd])?$/, "JWT_ACCESS_TTL debe ser una duración como 900, 15m, 1h o 7d")
+      .default("1h"),
+    PASSWORD_RESET_TTL_MINUTES: z.coerce.number().int().min(5).max(1_440).default(60),
+    GOOGLE_CLIENT_ID: optionalString,
+    GOOGLE_CLIENT_SECRET: optionalString,
+    GOOGLE_REDIRECT_URI: z.url().optional(),
     ADMIN_USER_IDS: csv.pipe(z.array(z.uuid())),
     ADMIN_EMAILS: csv.transform((emails) => emails.map((email) => email.toLowerCase())),
   })
@@ -51,7 +62,7 @@ const rawEnvironmentSchema = z
     const hasUrl = Boolean(environment.SUPABASE_URL);
     const hasKey = Boolean(environment.SUPABASE_KEY);
 
-    if (hasUrl !== hasKey) {
+    if (environment.AUTH_MODE === "supabase" && hasUrl !== hasKey) {
       context.addIssue({
         code: "custom",
         message: "SUPABASE_URL y SUPABASE_PUBLISHABLE_KEY (o SUPABASE_ANON_KEY) deben configurarse juntas.",
@@ -59,7 +70,7 @@ const rawEnvironmentSchema = z
       });
     }
 
-    if (environment.NODE_ENV === "production" && (!hasUrl || !hasKey)) {
+    if (environment.AUTH_MODE === "supabase" && environment.NODE_ENV === "production" && (!hasUrl || !hasKey)) {
       context.addIssue({
         code: "custom",
         message: "Supabase debe estar configurado en producción.",
@@ -73,6 +84,23 @@ const rawEnvironmentSchema = z
         message: "SUPABASE_SERVICE_ROLE_KEY es obligatoria para los módulos de negocio.",
         path: ["SUPABASE_SERVICE_ROLE_KEY"],
       });
+    }
+
+    if (environment.AUTH_MODE === "local") {
+      if (!environment.SUPABASE_URL || !environment.SUPABASE_SERVICE_ROLE_KEY) {
+        context.addIssue({
+          code: "custom",
+          message: "El modo local requiere SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY para la base de datos.",
+          path: ["SUPABASE_SERVICE_ROLE_KEY"],
+        });
+      }
+      if (!environment.JWT_SECRET) {
+        context.addIssue({
+          code: "custom",
+          message: "JWT_SECRET es obligatorio en modo local y debe tener al menos 32 caracteres.",
+          path: ["JWT_SECRET"],
+        });
+      }
     }
   });
 

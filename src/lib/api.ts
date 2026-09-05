@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
-import { apiFetch } from "@/lib/backend";
+import { apiFetch, getAuthUser, isLocalBackend } from "@/lib/backend";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 type ProfileUpdate = Partial<Profile> & { user_id: string };
@@ -36,6 +36,12 @@ function withCalculatedAge(profile: Profile): Profile {
 }
 
 async function authenticatedUserId(): Promise<string> {
+  if (isLocalBackend()) {
+    const user = await getAuthUser();
+    if (!user) throw new Error("No autenticado");
+    return user.id;
+  }
+
   const { data } = await supabase.auth.getSession();
   const id = data.session?.user.id;
   if (!id) throw new Error("No autenticado");

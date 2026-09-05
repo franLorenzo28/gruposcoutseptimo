@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { apiFetch, uploadImage } from "@/lib/backend";
+import { apiFetch, isLocalBackend, uploadImage } from "@/lib/backend";
 import { ensureAdminForMediaUpload } from "@/lib/admin-permissions";
 
 export type GroupRole = "owner" | "admin" | "member";
@@ -41,7 +41,7 @@ export type GroupMessageWithSender = GroupMessage & {
   sender_avatar?: string | null;
 };
 
-const GROUPS_VIA_API = true;
+const GROUPS_VIA_API = isLocalBackend();
 
 // Listar todos los grupos
 export async function listGroups(): Promise<GroupWithMemberCount[]> {
@@ -475,7 +475,16 @@ export async function sendGroupMessage(
 
 // Eliminar mensaje
 export async function deleteGroupMessage(messageId: string): Promise<void> {
-  await apiFetch(`/group-messages/${messageId}`, { method: "DELETE" });
+  if (GROUPS_VIA_API) {
+    await apiFetch(`/group-messages/${messageId}`, { method: "DELETE" });
+    return;
+  }
+
+  const { error } = await supabase
+    .from("group_messages")
+    .delete()
+    .eq("id", messageId);
+  if (error) throw error;
 }
 
 // Actualizar grupo (solo admins/owner)
@@ -577,7 +586,13 @@ export async function updateGroup(
 
 // Eliminar grupo (solo owner)
 export async function deleteGroup(groupId: string): Promise<void> {
-  await apiFetch(`/groups/${groupId}`, { method: "DELETE" });
+  if (GROUPS_VIA_API) {
+    await apiFetch(`/groups/${groupId}`, { method: "DELETE" });
+    return;
+  }
+
+  const { error } = await supabase.from("groups").delete().eq("id", groupId);
+  if (error) throw error;
 }
 
 // Eliminar grupo y limpiar archivos asociados en storage (portada y fotos de mensajes)

@@ -21,7 +21,7 @@ import logoImage from "@/assets/grupo-scout-logo.png";
 import PageLoader from "@/components/ui/PageLoader";
 import { PageGridBackground } from "@/components/PageGridBackground";
 import RegistroContactoWhatsApp from "@/components/auth/RegistroContactoWhatsApp";
-import { apiFetch } from "@/lib/backend";
+import { apiFetch, isLocalBackend, saveLocalAccessToken } from "@/lib/backend";
 
 function isVercelAppHost(hostname: string): boolean {
   return hostname.endsWith(".vercel.app");
@@ -645,10 +645,35 @@ const Auth = () => {
       // Evita que un intent OAuth viejo bloquee la navegaci�n post-login normal.
       localStorage.removeItem("oauth_intent");
 
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: trimmedEmail,
-        password: trimmedPassword,
-      });
+      let localLogin = false;
+      let data: { user?: { email_confirmed_at?: string | null; confirmed_at?: string | null } | null } | null = null;
+      let error: Error | null = null;
+
+      if (isLocalBackend()) {
+        try {
+          const response = await apiFetch<{
+            access_token: string;
+            user: { email_confirmed_at?: string | null; confirmed_at?: string | null };
+          }>("/v1/auth/login", {
+            method: "POST",
+            auth: "none",
+            body: JSON.stringify({ email: trimmedEmail, password: trimmedPassword }),
+          });
+          saveLocalAccessToken(response.access_token);
+          data = response;
+          localLogin = true;
+        } catch (requestError) {
+          error = requestError instanceof Error ? requestError : new Error("No se pudo iniciar sesión.");
+        }
+      } else {
+        const result = await supabase.auth.signInWithPassword({
+          email: trimmedEmail,
+          password: trimmedPassword,
+        });
+        data = result.data;
+        error = result.error;
+      }
+
       if (error) {
         console.error("Error en login:", error);
         if (
@@ -675,7 +700,7 @@ const Auth = () => {
         }
       } else {
         // Verificar si el usuario est� verificado
-        if (data?.user && !data.user.confirmed_at) {
+        if (!localLogin && data?.user && !data.user.confirmed_at) {
           toast({
             title: "Correo no verificado",
             description: "Debes confirmar tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada y spam.",

@@ -10,6 +10,7 @@ import { getAuthUser } from "@/lib/backend";
 import { getProfile } from "@/lib/api";
 import { resolveMemberAccessFromProfile } from "@/lib/member-auth";
 import { supabase } from "@/integrations/supabase/client";
+import { isLocalBackend } from "@/lib/backend";
 
 interface LoginPayload {
   authUserId: string;
@@ -113,6 +114,12 @@ export function MemberAuthProvider({ children }: { children: React.ReactNode }) 
     };
 
     checkAuth();
+
+    if (isLocalBackend()) {
+      return () => {
+        active = false;
+      };
+    }
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
       checkAuth();

@@ -45,6 +45,7 @@ import { useNotifications } from "@/context/Notifications";
 import { NotificationsPopover } from "@/components/layout/NotificationsPanel";
 import { useScrolledHeader } from "@/hooks/useScrolledHeader";
 import { supabase } from "@/integrations/supabase/client";
+import { isLocalBackend, resetLocalBackendAuth } from "@/lib/backend";
 import logoImage from "@/assets/grupo-scout-logo.png";
 
 interface InternalNavLink {
@@ -102,7 +103,17 @@ export function InternalPlatformNav() {
   } = useNotifications();
 
   const handleLogout = useCallback(async () => {
-    await supabase.auth.signOut();
+    if (isLocalBackend()) {
+      await fetch(`${import.meta.env.VITE_API_BASE || "http://localhost:4000"}/v1/auth/logout`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("grupo7_local_access_token") || ""}`,
+        },
+      }).catch(() => undefined);
+      resetLocalBackendAuth();
+    } else {
+      await supabase.auth.signOut();
+    }
     logout();
   }, [logout]);
 

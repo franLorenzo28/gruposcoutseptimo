@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 const API_BASE = (import.meta.env.VITE_API_BASE || "http://localhost:4000").replace(/\/$/, "");
+const LOCAL_ACCESS_TOKEN_KEY = "grupo7_local_access_token";
 
 type ApiAuthMode = "none" | "optional" | "required";
 
@@ -28,11 +29,29 @@ export function isLocalBackend(): boolean {
 }
 
 async function currentAccessToken(refresh = false): Promise<string | null> {
+  if (isLocalBackend()) {
+    if (refresh) return getStoredLocalAccessToken();
+    return getStoredLocalAccessToken();
+  }
+
   const result = refresh
     ? await supabase.auth.refreshSession()
     : await supabase.auth.getSession();
   if (result.error) return null;
   return result.data.session?.access_token ?? null;
+}
+
+function getStoredLocalAccessToken(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.localStorage.getItem(LOCAL_ACCESS_TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function saveLocalAccessToken(token: string): void {
+  window.localStorage.setItem(LOCAL_ACCESS_TOKEN_KEY, token);
 }
 
 async function parseResponse(response: Response): Promise<unknown> {
@@ -124,7 +143,11 @@ export async function localAuthGet<TResponse = unknown>(path: string): Promise<T
 }
 
 export function resetLocalBackendAuth(): void {
-  // The API uses the Supabase session; there is no second local JWT to clear.
+  try {
+    window.localStorage.removeItem(LOCAL_ACCESS_TOKEN_KEY);
+  } catch {
+    // Storage may be unavailable in private browsing contexts.
+  }
 }
 
 export async function ensureLocalToken(): Promise<string> {
@@ -164,16 +187,41 @@ export async function getAuthUser(): Promise<{
   account_classification?: string | null;
   isLocal: boolean;
 } | null> {
+  if (isLocalBackend()) {
+    const token = getStoredLocalAccessToken();
+    if (!token) return null;
+
+    try {
+      const response = await apiFetch<{
+        user: {
+          id: string;
+          email?: string | null;
+          email_confirmed_at?: string | null;
+        };
+      }>("/v1/auth/session");
+      return {
+        id: response.user.id,
+        email: response.user.email,
+        email_verified: Boolean(response.user.email_confirmed_at),
+        account_status: null,
+        account_classification: null,
+        isLocal: true,
+      };
+    } catch {
+      resetLocalBackendAuth();
+      return null;
+    }
+  }
+
   const { data } = await supabase.auth.getSession();
   const user = data.session?.user;
   if (!user) return null;
 
-  let profile: { account_status?: string | null; account_classification?: string | null } | null = null;
-  try {
-    profile = await apiFetch("/v1/me/profile");
-  } catch {
-    // Auth identity remains usable for logout/recovery while the API is unavailable.
-  }
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("account_status, account_classification")
+    .eq("user_id", user.id)
+    .maybeSingle();
 
   return {
     id: user.id,

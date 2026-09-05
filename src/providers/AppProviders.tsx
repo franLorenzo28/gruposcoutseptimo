@@ -7,6 +7,7 @@ import type { User } from "@supabase/supabase-js";
 import type { Profile } from "@/types/profile";
 import { querySilent } from "@/lib/supabase-logger";
 import { NotificationsProvider } from "@/context/Notifications";
+import { apiFetch, getAuthUser, isLocalBackend, resetLocalBackendAuth } from "@/lib/backend";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -124,16 +125,73 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
     setIsUserLoading(false);
   }, []);
 
+  const fetchLocalUser = useCallback(async () => {
+    const currentRequest = ++requestId.current;
+    setIsUserLoading(true);
+
+    try {
+      const authUser = await getAuthUser();
+      if (!authUser) {
+        setUser(null);
+        setAccountStatus(null);
+        return;
+      }
+
+      const profile = await apiFetch<Record<string, unknown>>("/v1/me/profile");
+      if (currentRequest !== requestId.current) return;
+
+      const status = typeof profile.account_status === "string"
+        ? profile.account_status
+        : "activo";
+      const combinedUser = { ...authUser, ...profile } as unknown as SupabaseUserWithProfile;
+      setAccountStatus(status);
+
+      if (status !== "activo") {
+        resetLocalBackendAuth();
+        setUser(null);
+        try {
+          localStorage.setItem("pendingAccountStatus", status);
+          localStorage.setItem("pendingUserName", String(profile.nombre_completo || authUser.email || "Usuario"));
+        } catch {
+          // App still works without localStorage.
+        }
+        return;
+      }
+
+      setUser(combinedUser);
+      try {
+        localStorage.setItem("adminUser", JSON.stringify(combinedUser));
+      } catch {
+        // App still works without localStorage.
+      }
+    } catch {
+      setUser(null);
+      setAccountStatus(null);
+    } finally {
+      if (currentRequest === requestId.current) setIsUserLoading(false);
+    }
+  }, []);
+
   const refreshUser = useCallback(async () => {
+    if (isLocalBackend()) {
+      await fetchLocalUser();
+      return;
+    }
+
     try {
       const { data: { session } } = await supabase.auth.getSession();
       await fetchUserAndProfile(session?.user ?? null);
     } catch (error) {
       if (import.meta.env.DEV) console.error("Error refreshing user:", error);
     }
-  }, [fetchUserAndProfile]);
+  }, [fetchLocalUser, fetchUserAndProfile]);
 
   useEffect(() => {
+    if (isLocalBackend()) {
+      void fetchLocalUser();
+      return;
+    }
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       const u = session?.user ?? null;
       if (u) {
@@ -166,7 +224,7 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
     return () => {
       subscription?.unsubscribe();
     };
-  }, [fetchUserAndProfile]);
+  }, [fetchLocalUser, fetchUserAndProfile]);
 
   return (
     <SupabaseUserContext.Provider value={{ user, isUserLoading, accountStatus, refreshUser }}>

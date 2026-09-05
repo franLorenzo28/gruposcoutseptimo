@@ -257,7 +257,7 @@ const Cancionero = () => {
         `}
       </style>
 
-      <PageGridBackground>
+      <PageGridBackground className="theme-readable-page">
         {/* Hero */}
         <section
           ref={heroRef}

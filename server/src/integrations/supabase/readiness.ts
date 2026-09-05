@@ -38,7 +38,7 @@ export function createSupabaseReadinessProbe(
         method: "GET",
         headers: {
           Accept: "application/json",
-          apikey: config.SUPABASE_KEY!,
+          apikey: config.SUPABASE_KEY ?? config.SUPABASE_SERVICE_ROLE_KEY!,
         },
         signal: controller.signal,
       });
@@ -65,7 +65,8 @@ export function createSupabaseReadinessProbe(
 
   return {
     async check(): Promise<SupabaseReadinessChecks> {
-      if (!config.SUPABASE_URL || !config.SUPABASE_KEY) {
+      const databaseKey = config.SUPABASE_KEY ?? config.SUPABASE_SERVICE_ROLE_KEY;
+      if (!config.SUPABASE_URL || !databaseKey) {
         const notConfigured = { status: "not_configured" as const, latencyMs: 0 };
         return { auth: notConfigured, database: notConfigured };
       }

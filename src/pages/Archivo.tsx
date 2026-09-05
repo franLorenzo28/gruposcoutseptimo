@@ -173,7 +173,7 @@ const Archivo = () => {
         `}
       </style>
 
-      <div className="min-h-screen">
+      <div className="theme-readable-page min-h-screen">
         {/* Hero */}
         <section
           ref={heroRef}
