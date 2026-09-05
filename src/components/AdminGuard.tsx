@@ -1,35 +1,32 @@
+import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useUser } from "../hooks/useUser.tsx";
+import { getCurrentUserAdminAccess, type AdminAccess } from "@/lib/admin-permissions";
 
 export function AdminGuard({ children }: { children: React.ReactNode }) {
   const { user, isUserLoading } = useUser();
+  const [access, setAccess] = useState<AdminAccess | null>(null);
 
-  if (isUserLoading) {
+  useEffect(() => {
+    let active = true;
+    if (!user) {
+      setAccess(null);
+      return;
+    }
+    setAccess(null);
+    void getCurrentUserAdminAccess().then((result) => {
+      if (active) setAccess(result);
+    });
+    return () => {
+      active = false;
+    };
+  }, [user]);
+
+  if (isUserLoading || (user && access === null)) {
     return <div className="p-8 text-center text-muted-foreground">Verificando permisos...</div>;
   }
 
-  const adminEmails = (import.meta.env.VITE_GALLERY_ADMIN_EMAILS || "")
-    .split(",")
-    .map((email: string) => email.trim().toLowerCase())
-    .filter(Boolean);
-
-  const email = user?.email?.toLowerCase();
-  const appRole =
-    user && "role" in user && typeof user.role === "string"
-      ? user.role.toLowerCase()
-      : "";
-  const rolAdulto =
-    user && "rol_adulto" in user && typeof user.rol_adulto === "string"
-      ? user.rol_adulto.toLowerCase()
-      : undefined;
-  const isAdmin =
-    appRole === "admin" ||
-    appRole === "mod" ||
-    rolAdulto === "admin" ||
-    rolAdulto === "mod" ||
-    (!!email && adminEmails.includes(email));
-
-  if (!isAdmin) {
+  if (!user || !access?.canOpenAdminPanel) {
     return <Navigate to="/" replace />;
   }
   return <>{children}</>;

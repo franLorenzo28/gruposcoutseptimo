@@ -1,5 +1,4 @@
 import { Navigate, useLocation, useParams, type RouteObject } from "react-router-dom";
-import { TestDiagnostic } from "@/app/routes/lazy-pages";
 
 function PreserveRedirect({ to }: { to: string }) {
   const location = useLocation();
@@ -40,5 +39,4 @@ export const compatibilityRoutes: RouteObject[] = [
   { path: "planificacion", element: <Navigate to="/interno/planificacion" replace /> },
   { path: "capsula-del-tiempo", element: <Navigate to="/archivo/capsula-del-tiempo" replace /> },
   { path: "capsula-tiempo", element: <Navigate to="/archivo/capsula-del-tiempo" replace /> },
-  { path: "test-diagnostic", element: <TestDiagnostic /> },
 ];

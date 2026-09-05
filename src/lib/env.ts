@@ -58,7 +58,7 @@ export function isDebugEnabled(): boolean {
  * Obtener la URL del backend según el entorno
  */
 export function getBackendURL(): string {
-  return import.meta.env.VITE_BACKEND_URL || "http://localhost:8080";
+  return import.meta.env.VITE_API_BASE || "http://localhost:4000";
 }
 
 /**
@@ -71,7 +71,7 @@ export function getEnvConfig() {
     isStaging: isStaging(),
     isProd: isProduction(),
     backendURL: getBackendURL(),
-    backendMode: import.meta.env.VITE_BACKEND || "local",
+    backendMode: import.meta.env.VITE_BACKEND || "supabase",
     features: {
       devtools: isDevToolsEnabled(),
       logging: isLoggingEnabled(),

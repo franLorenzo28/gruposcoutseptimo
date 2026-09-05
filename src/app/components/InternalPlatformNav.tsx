@@ -1,13 +1,15 @@
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   ArrowLeft,
   BellRing,
-  CalendarDays,
+  BookOpen,
   CalendarCheck,
+  CalendarDays,
   ChevronDown,
   ClipboardList,
   FolderOpen,
+  Images,
   LayoutDashboard,
   Library,
   LogOut,
@@ -17,19 +19,20 @@ import {
   Shield,
   Upload,
   User2,
-  X,
-  BookOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -40,6 +43,7 @@ import { cn } from "@/lib/utils";
 import { useMemberAuth } from "@/context/MemberAuthContext";
 import { useNotifications } from "@/context/Notifications";
 import { NotificationsPopover } from "@/components/layout/NotificationsPanel";
+import { useScrolledHeader } from "@/hooks/useScrolledHeader";
 import { supabase } from "@/integrations/supabase/client";
 import logoImage from "@/assets/grupo-scout-logo.png";
 
@@ -47,32 +51,44 @@ interface InternalNavLink {
   to: string;
   label: string;
   icon: React.ElementType;
+  description?: string;
+}
+
+interface InternalNavSection {
+  label: string;
+  links: InternalNavLink[];
 }
 
 const primaryLinks: InternalNavLink[] = [
-  { to: "/interno/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/interno/dashboard", label: "Inicio", icon: LayoutDashboard },
   { to: "/interno/usuarios", label: "Comuni 7", icon: User2 },
   { to: "/interno/mensajes", label: "Mensajes", icon: MessageCircle },
-  { to: "/interno/documentos", label: "Documentos", icon: FolderOpen },
-  { to: "/interno/anuncios", label: "Anuncios", icon: BellRing },
   { to: "/interno/agenda", label: "Agenda", icon: CalendarDays },
-  { to: "/interno/subidas", label: "PPP", icon: Upload },
-  { to: "/interno/configuracion", label: "Configuración", icon: Settings },
+  { to: "/interno/anuncios", label: "Anuncios", icon: BellRing },
 ];
 
-const secondaryLinks: InternalNavLink[] = [
-  { to: "/interno/narrativas", label: "Narrativas", icon: BookOpen },
-  { to: "/interno/planificacion", label: "Planificación", icon: CalendarCheck },
-  { to: "/interno/biblioteca", label: "Biblioteca", icon: Library },
-  { to: "/interno/formularios", label: "Formularios", icon: ClipboardList },
+const resourceLinks: InternalNavLink[] = [
+  { to: "/interno/documentos", label: "Documentos", icon: FolderOpen, description: "Material institucional" },
+  { to: "/interno/galeria", label: "Galería", icon: Images, description: "Fotos de la comunidad" },
+  { to: "/interno/subidas", label: "PPP y subidas", icon: Upload, description: "Archivos de tu unidad" },
+  { to: "/interno/narrativas", label: "Narrativas", icon: BookOpen, description: "Memoria e identidad" },
+  { to: "/interno/planificacion", label: "Planificación", icon: CalendarCheck, description: "Ciclo de programa" },
+  { to: "/interno/biblioteca", label: "Biblioteca", icon: Library, description: "Recursos pedagógicos" },
+  { to: "/interno/formularios", label: "Formularios", icon: ClipboardList, description: "Fichas y autorizaciones" },
+  { to: "/interno/configuracion", label: "Configuración", icon: Settings, description: "Perfil y preferencias" },
 ];
 
-const allLinks = [...primaryLinks, ...secondaryLinks];
+const mobileSections: InternalNavSection[] = [
+  { label: "Comunidad", links: primaryLinks },
+  { label: "Recursos y gestión", links: resourceLinks },
+];
+
+const allLinks = [...primaryLinks, ...resourceLinks];
 
 export function InternalPlatformNav() {
-  const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const isScrolled = useScrolledHeader();
   const { isAuthenticated, session, logout } = useMemberAuth();
   const {
     notifications,
@@ -90,235 +106,120 @@ export function InternalPlatformNav() {
     logout();
   }, [logout]);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  useEffect(() => setIsMobileMenuOpen(false), [location.pathname]);
 
-  useEffect(() => {
-    setIsMobileMenuOpen(false);
-  }, [location.pathname]);
+  const isActive = useCallback(
+    (path: string) => location.pathname === path || location.pathname.startsWith(`${path}/`),
+    [location.pathname],
+  );
 
-  const isActive = (path: string) => {
-    if (path === "/interno") return location.pathname === "/interno";
-    return location.pathname === path || location.pathname.startsWith(`${path}/`);
-  };
-
-  const isSecondaryActive = secondaryLinks.some(
-    (link) => isActive(link.to),
+  const resourcesActive = resourceLinks.some((link) => isActive(link.to));
+  const currentLabel = useMemo(
+    () => allLinks.find((link) => isActive(link.to))?.label ?? "Plataforma interna",
+    [isActive],
   );
 
   return (
     <>
-      <nav
-        className={cn(
-          "fixed top-0 left-0 right-0 z-50 text-white transition-all duration-300 backdrop-blur-sm supports-[backdrop-filter]:backdrop-blur-sm bg-slate-950/82 dark:bg-slate-950/82 supports-[backdrop-filter]:bg-slate-950/70 border-b border-white/10",
-          isScrolled && "shadow-md",
-        )}
-      >
-        <div className="container mx-auto px-4 md:px-6">
-          <div className="relative flex h-16 items-center justify-between md:h-20">
-            {/* Logo */}
+      <div className="pointer-events-none fixed inset-x-0 top-0 z-50 px-2 pt-2 sm:px-4 sm:pt-3">
+        <nav
+          aria-label="Navegación de la plataforma interna"
+          className={cn(
+            "pointer-events-auto mx-auto max-w-[1480px] rounded-[22px] border border-white/10 bg-[#080c14]/92 text-white shadow-[0_10px_40px_-18px_rgba(0,0,0,0.75)] backdrop-blur-xl transition-[background-color,box-shadow,border-color] duration-300",
+            isScrolled && "border-white/15 bg-[#080c14]/97 shadow-[0_18px_52px_-20px_rgba(0,0,0,0.9)]",
+          )}
+        >
+          <div className="relative flex h-14 items-center gap-3 px-3 sm:h-16 sm:px-4 lg:px-5">
+            <span className="absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-secondary/90 to-transparent" aria-hidden="true" />
+
             <Link
               to="/interno/dashboard"
-              className="flex items-center gap-3 group shrink-0"
+              className="group flex min-w-0 shrink-0 items-center gap-2.5 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary"
+              aria-label="Plataforma interna, ir al dashboard"
             >
-              <div className="relative">
-                <img
-                  src={logoImage}
-                  alt="Grupo Scout Séptimo"
-                  className="h-10 w-10 md:h-12 md:w-12 object-contain transition-transform group-hover:scale-110 [will-change:transform]"
-                  loading="eager"
-                  decoding="async"
-                />
-                <div className="absolute inset-0 bg-muted/40 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
-              </div>
-              <div className="hidden xl:block">
-                <h1 className="whitespace-nowrap text-base xl:text-lg font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent leading-none">
-                  Plataforma Interna
-                </h1>
-                <p className="whitespace-nowrap text-xs text-white/70 mt-1">
-                  Grupo Scout Séptimo
-                </p>
-              </div>
+              <span className="relative grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl border border-secondary/30 bg-white/5 sm:h-11 sm:w-11">
+                <img src={logoImage} alt="" className="h-9 w-9 object-contain transition-transform duration-300 motion-safe:group-hover:scale-105 sm:h-10 sm:w-10" loading="eager" decoding="async" />
+              </span>
+              <span className="min-w-0">
+                <span className="hidden truncate text-sm font-bold leading-tight text-white 2xl:block">Plataforma interna</span>
+                <span className="block max-w-[145px] truncate text-xs font-semibold text-white sm:hidden">{currentLabel}</span>
+                <span className="mt-0.5 hidden text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary/80 2xl:block">Grupo Scout Séptimo</span>
+              </span>
             </Link>
 
-            {/* Desktop Right Section: Pills + Actions */}
-            <div className="hidden items-center gap-2 xl:flex min-w-0">
-              {/* Pills */}
-              <div className="flex items-center gap-1 rounded-full border border-white/10 bg-slate-950/55 px-2 py-1 shadow-sm backdrop-blur-sm supports-[backdrop-filter]:backdrop-blur-sm dark:bg-slate-950/55">
+            <div className="hidden min-w-0 flex-1 items-center justify-center xl:flex">
+              <div className="flex items-center gap-0.5 rounded-2xl border border-white/[0.08] bg-white/[0.035] p-1">
                 {primaryLinks.map((link) => {
                   const Icon = link.icon;
+                  const active = isActive(link.to);
                   return (
                     <Link
-                      key={link.label}
+                      key={link.to}
                       to={link.to}
+                      aria-current={active ? "page" : undefined}
                       className={cn(
-                        "relative px-3 py-2 rounded-full text-xs md:text-sm font-medium transition-all duration-300 group nav-link-underline [will-change:transform]",
-                        "hover:bg-white/10 hover:text-primary",
-                        isActive(link.to) ? "text-white nav-link-underline--active" : "text-white/80",
+                        "relative inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-xs font-semibold text-white/68 transition-colors hover:bg-white/[0.07] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary",
+                        active && "bg-white/[0.09] text-white shadow-sm",
                       )}
                     >
-                      <span className="flex items-center gap-1.5 whitespace-nowrap">
-                        <Icon className="h-3.5 w-3.5" />
-                        {link.label}
-                      </span>
+                      <Icon className={cn("h-3.5 w-3.5", active && "text-secondary")} />
+                      {link.label}
+                      {active ? <span className="absolute inset-x-3 -bottom-1 h-0.5 rounded-full bg-secondary" aria-hidden="true" /> : null}
                     </Link>
                   );
                 })}
 
-                {/* More dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="ghost"
                       size="sm"
                       className={cn(
-                        "px-3 py-2 text-xs md:text-sm font-medium rounded-full transition-all duration-300",
-                        "hover:bg-white/10 hover:text-primary",
-                        isSecondaryActive ? "text-white nav-link-underline--active" : "text-white/80",
+                        "h-9 rounded-xl px-3 text-xs text-white/68 hover:bg-white/[0.07] hover:text-white",
+                        resourcesActive && "bg-white/[0.09] text-white",
                       )}
                     >
-                      <span className="flex items-center gap-1.5 whitespace-nowrap">
-                        Más
-                        <ChevronDown className="ml-0.5 h-3 w-3" />
-                      </span>
+                      <FolderOpen className={cn("h-3.5 w-3.5", resourcesActive && "text-secondary")} />
+                      Recursos
+                      <ChevronDown className="h-3.5 w-3.5 text-white/45" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="center" className="w-48">
-                    {secondaryLinks.map((link) => {
-                      const Icon = link.icon;
-                      return (
-                        <DropdownMenuItem key={link.to} asChild>
-                          <Link
-                            to={link.to}
-                            className={cn(
-                              "flex items-center gap-2 px-2 py-2 cursor-pointer",
-                              isActive(link.to) && "bg-primary/10 text-primary font-semibold",
-                            )}
-                          >
-                            <Icon className="h-4 w-4" />
-                            <span>{link.label}</span>
-                          </Link>
-                        </DropdownMenuItem>
-                      );
-                    })}
+                  <DropdownMenuContent align="center" sideOffset={12} className="w-[340px] rounded-2xl p-2 shadow-xl">
+                    <DropdownMenuLabel className="px-2 pb-2 pt-1 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Herramientas de la plataforma</DropdownMenuLabel>
+                    <div className="grid grid-cols-2 gap-1">
+                      {resourceLinks.map((link) => {
+                        const Icon = link.icon;
+                        return (
+                          <DropdownMenuItem key={link.to} asChild>
+                            <Link
+                              to={link.to}
+                              className={cn(
+                                "flex cursor-pointer items-start gap-2.5 rounded-xl px-2.5 py-2.5",
+                                isActive(link.to) && "bg-secondary/15 text-foreground",
+                              )}
+                            >
+                              <span className="mt-0.5 rounded-lg bg-muted p-1.5"><Icon className="h-4 w-4" /></span>
+                              <span className="min-w-0"><span className="block truncate text-xs font-bold">{link.label}</span><span className="block truncate text-[10px] text-muted-foreground">{link.description}</span></span>
+                            </Link>
+                          </DropdownMenuItem>
+                        );
+                      })}
+                    </div>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
-
-              {/* Actions */}
-              <div className="flex items-center gap-1.5 shrink-0">
-                <Button
-                  asChild
-                  variant="ghost"
-                  size="sm"
-                  className="text-white/60 hover:text-white hover:bg-white/10 gap-1.5"
-                  title="Sitio público"
-                >
-                  <Link to="/">
-                    <ArrowLeft className="h-4 w-4" />
-                    Sitio público
-                  </Link>
-                </Button>
-
-                <Button
-                  asChild
-                  variant="ghost"
-                  size="sm"
-                  className="text-white/60 hover:text-white hover:bg-white/10 gap-1.5"
-                  title="Admin"
-                >
-                  <Link to="/admin">
-                    <Shield className="h-4 w-4 text-primary" />
-                    Admin
-                  </Link>
-                </Button>
-
-                <ThemeToggle />
-
-                {isAuthenticated && (
-                  <NotificationsPopover
-                    notifications={notifications}
-                    unreadCount={unreadCount}
-                    hasMore={hasMore}
-                    loadingMore={loadingMore}
-                    onMarkAllRead={markAllRead}
-                    onMarkRead={markRead}
-                    onRemove={removeNotification}
-                    onLoadMore={loadMore}
-                    align="end"
-                  >
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="relative h-9 w-9 text-white/60 hover:text-white hover:bg-white/10"
-                      aria-label="Notificaciones"
-                      title="Notificaciones"
-                    >
-                      <BellRing className="h-4.5 w-4.5" />
-                      {unreadCount > 0 && (
-                        <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
-                          {unreadCount > 9 ? "9+" : unreadCount}
-                        </span>
-                      )}
-                    </Button>
-                  </NotificationsPopover>
-                )}
-
-                {isAuthenticated ? (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button className="flex items-center gap-2 px-2 py-1.5 rounded-full hover:bg-white/10 transition-all duration-300 outline-none">
-                        <UserAvatar userName={session?.nombre} size="sm" />
-                        <ChevronDown className="h-3 w-3 text-white/60" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" sideOffset={8} collisionPadding={16} className="w-56">
-                      <div className="flex items-center gap-3 p-2">
-                        <UserAvatar userName={session?.nombre} size="sm" />
-                        <div className="flex flex-col space-y-0.5 leading-none min-w-0">
-                          <p className="font-medium text-sm truncate">{session?.nombre || "Usuario"}</p>
-                          <p className="truncate text-xs text-muted-foreground">
-                            {session?.rama ? `Rama: ${session.rama}` : "Miembro"}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="h-px bg-muted my-1" />
-                      <DropdownMenuItem asChild>
-                        <Link to="/interno/perfil" className="cursor-pointer flex w-full items-center">
-                          <User2 className="mr-2 h-4 w-4" />
-                          <span>Ver Perfil</span>
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link to="/interno/configuracion" className="cursor-pointer flex w-full items-center">
-                          <Settings className="mr-2 h-4 w-4" />
-                          <span>Configuración</span>
-                        </Link>
-                      </DropdownMenuItem>
-                      <div className="h-px bg-muted my-1" />
-                      <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive focus:text-destructive flex w-full items-center">
-                        <LogOut className="mr-2 h-4 w-4" />
-                        <span>Cerrar sesión</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                ) : (
-                  <Button asChild variant="default" size="sm">
-                    <Link to="/interno/auth">Iniciar Sesión</Link>
-                  </Button>
-                )}
-              </div>
             </div>
 
-            {/* Mobile Menu Button */}
-            <div className="ml-auto flex items-center gap-2 xl:hidden">
-              <ThemeToggle />
-              {isAuthenticated && (
+            <div className="ml-auto flex shrink-0 items-center gap-1.5">
+              <Button asChild variant="ghost" size="icon" className="hidden h-9 w-9 rounded-xl text-white/60 hover:bg-white/10 hover:text-white 2xl:inline-flex" title="Sitio público">
+                <Link to="/" aria-label="Volver al sitio público"><ArrowLeft className="h-4 w-4" /></Link>
+              </Button>
+              <Button asChild variant="ghost" size="icon" className="hidden h-9 w-9 rounded-xl text-white/60 hover:bg-white/10 hover:text-white 2xl:inline-flex" title="Panel administrativo">
+                <Link to="/admin" aria-label="Abrir panel administrativo"><Shield className="h-4 w-4 text-primary" /></Link>
+              </Button>
+              <span className="hidden h-9 w-9 place-items-center rounded-xl border border-white/10 bg-white/[0.04] [&_button]:h-9 [&_button]:w-9 [&_button]:text-white [&_button]:hover:bg-white/10 [&_button]:hover:text-white sm:grid"><ThemeToggle /></span>
+
+              {isAuthenticated ? (
                 <NotificationsPopover
                   notifications={notifications}
                   unreadCount={unreadCount}
@@ -330,130 +231,74 @@ export function InternalPlatformNav() {
                   onLoadMore={loadMore}
                   align="end"
                 >
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="relative h-9 w-9 text-white/60 hover:text-white hover:bg-white/10"
-                    aria-label="Notificaciones"
-                    title="Notificaciones"
-                  >
-                    <BellRing className="h-4.5 w-4.5" />
-                    {unreadCount > 0 && (
-                      <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
-                        {unreadCount > 9 ? "9+" : unreadCount}
-                      </span>
-                    )}
+                  <Button variant="ghost" size="icon" className="relative h-9 w-9 rounded-xl border border-white/10 bg-white/[0.04] text-white/70 hover:bg-white/10 hover:text-white" aria-label="Notificaciones">
+                    <BellRing className="h-4 w-4" />
+                    {unreadCount > 0 ? <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-[#080c14] bg-primary px-1 text-[9px] font-black text-white">{unreadCount > 9 ? "9+" : unreadCount}</span> : null}
                   </Button>
                 </NotificationsPopover>
-              )}
+              ) : null}
+
+              {isAuthenticated ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="hidden h-10 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-1.5 pr-2 text-left hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary sm:flex">
+                      <UserAvatar userName={session?.nombre} size="sm" />
+                      <span className="hidden max-w-24 truncate text-xs font-semibold text-white/80 2xl:block">{session?.nombre || "Usuario"}</span>
+                      <ChevronDown className="h-3.5 w-3.5 text-white/45" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" sideOffset={12} collisionPadding={16} className="w-64 rounded-2xl p-2">
+                    <div className="flex items-center gap-3 rounded-xl bg-muted/50 p-3">
+                      <UserAvatar userName={session?.nombre} size="sm" />
+                      <div className="min-w-0"><p className="truncate text-sm font-bold">{session?.nombre || "Usuario"}</p><p className="truncate text-xs text-muted-foreground">{session?.rama ? `Rama: ${session.rama}` : "Miembro"}</p></div>
+                    </div>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild><Link to="/interno/perfil" className="cursor-pointer rounded-xl"><User2 className="mr-2 h-4 w-4" />Ver perfil</Link></DropdownMenuItem>
+                    <DropdownMenuItem asChild><Link to="/interno/configuracion" className="cursor-pointer rounded-xl"><Settings className="mr-2 h-4 w-4" />Configuración</Link></DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer rounded-xl text-destructive focus:text-destructive"><LogOut className="mr-2 h-4 w-4" />Cerrar sesión</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : null}
+
               <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                 <SheetTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="xl:hidden text-white"
-                    aria-label={isMobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
-                    aria-expanded={isMobileMenuOpen}
-                    title={isMobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
-                  >
-                    {isMobileMenuOpen ? (
-                      <X className="h-6 w-6" />
-                    ) : (
-                      <Menu className="h-6 w-6" />
-                    )}
-                  </Button>
+                  <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl border border-white/10 bg-white/[0.04] text-white hover:bg-white/10 hover:text-white xl:hidden" aria-label="Abrir menú" aria-expanded={isMobileMenuOpen} aria-controls="internal-mobile-navigation"><Menu className="h-5 w-5" /></Button>
                 </SheetTrigger>
-                <SheetContent
-                  side="right"
-                  className="flex h-[100dvh] w-[85vw] max-w-[400px] flex-col overflow-hidden p-0 sm:w-[400px]"
-                >
-                  <SheetHeader className="shrink-0 border-b px-6 py-4 pr-12">
-                    <SheetTitle className="text-left">Plataforma Interna</SheetTitle>
-                  </SheetHeader>
-                  <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 pb-6">
-                    <div className="flex flex-col gap-6 mt-6">
-                      {/* User Section */}
-                      {isAuthenticated ? (
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/30">
-                            <UserAvatar
-                              userName={session?.nombre}
-                              size="md"
-                            />
-                            <div className="flex-1 min-w-0 text-left">
-                              <p className="text-sm font-medium truncate">
-                                {session?.nombre || "Usuario"}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {session?.rama ? `Rama: ${session.rama}` : "Miembro"}
-                              </p>
-                            </div>
-                          </div>
+                <SheetContent side="right" className="flex h-[100dvh] w-[90vw] max-w-sm flex-col overflow-hidden p-0">
+                  <div className="shrink-0 bg-[#080c14] px-6 pb-6 pt-7 text-white">
+                    <SheetHeader className="text-left">
+                      <div className="mb-3 flex items-center gap-3"><img src={logoImage} alt="" className="h-11 w-11 object-contain" /><div><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-secondary">Área de miembros</p><p className="mt-1 max-w-[220px] truncate text-sm font-semibold text-white/80">{session?.nombre || "Grupo Scout Séptimo"}</p></div></div>
+                      <SheetTitle className="text-left text-2xl text-white">{currentLabel}</SheetTitle>
+                      <SheetDescription className="text-left text-white/60">Organizá la vida del grupo desde cualquier dispositivo.</SheetDescription>
+                    </SheetHeader>
+                  </div>
+                  <div id="internal-mobile-navigation" className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5">
+                    {mobileSections.map((section) => (
+                      <section key={section.label} className="mb-6 last:mb-0">
+                        <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">{section.label}</p>
+                        <div className="space-y-1">
+                          {section.links.map((link) => {
+                            const Icon = link.icon;
+                            const active = isActive(link.to);
+                            return <Link key={link.to} to={link.to} aria-current={active ? "page" : undefined} className={cn("flex min-h-12 items-center gap-3 rounded-xl border border-transparent px-3 py-2.5 text-sm font-semibold", "hover:border-border/70 hover:bg-muted/60", active && "border-secondary/30 bg-secondary/15 text-foreground")}><span className={cn("grid h-8 w-8 place-items-center rounded-lg bg-muted", active && "bg-secondary text-secondary-foreground")}><Icon className="h-4 w-4" /></span>{link.label}</Link>;
+                          })}
                         </div>
-                      ) : (
-                        <Button asChild variant="default" className="w-full">
-                          <Link to="/interno/auth">Iniciar Sesión</Link>
-                        </Button>
-                      )}
-
-                      {/* Nav Links */}
-                      <div className="space-y-1">
-                        {allLinks.map((link) => {
-                          const Icon = link.icon;
-                          return (
-                            <Link
-                              key={link.to}
-                              to={link.to}
-                              className={cn(
-                                "flex items-center gap-3 px-4 py-3 rounded-md transition-all duration-300",
-                                "hover:bg-nav-hover hover:text-primary",
-                                isActive(link.to) ? "bg-primary text-primary-foreground" : "text-foreground",
-                              )}
-                            >
-                              <Icon className="h-5 w-5" />
-                              <span className="text-sm font-medium">{link.label}</span>
-                            </Link>
-                          );
-                        })}
-                      </div>
-
-                      {/* Public site & Admin */}
-                      <div className="space-y-1 pt-4 border-t">
-                        <Link
-                          to="/"
-                          className="flex items-center gap-3 px-4 py-3 rounded-md transition-all duration-300 hover:bg-muted/30 hover:text-primary text-foreground"
-                        >
-                          <ArrowLeft className="h-5 w-5" />
-                          <span className="text-sm font-medium">Volver al sitio público</span>
-                        </Link>
-                        <Link
-                          to="/admin"
-                          className="flex items-center gap-3 px-4 py-3 rounded-md transition-all duration-300 hover:bg-muted/30 hover:text-primary text-foreground"
-                        >
-                          <Shield className="h-5 w-5 text-primary" />
-                          <span className="text-sm font-medium">Panel Admin</span>
-                        </Link>
-                        {isAuthenticated && (
-                          <button
-                            onClick={handleLogout}
-                            className="flex items-center gap-3 px-4 py-3 rounded-md transition-all duration-300 hover:bg-destructive/10 text-destructive w-full text-sm"
-                          >
-                            <LogOut className="h-5 w-5" />
-                            <span className="text-sm font-medium">Cerrar sesión</span>
-                          </button>
-                        )}
-                      </div>
-                    </div>
+                      </section>
+                    ))}
+                  </div>
+                  <div className="grid shrink-0 grid-cols-3 gap-2 border-t bg-background/95 p-4">
+                    <Button asChild variant="outline" className="rounded-xl"><Link to="/"><ArrowLeft className="h-4 w-4" />Sitio</Link></Button>
+                    <Button asChild variant="outline" className="rounded-xl"><Link to="/admin"><Shield className="h-4 w-4" />Admin</Link></Button>
+                    <Button variant="outline" className="rounded-xl text-destructive" onClick={handleLogout}><LogOut className="h-4 w-4" />Salir</Button>
                   </div>
                 </SheetContent>
               </Sheet>
             </div>
           </div>
-        </div>
-      </nav>
-
-      {/* Spacer */}
-      <div className="h-16 md:h-20" />
+        </nav>
+      </div>
+      <div className="h-[4.5rem] sm:h-[5.25rem]" aria-hidden="true" />
     </>
   );
 }

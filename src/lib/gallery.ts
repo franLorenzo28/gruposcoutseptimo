@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { isLocalBackend, apiFetch, ensureLocalToken } from "@/lib/backend";
+import { isLocalBackend, apiFetch } from "@/lib/backend";
 import { ensureAdminForMediaUpload } from "@/lib/admin-permissions";
 
 export type GalleryAlbum = { name: string; coverUrl?: string };
@@ -132,20 +132,22 @@ export async function createAlbum(name: string): Promise<void> {
 
 export async function uploadImage(album: string, file: File): Promise<void> {
   if (isLocalBackend()) {
-    const tokenizedForm = new FormData();
-    tokenizedForm.append("files", file);
-    const token = await ensureLocalToken();
-    const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8080";
-    await fetch(
-      `${API_BASE}/gallery/albums/${encodeURIComponent(album)}/images`,
-      {
-        method: "POST",
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        body: tokenizedForm,
-      },
-    ).then((r) => {
-      if (!r.ok) throw new Error("Error al subir imagen");
+    const signed = await apiFetch<{ signedUrl: string }>("/v1/media/uploads/sign", {
+      method: "POST",
+      body: JSON.stringify({
+        bucket: "gallery",
+        folder: album,
+        file_name: file.name,
+        content_type: file.type,
+        size: file.size,
+      }),
     });
+    const response = await fetch(signed.signedUrl, {
+      method: "PUT",
+      headers: { "Content-Type": file.type },
+      body: file,
+    });
+    if (!response.ok) throw new Error("Error al subir imagen");
     return;
   }
   await ensureAdminForMediaUpload();

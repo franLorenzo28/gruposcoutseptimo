@@ -3,25 +3,28 @@
  * Provides a consistent gradient background for all pages
  */
 
+import { memo } from "react";
+import { cn } from "@/lib/utils";
+
 interface PageGridBackgroundProps {
   children: React.ReactNode;
   className?: string;
 }
 
-export const PageGridBackground = ({
+export const PageGridBackground = memo(function PageGridBackground({
   children,
   className = "",
-}: PageGridBackgroundProps) => {
+}: PageGridBackgroundProps) {
   return (
     <div
-      className={`min-h-screen page-animate relative bg-gradient-to-br from-background via-background to-background ${className}`}
+      className={cn("page-animate relative isolate min-h-screen overflow-clip bg-background", className)}
     >
-      {/* Gradient overlays */}
-      <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-accent/10 pointer-events-none" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_150%_150%_at_50%_0%,var(--color-primary)_0%,transparent_50%)] opacity-5 pointer-events-none" />
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_12%_8%,hsl(var(--primary)/0.075),transparent_28rem),radial-gradient(circle_at_88%_24%,hsl(var(--secondary)/0.09),transparent_24rem)]" aria-hidden="true" />
+      <div className="app-grid pointer-events-none absolute inset-0 -z-10 opacity-35 dark:opacity-20" aria-hidden="true" />
 
-      {/* Content */}
-      <div className="relative z-10">{children}</div>
+      <div className="relative">{children}</div>
     </div>
   );
-};
+});
+
+PageGridBackground.displayName = "PageGridBackground";

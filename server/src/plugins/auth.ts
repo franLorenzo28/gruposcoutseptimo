@@ -1,4 +1,5 @@
 import type { User } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 
 import { AppError } from "../core/errors.js";
@@ -10,11 +11,15 @@ declare module "fastify" {
 
   interface FastifyRequest {
     authUser: User | null;
+    authToken: string | null;
+    userSupabase: SupabaseClient | null;
   }
 }
 
 export function installAuthentication(app: FastifyInstance): void {
   app.decorateRequest("authUser", null);
+  app.decorateRequest("authToken", null);
+  app.decorateRequest("userSupabase", null);
 
   app.decorate(
     "authenticate",
@@ -42,6 +47,8 @@ export function installAuthentication(app: FastifyInstance): void {
       }
 
       request.authUser = data.user;
+      request.authToken = accessToken;
+      request.userSupabase = app.createUserSupabase(accessToken);
     },
   );
 }

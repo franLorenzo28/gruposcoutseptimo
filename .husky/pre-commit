@@ -1,6 +1,3 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
-
 if ! command -v node >/dev/null 2>&1; then
 	export PATH="/c/nvm4w/nodejs:/c/Program Files/nodejs:$PATH"
 fi

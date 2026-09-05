@@ -1,32 +1,110 @@
 import { supabase } from "@/integrations/supabase/client";
 
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8080";
-export function isLocalBackend() {
-  return false;
+const API_BASE = (import.meta.env.VITE_API_BASE || "http://localhost:4000").replace(/\/$/, "");
+
+type ApiAuthMode = "none" | "optional" | "required";
+
+export interface ApiFetchOptions extends RequestInit {
+  auth?: ApiAuthMode;
+  timeoutMs?: number;
 }
 
-function getStoredToken() {
-  return localStorage.getItem("local_api_token");
+export class BackendError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+    readonly code: string,
+    readonly requestId?: string,
+    readonly details?: unknown,
+  ) {
+    super(message);
+    this.name = "BackendError";
+  }
 }
 
-function getStoredTokenOwner() {
-  return localStorage.getItem("local_api_token_owner");
+/** Transitional feature flag used by legacy data adapters during cut-over. */
+export function isLocalBackend(): boolean {
+  return ["api", "local"].includes(String(import.meta.env.VITE_BACKEND || "supabase"));
 }
 
-function setStoredToken(token: string) {
-  localStorage.setItem("local_api_token", token);
+async function currentAccessToken(refresh = false): Promise<string | null> {
+  const result = refresh
+    ? await supabase.auth.refreshSession()
+    : await supabase.auth.getSession();
+  if (result.error) return null;
+  return result.data.session?.access_token ?? null;
 }
 
-function setStoredTokenOwner(ownerId: string) {
-  localStorage.setItem("local_api_token_owner", ownerId);
+async function parseResponse(response: Response): Promise<unknown> {
+  if (response.status === 204) return undefined;
+  const type = response.headers.get("content-type") || "";
+  if (type.includes("application/json")) return response.json();
+  return response.text();
 }
 
-function clearStoredToken() {
+export async function apiFetch<T = any>(
+  path: string,
+  options: ApiFetchOptions = {},
+): Promise<T> {
+  const { auth = "required", timeoutMs = 15_000, ...init } = options;
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
+
+  async function execute(forceRefresh = false): Promise<Response> {
+    const token = auth === "none" ? null : await currentAccessToken(forceRefresh);
+    if (auth === "required" && !token) {
+      throw new BackendError("Tu sesión ha expirado. Inicia sesión nuevamente.", 401, "AUTH_REQUIRED");
+    }
+
+    const headers = new Headers(init.headers);
+    headers.set("Accept", "application/json");
+    if (!headers.has("Content-Type") && init.body && !(init.body instanceof FormData)) {
+      headers.set("Content-Type", "application/json");
+    }
+    if (token) headers.set("Authorization", `Bearer ${token}`);
+
+    return fetch(`${API_BASE}${path.startsWith("/") ? path : `/${path}`}`, {
+      ...init,
+      headers,
+      signal: controller.signal,
+    });
+  }
+
   try {
-    localStorage.removeItem("local_api_token");
-    localStorage.removeItem("local_api_token_owner");
-  } catch {
-    /* noop */
+    let response = await execute(false);
+    if (response.status === 401 && auth !== "none") {
+      response = await execute(true);
+    }
+    const payload = (await parseResponse(response)) as {
+      data?: unknown;
+      error?: { code?: string; message?: string; requestId?: string; details?: unknown };
+      message?: string;
+    } | null;
+
+    if (!response.ok) {
+      throw new BackendError(
+        payload?.error?.message || payload?.message || `Error HTTP ${response.status}`,
+        response.status,
+        payload?.error?.code || "REQUEST_FAILED",
+        payload?.error?.requestId || response.headers.get("x-request-id") || undefined,
+        payload?.error?.details,
+      );
+    }
+    return (payload && Object.prototype.hasOwnProperty.call(payload, "data")
+      ? payload.data
+      : payload) as T;
+  } catch (error) {
+    if (error instanceof BackendError) throw error;
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new BackendError("El servidor tardó demasiado en responder.", 0, "TIMEOUT");
+    }
+    throw new BackendError(
+      error instanceof Error ? error.message : "No se pudo conectar al servidor.",
+      0,
+      "NETWORK_ERROR",
+    );
+  } finally {
+    window.clearTimeout(timeout);
   }
 }
 
@@ -34,222 +112,50 @@ export async function localAuthRequest<TResponse = unknown>(
   path: string,
   body: unknown,
 ): Promise<TResponse> {
-  const res = await fetch(`${API_BASE}${path}`, {
+  return apiFetch<TResponse>(path, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
+    auth: "none",
   });
-
-  let payload: any;
-  try {
-    payload = await res.json();
-  } catch {
-    payload = null;
-  }
-
-  if (!res.ok) {
-    const message =
-      payload?.error?.message || payload?.error || payload?.message || "Solicitud fallida";
-    throw new Error(message);
-  }
-
-  return payload as TResponse;
 }
 
 export async function localAuthGet<TResponse = unknown>(path: string): Promise<TResponse> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    method: "GET",
-    headers: { "Content-Type": "application/json" },
-  });
-
-  let payload: any;
-  try {
-    payload = await res.json();
-  } catch {
-    payload = null;
-  }
-
-  if (!res.ok) {
-    const message =
-      payload?.error?.message || payload?.error || payload?.message || "Solicitud fallida";
-    throw new Error(message);
-  }
-
-  return payload as TResponse;
+  return apiFetch<TResponse>(path, { auth: "none" });
 }
 
-export function resetLocalBackendAuth() {
-  clearStoredToken();
+export function resetLocalBackendAuth(): void {
+  // The API uses the Supabase session; there is no second local JWT to clear.
 }
 
-async function login(email: string, password: string) {
-  const data = await localAuthRequest<{ token: string }>("/auth/login", {
-    email,
-    password,
-  });
-  return data.token;
-}
-
-function sanitizeUsername(input: string) {
-  // Permitir sólo [a-zA-Z0-9_] y longitud 3-32
-  const base = (input || "")
-    .normalize("NFKD")
-    .replace(/[^\w]/g, "_")
-    .replace(/_+/g, "_")
-    .replace(/^_+|_+$/g, "")
-    .slice(0, 32);
-  if (base.length >= 3) return base;
-  return `user_${Math.random().toString(36).slice(2, 8)}`;
-}
-
-async function registerBridge(email: string, password: string, username: string) {
-  const data = await localAuthRequest<{ token: string }>("/auth/local-bridge", {
-    email,
-    password,
-    username: sanitizeUsername(username),
-  });
-  return data.token as string;
-}
-
-export async function ensureLocalToken() {
-  let token = getStoredToken();
-  const { data: userData } = await supabase.auth.getUser();
-  const user = userData?.user;
-  const expectedOwner = user?.id || "guest";
-
-  if (token) {
-    const owner = getStoredTokenOwner();
-    if (owner === expectedOwner) return token;
-    clearStoredToken();
+export async function ensureLocalToken(): Promise<string> {
+  const token = await currentAccessToken();
+  if (!token) {
+    throw new BackendError("Tu sesión ha expirado. Inicia sesión nuevamente.", 401, "AUTH_REQUIRED");
   }
-
-  const DEFAULT_PASSWORD = "supabase-bridge-password";
-
-  if (user?.email) {
-    const email = user.email;
-    const rawUsername =
-      (user.user_metadata as any)?.username || email.split("@")[0];
-    const username = sanitizeUsername(rawUsername);
-    try {
-      token = await login(email, DEFAULT_PASSWORD);
-    } catch {
-      // Si falla el registro puente por cualquier motivo, caer a invitado para no bloquear
-      try {
-        token = await registerBridge(email, DEFAULT_PASSWORD, username);
-      } catch (_e: any) {
-        const rand = Math.random().toString(36).slice(2, 8);
-        const guestEmail = `guest-${rand}@local.dev`;
-        const guestPass = "guest-123";
-        const guestUser = sanitizeUsername(`guest_${rand}`);
-        try {
-          token = await login(guestEmail, guestPass);
-        } catch {
-          token = await registerBridge(guestEmail, guestPass, guestUser);
-        }
-      }
-    }
-    setStoredToken(token);
-    setStoredTokenOwner(user.id);
-    return token;
-  }
-
-  // Si no hay usuario Supabase, creamos uno invitado
-  const rand = Math.random().toString(36).slice(2, 8);
-  const email = `guest-${rand}@local.dev`;
-  const password = "guest-123";
-  const username = sanitizeUsername(`guest_${rand}`);
-  try {
-    token = await login(email, password);
-  } catch {
-    token = await registerBridge(email, password, username);
-  }
-  setStoredToken(token);
-  setStoredTokenOwner("guest");
   return token;
 }
 
-// API fetch with 15 second timeout using AbortController
-export async function apiFetch(path: string, init: RequestInit = {}) {
-  // Si no es backend local, lanzar error indicando que debe usarse Supabase
-  if (!isLocalBackend()) {
-    throw new Error("apiFetch solo funciona con backend local. Usa Supabase para operaciones remotas.");
-  }
-
-  const timeout = 15000; // 15 seconds timeout
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeout);
-
-  async function doRequest(): Promise<Response> {
-    const token = await ensureLocalToken();
-    const headers = new Headers(init.headers || {});
-    headers.set("Authorization", `Bearer ${token}`);
-    if (!headers.has("Content-Type") && !(init.body instanceof FormData)) {
-      headers.set("Content-Type", "application/json");
-    }
-    return fetch(`${API_BASE}${path}`, { ...init, headers, signal: controller.signal });
-  }
-
-  try {
-    // Primer intento
-    let res = await doRequest();
-    // Si token inválido/usuario faltante, limpiar y reintentar una vez
-    if (res.status === 401) {
-      clearStoredToken();
-      res = await doRequest();
-    }
-
-    if (!res.ok) {
-      let msg = `Error ${res.status}`;
-      try {
-        const j = await res.json();
-        if (j?.error) {
-          if (typeof j.error === "string") msg = j.error;
-          else if (typeof j.error?.message === "string") msg = j.error.message;
-          else msg = JSON.stringify(j.error);
-        } else if (typeof j?.message === "string") {
-          msg = j.message;
-        }
-      } catch {
-        // mantener mensaje genérico
-      }
-      throw new Error(msg);
-    }
-    const contentType = res.headers.get("content-type") || "";
-    return contentType.includes("application/json") ? res.json() : res.text();
-  } finally {
-    clearTimeout(timeoutId);
-  }
-}
-
 export async function uploadImage(file: File): Promise<string> {
-  // Si no es backend local, lanzar error
-  if (!isLocalBackend()) {
-    throw new Error("uploadImage solo funciona con backend local. Para Supabase, usa el cliente de storage directamente.");
+  const signed = await apiFetch<{ path: string; signedUrl: string }>("/v1/media/uploads/sign", {
+    method: "POST",
+    body: JSON.stringify({
+      bucket: "group-covers",
+      file_name: file.name,
+      content_type: file.type,
+      size: file.size,
+    }),
+  });
+  const upload = await fetch(signed.signedUrl, {
+    method: "PUT",
+    headers: { "Content-Type": file.type },
+    body: file,
+  });
+  if (!upload.ok) {
+    throw new BackendError("No se pudo subir la imagen.", upload.status, "UPLOAD_FAILED");
   }
-
-  const timeout = 15000;
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeout);
-
-  try {
-    const token = await ensureLocalToken();
-    const fd = new FormData();
-    fd.append("file", file);
-    const res = await fetch(`${API_BASE}/upload/image`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-      body: fd,
-      signal: controller.signal,
-    });
-    if (!res.ok) throw new Error("Error al subir imagen");
-    const data = await res.json();
-    return data.url as string;
-  } finally {
-    clearTimeout(timeoutId);
-  }
+  return supabase.storage.from("group-covers").getPublicUrl(signed.path).data.publicUrl;
 }
 
-// Helper: obtener usuario autenticado de forma agnóstica (local o Supabase)
 export async function getAuthUser(): Promise<{
   id: string;
   email?: string | null;
@@ -258,30 +164,23 @@ export async function getAuthUser(): Promise<{
   account_classification?: string | null;
   isLocal: boolean;
 } | null> {
-  const { data } = await supabase.auth.getUser();
-  if (data?.user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("user_id", data.user.id)
-      .maybeSingle();
-    const accountStatus =
-      profile && typeof (profile as any).account_status === "string"
-        ? ((profile as any).account_status as string)
-        : null;
-    const accountClassification =
-      profile && typeof (profile as any).account_classification === "string"
-        ? ((profile as any).account_classification as string)
-        : null;
+  const { data } = await supabase.auth.getSession();
+  const user = data.session?.user;
+  if (!user) return null;
 
-    return {
-      id: data.user.id,
-      email: data.user.email,
-      email_verified: !!data.user.email_confirmed_at,
-      account_status: accountStatus,
-      account_classification: accountClassification,
-      isLocal: false,
-    };
+  let profile: { account_status?: string | null; account_classification?: string | null } | null = null;
+  try {
+    profile = await apiFetch("/v1/me/profile");
+  } catch {
+    // Auth identity remains usable for logout/recovery while the API is unavailable.
   }
-  return null;
+
+  return {
+    id: user.id,
+    email: user.email,
+    email_verified: Boolean(user.email_confirmed_at),
+    account_status: profile?.account_status ?? null,
+    account_classification: profile?.account_classification ?? null,
+    isLocal: false,
+  };
 }

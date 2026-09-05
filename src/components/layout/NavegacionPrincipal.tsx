@@ -1,45 +1,47 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
-  Menu,
-  X,
-  ChevronDown,
-  Home,
-  Calendar,
-  History,
-  Mail,
-  Users,
-  Shield,
   Archive,
   Building,
-  FileText,
+  Calendar,
+  ChevronDown,
   Compass,
+  History,
+  Home,
+  Mail,
+  Menu,
   Settings,
+  Shield,
+  Sparkles,
+  Users,
 } from "lucide-react";
 import {
   DropdownMenu,
-  DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
-  SheetTrigger,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
+  SheetTrigger,
 } from "@/components/ui/sheet";
 import ThemeToggle from "@/components/ThemeToggle";
 import { cn } from "@/lib/utils";
+import { useScrolledHeader } from "@/hooks/useScrolledHeader";
 import logoImage from "@/assets/grupo-scout-logo.png";
 
 interface NavLink {
   name: string;
-  path?: string;
-  icon?: React.ElementType;
-  type?: "link" | "label" | "separator";
-  subitems?: NavLink[];
+  path: string;
+  icon: React.ElementType;
+  description?: string;
 }
 
 interface NavSection {
@@ -47,355 +49,233 @@ interface NavSection {
   links: NavLink[];
 }
 
-const navSections: NavSection[] = [
+const mainLinks: NavLink[] = [
+  { name: "Inicio", path: "/", icon: Home },
+  { name: "Historia", path: "/historia", icon: History },
+  { name: "Movimiento Scout", path: "/movimiento-scout", icon: Shield },
+  { name: "Eventos", path: "/eventos", icon: Calendar },
+  { name: "Contacto", path: "/contacto", icon: Mail },
+];
+
+const exploreSections: NavSection[] = [
   {
-    label: "Inicio",
+    label: "Archivo y memoria",
     links: [
-      { name: "Inicio", path: "/", icon: Home },
-      { name: "Historia", path: "/historia", icon: History },
-      { name: "Movimiento Scout", path: "/movimiento-scout", icon: Shield },
-      { name: "Eventos", path: "/eventos", icon: Calendar },
-      { name: "Contacto", path: "/contacto", icon: Mail },
-    ],
-  },
-  {
-    label: "Archivo",
-    links: [
-      {
-        name: "Archivo",
-        path: "/archivo",
-        icon: FileText,
-        type: "link",
-        subitems: [
-          { name: "Archivo", path: "/archivo", icon: Archive, type: "link" },
-          { name: "Scoutpedia", path: "/archivo/scoutpedia", icon: Compass, type: "link" },
-          { name: "Locales", path: "/archivo/locales", icon: Building, type: "link" },
-        ],
-      },
+      { name: "Archivo", path: "/archivo", icon: Archive, description: "Historia documentada del grupo" },
+      { name: "Scoutpedia", path: "/archivo/scoutpedia", icon: Compass, description: "Conocimiento y método scout" },
+      { name: "Locales", path: "/archivo/locales", icon: Building, description: "Los espacios que habitamos" },
     ],
   },
   {
     label: "Comunidad",
     links: [
-      { name: "Educadores", path: "/educadores", icon: Users },
-      { name: "Plataforma Interna", path: "/interno", icon: Settings },
+      { name: "Educadores", path: "/educadores", icon: Users, description: "Equipo de educadores" },
+      { name: "Plataforma interna", path: "/interno", icon: Settings, description: "Acceso para miembros" },
     ],
   },
 ];
 
-const Navigation = () => {
-  const [isScrolled, setIsScrolled] = useState(false);
+const mobileSections: NavSection[] = [
+  { label: "Conocer el grupo", links: mainLinks },
+  ...exploreSections,
+];
+
+export default function Navigation() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [expandedItems, setExpandedItems] = useState<string[]>([]);
-
   const location = useLocation();
+  const isScrolled = useScrolledHeader();
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  useEffect(() => {
-    setIsMobileMenuOpen(false);
-  }, [location.pathname]);
-
-  useEffect(() => {
-    const activeParentPaths = navSections
-      .flatMap((section) => section.links)
-      .filter((link) => {
-        if (!link.path || !link.subitems?.length) return false;
-        return link.subitems.some((subitem) => {
-          if (!subitem.path) return false;
-          if (subitem.path === "/") return location.pathname === "/";
-          return location.pathname === subitem.path || location.pathname.startsWith(`${subitem.path}/`);
-        });
-      })
-      .map((link) => link.path as string);
-
-    if (activeParentPaths.length === 0) return;
-    setExpandedItems((prev) => Array.from(new Set([...prev, ...activeParentPaths])));
-  }, [location.pathname]);
+  useEffect(() => setIsMobileMenuOpen(false), [location.pathname]);
 
   const isActive = (path: string) => {
     if (path === "/") return location.pathname === "/";
+    if (path === "/historia" && location.pathname === "/linea-temporal") return true;
+    if (path === "/eventos" && location.pathname === "/bauen") return true;
     return location.pathname === path || location.pathname.startsWith(`${path}/`);
   };
 
-  const toggleExpanded = (path: string) => {
-    setExpandedItems(prev =>
-      prev.includes(path) ? prev.filter(p => p !== path) : [...prev, path]
-    );
-  };
+  const exploreActive = exploreSections.some((section) =>
+    section.links.some((link) => isActive(link.path)),
+  );
 
   return (
     <>
-      <nav
-        aria-label="Navegación principal"
-        className={cn(
-          "fixed top-0 left-0 right-0 z-50 text-white transition-all duration-300 backdrop-blur-sm supports-[backdrop-filter]:backdrop-blur-sm bg-slate-950/82 dark:bg-slate-950/82 supports-[backdrop-filter]:bg-slate-950/70 border-b border-white/10",
-          isScrolled && "shadow-md",
-        )}
-      >
-        <div className="container mx-auto px-4 md:px-6">
-          <div className="relative flex h-16 items-center gap-3 md:h-20">
-            {/* Logo */}
+      <div className="pointer-events-none fixed inset-x-0 top-0 z-50 px-2 pt-2 sm:px-4 sm:pt-3">
+        <nav
+          aria-label="Navegación principal"
+          className={cn(
+            "pointer-events-auto mx-auto max-w-[1480px] overflow-visible rounded-[22px] border border-white/10 bg-[#080c14]/92 text-white shadow-[0_10px_40px_-18px_rgba(0,0,0,0.75)] backdrop-blur-xl transition-[background-color,box-shadow,border-color] duration-300",
+            isScrolled && "border-white/15 bg-[#080c14]/97 shadow-[0_18px_52px_-20px_rgba(0,0,0,0.9)]",
+          )}
+        >
+          <div className="relative flex h-14 items-center gap-3 px-3 sm:h-16 sm:px-4 lg:px-5">
+            <span className="absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-primary/80 to-transparent" aria-hidden="true" />
+
             <Link
               to="/"
-              className="flex items-center gap-3 group shrink-0"
+              className="group flex min-w-0 shrink-0 items-center gap-2.5 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              aria-label="Grupo Scout Séptimo, ir al inicio"
             >
-              <div className="relative">
+              <span className="relative grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl border border-secondary/30 bg-white/5 shadow-inner sm:h-11 sm:w-11">
                 <img
                   src={logoImage}
-                  alt="Grupo Scout Séptimo"
-                  className="h-10 w-10 md:h-12 md:w-12 object-contain transition-transform group-hover:scale-110 [will-change:transform]"
+                  alt=""
+                  className="h-9 w-9 object-contain transition-transform duration-300 motion-safe:group-hover:scale-105 sm:h-10 sm:w-10"
                   loading="eager"
                   decoding="async"
                 />
-                <div className="absolute inset-0 bg-muted/40 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
-              </div>
-              <div className="hidden xl:block">
-                <span className="whitespace-nowrap text-base xl:text-lg font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent leading-none">
-                  Grupo Scout Séptimo
+              </span>
+              <span className="hidden min-w-0 xl:block">
+                <span className="block truncate font-bold leading-tight text-white">Grupo Scout Séptimo</span>
+                <span className="mt-0.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/50">
+                  Montevideo · desde 1964
                 </span>
-                <p className="whitespace-nowrap text-xs text-white/70 mt-1">
-                  Montevideo, Uruguay
-                </p>
-              </div>
+              </span>
             </Link>
 
-            {/* Desktop Main Links */}
-            <div className="hidden min-w-0 flex-1 justify-center px-2 xl:flex xl:px-4 2xl:px-8">
-              <div className="flex items-center gap-1 rounded-full border border-white/10 bg-slate-950/55 px-2 py-1 shadow-sm backdrop-blur-sm supports-[backdrop-filter]:backdrop-blur-sm dark:bg-slate-950/55">
-                {navSections[0]?.links.map((link) => {
-                  const linkPath = link.path ?? "#";
+            <div className="hidden min-w-0 flex-1 items-center justify-center xl:flex">
+              <div className="flex items-center gap-0.5 rounded-2xl border border-white/[0.08] bg-white/[0.035] p-1">
+                {mainLinks.map((link) => {
                   const Icon = link.icon;
-                  const isSpecialActive =
-                    (linkPath === "/historia" && isActive("/linea-temporal")) ||
-                    (linkPath === "/eventos" && isActive("/bauen"));
-                  const active = isActive(linkPath) || isSpecialActive;
-
+                  const active = isActive(link.path);
                   return (
                     <Link
-                      key={linkPath}
-                      to={linkPath}
-                      className={cn(
-                        "relative px-3 py-2 rounded-full text-xs md:text-sm font-medium transition-all duration-300 group nav-link-underline [will-change:transform]",
-                        "hover:bg-white/10 hover:text-primary",
-                        active ? "text-white nav-link-underline--active" : "text-white/80",
-                      )}
+                      key={link.path}
+                      to={link.path}
                       aria-current={active ? "page" : undefined}
+                      className={cn(
+                        "relative inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-xs font-semibold text-white/68 transition-colors hover:bg-white/[0.07] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                        active && "bg-white/[0.09] text-white shadow-sm",
+                      )}
                     >
-                      <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
-                        {Icon && <Icon className="h-3.5 w-3.5" />}
-                        {link.name}
-                      </span>
+                      <Icon className={cn("h-3.5 w-3.5", active && "text-primary")} />
+                      <span>{link.name}</span>
+                      {active ? <span className="absolute inset-x-3 -bottom-1 h-0.5 rounded-full bg-primary" aria-hidden="true" /> : null}
                     </Link>
                   );
                 })}
 
-                {/* Desktop Dropdown único */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="px-3 py-2 text-xs md:text-sm font-medium text-white/80 hover:text-primary hover:bg-white/10"
+                      className={cn(
+                        "h-9 rounded-xl px-3 text-xs text-white/68 hover:bg-white/[0.07] hover:text-white",
+                        exploreActive && "bg-white/[0.09] text-white",
+                      )}
                     >
-                      <span className="whitespace-nowrap">Más</span>
-                      <ChevronDown className="ml-1 h-3 w-3" />
+                      <Sparkles className={cn("h-3.5 w-3.5", exploreActive && "text-secondary")} />
+                      Explorar
+                      <ChevronDown className="h-3.5 w-3.5 text-white/45" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="center" className="w-56">
-                    {navSections.slice(1).flatMap((section) =>
-                      section.links.filter((link) => link.path !== "/interno" && link.path !== "/educadores").flatMap((link) => {
-                        if (link.subitems && link.subitems.length > 0) {
-                          return link.subitems.map((subitem) => {
-                            const SubIcon = subitem.icon;
-                            const subActive = isActive(subitem.path || "");
-                            return (
-                              <DropdownMenuItem key={subitem.path} asChild>
-                                <Link
-                                  to={subitem.path || "#"}
-                                  className={cn(
-                                    "flex items-center gap-2 px-2 py-2 cursor-pointer",
-                                    subActive && "bg-primary/10 text-primary font-semibold"
-                                  )}
-                                >
-                                  {SubIcon && <SubIcon className="h-4 w-4" />}
-                                  <span>{subitem.name}</span>
-                                </Link>
-                              </DropdownMenuItem>
-                            );
-                          });
-                        }
-                        const Icon = link.icon;
-                        const active = isActive(link.path || "");
-                        return (
-                          <DropdownMenuItem key={link.path} asChild>
-                            <Link
-                              to={link.path || "#"}
-                              className={cn(
-                                "flex items-center gap-2 px-2 py-2 cursor-pointer",
-                                active && "bg-primary/10 text-primary font-semibold"
-                              )}
-                            >
-                              {Icon && <Icon className="h-4 w-4" />}
-                              <span>{link.name}</span>
-                            </Link>
-                          </DropdownMenuItem>
-                        );
-                      })
-                    )}
+                  <DropdownMenuContent align="center" sideOffset={12} className="w-72 rounded-2xl p-2 shadow-xl">
+                    {exploreSections.map((section, sectionIndex) => (
+                      <div key={section.label}>
+                        {sectionIndex > 0 ? <DropdownMenuSeparator /> : null}
+                        <DropdownMenuLabel className="px-2 pb-1 pt-2 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                          {section.label}
+                        </DropdownMenuLabel>
+                        {section.links.map((link) => {
+                          const Icon = link.icon;
+                          return (
+                            <DropdownMenuItem key={link.path} asChild>
+                              <Link
+                                to={link.path}
+                                className={cn(
+                                  "flex cursor-pointer items-start gap-3 rounded-xl px-3 py-2.5",
+                                  isActive(link.path) && "bg-primary/10 text-primary",
+                                )}
+                              >
+                                <span className="mt-0.5 rounded-lg bg-muted p-1.5 text-foreground"><Icon className="h-4 w-4" /></span>
+                                <span><span className="block text-sm font-semibold">{link.name}</span><span className="block text-xs text-muted-foreground">{link.description}</span></span>
+                              </Link>
+                            </DropdownMenuItem>
+                          );
+                        })}
+                      </div>
+                    ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
             </div>
 
-            {/* Desktop Right Actions */}
-            <div className="hidden shrink-0 items-center gap-2 xl:flex xl:gap-3">
-              <Button
-                asChild
-                variant="outline"
-                size="sm"
-                className="border-primary/45 hover:bg-primary/10 hover:text-white text-white gap-1.5 font-semibold"
-              >
-                <Link to="/interno">
-                  <Shield className="h-4 w-4 text-primary" />
-                  Plataforma Interna
-                </Link>
+            <div className="ml-auto hidden shrink-0 items-center gap-2 xl:flex">
+              <Button asChild size="sm" className="h-10 rounded-xl px-4 shadow-[0_8px_24px_-10px_hsl(var(--primary))]">
+                <Link to="/interno"><Shield className="h-4 w-4" />Plataforma interna</Link>
               </Button>
-
-              <ThemeToggle />
+              <span className="grid h-10 w-10 place-items-center rounded-xl border border-white/10 bg-white/[0.04] [&_button]:text-white [&_button]:hover:bg-white/10 [&_button]:hover:text-white">
+                <ThemeToggle />
+              </span>
             </div>
 
-            {/* Mobile Menu Button */}
-            <div className="ml-auto flex items-center gap-2 xl:hidden">
-              <ThemeToggle />
+            <div className="ml-auto flex items-center gap-1.5 xl:hidden">
+              <span className="grid h-10 w-10 place-items-center rounded-xl border border-white/10 bg-white/[0.04] [&_button]:text-white [&_button]:hover:bg-white/10 [&_button]:hover:text-white">
+                <ThemeToggle />
+              </span>
               <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                 <SheetTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="xl:hidden"
-                    aria-label={isMobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
+                    className="h-10 w-10 rounded-xl border border-white/10 bg-white/[0.04] text-white hover:bg-white/10 hover:text-white"
+                    aria-label="Abrir menú"
                     aria-expanded={isMobileMenuOpen}
-                    aria-controls="mobile-navigation"
-                    title={isMobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
+                    aria-controls="public-mobile-navigation"
                   >
-                    {isMobileMenuOpen ? (
-                      <X className="h-6 w-6" />
-                    ) : (
-                      <Menu className="h-6 w-6" />
-                    )}
+                    <Menu className="h-5 w-5" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent
-                  side="right"
-                  className="flex h-[100dvh] w-[85vw] max-w-[400px] flex-col overflow-hidden p-0 sm:w-[400px]"
-                >
-                  <SheetHeader className="shrink-0 border-b px-6 py-4 pr-12">
-                    <SheetTitle className="text-left">Menú</SheetTitle>
-                  </SheetHeader>
-                  <div id="mobile-navigation" className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 pb-6">
-                    <div className="flex flex-col gap-6 mt-6">
-                      {navSections.map((section) => (
-                        <div key={section.label} className="space-y-2">
-                          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2">
-                            {section.label}
-                          </h3>
-                          <div className="space-y-1">
-                            {section.links.map((link) => {
-                              if (link.type === "separator") {
-                                return (
-                                  <div key={`separator-${link.name}`} className="pt-2">
-                                    <div className="border-t border-muted mb-2" />
-                                    {link.name && (
-                                      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2 py-2">
-                                        {link.name}
-                                      </h4>
-                                    )}
-                                  </div>
-                                );
-                              }
-
-                              const isExpanded = expandedItems.includes(link.path || "");
-                              const hasSubitems = link.subitems && link.subitems.length > 0;
-
-                              if (hasSubitems) {
-                                return (
-                                  <div key={link.path}>
-                                    <button
-                                      onClick={() => toggleExpanded(link.path || "")}
-                                      className={cn(
-                                        "w-full flex items-center justify-between px-4 py-3 rounded-md transition-all duration-300",
-                                        "hover:bg-nav-hover hover:text-primary",
-                                        isActive(link.path || "") ? "bg-primary text-primary-foreground" : "text-foreground",
-                                      )}
-                                    >
-                                      <div className="flex items-center gap-3">
-                                        {link.icon && <link.icon className="h-5 w-5" />}
-                                        <span className="text-sm font-medium">{link.name}</span>
-                                      </div>
-                                      <ChevronDown className={cn("h-4 w-4 transition-transform duration-300", isExpanded && "rotate-180")} />
-                                    </button>
-                                    {isExpanded && (
-                                      <div className="pl-6 space-y-1 mt-1">
-                                        {(link.subitems ?? []).map((subitem) => (
-                                          <Link
-                                            key={subitem.path}
-                                            to={subitem.path || "#"}
-                                            onClick={() => setIsMobileMenuOpen(false)}
-                                            className={cn(
-                                              "flex items-center gap-3 px-4 py-2 rounded-md transition-all duration-300",
-                                              "hover:bg-nav-hover hover:text-primary",
-                                              isActive(subitem.path || "") ? "bg-primary text-primary-foreground" : "text-foreground text-sm",
-                                            )}
-                                          >
-                                            {subitem.icon && <subitem.icon className="h-4 w-4" />}
-                                            <span className="text-sm font-medium">{subitem.name}</span>
-                                          </Link>
-                                        ))}
-                                      </div>
-                                    )}
-                                  </div>
-                                );
-                              }
-
-                              return (
-                                <Link
-                                  key={link.path}
-                                  to={link.path || "#"}
-                                  onClick={() => setIsMobileMenuOpen(false)}
-                                  className={cn(
-                                    "flex items-center gap-3 px-4 py-3 rounded-md transition-all duration-300 [will-change:transform]",
-                                    "hover:bg-nav-hover hover:text-primary",
-                                    isActive(link.path || "") ? "bg-primary text-primary-foreground" : "text-foreground",
-                                  )}
-                                >
-                                  {link.icon && <link.icon className="h-5 w-5" />}
-                                  <span className="text-sm font-medium">{link.name}</span>
-                                </Link>
-                              );
-                            })}
-                          </div>
+                <SheetContent side="right" className="flex h-[100dvh] w-[90vw] max-w-sm flex-col overflow-hidden border-l-border/60 p-0">
+                  <div className="shrink-0 bg-[#080c14] px-6 pb-6 pt-7 text-white">
+                    <SheetHeader className="text-left">
+                      <div className="mb-3 flex items-center gap-3">
+                        <img src={logoImage} alt="" className="h-11 w-11 object-contain" />
+                        <span className="text-xs font-bold uppercase tracking-[0.18em] text-secondary">Siempre listos</span>
+                      </div>
+                      <SheetTitle className="text-left text-2xl text-white">Explorá el Séptimo</SheetTitle>
+                      <SheetDescription className="text-left text-white/60">Historia, actividades y comunidad scout en un solo lugar.</SheetDescription>
+                    </SheetHeader>
+                  </div>
+                  <div id="public-mobile-navigation" className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5">
+                    {mobileSections.map((section) => (
+                      <section key={section.label} className="mb-6 last:mb-0">
+                        <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">{section.label}</p>
+                        <div className="space-y-1">
+                          {section.links.map((link) => {
+                            const Icon = link.icon;
+                            const active = isActive(link.path);
+                            return (
+                              <Link
+                                key={link.path}
+                                to={link.path}
+                                aria-current={active ? "page" : undefined}
+                                className={cn(
+                                  "flex min-h-12 items-center gap-3 rounded-xl border border-transparent px-3 py-2.5 text-sm font-semibold text-foreground",
+                                  "hover:border-border/70 hover:bg-muted/60",
+                                  active && "border-primary/20 bg-primary/10 text-primary",
+                                )}
+                              >
+                                <span className={cn("grid h-8 w-8 place-items-center rounded-lg bg-muted", active && "bg-primary text-primary-foreground")}><Icon className="h-4 w-4" /></span>
+                                <span>{link.name}</span>
+                              </Link>
+                            );
+                          })}
                         </div>
-                      ))}
-                    </div>
+                      </section>
+                    ))}
+                  </div>
+                  <div className="shrink-0 border-t bg-background/95 p-4">
+                    <Button asChild className="h-12 w-full rounded-xl"><Link to="/interno"><Shield className="h-4 w-4" />Entrar a la plataforma</Link></Button>
                   </div>
                 </SheetContent>
               </Sheet>
             </div>
           </div>
-        </div>
-      </nav>
-
-      {/* Spacer */}
-      <div className="h-16 md:h-20" />
+        </nav>
+      </div>
+      <div className="h-[4.5rem] sm:h-[5.25rem]" aria-hidden="true" />
     </>
   );
-};
-
-export default Navigation;
+}

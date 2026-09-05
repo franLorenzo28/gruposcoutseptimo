@@ -49,6 +49,7 @@ import {
   type GroupMessageWithSender,
 } from "@/lib/groups";
 import { isLocalBackend, apiFetch, getAuthUser } from "@/lib/backend";
+import { getFollowers, getFollowing } from "@/lib/follows";
 
 export default function GrupoDetail() {
   const { id } = useParams();
@@ -156,83 +157,35 @@ export default function GrupoDetail() {
     if (!id) return;
 
     try {
-      if (isLocalBackend()) {
-        const auth = await getAuthUser();
-        if (!auth) {
-          navigate("/auth");
-          return;
-        }
-        setCurrentUserId(auth.id);
-
-        const g: any = await apiFetch(`/groups/${id}`);
-        setGroup({ ...g, cover_image: g.cover_url ?? null });
-
-        const membersData = await listGroupMembers(id);
-        setMembers(membersData);
-        const mine = membersData.find(
-          (m: any) => String(m.user_id) === String(auth.id),
-        );
-        if (!mine) {
-          toast({
-            title: "Acceso denegado",
-            description: "No eres miembro de este grupo",
-            variant: "destructive",
-          });
-          navigate("/interno/usuarios");
-          return;
-        }
-        setUserRole(mine.role);
-
-        const messagesData = await listGroupMessages(id);
-        setMessages(messagesData);
-      } else {
-        const { data: { session } } = await supabase.auth.getSession();
-        const user = session?.user ?? null;
-        if (!user) {
-          navigate("/auth");
-          return;
-        }
-        setCurrentUserId(user?.id);
-
-        // Cargar grupo
-        const { data: groupData, error: groupError } = await supabase
-          .from("groups")
-          .select("*")
-          .eq("id", id)
-          .single();
-
-        if (groupError) throw groupError;
-        setGroup(groupData);
-
-        // Verificar membresáa y rol
-        const { data: membership } = await supabase
-          .from("group_members")
-          .select("role")
-          .eq("group_id", id)
-          .eq("user_id", user.id)
-          .maybeSingle();
-
-        if (!membership) {
-          toast({
-            title: "Acceso denegado",
-            description: "No eres miembro de este grupo",
-            variant: "destructive",
-          });
-          navigate("/interno/usuarios");
-          return;
-        }
-
-        setUserRole(membership.role);
-
-        // Cargar miembros y mensajes
-        const [membersData, messagesData] = await Promise.all([
-          listGroupMembers(id),
-          listGroupMessages(id),
-        ]);
-
-        setMembers(membersData);
-        setMessages(messagesData);
+      const auth = await getAuthUser();
+      if (!auth) {
+        navigate("/auth");
+        return;
       }
+      setCurrentUserId(auth.id);
+
+      const [groupData, membersData, messagesData] = await Promise.all([
+        apiFetch<any>(`/groups/${id}`),
+        listGroupMembers(id),
+        listGroupMessages(id),
+      ]);
+      const mine = membersData.find(
+        (member: any) => String(member.user_id) === String(auth.id),
+      );
+      if (!mine) {
+        toast({
+          title: "Acceso denegado",
+          description: "No eres miembro de este grupo",
+          variant: "destructive",
+        });
+        navigate("/interno/usuarios");
+        return;
+      }
+
+      setGroup({ ...groupData, cover_image: groupData.cover_url ?? groupData.cover_image ?? null });
+      setMembers(membersData);
+      setMessages(messagesData);
+      setUserRole(mine.role);
 
       // Scroll al final
       setTimeout(() => {
@@ -329,24 +282,21 @@ export default function GrupoDetail() {
   const loadMutualFollowers = async () => {
     if (!id || !currentUserId) return;
     try {
-      // Obtener follows que sigo (aceptados)
-      const { data: iFollow, error: e1 } = await supabase
-        .from("follows")
-        .select("followed_id, status")
-        .eq("follower_id", currentUserId)
-        .eq("status", "accepted");
-      if (e1) throw e1;
+      const [followingResult, followersResult] = await Promise.all([
+        getFollowing(currentUserId),
+        getFollowers(currentUserId),
+      ]);
+      if (followingResult.error) throw followingResult.error;
+      if (followersResult.error) throw followersResult.error;
+      const iFollow = followingResult.data || [];
+      const followsMe = followersResult.data || [];
 
-      // Obtener follows que me siguen (aceptados)
-      const { data: followsMe, error: e2 } = await supabase
-        .from("follows")
-        .select("follower_id, status")
-        .eq("followed_id", currentUserId)
-        .eq("status", "accepted");
-      if (e2) throw e2;
-
-      const iFollowSet = new Set((iFollow || []).map((f) => f.followed_id));
-      const followsMeSet = new Set((followsMe || []).map((f) => f.follower_id));
+      const iFollowSet = new Set(
+        (iFollow || []).map((follow: { followed_id: string }) => follow.followed_id),
+      );
+      const followsMeSet = new Set(
+        (followsMe || []).map((follow: { follower_id: string }) => follow.follower_id),
+      );
 
       // Intersección: mutuos
       const mutualIds: string[] = [];
@@ -367,14 +317,13 @@ export default function GrupoDetail() {
         return;
       }
 
-      const { data: profiles, error: e3 } = await supabase
-        .from("profiles")
-        .select("user_id, nombre_completo, username, avatar_url")
-        .in("user_id", candidates);
-      if (e3) throw e3;
+      const profiles = await apiFetch<any[]>("/profiles/batch", {
+        method: "POST",
+        body: JSON.stringify({ ids: candidates }),
+      });
 
       setMutuals(
-        (profiles || []).map((p) => ({
+        profiles.map((p) => ({
           user_id: p.user_id as string,
           nombre_completo: (p as any).nombre_completo ?? null,
           username: (p as any).username ?? null,
@@ -602,14 +551,12 @@ export default function GrupoDetail() {
                           const u = usernameToAdd.trim().replace(/^@/, "");
                           if (!u) return;
                           try {
-                            const { data: prof, error } = await supabase
-                              .from("profiles")
-                              .select(
-                                "user_id, nombre_completo, username, avatar_url",
-                              )
-                              .eq("username", u)
-                              .maybeSingle();
-                            if (error) throw error;
+                            const profiles = await apiFetch<any[]>(
+                              `/profiles/directory?q=${encodeURIComponent(u)}&limit=20`,
+                            );
+                            const prof = profiles.find(
+                              (profile) => String(profile.username || "").toLowerCase() === u.toLowerCase(),
+                            );
                             if (!prof) {
                               toast({
                                 title: "No encontrado",

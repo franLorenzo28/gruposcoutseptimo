@@ -26,6 +26,8 @@ export function createSupabaseReadinessProbe(
   config: EnvironmentConfig,
   fetchImplementation: FetchImplementation = globalThis.fetch,
 ): ReadinessProbe {
+  let cached: { value: SupabaseReadinessChecks; expiresAt: number } | null = null;
+  let inFlight: Promise<SupabaseReadinessChecks> | null = null;
   async function checkEndpoint(url: string): Promise<DependencyCheck> {
     const startedAt = Date.now();
     const controller = new AbortController();
@@ -68,13 +70,25 @@ export function createSupabaseReadinessProbe(
         return { auth: notConfigured, database: notConfigured };
       }
 
-      const baseUrl = config.SUPABASE_URL.replace(/\/$/, "");
-      const [auth, database] = await Promise.all([
-        checkEndpoint(`${baseUrl}/auth/v1/health`),
-        checkEndpoint(`${baseUrl}/rest/v1/profiles?select=id&limit=1`),
-      ]);
+      if (cached && cached.expiresAt > Date.now()) return cached.value;
+      if (inFlight) return inFlight;
 
-      return { auth, database };
+      inFlight = (async () => {
+        const baseUrl = config.SUPABASE_URL!.replace(/\/$/, "");
+        const [auth, database] = await Promise.all([
+          checkEndpoint(`${baseUrl}/auth/v1/health`),
+          checkEndpoint(`${baseUrl}/rest/v1/profiles?select=id&limit=1`),
+        ]);
+        const value = { auth, database };
+        cached = { value, expiresAt: Date.now() + config.READINESS_CACHE_MS };
+        return value;
+      })();
+
+      try {
+        return await inFlight;
+      } finally {
+        inFlight = null;
+      }
     },
   };
 }

@@ -25,11 +25,12 @@ Supabase
     `-- Realtime
 ```
 
-## Límites de esta fase
+## Estado de implementación
 
-- Activos: configuración validada, seguridad HTTP, cliente Supabase sin sesión persistente, hook de autenticación con `auth.getUser(token)`, errores consistentes, `/health`, `/ready`, OpenAPI en desarrollo y cierre ordenado.
-- Aún no migrado: endpoints de negocio del Express legado y llamadas directas del frontend a tablas/RPC. Eso corresponde a las siguientes fases.
-- La service-role key es opcional y no se usa en esta base. Los módulos futuros deberán aislarla y nunca reenviarla al navegador.
+- Activos: configuración validada, seguridad HTTP, cliente público, cliente por request y cliente service-role aislados, autenticación, estado de cuenta, roles firmados, errores consistentes, `/health`, `/ready`, OpenAPI y cierre ordenado.
+- Migrados a Fastify: registro/aprobación, perfiles, administración de usuarios/roles/permisos, eventos, narrativas, grupos, follows, mensajes, notificaciones y autorización de Storage por URL firmada.
+- El frontend ya usa Fastify obligatoriamente para registro, panel administrativo y mensajes del módulo `dms`. Los adaptadores de negocio restantes conservan un modo transicional con `VITE_BACKEND` hasta completar su QA visual.
+- Supabase continúa siendo la fuente única de datos; no existe una segunda sesión JWT ni una base SQLite en el runtime activo.
 
 ## Contratos operativos
 
@@ -38,7 +39,7 @@ Supabase
 - `GET /docs`: Swagger UI solamente con `NODE_ENV=development`.
 - Todos los errores incluyen `error.code`, `error.message` y `error.requestId`.
 
-`/ready` está pensado para sondas controladas de infraestructura. Antes de exponerlo a tráfico público sostenido se debe proteger en el proxy o añadir una caché breve, porque cada consulta realiza verificaciones remotas contra Supabase.
+`/ready` deduplica comprobaciones concurrentes y cachea el resultado durante `READINESS_CACHE_MS` (5 segundos por defecto).
 
 ## Ejecución
 

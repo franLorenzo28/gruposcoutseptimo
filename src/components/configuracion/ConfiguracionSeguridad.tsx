@@ -342,11 +342,6 @@ export default function ConfiguracionSeguridad() {
       await deleteMyAccount();
 
       try {
-        localStorage.removeItem("local_api_token");
-      } catch {
-        // noop
-      }
-      try {
         await supabase.auth.signOut();
       } catch {
         // noop

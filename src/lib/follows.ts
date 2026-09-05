@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { isLocalBackend, apiFetch } from "@/lib/backend";
+import { apiFetch } from "@/lib/backend";
 import { createFollowNotification, createFollowAcceptedNotification } from "@/lib/notifications";
 
 export type FollowStatus = "pending" | "accepted" | "blocked";
@@ -10,6 +10,7 @@ export type FollowActionResult = {
 };
 
 const FOLLOW_RELATION_CACHE_KEY = "follow_relation_cache_v1";
+const FOLLOWS_VIA_API = true;
 
 function canUseStorage() {
   return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
@@ -145,7 +146,7 @@ async function getPendingRequestsViaRpc(
 }
 
 export async function getMyUserId() {
-  if (isLocalBackend()) {
+  if (FOLLOWS_VIA_API) {
     try {
       const me = (await apiFetch("/profiles/me")) as any;
       return me?.id || me?.user_id || null;
@@ -158,7 +159,7 @@ export async function getMyUserId() {
 }
 
 export async function getFollowRelation(withUserId: string) {
-  if (isLocalBackend()) {
+  if (FOLLOWS_VIA_API) {
     try {
       const rel = await apiFetch(`/follows/relation/${withUserId}`);
       return { data: rel, error: null } as const;
@@ -207,7 +208,7 @@ export async function getFollowRelation(withUserId: string) {
 }
 
 export async function followUser(targetUserId: string): Promise<FollowActionResult> {
-  if (isLocalBackend()) {
+  if (FOLLOWS_VIA_API) {
     try {
       await apiFetch("/follows/follow", {
         method: "POST",
@@ -282,7 +283,7 @@ export async function followUser(targetUserId: string): Promise<FollowActionResu
 }
 
 export async function unfollowUser(targetUserId: string) {
-  if (isLocalBackend()) {
+  if (FOLLOWS_VIA_API) {
     try {
       await apiFetch(`/follows/${targetUserId}`, { method: "DELETE" });
       return { error: null } as const;
@@ -311,7 +312,7 @@ export async function cancelRequest(targetUserId: string) {
 }
 
 export async function acceptFollow(followerId: string) {
-  if (isLocalBackend()) {
+  if (FOLLOWS_VIA_API) {
     try {
       await apiFetch(`/follows/${followerId}/accept`, { method: "POST" });
       return { error: null } as const;
@@ -354,7 +355,7 @@ export async function acceptFollow(followerId: string) {
 }
 
 export async function rejectFollow(followerId: string) {
-  if (isLocalBackend()) {
+  if (FOLLOWS_VIA_API) {
     try {
       await apiFetch(`/follows/${followerId}/reject`, { method: "DELETE" });
       return { error: null } as const;
@@ -373,7 +374,7 @@ export async function rejectFollow(followerId: string) {
 }
 
 export async function getFollowers(userId: string) {
-  if (isLocalBackend()) {
+  if (FOLLOWS_VIA_API) {
     try {
       const rows = await apiFetch(
         `/follows/followers?userId=${encodeURIComponent(userId)}`,
@@ -392,7 +393,7 @@ export async function getFollowers(userId: string) {
 }
 
 export async function getFollowing(userId: string) {
-  if (isLocalBackend()) {
+  if (FOLLOWS_VIA_API) {
     try {
       const rows = await apiFetch(
         `/follows/following?userId=${encodeURIComponent(userId)}`,
@@ -411,7 +412,7 @@ export async function getFollowing(userId: string) {
 }
 
 export async function getPendingRequestsForMe() {
-  if (isLocalBackend()) {
+  if (FOLLOWS_VIA_API) {
     try {
       const me = await getMyUserId();
       if (!me) return { data: [], error: new Error("No autenticado") } as const;
@@ -469,14 +470,14 @@ export async function getPendingRequestsForMe() {
 
 // Counts
 export async function getFollowersCount(userId: string) {
-  if (isLocalBackend()) {
+  if (FOLLOWS_VIA_API) {
     try {
-      const rows = (await apiFetch(
-        `/follows/followers?userId=${encodeURIComponent(userId)}`,
-      )) as Array<any>;
-      return { count: rows?.length || 0 } as any;
-    } catch {
-      return { count: 0 } as any;
+      const counts = await apiFetch<{ followers: number; following: number }>(
+        `/follows/counts?userId=${encodeURIComponent(userId)}`,
+      );
+      return { count: counts.followers, error: null } as const;
+    } catch (error) {
+      return { count: 0, error } as const;
     }
   }
 
@@ -493,14 +494,14 @@ export async function getFollowersCount(userId: string) {
 }
 
 export async function getFollowingCount(userId: string) {
-  if (isLocalBackend()) {
+  if (FOLLOWS_VIA_API) {
     try {
-      const rows = (await apiFetch(
-        `/follows/following?userId=${encodeURIComponent(userId)}`,
-      )) as Array<any>;
-      return { count: rows?.length || 0 } as any;
-    } catch {
-      return { count: 0 } as any;
+      const counts = await apiFetch<{ followers: number; following: number }>(
+        `/follows/counts?userId=${encodeURIComponent(userId)}`,
+      );
+      return { count: counts.following, error: null } as const;
+    } catch (error) {
+      return { count: 0, error } as const;
     }
   }
 
@@ -522,7 +523,7 @@ export async function getFollowersWithProfiles(
   from = 0,
   to = 49,
 ) {
-  if (isLocalBackend()) {
+  if (FOLLOWS_VIA_API) {
     try {
       const rows = (await apiFetch(
         `/follows/followers?userId=${encodeURIComponent(userId)}`,
@@ -576,7 +577,7 @@ export async function getFollowingWithProfiles(
   from = 0,
   to = 49,
 ) {
-  if (isLocalBackend()) {
+  if (FOLLOWS_VIA_API) {
     try {
       const rows = (await apiFetch(
         `/follows/following?userId=${encodeURIComponent(userId)}`,

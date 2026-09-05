@@ -1,6 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import type { Json } from "@/integrations/supabase/types";
-import { apiFetch, ensureLocalToken, isLocalBackend } from "@/lib/backend";
+import { apiFetch } from "@/lib/backend";
 
 const ADMIN_UPLOAD_ERROR = "Solo los usuarios admin pueden subir archivos multimedia";
 
@@ -35,37 +34,6 @@ export function normalizeRole(value: string | null | undefined): AppPowerRole {
   return "user";
 }
 
-function normalizeEducatorRole(value: string | null | undefined): string {
-  return String(value || "")
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-}
-
-function isEducatorRole(value: string | null | undefined): boolean {
-  const normalized = normalizeEducatorRole(value);
-  return (
-    normalized === "educador/a" ||
-    normalized === "educador" ||
-    normalized === "educadora"
-  );
-}
-
-function configuredAdminEmails(): Set<string> {
-  return new Set(
-    String(import.meta.env.VITE_GALLERY_ADMIN_EMAILS || "")
-      .split(",")
-      .map((value) => value.trim().toLowerCase())
-      .filter(Boolean),
-  );
-}
-
-function isSuperAdminEmail(email: string | null | undefined): boolean {
-  if (!email) return false;
-  return configuredAdminEmails().has(String(email).toLowerCase());
-}
-
 function normalizeUnits(units: string[]): EducatorUnit[] {
   const mapped = units
     .map((unit) => String(unit || "").trim().toLowerCase())
@@ -97,8 +65,7 @@ function buildAccess(args: {
   roleValue: string | null | undefined;
 }): AdminAccess {
   const role = normalizeRole(args.roleValue);
-  const fromEmail = isSuperAdminEmail(args.email);
-  const isSuperAdmin = role === "admin" || fromEmail;
+  const isSuperAdmin = role === "admin";
   const isMod = role === "mod";
 
   return {
@@ -114,67 +81,20 @@ function buildAccess(args: {
   };
 }
 
-async function sendNotificationToUser(args: {
-  recipientId: string;
-  actorId: string;
-  type: string;
-  entityType: string;
-  entityId: string;
-  data: Record<string, unknown>;
-}) {
-  const { error: insertError } = await supabase.from("notifications").insert({
-    recipient_id: args.recipientId,
-    actor_id: args.actorId,
-    type: args.type,
-    entity_type: args.entityType,
-    entity_id: args.entityId,
-    data: args.data as Json,
-  });
-
-  if (insertError) {
-    throw insertError;
-  }
-}
-
 export async function getCurrentUserAdminAccess(): Promise<AdminAccess> {
-  if (isLocalBackend()) {
-    try {
-      await ensureLocalToken();
-      const me = (await apiFetch("/profiles/me")) as {
-        id?: string;
-        email?: string | null;
-        role?: string | null;
-      };
-
-      return buildAccess({
-        userId: me?.id || null,
-        email: me?.email || null,
-        roleValue: me?.role,
-      });
-    } catch {
-      return buildAccess({ userId: null, email: null, roleValue: null });
-    }
-  }
-
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
 
-  if (!user) {
+  if (!session?.user) {
     return buildAccess({ userId: null, email: null, roleValue: null });
   }
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role, email")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  return buildAccess({
-    userId: user.id,
-    email: user.email || profile?.email || null,
-    roleValue: profile?.role,
-  });
+  try {
+    return await apiFetch<AdminAccess>("/v1/me/access");
+  } catch {
+    // Fail closed: the UI never infers admin powers from editable profile data.
+    return buildAccess({ userId: session.user.id, email: session.user.email || null, roleValue: null });
+  }
 }
 
 export async function isCurrentUserAdmin(): Promise<boolean> {
@@ -202,108 +122,10 @@ export async function requestEducatorPermissions(args: {
   if (normalizedUnits.length === 0) {
     throw new Error("Selecciona al menos una unidad para solicitar permisos.");
   }
-
-  // Para backend local, usar endpoint Express
-  if (isLocalBackend()) {
-    const token = await ensureLocalToken();
-    const response = await fetch("/admin/request-educator-permissions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        units: normalizedUnits,
-        note: args.note || "",
-      }),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || "Error al solicitar permisos");
-    }
-
-    const result = await response.json();
-    return { sentCount: result.notificationsCreated || 0 };
-  }
-
-  // Para Supabase, usar RPC
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    throw new Error("Necesitas iniciar sesión para solicitar permisos.");
-  }
-
-  const { data: myProfile, error: myProfileError } = await supabase
-    .from("profiles")
-    .select("nombre_completo, username, rol_adulto")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (myProfileError) throw myProfileError;
-
-  if (!isEducatorRole(myProfile?.rol_adulto)) {
-    throw new Error("Solo perfiles con rol educador/a pueden pedir permisos de unidad.");
-  }
-
-  const { data: reviewerRows, error: reviewersError } = await supabase
-    .from("profiles")
-    .select("user_id, role, email")
-    .neq("user_id", user.id);
-
-  if (reviewersError) throw reviewersError;
-
-  const reviewers = (reviewerRows || []).filter((row) => {
-    const role = normalizeRole(row.role);
-    return role === "admin" || role === "mod" || isSuperAdminEmail(row.email);
+  return apiFetch<{ sentCount: number }>("/v1/me/educator-permission-requests", {
+    method: "POST",
+    body: JSON.stringify({ units: normalizedUnits, note: args.note || "" }),
   });
-
-  if (reviewers.length === 0) {
-    throw new Error("No hay administradores o moderadores disponibles para revisar tu solicitud.");
-  }
-
-  const requesterName =
-    myProfile?.nombre_completo?.trim() ||
-    myProfile?.username?.trim() ||
-    user.email ||
-    user.id.slice(0, 8);
-  const note = String(args.note || "").trim();
-  const now = new Date().toISOString();
-  const requestId = `${user.id}:${now}`;
-
-  const payload = {
-    kind: "educator_permission_request",
-    request_id: requestId,
-    requester_id: user.id,
-    requester_name: requesterName,
-    requester_username: myProfile?.username || null,
-    requested_units: normalizedUnits,
-    note: note || null,
-    status: "pending",
-    requested_at: now,
-  };
-
-  const results = await Promise.allSettled(
-    reviewers.map((reviewer) =>
-      sendNotificationToUser({
-        recipientId: reviewer.user_id,
-        actorId: user.id,
-        type: "message",
-        entityType: "educator_permission_request",
-        entityId: user.id,
-        data: payload,
-      }),
-    ),
-  );
-
-  const sentCount = results.filter((result) => result.status === "fulfilled").length;
-  if (sentCount === 0) {
-    throw new Error("No se pudo enviar la solicitud. Revisa permisos de notificaciones.");
-  }
-
-  return { sentCount };
 }
 
 export async function reviewEducatorPermissionRequest(args: {
@@ -313,10 +135,6 @@ export async function reviewEducatorPermissionRequest(args: {
   units: EducatorUnit[];
   note?: string;
 }): Promise<void> {
-  if (isLocalBackend()) {
-    throw new Error("Esta acción está disponible solo en Supabase.");
-  }
-
   const access = await getCurrentUserAdminAccess();
   if (!access.canManageEducators) {
     throw new Error("No tienes permisos para revisar solicitudes de educador/a.");
@@ -331,15 +149,15 @@ export async function reviewEducatorPermissionRequest(args: {
     throw new Error("Debes seleccionar al menos una unidad para aprobar.");
   }
 
-  const note = String(args.note || "").trim();
-  const { error } = await (supabase as any).rpc("simple_review_educator_permission", {
-    p_requester_id: args.requesterId,
-    p_approve: args.approve,
-    p_units: units,
-    p_note: note || null,
+  await apiFetch(`/v1/admin/educator-permission-requests/${args.notificationId}/decision`, {
+    method: "POST",
+    body: JSON.stringify({
+      requesterId: args.requesterId,
+      approve: args.approve,
+      units,
+      note: String(args.note || "").trim() || null,
+    }),
   });
-
-  if (error) throw error;
 }
 
 export async function reviewUserRegistrationRequest(args: {
@@ -348,10 +166,6 @@ export async function reviewUserRegistrationRequest(args: {
   approve: boolean;
   note?: string;
 }): Promise<void> {
-  if (isLocalBackend()) {
-    throw new Error("Esta accion esta disponible solo en Supabase.");
-  }
-
   const access = await getCurrentUserAdminAccess();
   if (!access.canOpenAdminPanel) {
     throw new Error("No tienes permisos para revisar registros.");
@@ -361,14 +175,18 @@ export async function reviewUserRegistrationRequest(args: {
     throw new Error("No hay sesion activa.");
   }
 
-  const note = String(args.note || "").trim();
-  const { error } = await (supabase as any).rpc("simple_review_user_registration", {
-    p_requester_id: args.requesterId,
-    p_approve: args.approve,
-    p_note: note || null,
+  const pending = await apiFetch<Array<{ id: string; auth_user_id: string | null }>>(
+    "/v1/admin/registration-requests?status=pending&limit=100",
+  );
+  const request = pending.find((item) => item.auth_user_id === args.requesterId);
+  if (!request) throw new Error("No se encontró una solicitud pendiente para ese usuario.");
+  await apiFetch(`/v1/admin/registration-requests/${request.id}/decision`, {
+    method: "POST",
+    body: JSON.stringify({
+      action: args.approve ? "approve" : "reject",
+      admin_notes: String(args.note || "").trim() || null,
+    }),
   });
-
-  if (error) throw error;
 }
 
 export async function updateUserRole(args: {
@@ -384,14 +202,8 @@ export async function updateUserRole(args: {
     throw new Error("Los moderadores no pueden asignar rol admin.");
   }
 
-  if (isLocalBackend()) {
-    throw new Error("Cambiar roles está disponible solo en Supabase.");
-  }
-
-  const { error } = await (supabase as any).rpc("update_user_role", {
-    p_user_id: args.userId,
-    p_new_role: args.newRole,
+  await apiFetch(`/v1/admin/users/${args.userId}/role`, {
+    method: "PATCH",
+    body: JSON.stringify({ role: args.newRole }),
   });
-
-  if (error) throw error;
 }

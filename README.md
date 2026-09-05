@@ -2,7 +2,7 @@
 
 Sitio web oficial del Grupo Scout Séptimo.
 
-Frontend principal con React + TypeScript + Vite, diseño con TailwindCSS y shadcn/ui, y soporte de backend local opcional para desarrollo.
+Plataforma React + TypeScript + Vite con un backend Fastify real sobre Supabase (PostgreSQL, Auth, Storage y Realtime).
 
 ## Índice
 
@@ -14,7 +14,7 @@ Frontend principal con React + TypeScript + Vite, diseño con TailwindCSS y shad
 ### Resumen
 
 - Stack frontend: React 19, TypeScript, Vite, React Router, TailwindCSS, shadcn/ui.
-- Estado de datos: modo dual (Supabase o backend local según variable de entorno).
+- Datos: Supabase es la fuente única; Fastify aplica contratos, autorización y reglas de negocio.
 - Backend opcional: Express + TypeScript en [server](server).
 - Deploy principal: Vercel.
 

@@ -14,20 +14,20 @@ const ENV_VALIDATIONS: EnvValidation[] = [
   {
     key: "VITE_BACKEND",
     required: true,
-    description: "Modo de backend (local | supabase)",
-    validator: (value) => ["local", "supabase"].includes(value),
+    description: "Modo de datos durante la transición (api | supabase)",
+    validator: (value) => ["api", "supabase"].includes(value),
   },
   {
     key: "VITE_SUPABASE_URL",
-    required: false, // Solo si VITE_BACKEND=supabase
+    required: true, // Auth, Realtime y Storage siempre usan Supabase
     description: "URL de Supabase",
     validator: (value) => value.startsWith("https://") && value.includes(".supabase.co"),
   },
   {
     key: "VITE_SUPABASE_ANON_KEY",
-    required: false, // Solo si VITE_BACKEND=supabase
+    required: true,
     description: "Clave anónima de Supabase",
-    validator: (value) => value.length > 100, // JWT típicamente > 100 chars
+    validator: (value) => value.length > 20,
   },
   {
     key: "VITE_GOOGLE_MAPS_API_KEY",
@@ -45,14 +45,10 @@ export function validateEnvironment(): { valid: boolean; errors: string[]; warni
   const errors: string[] = [];
   const warnings: string[] = [];
   
-  const isSupabase = import.meta.env.VITE_BACKEND === "supabase";
-  
   ENV_VALIDATIONS.forEach(({ key, required, description, validator }) => {
     const value = import.meta.env[key];
     
-    // Validación de Supabase solo si está en modo supabase
-    const isSupabaseKey = key.includes("SUPABASE");
-    const isRequiredNow = required || (isSupabaseKey && isSupabase);
+    const isRequiredNow = required;
     
     if (isRequiredNow && !value) {
       errors.push(`❌ ${key}: ${description} (REQUERIDA)`);

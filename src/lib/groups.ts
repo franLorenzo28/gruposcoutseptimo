@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { isLocalBackend, apiFetch, uploadImage } from "@/lib/backend";
+import { apiFetch, uploadImage } from "@/lib/backend";
 import { ensureAdminForMediaUpload } from "@/lib/admin-permissions";
 
 export type GroupRole = "owner" | "admin" | "member";
@@ -41,9 +41,11 @@ export type GroupMessageWithSender = GroupMessage & {
   sender_avatar?: string | null;
 };
 
+const GROUPS_VIA_API = true;
+
 // Listar todos los grupos
 export async function listGroups(): Promise<GroupWithMemberCount[]> {
-  if (isLocalBackend()) {
+  if (GROUPS_VIA_API) {
     const groups = await apiFetch("/groups");
     return (groups as any[]).map((g) => ({
       id: g.id,
@@ -53,7 +55,7 @@ export async function listGroups(): Promise<GroupWithMemberCount[]> {
       creator_id: g.creator_id,
       created_at: g.created_at,
       updated_at: g.updated_at,
-      member_count: undefined,
+      member_count: g.member_count ?? 0,
       user_role: g.my_role ?? undefined,
     }));
   }
@@ -107,7 +109,7 @@ export async function createGroup(
   description: string | null,
   coverImage?: File,
 ): Promise<Group> {
-  if (isLocalBackend()) {
+  if (GROUPS_VIA_API) {
     let cover_url: string | undefined;
     if (coverImage) {
       cover_url = await uploadImage(coverImage);
@@ -199,7 +201,7 @@ export async function createGroup(
 
 // Unirse a un grupo
 export async function joinGroup(groupId: string): Promise<void> {
-  if (isLocalBackend()) {
+  if (GROUPS_VIA_API) {
     await apiFetch(`/groups/${groupId}/join`, { method: "POST" });
     return;
   }
@@ -219,7 +221,7 @@ export async function joinGroup(groupId: string): Promise<void> {
 
 // Salir de un grupo
 export async function leaveGroup(groupId: string): Promise<void> {
-  if (isLocalBackend()) {
+  if (GROUPS_VIA_API) {
     await apiFetch(`/groups/${groupId}/leave`, { method: "POST" });
     return;
   }
@@ -239,15 +241,15 @@ export async function leaveGroup(groupId: string): Promise<void> {
 
 // Listar miembros de un grupo
 export async function listGroupMembers(groupId: string) {
-  if (isLocalBackend()) {
+  if (GROUPS_VIA_API) {
     const rows = await apiFetch(`/groups/${groupId}/members`);
     return (rows as any[]).map((r) => ({
       user_id: r.user_id,
       role: r.role,
-      joined_at: "",
-      nombre_completo: r.username,
-      username: r.username,
-      avatar_url: null,
+      joined_at: r.joined_at,
+      nombre_completo: r.profile?.nombre_completo ?? null,
+      username: r.profile?.username ?? null,
+      avatar_url: r.profile?.avatar_url ?? null,
     }));
   }
   const { data, error } = await supabase
@@ -283,7 +285,7 @@ export async function promoteToAdmin(
   groupId: string,
   userId: string,
 ): Promise<void> {
-  if (isLocalBackend()) {
+  if (GROUPS_VIA_API) {
     await apiFetch(`/groups/${groupId}/admins/promote`, {
       method: "POST",
       body: JSON.stringify({ userId }),
@@ -304,7 +306,7 @@ export async function demoteToMember(
   groupId: string,
   userId: string,
 ): Promise<void> {
-  if (isLocalBackend()) {
+  if (GROUPS_VIA_API) {
     await apiFetch(`/groups/${groupId}/admins/demote`, {
       method: "POST",
       body: JSON.stringify({ userId }),
@@ -325,7 +327,7 @@ export async function kickMember(
   groupId: string,
   userId: string,
 ): Promise<void> {
-  if (isLocalBackend()) {
+  if (GROUPS_VIA_API) {
     await apiFetch(`/groups/${groupId}/members/${userId}`, {
       method: "DELETE",
     });
@@ -344,18 +346,18 @@ export async function kickMember(
 export async function listGroupMessages(
   groupId: string,
 ): Promise<GroupMessageWithSender[]> {
-  if (isLocalBackend()) {
+  if (GROUPS_VIA_API) {
     const rows = await apiFetch(`/groups/${groupId}/messages`);
     return (rows as any[]).map((m: any) => ({
       id: m.id,
       group_id: m.group_id,
-      sender_id: m.user_id,
+      sender_id: m.sender_id,
       content: m.content ?? "",
       image_url: m.image_url ?? null,
       created_at: m.created_at,
-      sender_name: m.username,
-      sender_username: m.username,
-      sender_avatar: null,
+      sender_name: m.profile?.nombre_completo ?? null,
+      sender_username: m.profile?.username ?? null,
+      sender_avatar: m.profile?.avatar_url ?? null,
     }));
   }
   const { data: messages, error } = await supabase
@@ -392,7 +394,7 @@ export async function sendGroupMessage(
   content: string,
   image?: File,
 ): Promise<GroupMessage> {
-  if (isLocalBackend()) {
+  if (GROUPS_VIA_API) {
     let image_url: string | undefined;
     if (image) image_url = await uploadImage(image);
     const msg = await apiFetch(`/groups/${groupId}/messages`, {
@@ -402,7 +404,7 @@ export async function sendGroupMessage(
     return {
       id: msg.id,
       group_id: msg.group_id,
-      sender_id: msg.user_id,
+      sender_id: msg.sender_id,
       content: msg.content ?? "",
       image_url: msg.image_url ?? null,
       created_at: msg.created_at,
@@ -473,16 +475,7 @@ export async function sendGroupMessage(
 
 // Eliminar mensaje
 export async function deleteGroupMessage(messageId: string): Promise<void> {
-  if (isLocalBackend()) {
-    // No endpoint de borrar mensaje en server minimal; omitir.
-    throw new Error("No soportado en modo local");
-  }
-  const { error } = await supabase
-    .from("group_messages")
-    .delete()
-    .eq("id", messageId);
-
-  if (error) throw error;
+  await apiFetch(`/group-messages/${messageId}`, { method: "DELETE" });
 }
 
 // Actualizar grupo (solo admins/owner)
@@ -494,7 +487,7 @@ export async function updateGroup(
     cover_image?: File | null;
   },
 ): Promise<void> {
-  if (isLocalBackend()) {
+  if (GROUPS_VIA_API) {
     const payload: any = {};
     if (updates.name !== undefined) {
       if (updates.name.trim().length < 3)
@@ -584,14 +577,12 @@ export async function updateGroup(
 
 // Eliminar grupo (solo owner)
 export async function deleteGroup(groupId: string): Promise<void> {
-  const { error } = await supabase.from("groups").delete().eq("id", groupId);
-
-  if (error) throw error;
+  await apiFetch(`/groups/${groupId}`, { method: "DELETE" });
 }
 
 // Eliminar grupo y limpiar archivos asociados en storage (portada y fotos de mensajes)
 export async function deleteGroupDeep(groupId: string): Promise<void> {
-  if (isLocalBackend()) {
+  if (GROUPS_VIA_API) {
     await apiFetch(`/groups/${groupId}`, { method: "DELETE" });
     return;
   }
@@ -632,7 +623,7 @@ export async function deleteGroupDeep(groupId: string): Promise<void> {
 
   // 3) Borrar archivos del bucket (ignorar errores parciales)
   if (keys.length > 0) {
-    if (isLocalBackend()) {
+    if (GROUPS_VIA_API) {
       // Podemos intentar usar el endpoint /members/invite si los usuarios existen en el backend local.
       // Pero sin mapeo de IDs entre Supabase y local, mejor bloquear para evitar inconsistencias.
       throw new Error("Invitaciones no soportadas en modo local");
@@ -651,6 +642,13 @@ export async function inviteMembers(
 ): Promise<{ inserted: number; skipped: number }> {
   if (!Array.isArray(userIds) || userIds.length === 0) {
     return { inserted: 0, skipped: 0 };
+  }
+
+  if (GROUPS_VIA_API) {
+    return apiFetch(`/groups/${groupId}/invite`, {
+      method: "POST",
+      body: JSON.stringify({ userIds: Array.from(new Set(userIds)) }),
+    });
   }
 
   // Construir filas únicas

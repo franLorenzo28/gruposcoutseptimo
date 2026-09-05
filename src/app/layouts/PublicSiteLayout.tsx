@@ -20,7 +20,7 @@ export function PublicSiteLayout() {
       <SaltarAlContenido />
       <BotonVolverGlobal />
       <NovedadesRecientes />
-      <PageGridBackground>
+      <PageGridBackground className="public-app-shell">
         <main id="main-content" tabIndex={-1} className="min-h-screen">
           <TransicionRuta>
             <Outlet />

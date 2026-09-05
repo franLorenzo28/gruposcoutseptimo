@@ -8,11 +8,14 @@ describe("loadEnvironment", () => {
 
     expect(config.PORT).toBe(4000);
     expect(config.BODY_LIMIT_BYTES).toBe(1_048_576);
+    expect(config.READINESS_CACHE_MS).toBe(5_000);
     expect(config.CORS_ORIGINS).toEqual([
       "http://localhost:5173",
       "http://127.0.0.1:5173",
     ]);
     expect(config.SUPABASE_KEY).toBeUndefined();
+    expect(config.ADMIN_USER_IDS).toEqual([]);
+    expect(config.ADMIN_EMAILS).toEqual([]);
   });
 
   it("acepta la anon key como transición", () => {
@@ -38,5 +41,16 @@ describe("loadEnvironment", () => {
     expect(() => loadEnvironment({ NODE_ENV: "production" })).toThrow(
       "Supabase debe estar configurado",
     );
+  });
+
+  it("normaliza las listas de administradores", () => {
+    const config = loadEnvironment({
+      NODE_ENV: "test",
+      ADMIN_USER_IDS: "550e8400-e29b-41d4-a716-446655440000",
+      ADMIN_EMAILS: " Admin@Example.com,other@example.com ",
+    });
+
+    expect(config.ADMIN_USER_IDS).toEqual(["550e8400-e29b-41d4-a716-446655440000"]);
+    expect(config.ADMIN_EMAILS).toEqual(["admin@example.com", "other@example.com"]);
   });
 });

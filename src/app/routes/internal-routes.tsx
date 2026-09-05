@@ -234,6 +234,13 @@ export const internalRoutes: RouteObject = {
         </RequireMemberAuth>
       ),
     },
-    { path: "dashboard-coordinador", element: <DashboardCoordinador /> },
+    {
+      path: "dashboard-coordinador",
+      element: (
+        <RequireApproval>
+          <DashboardCoordinador />
+        </RequireApproval>
+      ),
+    },
   ],
 };

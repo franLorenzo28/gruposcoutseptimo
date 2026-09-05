@@ -2,6 +2,16 @@ import { z } from "zod/v4";
 
 const optionalString = z.string().trim().min(1).optional();
 
+const csv = z
+  .string()
+  .optional()
+  .transform((value) =>
+    (value ?? "")
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean),
+  );
+
 const rawEnvironmentSchema = z
   .object({
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
@@ -28,6 +38,9 @@ const rawEnvironmentSchema = z
     SUPABASE_ANON_KEY: optionalString,
     SUPABASE_SERVICE_ROLE_KEY: optionalString,
     SUPABASE_TIMEOUT_MS: z.coerce.number().int().min(250).max(30_000).default(3_000),
+    READINESS_CACHE_MS: z.coerce.number().int().min(0).max(60_000).default(5_000),
+    ADMIN_USER_IDS: csv.pipe(z.array(z.uuid())),
+    ADMIN_EMAILS: csv.transform((emails) => emails.map((email) => email.toLowerCase())),
   })
   .transform(({ ORIGIN, SUPABASE_PUBLISHABLE_KEY, SUPABASE_ANON_KEY, ...environment }) => ({
     ...environment,
@@ -51,6 +64,14 @@ const rawEnvironmentSchema = z
         code: "custom",
         message: "Supabase debe estar configurado en producción.",
         path: ["SUPABASE_URL"],
+      });
+    }
+
+    if (environment.NODE_ENV === "production" && !environment.SUPABASE_SERVICE_ROLE_KEY) {
+      context.addIssue({
+        code: "custom",
+        message: "SUPABASE_SERVICE_ROLE_KEY es obligatoria para los módulos de negocio.",
+        path: ["SUPABASE_SERVICE_ROLE_KEY"],
       });
     }
   });

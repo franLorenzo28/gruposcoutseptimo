@@ -33,7 +33,7 @@ export function InternalPlatformLayout() {
       <ScrollAlInicio />
       <SaltarAlContenido />
       <InternalPlatformNav />
-      <PageGridBackground>
+      <PageGridBackground className="internal-app-shell">
         <main id="main-content" tabIndex={-1} className="min-h-screen">
           <TransicionRuta>
             <Outlet />

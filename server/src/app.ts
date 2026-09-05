@@ -12,7 +12,15 @@ import {
   type ReadinessProbe,
 } from "./integrations/supabase/readiness.js";
 import { healthRoutes } from "./modules/health/health.routes.js";
+import { adminRoutes } from "./modules/admin/admin.routes.js";
+import { contentRoutes } from "./modules/content/content.routes.js";
+import { groupRoutes } from "./modules/groups/group.routes.js";
+import { socialRoutes } from "./modules/social/social.routes.js";
+import { mediaRoutes } from "./modules/media/media.routes.js";
+import { profileRoutes } from "./modules/profiles/profile.routes.js";
+import { registrationRoutes } from "./modules/registrations/registration.routes.js";
 import { installAuthentication } from "./plugins/auth.js";
+import { installAuthorization } from "./plugins/authorization.js";
 import { installErrorHandlers } from "./plugins/error-handler.js";
 import { registerOpenApi } from "./plugins/openapi.js";
 import { registerSecurityPlugins } from "./plugins/security.js";
@@ -65,12 +73,22 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   installErrorHandlers(app);
   installSupabaseClient(app, config);
   installAuthentication(app);
+  installAuthorization(app, config);
 
   await registerSecurityPlugins(app, config);
   await registerOpenApi(app, config);
   await app.register(healthRoutes, {
     readinessProbe: options.readinessProbe ?? createSupabaseReadinessProbe(config),
   });
+  await app.register(registrationRoutes);
+  await app.register(profileRoutes);
+  await app.register(adminRoutes);
+  await app.register(contentRoutes);
+  await app.register(groupRoutes, { prefix: "/v1" });
+  await app.register(groupRoutes);
+  await app.register(socialRoutes, { prefix: "/v1" });
+  await app.register(socialRoutes);
+  await app.register(mediaRoutes);
 
   return app;
 }

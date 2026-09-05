@@ -21,6 +21,7 @@ import logoImage from "@/assets/grupo-scout-logo.png";
 import PageLoader from "@/components/ui/PageLoader";
 import { PageGridBackground } from "@/components/PageGridBackground";
 import RegistroContactoWhatsApp from "@/components/auth/RegistroContactoWhatsApp";
+import { apiFetch } from "@/lib/backend";
 
 function isVercelAppHost(hostname: string): boolean {
   return hostname.endsWith(".vercel.app");
@@ -503,47 +504,12 @@ const Auth = () => {
     }
   };
 
-  // Validar si el email est� registrado (para login con Google)
+  // Evita enumerar cuentas mediante una RPC pública. Google y el backend
+  // resuelven el estado real después de autenticar al usuario.
   useEffect(() => {
     const trimmed = email.trim().toLowerCase();
-    if (!trimmed) {
-      requestAnimationFrame(() => {
-        setGoogleLoginAllowed(false);
-        setCheckingEmail(false);
-      });
-      return;
-    }
-    if (!/^\S+@\S+\.\S+$/.test(trimmed)) {
-      requestAnimationFrame(() => {
-        setGoogleLoginAllowed(false);
-        setCheckingEmail(false);
-      });
-      return;
-    }
-    let isCancelled = false;
-    setCheckingEmail(true);
-
-    const timer = setTimeout(async () => {
-      try {
-        const { data: isRegistered, error } = await (supabase as any).rpc("is_email_registered", {
-          p_email: trimmed,
-        });
-        if (isCancelled) return;
-        if (error) {
-          setGoogleLoginAllowed(false);
-          setCheckingEmail(false);
-          return;
-        }
-        setGoogleLoginAllowed(!!isRegistered);
-      } finally {
-        if (!isCancelled) setCheckingEmail(false);
-      }
-    }, 400);
-
-    return () => {
-      isCancelled = true;
-      clearTimeout(timer);
-    };
+    setGoogleLoginAllowed(/^\S+@\S+\.\S+$/.test(trimmed));
+    setCheckingEmail(false);
   }, [email]);
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -598,122 +564,41 @@ const Auth = () => {
   const handleContactedAndSignup = async () => {
     if (!pendingSignup) return;
     setLoading(true);
-    console.log("DEBUG: Attempting registration request with email:", pendingSignup.email);
     try {
-      const fullName = `${pendingSignup.nombre} ${pendingSignup.apellido}`.trim();
-      
-      // Check if already has session (Google OAuth - user already in auth.users)
       const { data: { session: existingSession } } = await supabase.auth.getSession();
-      
-      // Request data to save
-      const requestData = {
-        email: pendingSignup.email.toLowerCase().trim(),
-        password_hash: pendingSignup.password, // Will be hashed on backend
+      const profileData = {
         nombre: sanitizeText(pendingSignup.nombre),
         apellido: sanitizeText(pendingSignup.apellido),
         grupo_scout: pendingSignup.grupo === "otro" ? sanitizeText(pendingSignup.otroGrupo) : "septimo",
         rama: pendingSignup.rama || null,
         nombre_scout_relacionado: pendingSignup.nombreScoutRelacionado || null,
-        provider: existingSession?.user ? 'google' : 'email',
-        provider_id: existingSession?.user?.id || null,
-        status: 'pending',
-        metadata: existingSession?.user ? {
-          nombre_completo: fullName,
-          avatar_url: existingSession.user.user_metadata?.avatar_url,
-        } : {},
       };
-      
-      console.log("DEBUG: Checking for existing registration request...");
-      
-      // Check if already has a request
-      const { data: existingRequest } = await supabase
-        .from("registration_requests")
-        .select("id, status")
-        .eq("email", requestData.email)
-        .maybeSingle();
-      
-      if (existingRequest) {
-        // Update existing request and reset status to pending
-        console.log("DEBUG: Updating existing request:", existingRequest.id, "status:", existingRequest.status);
-        const { error: updateError } = await supabase
-          .from("registration_requests")
-          .update({
-            nombre: requestData.nombre,
-            apellido: requestData.apellido,
-            grupo_scout: requestData.grupo_scout,
-            rama: requestData.rama,
-            nombre_scout_relacionado: requestData.nombre_scout_relacionado,
-            provider: requestData.provider,
-            provider_id: requestData.provider_id,
-            metadata: requestData.metadata,
-            status: 'pending',
-            reviewed_at: null,
-            reviewed_by: null,
-            admin_notes: null,
-          })
-          .eq("id", existingRequest.id);
-        
-        if (updateError) {
-          console.error("DEBUG: Update error:", updateError);
-          throw new Error(updateError.message);
-        }
-        
-        toast({
-          title: "¡Solicitud actualizada!",
-          description: "Un admin revisará tu solicitud. Te avisaremos por mail cuando sea aprobada.",
+
+      if (existingSession?.user) {
+        await apiFetch("/v1/registration-requests/oauth", {
+          method: "POST",
+          body: JSON.stringify(profileData),
         });
       } else {
-        // Insert new request
-        console.log("DEBUG: Inserting new registration request...");
-        const { error: insertError } = await supabase
-          .from("registration_requests")
-          .insert(requestData);
-        
-        if (insertError) {
-          console.error("DEBUG: Insert error:", insertError);
-          // If already exists (race condition), show friendly message
-          if (insertError.code === '23505') {
-            throw new Error("Ya existe una solicitud con este correo. Esperá la aprobación.");
-          }
-          throw new Error(insertError.message);
-        }
-        
-        console.log("DEBUG: Registration request saved successfully");
-        
-        toast({
-          title: "¡Solicitud enviada!",
-          description: "Un admin revisará tu solicitud. Te avisaremos por mail cuando sea aprobada.",
+        await apiFetch("/v1/registration-requests", {
+          method: "POST",
+          auth: "none",
+          body: JSON.stringify({
+            ...profileData,
+            email: pendingSignup.email.toLowerCase().trim(),
+            password: pendingSignup.password,
+          }),
         });
       }
-      
-      // Clear the pending signup state
+
+      toast({
+        title: "¡Solicitud enviada!",
+        description: "Confirma tu correo. Un admin revisará la solicitud sin acceder a tu contraseña.",
+      });
+
       setShowWhatsappContacts(false);
       setPendingSignup(null);
-      
-      // Notify admin via Edge Function (non-blocking)
-      try {
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-        if (supabaseUrl) {
-          fetch(`${supabaseUrl}/functions/v1/notify-admin-signup`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              user: {
-                email: pendingSignup.email,
-                user_metadata: {
-                  nombre: pendingSignup.nombre,
-                  apellido: pendingSignup.apellido,
-                  grupo_scout: pendingSignup.grupo === "otro" ? pendingSignup.otroGrupo : "septimo",
-                  rama: pendingSignup.rama,
-                  nombre_scout_relacionado: pendingSignup.nombreScoutRelacionado,
-                },
-              },
-            }),
-          }).catch(() => {});
-        }
-      } catch { /* Silent */ }
 
-      // Clear form
       setEmail("");
       setPassword("");
       setSignupNombre("");
@@ -723,9 +608,8 @@ const Auth = () => {
       setSignupRama("");
       setSignupNombreScoutRelacionado("");
       
-      // Redirect to home after a delay
       setTimeout(() => {
-        navigate("/interno/dashboard", { replace: true });
+        navigate(existingSession?.user ? "/interno/dashboard" : "/interno/auth", { replace: true });
       }, 2000);
       
     } catch (error) {

@@ -48,4 +48,14 @@ describe("Supabase readiness probe", () => {
       database: { status: "down", reason: "HTTP 503" },
     });
   });
+
+  it("cachea brevemente el resultado para no golpear Supabase por cada sonda", async () => {
+    const fetchImplementation = vi.fn(async () => new Response("{}", { status: 200 }));
+    const probe = createSupabaseReadinessProbe(config, fetchImplementation);
+
+    await Promise.all([probe.check(), probe.check(), probe.check()]);
+    await probe.check();
+
+    expect(fetchImplementation).toHaveBeenCalledTimes(2);
+  });
 });
