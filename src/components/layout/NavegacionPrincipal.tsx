@@ -13,7 +13,6 @@ import {
   Settings,
   Shield,
   Sparkles,
-  Users,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -69,7 +68,6 @@ const exploreSections: NavSection[] = [
   {
     label: "Comunidad",
     links: [
-      { name: "Educadores", path: "/educadores", icon: Users, description: "Equipo de educadores" },
       { name: "Plataforma interna", path: "/interno", icon: Settings, description: "Acceso para miembros" },
     ],
   },
@@ -104,8 +102,8 @@ export default function Navigation() {
         <nav
           aria-label="Navegación principal"
           className={cn(
-            "pointer-events-auto mx-auto max-w-[1480px] overflow-visible rounded-[22px] border border-white/10 bg-[#080c14]/[0.92] text-white shadow-[0_10px_40px_-18px_rgba(0,0,0,0.75)] backdrop-blur-xl transition-[background-color,box-shadow,border-color] duration-300",
-            isScrolled && "border-white/15 bg-[#080c14]/[0.97] shadow-[0_18px_52px_-20px_rgba(0,0,0,0.9)]",
+            "pointer-events-auto mx-auto max-w-[1480px] overflow-visible rounded-[22px] border border-border/70 bg-background/[0.94] text-foreground shadow-[0_10px_40px_-18px_rgba(0,0,0,0.35)] backdrop-blur-xl transition-[background-color,box-shadow,border-color] duration-300 dark:border-white/10 dark:bg-[#080c14]/[0.92] dark:text-white dark:shadow-[0_10px_40px_-18px_rgba(0,0,0,0.75)]",
+            isScrolled && "border-border bg-background/[0.98] shadow-[0_18px_52px_-20px_rgba(0,0,0,0.45)] dark:border-white/15 dark:bg-[#080c14]/[0.97] dark:shadow-[0_18px_52px_-20px_rgba(0,0,0,0.9)]",
           )}
         >
           <div className="relative flex h-14 items-center gap-3 px-3 sm:h-16 sm:px-4 lg:px-5">
@@ -116,7 +114,7 @@ export default function Navigation() {
               className="group flex min-w-0 shrink-0 items-center gap-2.5 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               aria-label="Grupo Scout Séptimo, ir al inicio"
             >
-              <span className="relative grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl border border-secondary/30 bg-white/5 shadow-inner sm:h-11 sm:w-11">
+              <span className="relative grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl border border-secondary/30 bg-muted/60 shadow-inner dark:bg-white/5 sm:h-11 sm:w-11">
                 <img
                   src={logoImage}
                   alt=""
@@ -125,16 +123,16 @@ export default function Navigation() {
                   decoding="async"
                 />
               </span>
-              <span className="hidden min-w-0 xl:block">
-                <span className="block truncate font-bold leading-tight text-white">Grupo Scout Séptimo</span>
-                <span className="mt-0.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/50">
+              <span className="hidden min-w-0 min-[1180px]:block">
+                <span className="block truncate font-bold leading-tight text-foreground dark:text-white">Grupo Scout Séptimo</span>
+                <span className="mt-0.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground dark:text-white/50">
                   Montevideo · desde 1964
                 </span>
               </span>
             </Link>
 
-            <div className="hidden min-w-0 flex-1 items-center justify-center xl:flex">
-              <div className="flex items-center gap-0.5 rounded-2xl border border-white/[0.08] bg-white/[0.035] p-1">
+            <div className="hidden min-w-0 flex-1 items-center justify-center min-[1180px]:flex">
+              <div className="flex items-center gap-0.5 rounded-2xl border border-border/70 bg-muted/50 p-1 dark:border-white/[0.08] dark:bg-white/[0.035]">
                 {mainLinks.map((link) => {
                   const Icon = link.icon;
                   const active = isActive(link.path);
@@ -144,8 +142,8 @@ export default function Navigation() {
                       to={link.path}
                       aria-current={active ? "page" : undefined}
                       className={cn(
-                        "relative inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-xs font-semibold text-white/68 transition-colors hover:bg-white/[0.07] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-                        active && "bg-white/[0.09] text-white shadow-sm",
+                        "relative inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-xs font-semibold text-muted-foreground transition-colors hover:bg-background/80 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:text-white/[0.68] dark:hover:bg-white/[0.07] dark:hover:text-white",
+                        active && "bg-background text-foreground shadow-sm dark:bg-white/[0.09] dark:text-white",
                       )}
                     >
                       <Icon className={cn("h-3.5 w-3.5", active && "text-primary")} />
@@ -161,13 +159,13 @@ export default function Navigation() {
                       variant="ghost"
                       size="sm"
                       className={cn(
-                        "h-9 rounded-xl px-3 text-xs text-white/68 hover:bg-white/[0.07] hover:text-white",
-                        exploreActive && "bg-white/[0.09] text-white",
+                        "h-9 rounded-xl px-3 text-xs text-muted-foreground hover:bg-background/80 hover:text-foreground dark:text-white/[0.68] dark:hover:bg-white/[0.07] dark:hover:text-white",
+                        exploreActive && "bg-background text-foreground dark:bg-white/[0.09] dark:text-white",
                       )}
                     >
                       <Sparkles className={cn("h-3.5 w-3.5", exploreActive && "text-secondary")} />
                       Explorar
-                      <ChevronDown className="h-3.5 w-3.5 text-white/45" />
+                      <ChevronDown className="h-3.5 w-3.5 text-muted-foreground dark:text-white/[0.45]" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="center" sideOffset={12} className="w-72 rounded-2xl p-2 shadow-xl">
@@ -201,17 +199,17 @@ export default function Navigation() {
               </div>
             </div>
 
-            <div className="ml-auto hidden shrink-0 items-center gap-2 xl:flex">
+            <div className="ml-auto hidden shrink-0 items-center gap-2 min-[1180px]:flex">
               <Button asChild size="sm" className="h-10 rounded-xl px-4 shadow-[0_8px_24px_-10px_hsl(var(--primary))]">
                 <Link to="/interno"><Shield className="h-4 w-4" />Plataforma interna</Link>
               </Button>
-              <span className="grid h-10 w-10 place-items-center rounded-xl border border-white/10 bg-white/[0.04] [&_button]:text-white [&_button]:hover:bg-white/10 [&_button]:hover:text-white">
+              <span className="grid h-10 w-10 place-items-center rounded-xl border border-border/70 bg-muted/50 [&_button]:text-foreground [&_button]:hover:bg-background/80 [&_button]:hover:text-foreground dark:border-white/10 dark:bg-white/[0.04] dark:[&_button]:text-white dark:[&_button]:hover:bg-white/10 dark:[&_button]:hover:text-white">
                 <ThemeToggle />
               </span>
             </div>
 
-            <div className="ml-auto flex items-center gap-1.5 xl:hidden">
-              <span className="grid h-10 w-10 place-items-center rounded-xl border border-white/10 bg-white/[0.04] [&_button]:text-white [&_button]:hover:bg-white/10 [&_button]:hover:text-white">
+            <div className="ml-auto flex items-center gap-1.5 min-[1180px]:hidden">
+              <span className="grid h-10 w-10 place-items-center rounded-xl border border-border/70 bg-muted/50 [&_button]:text-foreground [&_button]:hover:bg-background/80 [&_button]:hover:text-foreground dark:border-white/10 dark:bg-white/[0.04] dark:[&_button]:text-white dark:[&_button]:hover:bg-white/10 dark:[&_button]:hover:text-white">
                 <ThemeToggle />
               </span>
               <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
@@ -219,7 +217,7 @@ export default function Navigation() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-10 w-10 rounded-xl border border-white/10 bg-white/[0.04] text-white hover:bg-white/10 hover:text-white"
+                    className="h-10 w-10 rounded-xl border border-border/70 bg-muted/50 text-foreground hover:bg-background/80 hover:text-foreground dark:border-white/10 dark:bg-white/[0.04] dark:text-white dark:hover:bg-white/10 dark:hover:text-white"
                     aria-label="Abrir menú"
                     aria-expanded={isMobileMenuOpen}
                     aria-controls="public-mobile-navigation"

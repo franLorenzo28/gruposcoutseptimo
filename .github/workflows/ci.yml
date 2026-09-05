@@ -32,6 +32,7 @@ jobs:
 
       - name: Frontend and backend quality gates
         env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          # CI only compiles the frontend; deployment still requires real credentials.
+          VITE_SUPABASE_URL: https://ci.invalid
+          VITE_SUPABASE_ANON_KEY: ci-build-anon-key
         run: pnpm run ci

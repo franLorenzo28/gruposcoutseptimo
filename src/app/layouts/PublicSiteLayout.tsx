@@ -5,7 +5,6 @@ import { NewsPopup } from "@/components/layout/NewsPopup";
 import ScrollAlInicio from "@/components/layout/ScrollAlInicio";
 import TransicionRuta from "@/components/layout/TransicionRuta";
 import BotonVolverGlobal from "@/components/layout/BotonVolverGlobal";
-import NovedadesRecientes from "@/components/sections/NovedadesRecientes";
 import FondoAnimado from "@/components/layout/FondoAnimado";
 import SaltarAlContenido from "@/components/layout/SaltarAlContenido";
 import { PageGridBackground } from "@/components/PageGridBackground";
@@ -19,7 +18,6 @@ export function PublicSiteLayout() {
       <ScrollAlInicio />
       <SaltarAlContenido />
       <BotonVolverGlobal />
-      <NovedadesRecientes />
       <PageGridBackground className="public-app-shell">
         <main id="main-content" tabIndex={-1} className="min-h-screen">
           <TransicionRuta>

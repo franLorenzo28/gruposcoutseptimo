@@ -9,6 +9,12 @@
  */
 
 const envVariables = {
+  VITE_SUPABASE_URL: {
+    name: "Supabase URL",
+    placeholder: "https://tu-proyecto.supabase.co",
+    required: true,
+    dashboardUrl: "https://app.supabase.com/project/lndqeaspuwwgdwbggayd/settings/api",
+  },
   VITE_SUPABASE_ANON_KEY: {
     name: "Supabase Anon Key",
     placeholder: "REGENERATE_FROM_SUPABASE_DASHBOARD",
@@ -18,7 +24,7 @@ const envVariables = {
   VITE_GOOGLE_MAPS_API_KEY: {
     name: "Google Maps API Key",
     placeholder: "REGENERATE_FROM_GOOGLE_CLOUD_CONSOLE",
-    required: true,
+    required: false,
     dashboardUrl: "https://console.cloud.google.com/apis/credentials",
   },
 };
@@ -47,6 +53,11 @@ Object.entries(envVariables).forEach(([key, config]) => {
   const value = env[key];
 
   if (!value) {
+    if (!config.required) {
+      console.log(`ℹ️  ${config.name} no configurada (opcional)`);
+      return;
+    }
+
     if (isDevelopment && !isCI) {
       warnings.push(`⚠️  ${config.name} no está configurada (desarrollo)`);
     } else {
