@@ -47,6 +47,13 @@ const rawEnvironmentSchema = z
       .regex(/^\d+(?:[smhd])?$/, "JWT_ACCESS_TTL debe ser una duración como 900, 15m, 1h o 7d")
       .default("1h"),
     PASSWORD_RESET_TTL_MINUTES: z.coerce.number().int().min(5).max(1_440).default(60),
+    APP_URL: z.url().default("http://localhost:5173"),
+    SMTP_HOST: optionalString,
+    SMTP_PORT: z.coerce.number().int().min(1).max(65_535).default(587),
+    SMTP_SECURE: z.enum(["true", "false"]).default("false").transform((value) => value === "true"),
+    SMTP_USER: optionalString,
+    SMTP_PASSWORD: z.string().min(1).optional(),
+    SMTP_FROM: z.email().optional(),
     GOOGLE_CLIENT_ID: optionalString,
     GOOGLE_CLIENT_SECRET: optionalString,
     GOOGLE_REDIRECT_URI: z.url().optional(),
@@ -87,6 +94,15 @@ const rawEnvironmentSchema = z
     }
 
     if (environment.AUTH_MODE === "local") {
+      if (Boolean(environment.SMTP_HOST) !== Boolean(environment.SMTP_FROM)) {
+        context.addIssue({ code: "custom", path: ["SMTP_HOST"], message: "SMTP_HOST y SMTP_FROM deben configurarse juntos." });
+      }
+      if (Boolean(environment.SMTP_USER) !== Boolean(environment.SMTP_PASSWORD)) {
+        context.addIssue({ code: "custom", path: ["SMTP_USER"], message: "SMTP_USER y SMTP_PASSWORD deben configurarse juntos." });
+      }
+      if (environment.NODE_ENV === "production" && (!environment.SMTP_HOST || !environment.SMTP_FROM || !environment.APP_URL.startsWith("https://"))) {
+        context.addIssue({ code: "custom", path: ["SMTP_HOST"], message: "Auth local en producción requiere SMTP_HOST, SMTP_FROM y APP_URL con HTTPS." });
+      }
       if (!environment.SUPABASE_URL || !environment.SUPABASE_SERVICE_ROLE_KEY) {
         context.addIssue({
           code: "custom",

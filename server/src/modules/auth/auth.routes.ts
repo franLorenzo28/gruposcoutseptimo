@@ -8,6 +8,7 @@ import { z } from "zod/v4";
 import type { EnvironmentConfig } from "../../config/environment.js";
 import { AppError } from "../../core/errors.js";
 import { hashSessionToken, localUserFromRow, type LocalUserRow } from "./local-auth.js";
+import { authActionUrl, type AuthMailer } from "./auth-mailer.js";
 
 const credentialsSchema = z.object({
   email: z.string().trim().email().transform((value) => value.toLowerCase()),
@@ -20,7 +21,7 @@ const requestResetSchema = z.object({
 
 const resetSchema = z.object({
   token: z.string().trim().min(32).max(256),
-  password: z.string().min(8).max(256),
+  password: z.string().min(8).max(256).refine((value) => Buffer.byteLength(value, "utf8") <= 72, "La contraseña no puede superar 72 bytes."),
 });
 
 type SessionClaims = { sub: string; jti: string; typ: "access"; exp?: number };
@@ -90,8 +91,67 @@ async function localLogin(app: FastifyInstance, config: EnvironmentConfig, email
   };
 }
 
-export const authRoutes: FastifyPluginAsyncZod<{ config: EnvironmentConfig }> = async (app, options) => {
+export const authRoutes: FastifyPluginAsyncZod<{ config: EnvironmentConfig; authMailer: AuthMailer }> = async (app, options) => {
   const config = options.config;
+
+  app.post("/v1/auth/request-verification", {
+    config: { rateLimit: { max: 5, timeWindow: "15 minutes" } },
+    schema: { tags: ["auth"], body: requestResetSchema },
+  }, async (request) => {
+    if (config.AUTH_MODE !== "local") throw new AppError(501, "AUTH_EXTERNAL_PROVIDER", "La verificación corresponde al proveedor externo.");
+    const admin = requireAdminClient(app);
+    const token = randomBytes(32).toString("hex");
+    const { data, error } = await admin.from("app_users").update({
+      email_verification_token_hash: hashSessionToken(token),
+      email_verification_expires_at: new Date(Date.now() + 86_400_000).toISOString(),
+    }).ilike("email", request.body.email.replace(/[\\%_]/g, "\\$&")).is("email_verified_at", null).select("id").maybeSingle();
+    if (error) throw new AppError(503, "VERIFICATION_UNAVAILABLE", "No se pudo procesar la solicitud.");
+    if (data) {
+      try { await options.authMailer(request.body.email, token, "verification"); }
+      catch { request.log.error({ userId: data.id }, "verification email delivery failed"); }
+    }
+    return { data: { accepted: true, ...(data && config.NODE_ENV !== "production"
+      ? { verificationUrl: authActionUrl(config, token, "verification") } : {}) } };
+  });
+
+  app.post("/v1/auth/verify-email", {
+    config: { rateLimit: { max: 10, timeWindow: "15 minutes" } },
+    schema: { tags: ["auth"], body: z.object({ token: z.string().regex(/^[a-f0-9]{64}$/) }) },
+  }, async (request) => {
+    if (config.AUTH_MODE !== "local") throw new AppError(501, "AUTH_EXTERNAL_PROVIDER", "La verificación corresponde al proveedor externo.");
+    const { data, error } = await requireAdminClient(app).rpc("verify_local_email", { p_token_hash: hashSessionToken(request.body.token) });
+    if (error) {
+      if (error.message.includes("verification_token_invalid")) throw new AppError(400, "VERIFICATION_TOKEN_INVALID", "El enlace no es válido o ha expirado.");
+      throw new AppError(503, "VERIFICATION_UNAVAILABLE", "No se pudo verificar el correo.");
+    }
+    return { data };
+  });
+
+  app.post("/v1/auth/resend-verification", {
+    preHandler: app.authenticate,
+    config: { rateLimit: { max: 5, timeWindow: "15 minutes" } },
+    schema: { tags: ["auth"] },
+  }, async (request) => {
+    if (config.AUTH_MODE !== "local") throw new AppError(501, "AUTH_EXTERNAL_PROVIDER", "La verificación corresponde al proveedor externo.");
+    const user = request.authUser!;
+    if (user.email_confirmed_at) return { data: { success: true, message: "El correo ya está verificado." } };
+    if (!user.email) throw new AppError(400, "AUTH_EMAIL_REQUIRED", "La cuenta no tiene correo.");
+    const token = randomBytes(32).toString("hex");
+    const { error } = await requireAdminClient(app).from("app_users").update({
+      email_verification_token_hash: hashSessionToken(token),
+      email_verification_expires_at: new Date(Date.now() + 86_400_000).toISOString(),
+    }).eq("id", user.id).is("email_verified_at", null);
+    if (error) throw new AppError(503, "VERIFICATION_UNAVAILABLE", "No se pudo generar el enlace.");
+    try {
+      await options.authMailer(user.email, token, "verification");
+    } catch {
+      request.log.error({ userId: user.id }, "verification email delivery failed");
+      throw new AppError(503, "AUTH_EMAIL_UNAVAILABLE", "No se pudo enviar el correo. Intenta nuevamente.");
+    }
+    return { data: { success: true, message: "Revisa tu correo para verificar la cuenta.",
+      ...(config.NODE_ENV !== "production" ? { verificationUrl: authActionUrl(config, token, "verification"), developmentMode: true } : {}),
+    } };
+  });
 
   app.post(
     "/v1/auth/login",
@@ -169,7 +229,7 @@ export const authRoutes: FastifyPluginAsyncZod<{ config: EnvironmentConfig }> = 
       schema: {
         tags: ["auth"],
         summary: "Solicita un reset de contraseña sin revelar si existe la cuenta",
-        description: "En local genera un token para el canal de correo pendiente de integrar. Nunca se devuelve en producción.",
+        description: "Envía un enlace de un solo uso por correo. Nunca devuelve tokens en producción.",
         body: requestResetSchema,
       },
     },
@@ -186,7 +246,7 @@ export const authRoutes: FastifyPluginAsyncZod<{ config: EnvironmentConfig }> = 
       }
 
       const admin = requireAdminClient(app);
-      const { data: user, error } = await admin.from("app_users").select("id").eq("email", email).maybeSingle();
+      const { data: user, error } = await admin.from("app_users").select("id").ilike("email", email.replace(/[\\%_]/g, "\\$&")).maybeSingle();
       if (error) throw new AppError(503, "AUTH_DATABASE_UNAVAILABLE", "No se pudo procesar la solicitud.");
       const response: { accepted: boolean; reset_token?: string } = { accepted: true };
       if (user) {
@@ -197,6 +257,12 @@ export const authRoutes: FastifyPluginAsyncZod<{ config: EnvironmentConfig }> = 
           .update({ password_reset_token_hash: hashSessionToken(token), password_reset_expires_at: expiresAt })
           .eq("id", user.id);
         if (updateError) throw new AppError(503, "PASSWORD_RESET_CREATE_FAILED", "No se pudo procesar la solicitud.");
+        try {
+          await options.authMailer(email, token, "password-reset");
+        } catch {
+          // Match the response for unknown emails even when SMTP is unavailable.
+          request.log.error({ userId: user.id }, "password reset email delivery failed");
+        }
         if (config.NODE_ENV !== "production") response.reset_token = token;
       }
       return { data: response };
@@ -219,32 +285,13 @@ export const authRoutes: FastifyPluginAsyncZod<{ config: EnvironmentConfig }> = 
       }
       const admin = requireAdminClient(app);
       const { token, password } = request.body;
-      const { data: user, error } = await admin
-        .from("app_users")
-        .select("id,password_reset_expires_at")
-        .eq("password_reset_token_hash", hashSessionToken(token))
-        .maybeSingle();
-      if (error) throw new AppError(503, "AUTH_DATABASE_UNAVAILABLE", "No se pudo completar el reset.");
-      if (!user || !user.password_reset_expires_at || new Date(user.password_reset_expires_at).getTime() <= Date.now()) {
-        throw new AppError(400, "PASSWORD_RESET_TOKEN_INVALID", "El token de reset no es válido o ha expirado.");
+      const { error } = await admin.rpc("reset_local_password", {
+        p_token_hash: hashSessionToken(token), p_password_hash: await bcrypt.hash(password, 12),
+      });
+      if (error) {
+        if (error.message.includes("password_reset_token_invalid")) throw new AppError(400, "PASSWORD_RESET_TOKEN_INVALID", "El token de reset no es válido o ha expirado.");
+        throw new AppError(503, "PASSWORD_RESET_FAILED", "No se pudo actualizar la contraseña.");
       }
-      const { error: updateError } = await admin
-        .from("app_users")
-        .update({
-          password_hash: await bcrypt.hash(password, 12),
-          password_reset_required: false,
-          password_reset_token_hash: null,
-          password_reset_expires_at: null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", user.id);
-      if (updateError) throw new AppError(503, "PASSWORD_RESET_FAILED", "No se pudo actualizar la contraseña.");
-      const { error: revokeError } = await admin
-        .from("app_sessions")
-        .update({ revoked_at: new Date().toISOString() })
-        .eq("user_id", user.id)
-        .is("revoked_at", null);
-      if (revokeError) throw new AppError(503, "PASSWORD_RESET_FAILED", "No se pudo invalidar las sesiones anteriores.");
       return { data: { reset: true } };
     },
   );

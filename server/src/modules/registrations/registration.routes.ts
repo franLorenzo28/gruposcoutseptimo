@@ -2,6 +2,11 @@ import type { FastifyInstance } from "fastify";
 import { ZodTypeProvider } from "fastify-type-provider-zod";
 
 import { AppError } from "../../core/errors.js";
+import { randomBytes } from "node:crypto";
+import bcrypt from "bcryptjs";
+import type { EnvironmentConfig } from "../../config/environment.js";
+import { hashSessionToken } from "../auth/local-auth.js";
+import { authActionUrl, type AuthMailer } from "../auth/auth-mailer.js";
 import {
   emailRegistrationSchema,
   registrationDecisionSchema,
@@ -44,7 +49,7 @@ function registrationRow(input: RegistrationProfileInput, userId: string, email:
   };
 }
 
-export async function registrationRoutes(app: FastifyInstance): Promise<void> {
+export async function registrationRoutes(app: FastifyInstance, options: { config: EnvironmentConfig; authMailer: AuthMailer }): Promise<void> {
   const api = app.withTypeProvider<ZodTypeProvider>();
 
   api.post(
@@ -54,6 +59,35 @@ export async function registrationRoutes(app: FastifyInstance): Promise<void> {
       schema: { body: emailRegistrationSchema },
     },
     async (request, reply) => {
+      if (options.config.AUTH_MODE === "local") {
+        const admin = requireAdminClient(app);
+        const { password, ...profile } = request.body;
+        const token = randomBytes(32).toString("hex");
+        const { data, error } = await admin.rpc("create_local_registration", {
+          p_email: profile.email,
+          p_password_hash: await bcrypt.hash(password, 12),
+          p_profile: profile,
+          p_token_hash: hashSessionToken(token),
+        });
+        if (error) {
+          request.log.error({ code: error.code }, "local registration failed");
+          throw new AppError(503, "REGISTRATION_UNAVAILABLE", "No se pudo procesar la solicitud.");
+        }
+        // Duplicate requests never replace credentials or issue verification links.
+        if (data?.created) {
+          try {
+            await options.authMailer(profile.email, token, "verification");
+          } catch {
+            // Keep the account and allow authenticated resend; do not expose existence.
+            request.log.error({ userId: data.user_id }, "registration verification email delivery failed");
+          }
+        }
+        return reply.status(202).send({ data: {
+          ...publicAccepted,
+          ...(data?.created && options.config.NODE_ENV !== "production"
+            ? { verificationUrl: authActionUrl(options.config, token, "verification") } : {}),
+        } });
+      }
       if (!app.supabase) {
         throw new AppError(503, "SUPABASE_NOT_CONFIGURED", "El servicio de registro no está disponible.");
       }
@@ -203,7 +237,7 @@ export async function registrationRoutes(app: FastifyInstance): Promise<void> {
     },
     async (request) => {
       const admin = requireAdminClient(app);
-      const { data, error } = await admin.rpc("review_registration_request_v2", {
+      const { data, error } = await admin.rpc(options.config.AUTH_MODE === "local" ? "review_local_registration" : "review_registration_request_v2", {
         p_request_id: request.params.id,
         p_action: request.body.action,
         p_reviewer_id: request.authUser!.id,
@@ -224,7 +258,7 @@ export async function registrationRoutes(app: FastifyInstance): Promise<void> {
         throw new AppError(503, "REGISTRATION_DECISION_FAILED", "No se pudo revisar la solicitud.");
       }
       const result = data as { user_id?: string | null; status?: string } | null;
-      if (result?.user_id && result.status) {
+      if (options.config.AUTH_MODE !== "local" && result?.user_id && result.status) {
         const { data: target } = await admin.auth.admin.getUserById(result.user_id);
         if (target.user) {
           const { error: metadataError } = await admin.auth.admin.updateUserById(result.user_id, {

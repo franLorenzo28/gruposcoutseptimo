@@ -3,6 +3,12 @@ import { describe, expect, it } from "vitest";
 import { loadEnvironment } from "./environment.js";
 
 describe("loadEnvironment", () => {
+  it("requires mail and HTTPS for production local auth", () => {
+    expect(() => loadEnvironment({
+      NODE_ENV: "production", AUTH_MODE: "local", SUPABASE_URL: "https://example.supabase.co",
+      SUPABASE_SERVICE_ROLE_KEY: "service-key", JWT_SECRET: "a-secret-with-at-least-32-characters-long",
+    })).toThrow("SMTP_HOST, SMTP_FROM y APP_URL con HTTPS");
+  });
   it("aplica valores seguros para desarrollo", () => {
     const config = loadEnvironment({ NODE_ENV: "test" });
 

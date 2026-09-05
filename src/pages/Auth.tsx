@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -204,6 +204,7 @@ const Auth = () => {
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [authTab, setAuthTab] = useState<"login" | "signup">("login");
   const [inlineMessage, setInlineMessage] = useState<string>("");
+  const [signupVerificationUrl, setSignupVerificationUrl] = useState<string | null>(null);
   const [loginRedirecting, setLoginRedirecting] = useState(false);
   const [showWhatsappContacts, setShowWhatsappContacts] = useState(false);
   const [recentSignupName, setRecentSignupName] = useState("");
@@ -240,6 +241,7 @@ const Auth = () => {
 
   useEffect(() => {
     const queryParams = new URLSearchParams(window.location.search);
+    if (isLocalBackend()) return;
     const oauthError = queryParams.get("error");
     const oauthErrorDescription = queryParams.get("error_description");
 
@@ -417,6 +419,7 @@ const Auth = () => {
       }
     };
 
+    if (isLocalBackend()) return;
     checkSession();
 
     // Suscribirse a cambios de autenticaci�n
@@ -519,7 +522,7 @@ const Auth = () => {
     setWhatsappGateActive(true);
     try {
       const trimmedEmail = email.trim().toLowerCase();
-      const trimmedPassword = password.trim();
+      const trimmedPassword = password;
 
       if (!signupNombre.trim() || !signupApellido.trim()) {
         throw new Error("Nombre y apellido son obligatorios.");
@@ -565,7 +568,7 @@ const Auth = () => {
     if (!pendingSignup) return;
     setLoading(true);
     try {
-      const { data: { session: existingSession } } = await supabase.auth.getSession();
+      const existingSession = isLocalBackend() ? null : (await supabase.auth.getSession()).data.session;
       const profileData = {
         nombre: sanitizeText(pendingSignup.nombre),
         apellido: sanitizeText(pendingSignup.apellido),
@@ -580,7 +583,7 @@ const Auth = () => {
           body: JSON.stringify(profileData),
         });
       } else {
-        await apiFetch("/v1/registration-requests", {
+        const result = await apiFetch<{ verificationUrl?: string }>("/v1/registration-requests", {
           method: "POST",
           auth: "none",
           body: JSON.stringify({
@@ -589,6 +592,7 @@ const Auth = () => {
             password: pendingSignup.password,
           }),
         });
+        setSignupVerificationUrl(result.verificationUrl ?? null);
       }
 
       toast({
@@ -598,6 +602,8 @@ const Auth = () => {
 
       setShowWhatsappContacts(false);
       setPendingSignup(null);
+      setAuthTab("login");
+      setWhatsappGateActive(false);
 
       setEmail("");
       setPassword("");
@@ -633,7 +639,7 @@ const Auth = () => {
     setLoginRedirecting(false);
     try {
       const trimmedEmail = email.trim().toLowerCase();
-      const trimmedPassword = password.trim();
+      const trimmedPassword = password;
 
       if (!trimmedEmail || !/^\S+@\S+\.\S+$/.test(trimmedEmail)) {
         throw new Error("El correo no es válido.");
@@ -659,6 +665,10 @@ const Auth = () => {
             auth: "none",
             body: JSON.stringify({ email: trimmedEmail, password: trimmedPassword }),
           });
+          if (!response.user.email_confirmed_at) {
+            setInlineMessage("Confirma tu correo antes de continuar. Puedes solicitar otro enlace abajo.");
+            return;
+          }
           saveLocalAccessToken(response.access_token);
           data = response;
           localLogin = true;
@@ -735,6 +745,10 @@ const Auth = () => {
   };
 
   const handleGoogleSignIn = async (intent: "login" | "signup") => {
+    if (isLocalBackend()) {
+      setInlineMessage("El acceso con Google aún no está disponible. Usa tu correo y contraseña.");
+      return;
+    }
     if (!oauthSafety.safe) {
       toast({
         title: "Configuración OAuth incompleta",
@@ -1050,6 +1064,11 @@ const Auth = () => {
               )}
 
               <TabsContent value="login" className="data-[state=active]:animate-in data-[state=active]:fade-in data-[state=active]:slide-in-from-bottom-2 data-[state=active]:duration-300 mt-3">
+                {signupVerificationUrl && <p className="text-sm"><a className="text-primary underline" href={signupVerificationUrl}>Verificar correo (desarrollo)</a></p>}
+                {isLocalBackend() && <div className="flex flex-wrap gap-2">
+                  <Button asChild variant="link" size="sm"><Link to="/interno/restablecer-password">Olvidé mi contraseña</Link></Button>
+                  <Button asChild variant="link" size="sm"><Link to="/interno/restablecer-password?action=verification">Reenviar verificación</Link></Button>
+                </div>}
                 <form onSubmit={handleSignIn} className="space-y-3">
                   <div className="space-y-1.5">
                     <Label htmlFor="login-email">Correo electrónico</Label>

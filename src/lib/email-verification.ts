@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { apiFetch, getAuthUser, isLocalBackend } from "@/lib/backend";
 
 // Permitir activar el envío real por Edge Function solo cuando esté desplegada
 const USE_EDGE_EMAIL = (import.meta.env.VITE_ENABLE_EDGE_EMAIL || "").toString().toLowerCase() === "true";
@@ -14,6 +15,11 @@ function getAppOrigin(): string {
  * Para producción, usa la Edge Function deploy
  */
 export async function sendVerificationEmail() {
+  if (isLocalBackend()) {
+    return apiFetch<{ success: boolean; message: string; verificationUrl?: string; developmentMode?: boolean }>(
+      "/v1/auth/resend-verification", { method: "POST" },
+    );
+  }
   try {
     // Obtener usuario actual
     const { data: { user } } = await supabase.auth.getUser();
@@ -92,6 +98,11 @@ export async function sendVerificationEmail() {
  * Verifica un token de email
  */
 export async function verifyEmailToken(token: string) {
+  if (isLocalBackend()) {
+    return apiFetch<{ success: boolean; message?: string; userId?: string; nextStatus?: string; classification?: string }>(
+      "/v1/auth/verify-email", { method: "POST", auth: "none", body: JSON.stringify({ token }) },
+    );
+  }
   try {
     console.log('Verificando token...');
 
@@ -123,6 +134,7 @@ export async function verifyEmailToken(token: string) {
  * Verifica si el email del usuario actual está verificado
  */
 export async function checkEmailVerified(): Promise<boolean> {
+  if (isLocalBackend()) return Boolean((await getAuthUser())?.email_verified);
   try {
     const { data: { user } } = await supabase.auth.getUser();
     

@@ -25,9 +25,11 @@
     "fastify": "5.12.3",
     "fastify-type-provider-zod": "7.0.0",
     "jsonwebtoken": "^9.0.2",
+    "nodemailer": "10.0.0",
     "zod": "4.4.1"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.5.8",
     "@fastify/swagger": "9.8.1",
     "@fastify/swagger-ui": "6.1.1",
     "@types/bcryptjs": "^2.4.6",
@@ -43,7 +45,6 @@
     "express": "^4.19.2",
     "morgan": "^1.10.0",
     "multer": "2.3.0",
-    "nodemailer": "10.0.0",
     "pg": "^8.11.3",
     "prom-client": "^15.1.0",
     "socket.io": "^4.7.5",

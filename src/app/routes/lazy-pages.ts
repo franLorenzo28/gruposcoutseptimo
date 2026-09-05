@@ -1,4 +1,5 @@
 import { lazy } from "react";
+export const RestablecerPassword = lazy(() => import("@/pages/RestablecerPassword"));
 
 export const Inicio = lazy(() => import("@/pages/inicio/Inicio"));
 export const Historia = lazy(() => import("@/pages/historia/Historia"));

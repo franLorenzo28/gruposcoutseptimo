@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { verifyEmailToken } from "@/lib/email-verification";
@@ -11,10 +11,10 @@ const VerificarEmail = () => {
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
+  const startedToken = useRef<string | null>(null);
 
   const verifyEmail = async (token: string) => {
     try {
-      console.log("Verificando email con token:", token);
 
       const result = await verifyEmailToken(token);
 
@@ -39,7 +39,7 @@ const VerificarEmail = () => {
 
         // Redirigir a Comuni 7 después de 3 segundos
         setTimeout(() => {
-          navigate("/usuarios");
+          navigate("/interno/auth", { replace: true });
         }, 3000);
       } else {
         setStatus("error");
@@ -67,6 +67,9 @@ const VerificarEmail = () => {
       return;
     }
 
+    if (startedToken.current === token) return;
+    startedToken.current = token;
+    window.history.replaceState({}, "", window.location.pathname);
     verifyEmail(token);
   }, [searchParams]);
 

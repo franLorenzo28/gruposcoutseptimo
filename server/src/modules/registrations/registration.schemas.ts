@@ -16,7 +16,7 @@ export const registrationProfileSchema = z.object({
 
 export const emailRegistrationSchema = registrationProfileSchema.extend({
   email: z.string().trim().toLowerCase().email().max(254),
-  password: z.string().min(8).max(128),
+  password: z.string().min(8).max(128).refine((value) => Buffer.byteLength(value, "utf8") <= 72, "La contraseña no puede superar 72 bytes."),
 });
 
 export const registrationListQuerySchema = z.object({

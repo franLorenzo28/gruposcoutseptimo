@@ -6,6 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Loader2, MailCheck, MailQuestion, RefreshCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { getAuthUser, isLocalBackend } from "@/lib/backend";
 
 type VerifiedToastMode = "always" | "once-per-login" | "never";
 
@@ -38,8 +39,7 @@ const EmailVerificationGuard = ({
   const resolveVerifiedToastKey = async () => {
     if (typeof window === "undefined") return null;
 
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user ?? null;
+    const user = await getAuthUser();
     if (!user) return null;
 
     const scope = (verifiedToastScope || featureName || "feature").toLowerCase();
@@ -133,7 +133,7 @@ const EmailVerificationGuard = ({
   }, []);
 
   useEffect(() => {
-    if (verifiedToastMode !== "once-per-login") return;
+    if (verifiedToastMode !== "once-per-login" || isLocalBackend()) return;
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_OUT") {

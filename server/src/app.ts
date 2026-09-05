@@ -26,17 +26,20 @@ import { registerOpenApi } from "./plugins/openapi.js";
 import { registerSecurityPlugins } from "./plugins/security.js";
 import { installSupabaseClient } from "./plugins/supabase.js";
 import { authRoutes } from "./modules/auth/auth.routes.js";
+import { createAuthMailer, type AuthMailer } from "./modules/auth/auth-mailer.js";
 
 export interface BuildAppOptions {
   config?: EnvironmentConfig;
   logger?: boolean;
   readinessProbe?: ReadinessProbe;
+  authMailer?: AuthMailer;
 }
 
 const acceptedRequestId = /^[A-Za-z0-9._:-]{1,128}$/;
 
 export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyInstance> {
   const config = options.config ?? loadEnvironment();
+  const authMailer = options.authMailer ?? createAuthMailer(config);
   const logger =
     options.logger === false
       ? false
@@ -83,11 +86,11 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
 
   await registerSecurityPlugins(app, config);
   await registerOpenApi(app, config);
-  await app.register(authRoutes, { config });
+  await app.register(authRoutes, { config, authMailer });
   await app.register(healthRoutes, {
     readinessProbe: options.readinessProbe ?? createSupabaseReadinessProbe(config),
   });
-  await app.register(registrationRoutes);
+  await app.register(registrationRoutes, { config, authMailer });
   await app.register(profileRoutes);
   await app.register(adminRoutes);
   await app.register(contentRoutes);
