@@ -104,8 +104,8 @@ export default function Navigation() {
         <nav
           aria-label="Navegación principal"
           className={cn(
-            "pointer-events-auto mx-auto max-w-[1480px] overflow-visible rounded-[22px] border border-white/10 bg-[#080c14]/92 text-white shadow-[0_10px_40px_-18px_rgba(0,0,0,0.75)] backdrop-blur-xl transition-[background-color,box-shadow,border-color] duration-300",
-            isScrolled && "border-white/15 bg-[#080c14]/97 shadow-[0_18px_52px_-20px_rgba(0,0,0,0.9)]",
+            "pointer-events-auto mx-auto max-w-[1480px] overflow-visible rounded-[22px] border border-white/10 bg-[#080c14]/[0.92] text-white shadow-[0_10px_40px_-18px_rgba(0,0,0,0.75)] backdrop-blur-xl transition-[background-color,box-shadow,border-color] duration-300",
+            isScrolled && "border-white/15 bg-[#080c14]/[0.97] shadow-[0_18px_52px_-20px_rgba(0,0,0,0.9)]",
           )}
         >
           <div className="relative flex h-14 items-center gap-3 px-3 sm:h-16 sm:px-4 lg:px-5">
