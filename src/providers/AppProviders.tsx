@@ -51,6 +51,7 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
     const currentRequest = ++requestId.current;
     if (!sessionUser) {
       setUser(null);
+      localStorage.removeItem("adminUser");
       setAccountStatus(null);
       setIsUserLoading(false);
       return;
@@ -63,7 +64,7 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
       .select("*")
       .eq("user_id", sessionUser.id)
       .maybeSingle()
-    );
+    ).catch((error: unknown) => ({ data: null, error }));
 
     if (currentRequest !== requestId.current) return;
 
@@ -82,29 +83,17 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
       return;
     }
 
-    // Check if user was approved via Edge Function (metadata takes precedence)
-    const meta = sessionUser.user_metadata as Record<string, unknown> | undefined;
-    const approvedViaEdgeFunction = meta?.approved_at !== undefined && meta?.profile_complete === true;
-
-    if (approvedViaEdgeFunction) {
-      const combinedUser = { ...sessionUser };
-      setUser(combinedUser);
-      setAccountStatus('activo');
-      setIsUserLoading(false);
-      return;
-    }
-
     // Ensure status is always a valid value
     const status = (profile.account_status && profile.account_status.trim() !== '') 
       ? profile.account_status 
-      : 'activo';
+      : 'pendiente_aprobacion';
     setAccountStatus(status);
 
     // Block access if not approved
     if (status !== 'activo') {
-      // User is pending or rejected - sign them out
-      await supabase.auth.signOut();
-      setUser(null);
+      // Mantener OAuth para completar el registro; los guards comprueban el estado.
+      setUser({ ...profile, ...sessionUser });
+      localStorage.removeItem("adminUser");
       setAccountStatus(status);
       setIsUserLoading(false);
       // Store pending status so we can show a message
@@ -113,10 +102,12 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
       return;
     }
 
-    const combinedUser = { ...sessionUser, ...profile };
+    const combinedUser = { ...profile, ...sessionUser };
     setUser(combinedUser);
 
     try {
+      localStorage.removeItem("pendingAccountStatus");
+      localStorage.removeItem("pendingUserName");
       localStorage.setItem("adminUser", JSON.stringify(combinedUser));
     } catch {
       // App still works without localStorage
@@ -143,7 +134,7 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
       const status = typeof profile.account_status === "string"
         ? profile.account_status
         : "activo";
-      const combinedUser = { ...authUser, ...profile } as unknown as SupabaseUserWithProfile;
+      const combinedUser = { ...profile, ...authUser } as unknown as SupabaseUserWithProfile;
       setAccountStatus(status);
 
       if (status !== "activo") {
@@ -194,37 +185,38 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
       return () => window.removeEventListener(LOCAL_AUTH_CHANGED_EVENT, handleLocalAuthChange);
     }
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      const u = session?.user ?? null;
-      if (u) {
-        fetchUserAndProfile(u);
-      } else {
+    let active = true;
+    let authEventReceived = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const loadUser = (sessionUser: User | null) => {
+      void fetchUserAndProfile(sessionUser).catch(() => {
+        if (!active) return;
         setUser(null);
         setAccountStatus(null);
         setIsUserLoading(false);
-      }
-    }).catch((err) => {
-      if (import.meta.env.DEV) console.error("Error getSession:", err);
-      setUser(null);
-      setAccountStatus(null);
-      setIsUserLoading(false);
-    });
+      });
+    };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        const u = session?.user ?? null;
-        if (u) {
-          fetchUserAndProfile(u);
-        } else {
-          setUser(null);
-          setAccountStatus(null);
-          setIsUserLoading(false);
-        }
+        authEventReceived = true;
+        ++requestId.current; // Invalidar consultas anteriores, incluso al salir.
+        clearTimeout(timer);
+        // No consultar Supabase dentro de su callback de autenticación.
+        timer = setTimeout(() => { if (active) loadUser(session?.user ?? null); }, 0);
       },
     );
+    void supabase.auth.getSession().then(({ data: { session } }) => {
+      if (active && !authEventReceived) loadUser(session?.user ?? null);
+    }).catch(() => {
+      if (active && !authEventReceived) loadUser(null);
+    });
 
     return () => {
-      subscription?.unsubscribe();
+      active = false;
+      ++requestId.current;
+      clearTimeout(timer);
+      subscription.unsubscribe();
     };
   }, [fetchLocalUser, fetchUserAndProfile]);
 

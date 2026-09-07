@@ -41,15 +41,19 @@ export function MemberAuthProvider({ children }: { children: React.ReactNode }) 
 
   useEffect(() => {
     let active = true;
+    let requestId = 0;
+    let timer: ReturnType<typeof setTimeout> | undefined;
 
     const checkAuth = async () => {
       if (!active) return;
+      const currentRequest = ++requestId;
+      const isCurrent = () => active && currentRequest === requestId;
       setIsCheckingAuth(true);
       try {
         const authUser = await getAuthUser();
-        if (!active) return;
+        if (!isCurrent()) return;
 
-        if (!authUser?.id) {
+        if (!authUser?.id || (!authUser.isLocal && authUser.account_status !== "activo")) {
           clearMemberSession();
           if (active) {
             setSession(null);
@@ -64,6 +68,7 @@ export function MemberAuthProvider({ children }: { children: React.ReactNode }) 
           // Si no hay sesion de miembro o no coincide con authUser, intentamos autologuear
           try {
             const profile = await getProfile(authUser.id).catch(() => null);
+            if (!isCurrent()) return;
             if (profile && profile.nombre_completo) {
               const access = resolveMemberAccessFromProfile({
                 edad: (profile as any).edad,
@@ -97,6 +102,7 @@ export function MemberAuthProvider({ children }: { children: React.ReactNode }) 
               if (active) setSession(null);
             }
           } catch {
+            if (!isCurrent()) return;
             clearMemberSession();
             if (active) setSession(null);
           }
@@ -107,7 +113,7 @@ export function MemberAuthProvider({ children }: { children: React.ReactNode }) 
       } catch {
         if (!active) return;
       } finally {
-        if (active) {
+        if (isCurrent()) {
           setIsCheckingAuth(false);
         }
       }
@@ -125,11 +131,16 @@ export function MemberAuthProvider({ children }: { children: React.ReactNode }) 
     }
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      checkAuth();
+      ++requestId;
+      setIsCheckingAuth(true);
+      clearTimeout(timer);
+      timer = setTimeout(() => { void checkAuth(); }, 0);
     });
 
     return () => {
       active = false;
+      ++requestId;
+      clearTimeout(timer);
       subscription.unsubscribe();
     };
   }, []);

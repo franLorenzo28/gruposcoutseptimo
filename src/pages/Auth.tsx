@@ -16,7 +16,8 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { ToastAction } from "@/components/ui/toast";
+import { useMemberAuth } from "@/context/MemberAuthContext";
+import { useSupabaseUser } from "@/providers/AppProviders";
 import logoImage from "@/assets/grupo-scout-logo.png";
 import PageLoader from "@/components/ui/PageLoader";
 import { PageGridBackground } from "@/components/PageGridBackground";
@@ -220,12 +221,13 @@ const Auth = () => {
     nombreScoutRelacionado: string;
   } | null>(null);
   const [whatsappGateActive, setWhatsappGateActive] = useState(false);
-  const whatsappGateRef = useRef(false);
+  const [registrationSubmitted, setRegistrationSubmitted] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const isLogin = authTab === "login";
   const oauthSafety = useMemo(() => getOAuthSafety(), []);
-  const oauthProfileToastShownRef = useRef(false);
+  const { session: memberSession, isCheckingAuth } = useMemberAuth();
+  const { user, isUserLoading, accountStatus } = useSupabaseUser();
   const localOAuthStartedRef = useRef(false);
   const oauthAvailable = isLocalBackend() || oauthSafety.safe;
 
@@ -259,7 +261,7 @@ const Auth = () => {
         });
         saveLocalAccessToken(session.access_token);
         sessionStorage.removeItem("grupo7_google_oauth_ticket");
-        window.location.replace("/interno/dashboard");
+        // Los proveedores validan la sesión antes de navegar.
         return;
       }
       const metadata = info.user_metadata || {};
@@ -280,9 +282,6 @@ const Auth = () => {
     }).finally(() => setProcessingOAuth(false));
   }, [navigate]);
 
-  useEffect(() => {
-    whatsappGateRef.current = showWhatsappContacts || whatsappGateActive;
-  }, [showWhatsappContacts, whatsappGateActive]);
 
   useEffect(() => {
     if (!oauthSafety.safe && oauthSafety.reason) {
@@ -294,220 +293,52 @@ const Auth = () => {
   }, [oauthSafety.safe, oauthSafety.reason, oauthSafety.warning]);
 
   useEffect(() => {
-    const queryParams = new URLSearchParams(window.location.search);
     if (isLocalBackend()) return;
-    const oauthError = queryParams.get("error");
-    const oauthErrorDescription = queryParams.get("error_description");
+    const query = new URLSearchParams(window.location.search);
+    const hash = new URLSearchParams(window.location.hash.substring(1));
+    const error = query.get("error") || hash.get("error");
+    if (!error) return;
 
-    if (oauthError) {
-      localStorage.removeItem("oauth_intent");
-      toast({
-        title: "Error de Google OAuth",
-        description:
-          oauthErrorDescription ||
-          "No se pudo completar la autenticación con Google. Intenta nuevamente.",
-        variant: "destructive",
-      });
-      window.history.replaceState({}, "", window.location.pathname);
+    localStorage.removeItem("oauth_intent");
+    setInlineMessage(query.get("error_description") || hash.get("error_description") ||
+      "No se pudo completar el acceso con Google. Intenta nuevamente.");
+    window.history.replaceState(window.history.state, "", window.location.pathname);
+  }, []);
+
+  useEffect(() => {
+    if (showWhatsappContacts || whatsappGateActive || pendingSignup || registrationSubmitted) return;
+    if (isUserLoading || isCheckingAuth) return;
+
+    // Supabase procesa el callback al inicializarse. No intercambiar el código
+    // otra vez ni navegar por SIGNED_IN: el acceso interno puede no estar listo.
+    setProcessingOAuth(false);
+    setLoading(false);
+    setLoginRedirecting(false);
+    if (!user) return;
+
+    localStorage.removeItem("oauth_intent");
+    if (needsGoogleCompletion) return;
+    if (!isLocalBackend() && shouldPromptGoogleCompletion(user)) {
+      setGoogleCompletionDraft(buildGoogleCompletionDraft(user));
+      setNeedsGoogleCompletion(true);
+      return;
+    }
+    if (accountStatus !== "activo") {
+      setInlineMessage(accountStatus === "rechazado"
+        ? "La solicitud de acceso fue rechazada. Contacta a un administrador."
+        : "Tu cuenta está pendiente de aprobación. Contacta a un administrador.");
       return;
     }
 
-    // Detectar si venimos de un callback de OAuth (tiene hash fragment)
-    const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const accessToken = hashParams.get('access_token');
-    
-    if (accessToken) {
-      requestAnimationFrame(() => {
-        setProcessingOAuth(true);
-        setLoading(true);
-      });
+    // Usar la misma sesión validada que exige RequireMemberAuth, incluida su
+    // identidad, evita el rebote auth → dashboard → auth con perfiles incompletos.
+    if (memberSession?.authUserId === user.id) {
+      navigate("/interno/dashboard", { replace: true });
+      return;
     }
-  }, [toast]);
-
-  useEffect(() => {
-    // Verificar sesi�n actual y manejar callback de OAuth
-    const checkSession = async () => {
-      try {
-        // Skip session check if WhatsApp gate is active OR there's pending signup data
-        if (showWhatsappContacts || whatsappGateRef.current || pendingSignup) {
-          return;
-        }
-        
-        // Rest of the code...
-        const hashParams = new URLSearchParams(window.location.hash.substring(1));
-        const accessToken = hashParams.get('access_token');
-        
-        // Si hay un c�digo en la URL (callback de OAuth), intercambiarlo por sesi�n
-        const searchParams = new URLSearchParams(window.location.search);
-        const code = searchParams.get('code');
-        
-        if (code) {
-          setProcessingOAuth(true);
-          setLoading(true);
-          try {
-            console.log("DEBUG: Exchanging code for session...", code);
-            const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-            if (exchangeError) {
-              console.error("DEBUG: Error al intercambiar c�digo:", exchangeError);
-            } else {
-              console.log("DEBUG: Code exchanged successfully");
-            }
-          } catch (err) {
-            console.error("DEBUG: Error en exchangeCodeForSession:", err);
-          }
-        } else {
-          console.log("DEBUG: No code in URL, checking for access token in hash...");
-        }
-
-        // Obtener la sesi�n actual (importante para callback de OAuth)
-        console.log("DEBUG: Getting session...");
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError) {
-          console.error("DEBUG: Error al obtener sesi�n:", sessionError);
-        } else {
-          console.log("DEBUG: Session check complete, has session:", !!session?.user);
-        }
-
-        if (session?.user) {
-          if (needsGoogleCompletion) {
-            setProcessingOAuth(false);
-            setLoading(false);
-            return;
-          }
-
-          const meta = session.user.user_metadata as Record<string, unknown> | null;
-          const profileComplete = meta?.profile_complete === true;
-
-          // If user is approved and profile is complete, just log them in
-          if (profileComplete && isGoogleProvider(session.user)) {
-            console.log("DEBUG: Approved Google user logging in, redirecting to /");
-            localStorage.removeItem("oauth_intent");
-            setTimeout(() => {
-              navigate("/interno/dashboard", { replace: true });
-            }, 100);
-            return;
-          }
-
-          if (shouldPromptGoogleCompletion(session.user)) {
-            setGoogleCompletionDraft(buildGoogleCompletionDraft(session.user));
-            setNeedsGoogleCompletion(true);
-            setProcessingOAuth(false);
-            setLoading(false);
-            localStorage.removeItem("oauth_intent");
-            return;
-          }
-
-          const isAuthRoute = window.location.pathname === "/auth" || window.location.pathname === "/interno/auth" || window.location.pathname.startsWith("/interno/auth");
-          if (isAuthRoute && !accessToken) {
-            // Solo redirigir si también hay sesión de miembro guardada
-            const memberSession = localStorage.getItem("grupo7_member_session");
-            if (memberSession) {
-              localStorage.removeItem("oauth_intent");
-              setTimeout(() => {
-                navigate("/interno/dashboard", { replace: true });
-              }, 100);
-              return;
-            }
-            // Sin sesión de miembro → mostrar formulario de auth
-            setProcessingOAuth(false);
-            setLoading(false);
-            return;
-          }
-
-          // Check for new registration signup intent
-          const oauthIntent = localStorage.getItem("oauth_intent");
-
-          if (oauthIntent === "signup" && session.user.email) {
-            const nameFromMeta =
-              typeof meta?.full_name === "string"
-                ? meta.full_name
-                : typeof meta?.name === "string"
-                  ? meta.name
-                  : "";
-            setRecentSignupName(nameFromMeta);
-            setShowWhatsappContacts(true);
-            setProcessingOAuth(false);
-            setLoading(false);
-            localStorage.removeItem("oauth_intent");
-            return;
-          }
-
-          if (oauthIntent && !oauthProfileToastShownRef.current) {
-            toast({
-              title: "¡Ya estás dentro!",
-              description:
-                "Tip: completa o actualiza tu perfil para que la comunidad te conozca mejor.",
-              action: (
-                <ToastAction altText="Ir a editar perfil" onClick={() => navigate("/interno/perfil")}>
-                  Editar perfil
-                </ToastAction>
-              ),
-            });
-            oauthProfileToastShownRef.current = true;
-          }
-          
-          localStorage.removeItem("oauth_intent");
-          setTimeout(() => {
-            navigate("/interno/dashboard", { replace: true });
-          }, 100);
-          return;
-        }
-
-        // Si no hay sesión, intentamos usar el token del hash
-        // getSession es más seguro que getUser ya que no lanza error si no hay sesión
-        if (accessToken && !session) {
-          try {
-            const { data: { session: sessionFromToken } } = await supabase.auth.getSession();
-            if (sessionFromToken?.user) {
-              setTimeout(() => {
-                navigate("/interno/dashboard", { replace: true });
-              }, 100);
-            }
-          } catch (err) {
-            // Silenciar error esperado si el token no es válido en la primera carga
-          }
-        }
-      } catch (error) {
-        console.error("Error inesperado al verificar sesi�n:", error);
-      }
-    };
-
-    if (isLocalBackend()) return;
-    checkSession();
-
-    // Suscribirse a cambios de autenticaci�n
-    let subscription: any;
-    try {
-     const {
-        data: { subscription: sub },
-      } = supabase.auth.onAuthStateChange(async (event, session) => {
-        // Skip if WhatsApp gate is active OR there's pending signup
-        if (whatsappGateRef.current || showWhatsappContacts || pendingSignup) {
-          return;
-        }
-        
-        if (event === "SIGNED_IN" && session?.user) {
-          const pendingOauthIntent = localStorage.getItem("oauth_intent");
-          if (pendingOauthIntent) {
-            return;
-          }
-          setTimeout(() => {
-            navigate("/interno/dashboard", { replace: true });
-          }, 200);
-        }
-      });
-      subscription = sub;
-    } catch (error) {
-      console.error("Error al suscribirse a cambios de auth:", error);
-    }
-
-    return () => {
-      if (subscription) {
-        subscription.unsubscribe();
-      }
-    };
-  }, [navigate, needsGoogleCompletion, showWhatsappContacts, pendingSignup]);
+    setInlineMessage("Tu sesión está iniciada, pero tu perfil no tiene acceso al área de miembros. Revisa tu perfil o contacta a un administrador.");
+  }, [user, isUserLoading, accountStatus, memberSession, isCheckingAuth,
+    needsGoogleCompletion, showWhatsappContacts, whatsappGateActive, pendingSignup, registrationSubmitted, navigate]);
 
   const handleGoogleProfileCompletion = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -665,6 +496,7 @@ const Auth = () => {
           : "Confirma tu correo. Un admin revisará la solicitud sin acceder a tu contraseña.",
       });
 
+      setRegistrationSubmitted(true);
       setShowWhatsappContacts(false);
       setPendingSignup(null);
       setAuthTab("login");
@@ -679,9 +511,7 @@ const Auth = () => {
       setSignupRama("");
       setSignupNombreScoutRelacionado("");
       
-      setTimeout(() => {
-        navigate(existingSession?.user ? "/interno/dashboard" : "/interno/auth", { replace: true });
-      }, 2000);
+      setInlineMessage("Solicitud enviada. Tu cuenta está pendiente de aprobación.");
       
     } catch (error) {
       const message = error instanceof Error ? error.message : "Ocurrió un error inesperado";
@@ -699,6 +529,7 @@ const Auth = () => {
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    setRegistrationSubmitted(false);
     setLoading(true);
     setInlineMessage("");
     setLoginRedirecting(false);
@@ -784,9 +615,7 @@ const Auth = () => {
             title: "¡Bienvenido!",
             description: "Has iniciado sesión correctamente.",
           });
-          setTimeout(() => {
-            navigate("/interno/dashboard", { replace: true });
-          }, 450);
+          // La navegación espera a la validación de los proveedores.
           return;
         }
       }
@@ -1431,4 +1260,3 @@ const Auth = () => {
 };
 
 export default Auth;
-
