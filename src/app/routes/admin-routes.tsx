@@ -6,17 +6,13 @@ import { AdminPlatformLayout } from "@/app/layouts/AdminPlatformLayout";
 
 function AdminSectionRoute({ tab }: { tab: "overview" | "users" | "requests" | "groups" | "events" | "messages" | "pages" }) {
   return (
-    <RequireApproval>
-      <AdminGuard>
-        <AdminPanel initialTab={tab} />
-      </AdminGuard>
-    </RequireApproval>
+    <AdminPanel initialTab={tab} />
   );
 }
 
 export const adminRoutes: RouteObject = {
   path: "admin",
-  element: <AdminPlatformLayout />,
+  element: <AdminGuard><RequireApproval><AdminPlatformLayout /></RequireApproval></AdminGuard>,
   children: [
     {
       index: true,

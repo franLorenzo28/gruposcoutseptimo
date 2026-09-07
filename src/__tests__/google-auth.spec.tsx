@@ -1,5 +1,5 @@
 import { StrictMode } from "react";
-import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   listeners: new Set<(event: AuthChangeEvent, session: Session | null) => void>(),
   getSession: vi.fn(), getAuthUser: vi.fn(), getProfile: vi.fn(),
   profileQuery: vi.fn(), signOut: vi.fn(), exchangeCodeForSession: vi.fn(),
+  apiFetch: vi.fn(),
 }));
 
 vi.mock("@/integrations/supabase/client", () => ({ supabase: {
@@ -24,11 +25,11 @@ vi.mock("@/integrations/supabase/client", () => ({ supabase: {
       return { data: { subscription: { unsubscribe: () => mocks.listeners.delete(listener) } } };
     },
   },
-  from: () => ({ select: () => ({ eq: () => ({ maybeSingle: mocks.profileQuery }) }) }),
+  from: () => ({ select: () => ({ eq: () => ({ maybeSingle: mocks.profileQuery, single: mocks.profileQuery }) }) }),
 } }));
 vi.mock("@/lib/backend", () => ({
   isLocalBackend: () => false, getAuthUser: mocks.getAuthUser,
-  LOCAL_AUTH_CHANGED_EVENT: "local-auth", apiFetch: vi.fn(), getBackendUrl: vi.fn(),
+  LOCAL_AUTH_CHANGED_EVENT: "local-auth", apiFetch: mocks.apiFetch, getBackendUrl: vi.fn(),
   saveLocalAccessToken: vi.fn(), resetLocalBackendAuth: vi.fn(),
 }));
 vi.mock("@/lib/api", () => ({ getProfile: mocks.getProfile }));
@@ -86,7 +87,8 @@ describe("Google OAuth navigation", () => {
   it("stays usable when Google is signed in but the member profile has no eligible unit", async () => {
     mocks.getProfile.mockResolvedValue({ ...profile, edad: null });
     renderAuth();
-    expect(await screen.findByText(/tu perfil no tiene acceso al área de miembros/)).toBeInTheDocument();
+    expect(await screen.findByText(/Tu rol actual no te permite acceder/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Revisar mi perfil" })).toHaveAttribute("href", "/interno/perfil/editar");
     await act(async () => { await new Promise((resolve) => setTimeout(resolve, 350)); });
     expect(screen.getByTestId("location")).toHaveTextContent("/interno/auth/callback");
     expect(screen.queryByText("Dashboard listo")).not.toBeInTheDocument();
@@ -159,5 +161,50 @@ describe("Google OAuth navigation", () => {
     renderAuth();
     expect(await screen.findByText(/Tu cuenta está pendiente de aprobación/)).toBeInTheDocument();
     expect(screen.getByTestId("location")).toHaveTextContent("/interno/auth/callback");
+  });
+
+  it("opens the dashboard in Supabase mode even when the separate API cannot be reached", async () => {
+    const actualApi = await vi.importActual<typeof import("@/lib/api")>("@/lib/api");
+    mocks.getProfile.mockImplementation(actualApi.getProfile);
+    mocks.apiFetch.mockRejectedValue(new TypeError("Failed to fetch"));
+    mocks.profileQuery.mockResolvedValue({ data: {
+      ...profile, edad: null, fecha_nacimiento: `${new Date().getFullYear() - 15}-01-01`,
+    }, error: null });
+    renderAuth();
+    expect(await screen.findByText("Dashboard listo")).toBeInTheDocument();
+    expect(mocks.apiFetch).not.toHaveBeenCalled();
+    expect(JSON.parse(localStorage.getItem("grupo7_member_session")!)).toMatchObject({
+      authUserId: googleUser.id, rama: "pioneros",
+    });
+  });
+
+  it("reports profile connection errors without claiming the member has no permission", async () => {
+    mocks.getProfile.mockRejectedValue(new TypeError("Failed to fetch"));
+    renderAuth();
+    expect(await screen.findByText(/No pudimos cargar tu perfil/)).toBeInTheDocument();
+    expect(screen.queryByText(/Tu rol actual no te permite acceder/)).not.toBeInTheDocument();
+    expect(screen.queryByText("Dashboard listo")).not.toBeInTheDocument();
+  });
+
+  it("keeps registration data and allows retrying after the API is unavailable", async () => {
+    mocks.getSession.mockResolvedValue({ data: { session: { user: {
+      ...googleUser, user_metadata: { full_name: "Scout Prueba" },
+    } } } });
+    mocks.profileQuery.mockResolvedValue({ data: null, error: null });
+    mocks.getAuthUser.mockResolvedValue(null);
+    mocks.apiFetch.mockRejectedValueOnce(new Error("El servicio de registro no está disponible."))
+      .mockResolvedValueOnce({ accepted: true });
+    renderAuth();
+    fireEvent.click(await screen.findByRole("button", { name: "Continuar" }));
+    fireEvent.click(await screen.findByRole("button", { name: /Ya fui contactado/ }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("El servicio de registro no está disponible.");
+    const retry = screen.getByRole("button", { name: /Ya fui contactado/ });
+    expect(retry).toBeEnabled();
+    fireEvent.click(retry);
+    expect(await screen.findByText("Solicitud enviada. Tu cuenta está pendiente de aprobación.")).toBeInTheDocument();
+    expect(mocks.apiFetch).toHaveBeenCalledTimes(2);
+    expect(mocks.apiFetch.mock.calls[0]).toEqual(mocks.apiFetch.mock.calls[1]);
+    expect(mocks.apiFetch.mock.calls[1]?.[0]).toBe("/v1/registration-requests/oauth");
+    expect(screen.queryByRole("button", { name: "Continuar" })).not.toBeInTheDocument();
   });
 });

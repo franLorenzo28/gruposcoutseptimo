@@ -13,6 +13,14 @@ afterEach(async () => {
 });
 
 describe("authentication hook", () => {
+  it("rechaza los datos del panel admin sin una sesión aunque la ruta se abra directamente", async () => {
+    app = await buildApp({ config: loadEnvironment({ NODE_ENV: "test" }), logger: false });
+    for (const url of ["/v1/me/access", "/v1/admin/users", "/v1/admin/dashboard-data", "/v1/admin/registration-requests", "/v1/admin/educator-permission-requests"]) {
+      const response = await app.inject({ method: "GET", url });
+      expect(response.statusCode, url).toBe(401);
+      expect(response.json()).toMatchObject({ error: { code: "AUTH_TOKEN_MISSING" } });
+    }
+  });
   it("rechaza una ruta protegida cuando falta el bearer token", async () => {
     app = await buildApp({
       config: loadEnvironment({

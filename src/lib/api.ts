@@ -48,9 +48,20 @@ async function authenticatedUserId(): Promise<string> {
   return id;
 }
 
-/** Reads the private DTO for the current user and the public DTO for everybody else. */
+/** Reads the own profile from its backend; other profiles use the public API DTO. */
 export async function getProfile(userId: string): Promise<Profile> {
   const currentUserId = await authenticatedUserId();
+  // El acceso propio en modo Supabase no depende de una API local. Mantener
+  // los perfiles ajenos en la API, que aplica su DTO público y privacidad.
+  if (!isLocalBackend() && currentUserId === userId) {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("user_id", currentUserId)
+      .single();
+    if (error) throw error;
+    return withCalculatedAge(data as Profile);
+  }
   const profile = await apiFetch<Profile>(
     currentUserId === userId ? "/v1/me/profile" : `/v1/profiles/${userId}`,
   );

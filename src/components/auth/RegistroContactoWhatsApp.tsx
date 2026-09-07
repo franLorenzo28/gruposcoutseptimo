@@ -11,7 +11,8 @@ type WhatsAppContact = {
 type RegistroContactoWhatsAppProps = {
   nombreCompleto?: string;
   onBack?: () => void;
-  onContacted?: () => void;
+  onContacted?: () => Promise<boolean>;
+  errorMessage?: string;
 };
 
 const CONTACTS: WhatsAppContact[] = [
@@ -38,6 +39,7 @@ export default function RegistroContactoWhatsApp({
   nombreCompleto,
   onBack,
   onContacted,
+  errorMessage,
 }: RegistroContactoWhatsAppProps) {
   const safeName = nombreCompleto?.trim() || DEFAULT_NAME;
   const message = buildMessage(safeName);
@@ -46,11 +48,11 @@ export default function RegistroContactoWhatsApp({
 
   const handleContacted = async () => {
     setSending(true);
-    setContacted(true);
-    if (onContacted) {
-      await onContacted();
+    try {
+      if (onContacted) setContacted(await onContacted());
+    } finally {
+      setSending(false);
     }
-    setSending(false);
   };
 
   return (
@@ -98,6 +100,7 @@ export default function RegistroContactoWhatsApp({
         </p>
 
         {/* Botón "Ya fui contactado" */}
+        {errorMessage && <p role="alert" className="text-sm text-destructive">{errorMessage}</p>}
         {onContacted && (
           <Button
             type="button"
@@ -125,7 +128,7 @@ export default function RegistroContactoWhatsApp({
         )}
 
         {onBack ? (
-          <Button type="button" variant="outline" className="w-full h-10" onClick={onBack}>
+          <Button type="button" variant="outline" className="w-full h-10" onClick={onBack} disabled={sending}>
             Volver al inicio de sesion
           </Button>
         ) : null}

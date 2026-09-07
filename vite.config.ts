@@ -9,6 +9,23 @@ export default defineConfig(({ mode }) => ({
     host: "0.0.0.0",
     port: 5173,
     strictPort: true,
+    proxy: {
+      "/api": {
+        target: "http://127.0.0.1:4000",
+        changeOrigin: true,
+        rewrite: (requestPath) => requestPath.replace(/^\/api/, ""),
+        configure: (proxy) => {
+          proxy.on("error", (_error, _request, response) => {
+            if (!("writeHead" in response) || response.headersSent) return;
+            response.writeHead(503, { "Content-Type": "application/json" });
+            response.end(JSON.stringify({ error: {
+              code: "API_UNAVAILABLE",
+              message: "El servidor no está disponible. Intenta nuevamente en unos momentos.",
+            } }));
+          });
+        },
+      },
+    },
     watch: {
       usePolling: true,
     },

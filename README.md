@@ -58,7 +58,7 @@ Notas:
 ### Frontend
 
 ```bash
-pnpm dev
+pnpm dev:web
 pnpm build
 pnpm preview
 ```
@@ -72,7 +72,7 @@ pnpm dev:server
 ### Both
 
 ```bash
-pnpm dev:all
+pnpm dev # web + API
 ```
 
 ### Quality
@@ -199,7 +199,7 @@ Notes:
 #### Frontend
 
 ```bash
-pnpm dev
+pnpm dev:web
 pnpm build
 pnpm preview
 ```
@@ -213,7 +213,7 @@ pnpm dev:server
 #### Both
 
 ```bash
-pnpm dev:all
+pnpm dev # web + API
 ```
 
 #### Quality

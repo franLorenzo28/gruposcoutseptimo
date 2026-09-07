@@ -226,7 +226,7 @@ const Auth = () => {
   const { toast } = useToast();
   const isLogin = authTab === "login";
   const oauthSafety = useMemo(() => getOAuthSafety(), []);
-  const { session: memberSession, isCheckingAuth } = useMemberAuth();
+  const { session: memberSession, isCheckingAuth, accessError } = useMemberAuth();
   const { user, isUserLoading, accountStatus } = useSupabaseUser();
   const localOAuthStartedRef = useRef(false);
   const oauthAvailable = isLocalBackend() || oauthSafety.safe;
@@ -336,9 +336,9 @@ const Auth = () => {
       navigate("/interno/dashboard", { replace: true });
       return;
     }
-    setInlineMessage("Tu sesión está iniciada, pero tu perfil no tiene acceso al área de miembros. Revisa tu perfil o contacta a un administrador.");
+    setInlineMessage(accessError || "Tu sesión está iniciada, pero falta completar tu perfil para acceder al área de miembros.");
   }, [user, isUserLoading, accountStatus, memberSession, isCheckingAuth,
-    needsGoogleCompletion, showWhatsappContacts, whatsappGateActive, pendingSignup, registrationSubmitted, navigate]);
+    accessError, needsGoogleCompletion, showWhatsappContacts, whatsappGateActive, pendingSignup, registrationSubmitted, navigate]);
 
   const handleGoogleProfileCompletion = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -450,8 +450,9 @@ const Auth = () => {
 
   // Called when user clicks "Ya fui contactado" on WhatsApp screen
   const handleContactedAndSignup = async () => {
-    if (!pendingSignup) return;
+    if (!pendingSignup) return false;
     setLoading(true);
+    setInlineMessage("");
     try {
       const existingSession = isLocalBackend() ? null : (await supabase.auth.getSession()).data.session;
       const isLocalGoogleSignup = isLocalBackend() && Boolean(localOAuthTicket) && !pendingSignup.password;
@@ -512,6 +513,7 @@ const Auth = () => {
       setSignupNombreScoutRelacionado("");
       
       setInlineMessage("Solicitud enviada. Tu cuenta está pendiente de aprobación.");
+      return true;
       
     } catch (error) {
       const message = error instanceof Error ? error.message : "Ocurrió un error inesperado";
@@ -520,8 +522,8 @@ const Auth = () => {
         description: message,
         variant: "destructive",
       });
-      setPendingSignup(null);
-      setShowWhatsappContacts(false);
+      setInlineMessage(message);
+      return false;
     } finally {
       setLoading(false);
     }
@@ -703,6 +705,7 @@ const Auth = () => {
             setAuthTab("login");
           }}
           onContacted={handleContactedAndSignup}
+          errorMessage={inlineMessage}
         />
       ) : needsGoogleCompletion ? (
         <Card className="w-full max-w-lg border border-white/30 dark:border-white/10 bg-background/85 dark:bg-background/80 backdrop-blur-xl shadow-2xl relative overflow-hidden">
@@ -953,6 +956,12 @@ const Auth = () => {
                     inlineMessage
                   )}
                 </p>
+              )}
+
+              {user && accountStatus === "activo" && !isCheckingAuth && !memberSession && (
+                <Button asChild variant="link" size="sm">
+                  <Link to="/interno/perfil/editar">Revisar mi perfil</Link>
+                </Button>
               )}
 
               <TabsContent value="login" className="data-[state=active]:animate-in data-[state=active]:fade-in data-[state=active]:slide-in-from-bottom-2 data-[state=active]:duration-300 mt-3">

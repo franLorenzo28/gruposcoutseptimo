@@ -58,7 +58,8 @@ export function isDebugEnabled(): boolean {
  * Obtener la URL del backend según el entorno
  */
 export function getBackendURL(): string {
-  return import.meta.env.VITE_API_BASE || "http://localhost:4000";
+  return (import.meta.env.VITE_API_BASE?.trim() ||
+    (import.meta.env.DEV ? "/api" : "")).replace(/\/+$/, "");
 }
 
 /**

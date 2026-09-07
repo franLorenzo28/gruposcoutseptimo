@@ -8,9 +8,10 @@
   },
   "packageManager": "pnpm@9.15.4",
   "scripts": {
-    "dev": "vite --mode development",
+    "dev": "pnpm run dev:all",
+    "dev:web": "vite --mode development",
     "dev:server": "pnpm --prefix server run dev",
-    "dev:all": "concurrently -n web,api -c magenta,cyan \"pnpm:dev\" \"pnpm:dev:server\"",
+    "dev:all": "concurrently --kill-others -n web,api -c magenta,cyan \"pnpm:dev:web\" \"pnpm:dev:server\"",
     "build": "vite build --mode production",
     "build:dev": "vite build --mode development",
     "build:staging": "vite build --mode staging",

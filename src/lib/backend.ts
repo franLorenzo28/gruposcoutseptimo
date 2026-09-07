@@ -1,11 +1,15 @@
 import { supabase } from "@/integrations/supabase/client";
+import { getBackendURL } from "@/lib/env";
 
-const API_BASE = (import.meta.env.VITE_API_BASE || "http://localhost:4000").replace(/\/$/, "");
 const LOCAL_ACCESS_TOKEN_KEY = "grupo7_local_access_token";
 export const LOCAL_AUTH_CHANGED_EVENT = "grupo7:local-auth-changed";
 
 export function getBackendUrl(path: string): string {
-  return `${API_BASE}${path.startsWith("/") ? path : `/${path}`}`;
+  const apiBase = getBackendURL();
+  if (!apiBase) {
+    throw new BackendError("El servicio del sitio todavía no está configurado. Contacta al responsable de la web.", 503, "API_NOT_CONFIGURED");
+  }
+  return `${apiBase}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
 type ApiAuthMode = "none" | "optional" | "required";
@@ -100,6 +104,9 @@ export async function apiFetch<T = any>(
     if (response.status === 401 && auth !== "none") {
       response = await execute(true);
     }
+    if (response.ok && response.status !== 204 && !response.headers.get("content-type")?.includes("application/json")) {
+      throw new BackendError("El servidor devolvió una respuesta inválida. Intenta nuevamente más tarde.", 502, "API_INVALID_RESPONSE");
+    }
     const payload = (await parseResponse(response)) as {
       data?: unknown;
       error?: { code?: string; message?: string; requestId?: string; details?: unknown };
@@ -124,7 +131,7 @@ export async function apiFetch<T = any>(
       throw new BackendError("El servidor tardó demasiado en responder.", 0, "TIMEOUT");
     }
     throw new BackendError(
-      error instanceof Error ? error.message : "No se pudo conectar al servidor.",
+      "No se pudo conectar al servidor. Revisa tu conexión e intenta nuevamente.",
       0,
       "NETWORK_ERROR",
     );

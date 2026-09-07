@@ -200,6 +200,11 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         authEventReceived = true;
+        setIsUserLoading(true);
+        if (!session) {
+          setUser(null);
+          setAccountStatus(null);
+        }
         ++requestId.current; // Invalidar consultas anteriores, incluso al salir.
         clearTimeout(timer);
         // No consultar Supabase dentro de su callback de autenticación.

@@ -1,5 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
-import { apiFetch, isLocalBackend } from "@/lib/backend";
+import { apiFetch } from "@/lib/backend";
 
 const ADMIN_UPLOAD_ERROR = "Solo los usuarios admin pueden subir archivos multimedia";
 
@@ -81,38 +80,23 @@ function buildAccess(args: {
   };
 }
 
+/** Administrative permissions always come from the authenticated API. */
+export async function requestCurrentUserAdminAccess(): Promise<AdminAccess> {
+  const access = await apiFetch<AdminAccess>("/v1/me/access");
+  return buildAccess({
+    userId: access.userId,
+    email: access.email,
+    roleValue: access.role,
+  });
+}
+
 export async function getCurrentUserAdminAccess(): Promise<AdminAccess> {
-  if (isLocalBackend()) {
-    try {
-      return await apiFetch<AdminAccess>("/v1/me/access");
-    } catch {
-      return buildAccess({ userId: null, email: null, roleValue: null });
-    }
-  }
-
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  if (!session?.user) {
+  try {
+    return await requestCurrentUserAdminAccess();
+  } catch {
+    // Optional admin controls stay hidden when authorization is unavailable.
     return buildAccess({ userId: null, email: null, roleValue: null });
   }
-
-  if (!isLocalBackend()) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role, email")
-      .eq("user_id", session.user.id)
-      .maybeSingle();
-
-    return buildAccess({
-      userId: session.user.id,
-      email: session.user.email || profile?.email || null,
-      roleValue: profile?.role,
-    });
-  }
-
-  return buildAccess({ userId: session.user.id, email: session.user.email || null, roleValue: null });
 }
 
 export async function isCurrentUserAdmin(): Promise<boolean> {

@@ -1,33 +1,55 @@
 import { useEffect, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Link, Navigate, useLocation } from "react-router-dom";
 import { useUser } from "../hooks/useUser.tsx";
-import { getCurrentUserAdminAccess, type AdminAccess } from "@/lib/admin-permissions";
+import { requestCurrentUserAdminAccess, type AdminAccess } from "@/lib/admin-permissions";
+import { AdminAccessContext } from "@/context/AdminAccessContext";
+import { BackendError } from "@/lib/backend";
+import { Button } from "@/components/ui/button";
 
 export function AdminGuard({ children }: { children: React.ReactNode }) {
   const { user, isUserLoading } = useUser();
-  const [access, setAccess] = useState<AdminAccess | null>(null);
+  const location = useLocation();
+  const [result, setResult] = useState<{ userId: string; access?: AdminAccess; error?: unknown } | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let active = true;
-    if (!user) {
-      setAccess(null);
+    setResult(null);
+    if (!user || isUserLoading) {
       return;
     }
-    setAccess(null);
-    void getCurrentUserAdminAccess().then((result) => {
-      if (active) setAccess(result);
-    });
+    void requestCurrentUserAdminAccess().then(
+      (access) => { if (active) setResult({ userId: user.id, access }); },
+      (error: unknown) => { if (active) setResult({ userId: user.id, error }); },
+    );
     return () => {
       active = false;
     };
-  }, [user]);
+  }, [user, isUserLoading, attempt]);
 
-  if (isUserLoading || (user && access === null)) {
+  if (isUserLoading) {
     return <div className="p-8 text-center text-muted-foreground">Verificando permisos...</div>;
   }
 
-  if (!user || !access?.canOpenAdminPanel) {
+  if (!user || (result?.error instanceof BackendError && result.error.status === 401)) {
+    return <Navigate to="/interno/auth" replace state={{ from: location.pathname }} />;
+  }
+  if (!result || result.userId !== user.id) {
+    return <div className="p-8 text-center text-muted-foreground">Verificando permisos...</div>;
+  }
+  if (result.error) {
+    if (result.error instanceof BackendError && result.error.status === 403) {
+      return <Navigate to="/" replace />;
+    }
+    return <div className="flex min-h-screen flex-col items-center justify-center gap-4 p-8 text-center">
+      <p role="alert">No se pudieron verificar los permisos de administración. El servicio no está disponible.</p>
+      <Button onClick={() => { setResult(null); setAttempt((value) => value + 1); }}>Reintentar</Button>
+      <Button asChild variant="outline"><Link to="/">Volver al inicio</Link></Button>
+    </div>;
+  }
+  const access = result.access;
+  if (access?.userId !== user.id || !access.canOpenAdminPanel) {
     return <Navigate to="/" replace />;
   }
-  return <>{children}</>;
+  return <AdminAccessContext.Provider value={access}>{children}</AdminAccessContext.Provider>;
 }

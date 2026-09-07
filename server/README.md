@@ -20,6 +20,10 @@ pnpm dev:server
 
 Configura `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` y `SUPABASE_SERVICE_ROLE_KEY` en `server/.env`. La service-role queda aislada en el proceso del servidor y nunca se envía al navegador. En desarrollo la API puede iniciar sin Supabase, pero los endpoints dependientes responderán 503; en producción las tres variables son obligatorias.
 
+Desde la raíz, `pnpm dev` inicia la web y la API juntas. `pnpm dev:web` inicia sólo Vite. El registro necesita la API incluso con `VITE_BACKEND=supabase`. Deja `VITE_API_BASE` vacío en desarrollo para usar el proxy `/api` de Vite hacia `127.0.0.1:4000`; así también funciona al abrir la web desde otro equipo de la red. Si cambias el puerto de la API, configura `VITE_API_BASE` con su URL accesible desde el navegador.
+
+Si el registro indica que el servicio no está disponible, revisa la salida del proceso `api` y comprueba `http://localhost:5173/api/health`. Un estado `ok` confirma la conexión, pero guardar solicitudes también requiere `SUPABASE_SERVICE_ROLE_KEY` en `server/.env`. Reinicia la API después de cambiar ese archivo. Nunca agregues esta clave a una variable `VITE_`.
+
 Los administradores se autorizan mediante `app_metadata.role` (`admin` o `mod`). `ADMIN_USER_IDS` y `ADMIN_EMAILS` sirven sólo como bootstrap explícito; no se usan patrones de correo ni datos editables del perfil.
 
 ## Comandos

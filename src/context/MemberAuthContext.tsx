@@ -25,6 +25,7 @@ interface MemberAuthContextValue {
   session: MemberSession | null;
   isAuthenticated: boolean;
   isCheckingAuth: boolean;
+  accessError: string | null;
   login: (payload: LoginPayload) => void;
   logout: () => void;
 }
@@ -38,6 +39,7 @@ export function MemberAuthProvider({ children }: { children: React.ReactNode }) 
     getStoredMemberSession(),
   );
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [accessError, setAccessError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -49,6 +51,7 @@ export function MemberAuthProvider({ children }: { children: React.ReactNode }) 
       const currentRequest = ++requestId;
       const isCurrent = () => active && currentRequest === requestId;
       setIsCheckingAuth(true);
+      setAccessError(null);
       try {
         const authUser = await getAuthUser();
         if (!isCurrent()) return;
@@ -67,7 +70,7 @@ export function MemberAuthProvider({ children }: { children: React.ReactNode }) 
         if (!storedSession || storedSession.authUserId !== authUser.id) {
           // Si no hay sesion de miembro o no coincide con authUser, intentamos autologuear
           try {
-            const profile = await getProfile(authUser.id).catch(() => null);
+            const profile = await getProfile(authUser.id);
             if (!isCurrent()) return;
             if (profile && profile.nombre_completo) {
               const access = resolveMemberAccessFromProfile({
@@ -94,15 +97,18 @@ export function MemberAuthProvider({ children }: { children: React.ReactNode }) 
                 saveMemberSession(newSession);
                 if (active) setSession(newSession);
               } else {
+                setAccessError(access.reason || "Tu perfil no tiene una unidad asignada. Revisa tu perfil.");
                 clearMemberSession();
                 if (active) setSession(null);
               }
             } else {
+              setAccessError("Completa los datos de tu perfil para acceder al área de miembros.");
               clearMemberSession();
               if (active) setSession(null);
             }
           } catch {
             if (!isCurrent()) return;
+            setAccessError("No pudimos cargar tu perfil. Revisa tu conexión e intenta iniciar sesión nuevamente.");
             clearMemberSession();
             if (active) setSession(null);
           }
@@ -111,7 +117,10 @@ export function MemberAuthProvider({ children }: { children: React.ReactNode }) 
           if (active) setSession(storedSession);
         }
       } catch {
-        if (!active) return;
+        if (!isCurrent()) return;
+        clearMemberSession();
+        setSession(null);
+        setAccessError("No pudimos validar tu sesión. Revisa tu conexión e intenta nuevamente.");
       } finally {
         if (isCurrent()) {
           setIsCheckingAuth(false);
@@ -157,11 +166,13 @@ export function MemberAuthProvider({ children }: { children: React.ReactNode }) 
       loggedAt: new Date().toISOString(),
     };
     saveMemberSession(nextSession);
+    setAccessError(null);
     setSession(nextSession);
   };
 
   const logout = () => {
     clearMemberSession();
+    setAccessError(null);
     setSession(null);
   };
 
@@ -170,10 +181,11 @@ export function MemberAuthProvider({ children }: { children: React.ReactNode }) 
       session,
       isAuthenticated: !!session,
       isCheckingAuth,
+      accessError,
       login,
       logout,
     }),
-    [isCheckingAuth, session],
+    [isCheckingAuth, session, accessError],
   );
 
   return (

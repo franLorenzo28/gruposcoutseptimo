@@ -5,6 +5,9 @@ import { loadEnvironment } from "./config/environment.js";
 
 async function start(): Promise<void> {
   const config = loadEnvironment();
+  if (config.NODE_ENV === "development" && !config.SUPABASE_SERVICE_ROLE_KEY) {
+    console.warn("Registro no disponible: configura SUPABASE_SERVICE_ROLE_KEY en server/.env. La clave debe quedar solo en el servidor.");
+  }
   const app = await buildApp({ config });
   let shuttingDown = false;
 

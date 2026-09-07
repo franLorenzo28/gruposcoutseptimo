@@ -3,13 +3,14 @@
 ## Commands
 
 ```bash
-pnpm run dev            # Vite dev server (port 5173)
+pnpm run dev            # Vite (5173) + Fastify API (4000)
+pnpm dev:web            # Vite only (registration still requires the API)
 pnpm type-check     # tsc --noEmit
 pnpm lint           # ESLint
 pnpm test           # Vitest (jsdom)
 pnpm ci             # type-check + lint + build
 pnpm dev:server     # Express backend in /server
-pnpm dev:all        # frontend + backend concurrently
+pnpm dev:all        # frontend + backend concurrently (same as pnpm dev)
 ```
 
 ## Provider Tree
