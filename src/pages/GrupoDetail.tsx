@@ -55,7 +55,19 @@ export default function GrupoDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+
+  const isNearBottom = () => {
+    const el = messagesContainerRef.current;
+    if (!el) return true;
+    return el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+  };
+
+  const scrollChatToBottom = (behavior: ScrollBehavior) => {
+    const el = messagesContainerRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior });
+  };
 
   const [loading, setLoading] = useState(true);
   const [group, setGroup] = useState<any>(null);
@@ -93,9 +105,12 @@ export default function GrupoDetail() {
     if (isLocalBackend()) {
       const interval = setInterval(async () => {
         try {
+          const nearBottom = isNearBottom();
           const msgs = await listGroupMessages(id);
           setMessages(msgs);
-          messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+          if (nearBottom) {
+            setTimeout(() => scrollChatToBottom("smooth"), 50);
+          }
         } catch (e) {
           // ignore polling errors
         }
@@ -136,14 +151,15 @@ export default function GrupoDetail() {
             sender_avatar: profile?.avatar_url,
           };
 
+          const nearBottom = isNearBottom();
           setMessages((prev) => {
             if (prev.some((m) => m.id === enriched.id)) return prev;
             return [...prev, enriched];
           });
 
-          setTimeout(() => {
-            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-          }, 100);
+          if (nearBottom) {
+            setTimeout(() => scrollChatToBottom("smooth"), 50);
+          }
         },
       );
     channel.subscribe();
@@ -199,7 +215,7 @@ export default function GrupoDetail() {
 
       // Scroll al final
       setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+        scrollChatToBottom("auto");
       }, 100);
     } catch (e: any) {
       console.error(e);
@@ -744,8 +760,8 @@ export default function GrupoDetail() {
         {/* Chat */}
         <Card>
           <CardContent className="p-4">
-            <div className="flex flex-col h-[calc(100vh-300px)]">
-              <div className="flex-1 overflow-auto space-y-3 mb-4">
+            <div className="flex flex-col h-[calc(100vh-300px)] supports-[height:100dvh]:h-[calc(100dvh-300px)]">
+              <div ref={messagesContainerRef} className="flex-1 overflow-auto overscroll-contain space-y-3 mb-4">
                 {messages.length === 0 ? (
                   <div className="text-center text-muted-foreground py-8">
                     No hay mensajes aún. ¡Sé el primero en escribir!
@@ -817,7 +833,6 @@ export default function GrupoDetail() {
                         </div>
                       );
                     })}
-                    <div ref={messagesEndRef} />
                   </>
                 )}
               </div>
