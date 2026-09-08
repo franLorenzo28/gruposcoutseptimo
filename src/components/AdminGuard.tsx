@@ -31,13 +31,16 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
     return <div className="p-8 text-center text-muted-foreground">Verificando permisos...</div>;
   }
 
-  if (!user || (result?.error instanceof BackendError && result.error.status === 401)) {
+  if (!user) {
     return <Navigate to="/interno/auth" replace state={{ from: location.pathname }} />;
   }
   if (!result || result.userId !== user.id) {
     return <div className="p-8 text-center text-muted-foreground">Verificando permisos...</div>;
   }
   if (result.error) {
+    if (result.error instanceof BackendError && result.error.status === 401) {
+      return <Navigate to="/interno/auth" replace state={{ from: location.pathname }} />;
+    }
     if (result.error instanceof BackendError && result.error.status === 403) {
       return <Navigate to="/" replace />;
     }

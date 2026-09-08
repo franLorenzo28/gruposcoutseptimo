@@ -6,6 +6,23 @@ vi.mock("@/integrations/supabase/client", () => ({ supabase: { auth: {} } }));
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
 
 describe("registration API connection", () => {
+  it("does not send production requests to localhost when the API is not configured", async () => {
+    vi.stubEnv("DEV", false);
+    vi.stubEnv("VITE_API_BASE", "");
+    const fetch = vi.fn();
+    vi.stubGlobal("fetch", fetch);
+    await expect(apiFetch("/v1/admin/users", { auth: "none" }))
+      .rejects.toMatchObject({ code: "API_NOT_CONFIGURED" });
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("rejects the SPA HTML fallback instead of treating it as API data", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("<html>App</html>", {
+      status: 200, headers: { "Content-Type": "text/html" },
+    })));
+    await expect(apiFetch("/v1/me/access", { auth: "none" }))
+      .rejects.toMatchObject({ code: "API_INVALID_RESPONSE" });
+  });
   it("uses the Vite proxy in development unless an API URL is explicitly configured", () => {
     vi.stubEnv("DEV", true);
     vi.stubEnv("VITE_API_BASE", "");

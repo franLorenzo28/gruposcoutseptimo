@@ -76,6 +76,6 @@ Two auth layers:
 - `navigate()` after login uses `replace: true` to prevent back-button loops
 - `RequireMemberAuth` redirects to `/interno/login` (not `/interno/auth`)
 - `RequireApproval` is a stronger guard that checks account status — use for profile/settings/messages
-- `AdminGuard` checks both Supabase session and raw localStorage user — used for legacy pages
+- `AdminGuard` waits for the user provider and authenticated `/v1/me/access` before mounting the entire admin layout. It never trusts `adminUser` storage or a frontend profile role. API failures show a retry screen without mounting the panel.
 - `clearMemberSession()` removes the key from localStorage but does NOT call `supabase.auth.signOut()`
 - `checkAuth()` in MemberAuthContext runs on mount AND on every `onAuthStateChange` event
