@@ -465,10 +465,22 @@ const Auth = () => {
       };
 
       if (existingSession?.user) {
-        await apiFetch("/v1/registration-requests/oauth", {
-          method: "POST",
-          body: JSON.stringify(profileData),
-        });
+        if (isLocalBackend()) {
+          await apiFetch("/v1/registration-requests/oauth", {
+            method: "POST",
+            body: JSON.stringify(profileData),
+          });
+        } else {
+          const { error } = await supabase.auth.updateUser({
+            data: {
+              ...profileData,
+              nombre_completo: `${profileData.nombre} ${profileData.apellido}`.trim(),
+              tipo_relacion: "scout",
+              profile_complete: true,
+            },
+          });
+          if (error) throw error;
+        }
       } else if (isLocalBackend() && localOAuthTicket && !pendingSignup.password) {
         await apiFetch("/v1/registration-requests/oauth/local", {
           method: "POST",
@@ -477,6 +489,23 @@ const Auth = () => {
         });
         sessionStorage.removeItem("grupo7_google_oauth_ticket");
         setLocalOAuthTicket(null);
+      } else if (!isLocalBackend()) {
+        const { error } = await supabase.auth.signUp({
+          email: pendingSignup.email.toLowerCase().trim(),
+          password: pendingSignup.password,
+          options: {
+            data: {
+              nombre: profileData.nombre,
+              apellido: profileData.apellido,
+              nombre_completo: `${profileData.nombre} ${profileData.apellido}`.trim(),
+              grupo_scout: profileData.grupo_scout,
+              rama: profileData.rama,
+              nombre_scout_relacionado: profileData.nombre_scout_relacionado,
+              tipo_relacion: "scout",
+            },
+          },
+        });
+        if (error) throw error;
       } else {
         const result = await apiFetch<{ verificationUrl?: string }>("/v1/registration-requests", {
           method: "POST",

@@ -36,7 +36,16 @@ describe("own profile backend selection", () => {
     expect(mocks.from).not.toHaveBeenCalled();
   });
 
-  it("keeps other people's profiles behind the public API DTO", async () => {
+  it("reads other people's profiles from Supabase in Supabase mode", async () => {
+    mocks.single.mockResolvedValue({ data: { user_id: "other", is_public: true }, error: null });
+    await expect(getProfile("other")).resolves.toMatchObject({ user_id: "other" });
+    expect(mocks.from).toHaveBeenCalledWith("profiles");
+    expect(mocks.eq).toHaveBeenCalledWith("user_id", "other");
+    expect(mocks.apiFetch).not.toHaveBeenCalled();
+  });
+
+  it("keeps other people's profiles behind the public API DTO in local mode", async () => {
+    mocks.isLocalBackend.mockReturnValue(true);
     mocks.apiFetch.mockResolvedValue({ user_id: "other" });
     await getProfile("other");
     expect(mocks.apiFetch).toHaveBeenCalledWith("/v1/profiles/other");

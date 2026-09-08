@@ -365,8 +365,13 @@ export default function ConfiguracionSeguridad() {
   const handleCloseAllSessions = async () => {
     try {
       setClosingSessions(true);
-      await apiFetch("/v1/auth/logout-all", { method: "POST" });
-      resetLocalBackendAuth();
+      if (isLocalBackend()) {
+        await apiFetch("/v1/auth/logout-all", { method: "POST" });
+        resetLocalBackendAuth();
+      } else {
+        const { error } = await supabase.auth.signOut({ scope: "global" });
+        if (error) throw error;
+      }
       toast({ title: "Sesiones cerradas", description: "Inicia sesión nuevamente para continuar." });
       navigate("/interno/auth", { replace: true });
     } catch (error) {

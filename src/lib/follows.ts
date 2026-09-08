@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { apiFetch } from "@/lib/backend";
+import { apiFetch, isLocalBackend } from "@/lib/backend";
 import { createFollowNotification, createFollowAcceptedNotification } from "@/lib/notifications";
 
 export type FollowStatus = "pending" | "accepted" | "blocked";
@@ -10,7 +10,7 @@ export type FollowActionResult = {
 };
 
 const FOLLOW_RELATION_CACHE_KEY = "follow_relation_cache_v1";
-const FOLLOWS_VIA_API = true;
+const FOLLOWS_VIA_API = isLocalBackend();
 
 function canUseStorage() {
   return typeof window !== "undefined" && typeof window.localStorage !== "undefined";

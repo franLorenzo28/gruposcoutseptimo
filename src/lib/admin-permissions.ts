@@ -1,4 +1,5 @@
-import { apiFetch } from "@/lib/backend";
+import { supabase } from "@/integrations/supabase/client";
+import { apiFetch, isLocalBackend } from "@/lib/backend";
 
 const ADMIN_UPLOAD_ERROR = "Solo los usuarios admin pueden subir archivos multimedia";
 
@@ -91,6 +92,28 @@ export async function requestCurrentUserAdminAccess(): Promise<AdminAccess> {
 }
 
 export async function getCurrentUserAdminAccess(): Promise<AdminAccess> {
+  if (!isLocalBackend()) {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.user) {
+      return buildAccess({ userId: null, email: null, roleValue: null });
+    }
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role, email")
+      .eq("user_id", session.user.id)
+      .maybeSingle();
+
+    return buildAccess({
+      userId: session.user.id,
+      email: session.user.email || profile?.email || null,
+      roleValue: profile?.role,
+    });
+  }
+
   try {
     return await requestCurrentUserAdminAccess();
   } catch {

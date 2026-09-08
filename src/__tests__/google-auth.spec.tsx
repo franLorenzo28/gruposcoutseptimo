@@ -12,7 +12,7 @@ const mocks = vi.hoisted(() => ({
   listeners: new Set<(event: AuthChangeEvent, session: Session | null) => void>(),
   getSession: vi.fn(), getAuthUser: vi.fn(), getProfile: vi.fn(),
   profileQuery: vi.fn(), signOut: vi.fn(), exchangeCodeForSession: vi.fn(),
-  apiFetch: vi.fn(),
+  updateUser: vi.fn(), apiFetch: vi.fn(),
 }));
 
 vi.mock("@/integrations/supabase/client", () => ({ supabase: {
@@ -20,6 +20,7 @@ vi.mock("@/integrations/supabase/client", () => ({ supabase: {
     getSession: mocks.getSession,
     signOut: mocks.signOut,
     exchangeCodeForSession: mocks.exchangeCodeForSession,
+    updateUser: mocks.updateUser,
     onAuthStateChange: (listener: (event: AuthChangeEvent, session: Session | null) => void) => {
       mocks.listeners.add(listener);
       return { data: { subscription: { unsubscribe: () => mocks.listeners.delete(listener) } } };
@@ -69,6 +70,7 @@ beforeEach(() => {
   mocks.getAuthUser.mockResolvedValue({ id: googleUser.id, account_status: "activo", isLocal: false });
   mocks.profileQuery.mockResolvedValue({ data: profile, error: null });
   mocks.getProfile.mockResolvedValue(profile);
+  mocks.updateUser.mockResolvedValue({ data: { user: googleUser }, error: null });
 });
 afterEach(cleanup);
 
@@ -186,14 +188,14 @@ describe("Google OAuth navigation", () => {
     expect(screen.queryByText("Dashboard listo")).not.toBeInTheDocument();
   });
 
-  it("keeps registration data and allows retrying after the API is unavailable", async () => {
+  it("keeps registration data and allows retrying after the profile update fails", async () => {
     mocks.getSession.mockResolvedValue({ data: { session: { user: {
       ...googleUser, user_metadata: { full_name: "Scout Prueba" },
     } } } });
     mocks.profileQuery.mockResolvedValue({ data: null, error: null });
     mocks.getAuthUser.mockResolvedValue(null);
-    mocks.apiFetch.mockRejectedValueOnce(new Error("El servicio de registro no está disponible."))
-      .mockResolvedValueOnce({ accepted: true });
+    mocks.updateUser.mockRejectedValueOnce(new Error("El servicio de registro no está disponible."))
+      .mockResolvedValueOnce({ data: { user: googleUser }, error: null });
     renderAuth();
     fireEvent.click(await screen.findByRole("button", { name: "Continuar" }));
     fireEvent.click(await screen.findByRole("button", { name: /Ya fui contactado/ }));
@@ -202,9 +204,7 @@ describe("Google OAuth navigation", () => {
     expect(retry).toBeEnabled();
     fireEvent.click(retry);
     expect(await screen.findByText("Solicitud enviada. Tu cuenta está pendiente de aprobación.")).toBeInTheDocument();
-    expect(mocks.apiFetch).toHaveBeenCalledTimes(2);
-    expect(mocks.apiFetch.mock.calls[0]).toEqual(mocks.apiFetch.mock.calls[1]);
-    expect(mocks.apiFetch.mock.calls[1]?.[0]).toBe("/v1/registration-requests/oauth");
+    expect(mocks.updateUser).toHaveBeenCalledTimes(2);
     expect(screen.queryByRole("button", { name: "Continuar" })).not.toBeInTheDocument();
   });
 });

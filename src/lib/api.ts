@@ -51,13 +51,11 @@ async function authenticatedUserId(): Promise<string> {
 /** Reads the own profile from its backend; other profiles use the public API DTO. */
 export async function getProfile(userId: string): Promise<Profile> {
   const currentUserId = await authenticatedUserId();
-  // El acceso propio en modo Supabase no depende de una API local. Mantener
-  // los perfiles ajenos en la API, que aplica su DTO público y privacidad.
-  if (!isLocalBackend() && currentUserId === userId) {
+  if (!isLocalBackend()) {
     const { data, error } = await supabase
       .from("profiles")
       .select("*")
-      .eq("user_id", currentUserId)
+      .eq("user_id", userId)
       .single();
     if (error) throw error;
     return withCalculatedAge(data as Profile);
@@ -78,6 +76,16 @@ export async function updateProfile(profile: ProfileUpdate): Promise<Profile> {
   for (const field of writableProfileFields) {
     if (profile[field] !== undefined) body[field] = profile[field];
   }
+  if (!isLocalBackend()) {
+    const { data, error } = await supabase
+      .from("profiles")
+      .update(body)
+      .eq("user_id", currentUserId)
+      .select()
+      .single();
+    if (error) throw error;
+    return withCalculatedAge(data as Profile);
+  }
   return apiFetch<Profile>("/v1/me/profile", {
     method: "PATCH",
     body: JSON.stringify(body),
@@ -85,6 +93,14 @@ export async function updateProfile(profile: ProfileUpdate): Promise<Profile> {
 }
 
 export async function getEventos() {
+  if (!isLocalBackend()) {
+    const { data, error } = await supabase
+      .from("eventos")
+      .select()
+      .order("fecha_inicio", { ascending: true });
+    if (error) throw error;
+    return data as Array<Database["public"]["Tables"]["eventos"]["Row"]>;
+  }
   return apiFetch<Array<Database["public"]["Tables"]["eventos"]["Row"]>>(
     "/v1/events",
     { auth: "optional" },
@@ -94,6 +110,11 @@ export async function getEventos() {
 export async function createEvento(
   evento: Database["public"]["Tables"]["eventos"]["Insert"],
 ): Promise<void> {
+  if (!isLocalBackend()) {
+    const { error } = await supabase.from("eventos").insert(evento);
+    if (error) throw error;
+    return;
+  }
   await apiFetch("/v1/events", {
     method: "POST",
     body: JSON.stringify(evento),
@@ -103,6 +124,14 @@ export async function createEvento(
 export async function setProfilePublic(userId: string, isPublic: boolean): Promise<void> {
   const currentUserId = await authenticatedUserId();
   if (currentUserId !== userId) throw new Error("No puedes modificar el perfil de otro usuario");
+  if (!isLocalBackend()) {
+    const { error } = await supabase
+      .from("profiles")
+      .update({ is_public: isPublic })
+      .eq("user_id", userId);
+    if (error) throw error;
+    return;
+  }
   await apiFetch("/v1/me/profile", {
     method: "PATCH",
     body: JSON.stringify({ is_public: isPublic }),

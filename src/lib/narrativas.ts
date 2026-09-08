@@ -25,7 +25,8 @@ export const FEATURES_CHANGELOG = {
  */
 
 import type { Database, Json } from "@/integrations/supabase/types";
-import { apiFetch } from "@/lib/backend";
+import { supabase } from "@/integrations/supabase/client";
+import { apiFetch, isLocalBackend } from "@/lib/backend";
 import {
   NarrativaConAutor,
   NarrativaBloque,
@@ -81,6 +82,16 @@ function mapNarrativaRow(row: NarrativaRow): NarrativaConAutor {
  * Get all narrativas, optionally filtered by year_section
  */
 export async function getNarrativas(yearSection?: string): Promise<NarrativaConAutor[]> {
+  if (!isLocalBackend()) {
+    let query = supabase
+      .from("narrativas")
+      .select("*")
+      .order("year_section", { ascending: false });
+    if (yearSection) query = query.eq("year_section", yearSection);
+    const { data, error } = await query;
+    if (error) throw error;
+    return (data || []).map(mapNarrativaRow);
+  }
   const url = yearSection
     ? `/v1/narratives?year_section=${encodeURIComponent(yearSection)}`
     : "/v1/narratives";
@@ -92,6 +103,16 @@ export async function getNarrativas(yearSection?: string): Promise<NarrativaConA
  * Get single narrativa by id
  */
 export async function getNarrativa(id: string): Promise<NarrativaConAutor> {
+  if (!isLocalBackend()) {
+    const { data, error } = await supabase
+      .from("narrativas")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) throw new Error("Narrativa no encontrada");
+    return mapNarrativaRow(data as NarrativaRow);
+  }
   const row = await apiFetch<NarrativaRow>(`/v1/narratives/${id}`, {
     auth: "optional",
   });
@@ -110,6 +131,16 @@ export async function createNarrativa(
     bloques: input.bloques as unknown as Json,
     fecha_publicacion: input.fecha_publicacion ? new Date(input.fecha_publicacion).toISOString() : new Date().toISOString(),
   };
+  if (!isLocalBackend()) {
+    const { data: { session } } = await supabase.auth.getSession();
+    const { data, error } = await supabase
+      .from("narrativas")
+      .insert({ ...payload, autor_id: session?.user?.id })
+      .select()
+      .single();
+    if (error) throw error;
+    return mapNarrativaRow(data as NarrativaRow);
+  }
   const row = await apiFetch<NarrativaRow>("/v1/narratives", {
     method: "POST",
     body: JSON.stringify(payload),
@@ -129,6 +160,16 @@ export async function updateNarrativa(
   if (input.year_section !== undefined) payload.year_section = input.year_section;
   if (input.bloques !== undefined) payload.bloques = input.bloques as unknown as Json;
   if (input.fecha_publicacion !== undefined) payload.fecha_publicacion = new Date(input.fecha_publicacion).toISOString();
+  if (!isLocalBackend()) {
+    const { data, error } = await supabase
+      .from("narrativas")
+      .update(payload)
+      .eq("id", id)
+      .select()
+      .single();
+    if (error) throw error;
+    return mapNarrativaRow(data as NarrativaRow);
+  }
   const row = await apiFetch<NarrativaRow>(`/v1/narratives/${id}`, {
     method: "PATCH",
     body: JSON.stringify(payload),
@@ -140,5 +181,10 @@ export async function updateNarrativa(
  * Delete narrativa (author/admin only)
  */
 export async function deleteNarrativa(id: string): Promise<void> {
+  if (!isLocalBackend()) {
+    const { error } = await supabase.from("narrativas").delete().eq("id", id);
+    if (error) throw error;
+    return;
+  }
   await apiFetch(`/v1/narratives/${id}`, { method: "DELETE" });
 }

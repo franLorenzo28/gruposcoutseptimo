@@ -178,18 +178,22 @@ export default function Dashboard({
   }
 
   async function fetchData() {
+    if (isLocalBackend()) {
+      return;
+    }
+
     setLoading(true);
-    try {
-      const usuarios = await apiFetch<any[]>("/v1/admin/users");
-      setUsers(usuarios || []);
-      computeStats(usuarios || []);
-    } catch (error) {
-      console.warn("Error loading profiles for admin:", error);
+    const { data: usuarios, error } = await supabase.from("profiles").select("*");
+    if (error) {
+      console.warn("Error loading profiles for admin:", error.message);
       setUsers([]);
       computeStats([]);
-    } finally {
       setLoading(false);
+      return;
     }
+    setUsers(usuarios || []);
+    computeStats(usuarios || []);
+    setLoading(false);
   }
 
   async function fetchLocalDashboardData() {
@@ -197,7 +201,7 @@ export default function Dashboard({
     setLoadingAdmin(true);
 
     try {
-      const payload = (await apiFetch("/v1/admin/dashboard-data")) as LocalDashboardPayload;
+      const payload = (await apiFetch("/admin/dashboard-data")) as LocalDashboardPayload;
       const localUsers = payload.users || [];
 
       setUsers(localUsers);
@@ -213,7 +217,7 @@ export default function Dashboard({
     } catch (error: any) {
       toast({
         title: "Error al cargar datos admin",
-        description: error?.message || "No se pudieron cargar los datos del panel administrativo.",
+        description: error?.message || "No se pudieron cargar los datos del panel admin en backend local.",
         variant: "destructive",
       });
       setUsers([]);
@@ -232,36 +236,56 @@ export default function Dashboard({
   }
 
   async function fetchAdminData() {
+    if (isLocalBackend()) {
+      return;
+    }
+
     setLoadingAdmin(true);
     
-    let pendingRegistrationRequests: RegistrationRequest[] = [];
-    try {
-      pendingRegistrationRequests = await apiFetch<RegistrationRequest[]>(
-        "/v1/admin/registration-requests?status=pending&limit=100",
-      );
-    } catch (error) {
-      console.error("Error fetching registration requests from API:", error);
+    // Fetch registration_requests first (NEW TABLE)
+    const registrationRequestsRes = await supabase
+      .from("registration_requests")
+      .select("*")
+      .eq("status", "pending")
+      .order("requested_at", { ascending: false })
+      .limit(100);
+    
+    if (registrationRequestsRes.error) {
+      console.error("Error fetching registration_requests:", registrationRequestsRes.error);
+    } else {
+      console.log("Fetched registration requests:", registrationRequestsRes.data?.length || 0);
     }
     
-    try {
-      const payload = await apiFetch<LocalDashboardPayload>("/v1/admin/dashboard-data");
-      setGroups(payload.groups || []);
-      setEvents(payload.events || []);
-      setMessages(payload.messages || []);
-      setGroupMessages(payload.groupMessages || []);
-      setPages(payload.pages || []);
-      setFollows(payload.follows || []);
-      setNotifications(payload.notifications || []);
-    } catch (error: any) {
+    const [groupsRes, eventsRes, messagesRes, groupMessagesRes, pagesRes, followsRes, notificationsRes] = await Promise.all([
+      supabase.from("groups").select("*").order("created_at", { ascending: false }).limit(200),
+      supabase.from("eventos").select("*").order("fecha_inicio", { ascending: false }).limit(200),
+      supabase.from("messages").select("*").order("created_at", { ascending: false }).limit(200),
+      supabase.from("group_messages").select("*").order("created_at", { ascending: false }).limit(200),
+      supabase.from("site_pages").select("*").order("updated_at", { ascending: false }),
+      supabase.from("follows").select("*").order("created_at", { ascending: false }).limit(500),
+      supabase.from("notifications").select("*").order("created_at", { ascending: false }).limit(500),
+    ]);
+
+    const criticalError = groupsRes.error || eventsRes.error;
+    
+    if (criticalError) {
       toast({
         title: "Error al cargar datos admin",
-        description: error?.message || "No se pudieron cargar los datos administrativos.",
+        description: criticalError.message,
         variant: "destructive",
       });
     }
+
+    setGroups(groupsRes.data || []);
+    setEvents(eventsRes.data || []);
+    setMessages(messagesRes.data || []);
+    setGroupMessages(groupMessagesRes.data || []);
+    setPages(pagesRes.data || []);
+    setFollows(followsRes.data || []);
+    setNotifications(notificationsRes.data || []);
     
     // Store registration requests for the new registration flow
-    setRegistrationRequests(pendingRegistrationRequests);
+    setRegistrationRequests((registrationRequestsRes.data || []) as unknown as RegistrationRequest[]);
     
     setLoadingAdmin(false);
   }
@@ -270,15 +294,34 @@ export default function Dashboard({
     if (!currentAccess.canOpenAdminPanel) return;
     
     try {
-      await apiFetch(`/v1/admin/registration-requests/${requestId}/decision`, {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      if (!supabaseUrl || !anonKey) {
+        throw new Error("Supabase credentials not configured");
+      }
+      
+      const response = await fetch(`${supabaseUrl}/functions/v1/approve-registration`, {
         method: "POST",
-        body: JSON.stringify({ action, admin_notes: notes || null }),
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${anonKey}`,
+          "apikey": anonKey,
+        },
+        body: JSON.stringify({ request_id: requestId, action, admin_notes: notes }),
       });
+      
+      const result = await response.json();
+      
+      if (!response.ok || result.error) {
+        const errorMsg = result.error || result.message || `Edge Function error: ${response.status}`;
+        console.error("Edge Function response:", result);
+        throw new Error(errorMsg);
+      }
       
       toast({
         title: action === "approve" ? "Usuario aprobado" : "Solicitud rechazada",
         description: action === "approve" 
-          ? "La cuenta fue habilitada. La identidad de correo ya estaba confirmada."
+          ? "El usuario fue creado y recibirá un email de confirmación." 
           : "La solicitud fue rechazada.",
       });
       
@@ -383,11 +426,17 @@ export default function Dashboard({
   }, [initialTab]);
 
   async function fetchPendingEducators() {
-    let data: any[] = [];
-    try {
-      data = await apiFetch<any[]>("/v1/admin/educator-permission-requests");
-    } catch (error) {
-      console.warn("Error fetching pending educators:", error);
+    if (isLocalBackend()) return;
+    const { data, error } = await supabase
+      .from("notifications")
+      .select("id, actor_id, recipient_id, type, entity_type, entity_id, data, created_at, read_at")
+      .eq("type", "message")
+      .eq("entity_type", "educator_permission_request")
+      .is("read_at", null)
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (error) {
+      console.warn("Error fetching pending educators:", error.message);
       return;
     }
     const pending = (data || []).filter((n: any) => {
@@ -401,7 +450,7 @@ export default function Dashboard({
   }
 
   useEffect(() => {
-    if (!currentAccess.canOpenAdminPanel) return;
+    if (isLocalBackend() || !currentAccess.canOpenAdminPanel) return;
 
     void fetchPendingEducators();
 
@@ -433,6 +482,11 @@ export default function Dashboard({
   }, [currentAccess.canOpenAdminPanel]);
 
   useEffect(() => {
+    if (isLocalBackend()) {
+      void fetchLocalDashboardData();
+      return;
+    }
+
     fetchData();
     fetchAdminData();
   }, []);
@@ -459,11 +513,21 @@ export default function Dashboard({
     setLoadingAdminChat(true);
     setAdminChatConvId(conversationId);
     try {
-      const result = await apiFetch<{ messages: any[]; participants: Array<{ user_id: string }> }>(
-        `/v1/admin/conversations/${conversationId}`,
-      );
-      setAdminChatMessages(result.messages || []);
-      const parts = (result.participants || []).map((p) => ({
+      // Load messages for this conversation
+      const { data: msgs, error: msgsError } = await supabase
+        .from("messages")
+        .select("*")
+        .eq("conversation_id", conversationId)
+        .order("created_at", { ascending: true });
+      if (msgsError) throw msgsError;
+      setAdminChatMessages(msgs || []);
+
+      // Try to load participants
+      const { data: participants } = await supabase
+        .from("conversation_participants" as any)
+        .select("user_id")
+        .eq("conversation_id", conversationId);
+      const parts = (participants || []).map((p: any) => ({
         userId: p.user_id,
         name: resolveUserName(p.user_id),
       }));
@@ -487,18 +551,13 @@ export default function Dashboard({
   }
 
   async function handleDeleteById(table: string, idField: string, id: string) {
-    if (idField !== "id") {
+    const { error } = await (supabase as any).from(table).delete().eq(idField, id);
+    if (error) {
       toast({
         title: "No se pudo eliminar",
-        description: "Este registro requiere una acción administrativa específica.",
+        description: error.message,
         variant: "destructive",
       });
-      return false;
-    }
-    try {
-      await apiFetch(`/v1/admin/resources/${encodeURIComponent(table)}/${encodeURIComponent(id)}`, { method: "DELETE" });
-    } catch (error: any) {
-      toast({ title: "No se pudo eliminar", description: error?.message, variant: "destructive" });
       return false;
     }
     toast({
@@ -514,18 +573,21 @@ export default function Dashboard({
     const payload = {
       name: editGroup.name,
       description: editGroup.description || null,
-      cover_url: editGroup.cover_image || null,
+      cover_image: editGroup.cover_image || null,
     };
-    try {
-      await apiFetch(`/v1/groups/${editGroup.id}`, { method: "PATCH", body: JSON.stringify(payload) });
+    const { error } = await supabase.from("groups").update(payload).eq("id", editGroup.id);
+    if (error) {
+      toast({ title: "No se pudo guardar", description: error.message, variant: "destructive" });
+    } else {
       toast({ title: "Grupo actualizado" });
       setEditGroup(null);
-      await fetchAdminData();
-    } catch (error: any) {
-      toast({ title: "No se pudo guardar", description: error?.message, variant: "destructive" });
-    } finally {
-      setSaving(false);
+      if (isLocalBackend()) {
+        await fetchLocalDashboardData();
+      } else {
+        await fetchAdminData();
+      }
     }
+    setSaving(false);
   }
 
   async function saveEvent() {
@@ -534,19 +596,23 @@ export default function Dashboard({
     const payload = {
       titulo: editEvent.titulo,
       descripcion: editEvent.descripcion || null,
+      lugar: editEvent.lugar || null,
       fecha_inicio: editEvent.fecha_inicio,
       fecha_fin: editEvent.fecha_fin || null,
     };
-    try {
-      await apiFetch(`/v1/events/${editEvent.id}`, { method: "PATCH", body: JSON.stringify(payload) });
+    const { error } = await supabase.from("eventos").update(payload).eq("id", editEvent.id);
+    if (error) {
+      toast({ title: "No se pudo guardar", description: error.message, variant: "destructive" });
+    } else {
       toast({ title: "Evento actualizado" });
       setEditEvent(null);
-      await fetchAdminData();
-    } catch (error: any) {
-      toast({ title: "No se pudo guardar", description: error?.message, variant: "destructive" });
-    } finally {
-      setSaving(false);
+      if (isLocalBackend()) {
+        await fetchLocalDashboardData();
+      } else {
+        await fetchAdminData();
+      }
     }
+    setSaving(false);
   }
 
   async function savePage() {
@@ -560,22 +626,26 @@ export default function Dashboard({
     };
 
     if (editPage.id) {
-      try {
-        await apiFetch(`/v1/admin/pages/${editPage.id}`, { method: "PATCH", body: JSON.stringify(payload) });
+      const { error } = await supabase.from("site_pages").update(payload).eq("id", editPage.id);
+      if (error) {
+        toast({ title: "No se pudo guardar", description: error.message, variant: "destructive" });
+      } else {
         toast({ title: "Página actualizada" });
         setEditPage(null);
-        await fetchAdminData();
-      } catch (error: any) {
-        toast({ title: "No se pudo guardar", description: error?.message, variant: "destructive" });
+        if (isLocalBackend()) {
+          await fetchLocalDashboardData();
+        } else {
+          await fetchAdminData();
+        }
       }
     } else {
-      try {
-        const data = await apiFetch<any>("/v1/admin/pages", { method: "POST", body: JSON.stringify(payload) });
+      const { data, error } = await supabase.from("site_pages").insert(payload).select("*").single();
+      if (error) {
+        toast({ title: "No se pudo crear", description: error.message, variant: "destructive" });
+      } else {
         setPages((prev) => [data, ...prev]);
         toast({ title: "Página creada" });
         setEditPage(null);
-      } catch (error: any) {
-        toast({ title: "No se pudo crear", description: error?.message, variant: "destructive" });
       }
     }
     setSaving(false);
@@ -693,6 +763,10 @@ export default function Dashboard({
           )
         : [];
 
+      const roleToSave = canManageRoles
+        ? editData.role || "user"
+        : editUser.role || "user";
+
       const adultRoleToSave = canManageEducators
         ? editData.rol_adulto || null
         : editUser.rol_adulto || null;
@@ -719,6 +793,41 @@ export default function Dashboard({
           : null
         : editUser.rama_que_educa || null;
 
+      if (isLocalBackend()) {
+        await apiFetch(`/admin/users/${editUser.user_id}/educator-permissions`, {
+          method: "PUT",
+          body: JSON.stringify({
+            enabled: isEducador,
+            ramas: selectedUnits,
+            approved: editData.educador_aprobado ?? false,
+          }),
+        });
+
+        setUsers((prev) =>
+          prev.map((u) =>
+            u.user_id === editUser.user_id
+              ? {
+                  ...u,
+                  role: roleToSave,
+                  rol_adulto: isEducador ? "Educador/a" : null,
+                  rama_que_educa: ramaQueEduca,
+                  educador_aprobado: editData.educador_aprobado ?? false,
+                }
+              : u,
+          ),
+        );
+
+        toast({
+          title: "Permisos actualizados",
+          description: "Permisos de educador/a actualizados en backend local.",
+        });
+
+        setEditUser(null);
+        setEditData({});
+        setSaving(false);
+        return;
+      }
+
       if (canManageRoles) {
         try {
           const roleToSet = editData.role || "user";
@@ -741,9 +850,10 @@ export default function Dashboard({
       }
 
       const payload = {
+        email: canEditIdentity ? editData.email || null : editUser.email || null,
         nombre_completo: canEditIdentity
-          ? editData.nombre_completo || editUser.nombre_completo
-          : editUser.nombre_completo,
+          ? editData.nombre_completo || null
+          : editUser.nombre_completo || null,
         username: canEditIdentity
           ? editData.username
             ? String(editData.username).toLowerCase()
@@ -751,17 +861,21 @@ export default function Dashboard({
           : editUser.username || null,
         rol_adulto: adultRoleToSave,
         rama_que_educa: ramaQueEduca,
+        educador_aprobado: editData.educador_aprobado ?? false,
       };
-      await apiFetch(`/v1/admin/users/${editUser.user_id}/profile`, {
-        method: "PATCH",
-        body: JSON.stringify(payload),
-      });
+      const { error } = await supabase
+        .from("profiles")
+        .update(payload)
+        .eq("user_id", editUser.user_id);
 
-      if (canManageEducators) {
-        await apiFetch(`/v1/admin/users/${editUser.user_id}/educator-permissions`, {
-          method: "PATCH",
-          body: JSON.stringify({ enabled: isEducador, units: selectedUnits }),
+      if (error) {
+        toast({
+          title: "No se pudo guardar",
+          description: error.message,
+          variant: "destructive",
         });
+        setSaving(false);
+        return;
       }
 
       setUsers((prev) => {
@@ -814,7 +928,35 @@ export default function Dashboard({
     }
     if (!window.confirm("¿Eliminar usuario? Esta acción no se puede deshacer.")) return;
     try {
-      await apiFetch(`/v1/admin/users/${id}`, { method: "DELETE" });
+      if (isLocalBackend()) {
+        const { error } = await supabase.from("profiles").delete().eq("user_id", id);
+        if (error) {
+          toast({ title: "No se pudo eliminar", description: error.message, variant: "destructive" });
+          return;
+        }
+      } else {
+        const { data: { session } } = await supabase.auth.getSession();
+        const baseUrl = import.meta.env.VITE_SUPABASE_URL || "";
+        const res = await fetch(`${baseUrl}/functions/v1/admin-delete-user`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session?.access_token || ""}`,
+            apikey: import.meta.env.VITE_SUPABASE_ANON_KEY || "",
+          },
+          body: JSON.stringify({ userId: id }),
+        });
+
+        const result = await res.json();
+        if (!res.ok) {
+          toast({
+            title: "No se pudo eliminar",
+            description: result.error || "Error al eliminar usuario",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
 
       setUsers((prev) => {
         const updated = prev.filter((u) => u.user_id !== id);
@@ -1295,13 +1437,14 @@ export default function Dashboard({
                               <Button size="sm" className="gap-1.5 bg-green-600 hover:bg-green-700 text-white" onClick={async () => {
                                 const requesterId = n.actor_id;
                                 const units = d.requested_units || [];
-                                try {
-                                  await apiFetch(`/v1/admin/educator-permission-requests/${n.id}/decision`, {
-                                    method: "POST",
-                                    body: JSON.stringify({ requesterId, approve: true, units, note: "Aprobado por panel admin" }),
-                                  });
-                                } catch (error: any) {
-                                  toast({ title: "Error", description: error?.message, variant: "destructive" });
+                                const { error } = await (supabase.rpc as any)("simple_review_educator_permission", {
+                                  p_requester_id: requesterId,
+                                  p_approve: true,
+                                  p_units: units,
+                                  p_note: "Aprobado por panel admin"
+                                });
+                                if (error) {
+                                  toast({ title: "Error", description: error.message, variant: "destructive" });
                                   return;
                                 }
                                 toast({ title: "Permisos aprobados", description: `Unidades asignadas: ${units.join(", ")}` });
@@ -1312,13 +1455,14 @@ export default function Dashboard({
                                 Aprobar
                               </Button>
                               <Button size="sm" variant="destructive" onClick={async () => {
-                                try {
-                                  await apiFetch(`/v1/admin/educator-permission-requests/${n.id}/decision`, {
-                                    method: "POST",
-                                    body: JSON.stringify({ requesterId: n.actor_id, approve: false, units: [], note: "Rechazado por panel admin" }),
-                                  });
-                                } catch (error: any) {
-                                  toast({ title: "Error", description: error?.message, variant: "destructive" });
+                                const { error } = await (supabase.rpc as any)("simple_review_educator_permission", {
+                                  p_requester_id: n.actor_id,
+                                  p_approve: false,
+                                  p_units: [],
+                                  p_note: "Rechazado por panel admin"
+                                });
+                                if (error) {
+                                  toast({ title: "Error", description: error.message, variant: "destructive" });
                                   return;
                                 }
                                 toast({ title: "Solicitud rechazada" });
