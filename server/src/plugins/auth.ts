@@ -19,8 +19,19 @@ declare module "fastify" {
     authUser: User | null;
     authToken: string | null;
     authSessionId: string | null;
+    authProfileRole: string | null;
     userSupabase: SupabaseClient | null;
   }
+}
+
+async function profileRoleFromAdminClient(app: FastifyInstance, userId: string): Promise<string | null> {
+  if (!app.supabaseAdmin) return null;
+  const { data } = await app.supabaseAdmin
+    .from("profiles")
+    .select("role")
+    .eq("user_id", userId)
+    .maybeSingle();
+  return typeof data?.role === "string" ? data.role : null;
 }
 
 function tokenFromRequest(request: FastifyRequest): string | null {
@@ -82,6 +93,7 @@ export function installAuthentication(app: FastifyInstance, config: EnvironmentC
   app.decorateRequest("authUser", null);
   app.decorateRequest("authToken", null);
   app.decorateRequest("authSessionId", null);
+  app.decorateRequest("authProfileRole", null);
   app.decorateRequest("userSupabase", null);
 
   app.decorate(
