@@ -6,14 +6,15 @@ vi.mock("@/integrations/supabase/client", () => ({ supabase: { auth: {} } }));
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
 
 describe("registration API connection", () => {
-  it("does not send production requests to localhost when the API is not configured", async () => {
+  it("uses the same-origin Vercel API in production without an explicit API URL", async () => {
     vi.stubEnv("DEV", false);
     vi.stubEnv("VITE_API_BASE", "");
-    const fetch = vi.fn();
+    const fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({ data: [] }), {
+      headers: { "Content-Type": "application/json" },
+    }));
     vi.stubGlobal("fetch", fetch);
-    await expect(apiFetch("/v1/admin/users", { auth: "none" }))
-      .rejects.toMatchObject({ code: "API_NOT_CONFIGURED" });
-    expect(fetch).not.toHaveBeenCalled();
+    await expect(apiFetch("/v1/admin/users", { auth: "none" })).resolves.toEqual([]);
+    expect(fetch).toHaveBeenCalledWith("/api/v1/admin/users", expect.any(Object));
   });
 
   it("rejects the SPA HTML fallback instead of treating it as API data", async () => {

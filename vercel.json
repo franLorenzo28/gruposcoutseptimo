@@ -1,6 +1,10 @@
 {
-  "buildCommand": "vite build --config vite.config.ts",
+  "buildCommand": "pnpm --dir server build && vite build --config vite.config.ts",
   "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "/api/index"
+    },
     {
       "source": "/(.*)",
       "destination": "/index.html"
