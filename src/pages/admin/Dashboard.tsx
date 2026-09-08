@@ -130,6 +130,7 @@ export default function Dashboard({
 
   const [registrationRequests, setRegistrationRequests] = useState<RegistrationRequest[]>([]);
   const [pendingEducators, setPendingEducators] = useState<any[]>([]);
+  const [pendingAccounts, setPendingAccounts] = useState<any[]>([]);
   const [testUserNombre, setTestUserNombre] = useState("");
   const [testUserApellido, setTestUserApellido] = useState("");
   const [testUserEmail, setTestUserEmail] = useState("");
@@ -254,6 +255,20 @@ export default function Dashboard({
       console.error("Error fetching registration_requests:", registrationRequestsRes.error);
     } else {
       console.log("Fetched registration requests:", registrationRequestsRes.data?.length || 0);
+    }
+
+    // Cuentas con perfil pendiente de aprobación (flujo Supabase directo)
+    const pendingAccountsRes = await supabase
+      .from("profiles")
+      .select("user_id, email, nombre_completo, username, account_status, created_at")
+      .eq("account_status", "pendiente_aprobacion")
+      .order("created_at", { ascending: true })
+      .limit(100);
+    if (pendingAccountsRes.error) {
+      console.error("Error fetching pending accounts:", pendingAccountsRes.error);
+      setPendingAccounts([]);
+    } else {
+      setPendingAccounts(pendingAccountsRes.data || []);
     }
     
     const [groupsRes, eventsRes, messagesRes, groupMessagesRes, pagesRes, followsRes, notificationsRes] = await Promise.all([
@@ -419,7 +434,32 @@ export default function Dashboard({
     };
   }, [users, events, groups, messages, groupMessages, follows, notifications, today, sevenDaysAgo]);
 
-  const totalPending = pendingEducators.length;
+  const totalPending = registrationRequests.length + pendingAccounts.length + pendingEducators.length;
+
+  async function handleReviewAccount(targetUserId: string, approve: boolean) {
+    if (!currentAccess.canOpenAdminPanel) return;
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ account_status: approve ? "activo" : "rechazado" })
+        .eq("user_id", targetUserId);
+      if (error) throw error;
+      toast({
+        title: approve ? "Cuenta aprobada" : "Cuenta rechazada",
+        description: approve
+          ? "El usuario ya puede acceder a la plataforma."
+          : "La cuenta quedó marcada como rechazada.",
+      });
+      await fetchAdminData();
+      await fetchData();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error?.message || "No se pudo actualizar la cuenta.",
+        variant: "destructive",
+      });
+    }
+  }
 
   useEffect(() => {
     setActiveTab(initialTab);
@@ -1340,7 +1380,7 @@ export default function Dashboard({
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
                   <UserCheck className="w-4 h-4 text-primary" />
-                  Solicitudes de Registro ({registrationRequests.length})
+                  Solicitudes de Registro ({totalPending})
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -1386,6 +1426,47 @@ export default function Dashboard({
                               Aprobar
                             </Button>
                             <Button size="sm" variant="destructive" onClick={() => handleApproveRegistration(req.id, "reject")}>
+                              <UserX className="w-3.5 h-3.5" />
+                              Rechazar
+                            </Button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {/* Cuentas pendientes de aprobación */}
+                <div className="pt-6 border-t border-border/30">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-1 h-5 bg-amber-500 rounded-full" />
+                    <h3 className="text-sm font-bold">Cuentas pendientes de aprobación ({pendingAccounts.length})</h3>
+                  </div>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    {pendingAccounts.length === 0 ? (
+                      <div className="col-span-full text-center py-8">
+                        <UserCheck className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
+                        <p className="text-sm text-muted-foreground">No hay cuentas pendientes.</p>
+                      </div>
+                    ) : (
+                      pendingAccounts.map((account: any) => (
+                        <div key={account.user_id} className="group relative overflow-hidden rounded-xl border border-amber-500/30 bg-background/80 p-4 space-y-3 hover:shadow-lg hover:border-amber-500/40 transition-all duration-300">
+                          <div className="absolute top-0 right-0 w-20 h-20 bg-amber-500/5 rounded-bl-full" />
+                          <div className="relative">
+                            <p className="font-semibold text-sm">{account.nombre_completo || account.username || "Sin nombre"}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">{account.email}</p>
+                            {account.created_at && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Registro: {new Date(account.created_at).toLocaleDateString("es-ES")}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex flex-wrap gap-2 pt-2 border-t border-border/30">
+                            <Button size="sm" className="gap-1.5 bg-green-600 hover:bg-green-700 text-white" onClick={() => handleReviewAccount(account.user_id, true)}>
+                              <UserCheck className="w-3.5 h-3.5" />
+                              Aprobar
+                            </Button>
+                            <Button size="sm" variant="destructive" onClick={() => handleReviewAccount(account.user_id, false)}>
                               <UserX className="w-3.5 h-3.5" />
                               Rechazar
                             </Button>

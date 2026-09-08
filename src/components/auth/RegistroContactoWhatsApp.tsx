@@ -16,10 +16,7 @@ type RegistroContactoWhatsAppProps = {
 };
 
 const CONTACTS: WhatsAppContact[] = [
-  { unidad: "Manada", phone: "+59894004149" },
-  { unidad: "Tropa", phone: "+59893403713" },
-  { unidad: "Pioneros", phone: "+59800000000" },
-  { unidad: "Rovers", phone: "+59800000000" },
+  { unidad: "Admin", phone: "+59894004149" },
 ];
 
 const DEFAULT_NAME = "Nombre Apellido";

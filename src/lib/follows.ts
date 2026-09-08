@@ -1,6 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
 import { apiFetch, isLocalBackend } from "@/lib/backend";
-import { createFollowNotification, createFollowAcceptedNotification } from "@/lib/notifications";
 
 export type FollowStatus = "pending" | "accepted" | "blocked";
 
@@ -255,26 +254,8 @@ export async function followUser(targetUserId: string): Promise<FollowActionResu
 
   writeFollowRelationCache(me, targetUserId, status);
 
-  void (async () => {
-    try {
-      const { data: myProfile } = await supabase
-        .from("profiles")
-        .select("nombre_completo, username, avatar_url")
-        .eq("user_id", me)
-        .maybeSingle();
-      await createFollowNotification({
-        followerId: me,
-        followedId: targetUserId,
-        status,
-        followerDisplayName:
-          myProfile?.nombre_completo || myProfile?.username || "Scout",
-        followerUsername: myProfile?.username ?? null,
-        followerAvatarUrl: myProfile?.avatar_url ?? null,
-      });
-    } catch (e) {
-      console.warn("Failed to create follow notification:", e);
-    }
-  })();
+  // The notification is created by the handle_follows_notifications trigger,
+  // which owns follow notification writes (single writer, no duplicates).
 
   return {
     error: null,
@@ -329,27 +310,8 @@ export async function acceptFollow(followerId: string) {
     .eq("follower_id", followerId)
     .eq("status", "pending");
 
-  if (!result.error) {
-    void (async () => {
-      try {
-        const { data: myProfile } = await supabase
-          .from("profiles")
-          .select("nombre_completo, username, avatar_url")
-          .eq("user_id", me)
-          .maybeSingle();
-        await createFollowAcceptedNotification({
-          followerId,
-          followedId: me,
-          followedDisplayName:
-            myProfile?.nombre_completo || myProfile?.username || "Scout",
-          followedUsername: myProfile?.username ?? null,
-          followedAvatarUrl: myProfile?.avatar_url ?? null,
-        });
-      } catch (e) {
-        console.warn("Failed to create follow accepted notification:", e);
-      }
-    })();
-  }
+  // The accepted notification is created by the handle_follows_notifications
+  // trigger on the pending->accepted transition.
 
   return result;
 }

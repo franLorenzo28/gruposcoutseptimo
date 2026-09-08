@@ -24,6 +24,7 @@ import {
   InternalUploadsPage,
   Mensajes,
   Narrativas,
+  Notificaciones,
   Perfil,
   PerfilView,
   Usuarios,
@@ -217,6 +218,14 @@ export const internalRoutes: RouteObject = {
       element: (
         <RequireMemberAuth>
           <Mensajes />
+        </RequireMemberAuth>
+      ),
+    },
+    {
+      path: "notificaciones",
+      element: (
+        <RequireMemberAuth>
+          <Notificaciones />
         </RequireMemberAuth>
       ),
     },

@@ -98,7 +98,9 @@ export async function createFollowNotification({
   await createNotification({
     recipientId: followedId,
     actorId: followerId,
-    type: kind as NotificationType,
+    // The notifications_type_check constraint only accepts 'message' here;
+    // the kind travels in data so clients keep rendering follow actions.
+    type: "message",
     entityType: "follow",
     entityId: `${followerId}:${followedId}`,
     data: {
@@ -127,7 +129,9 @@ export async function createFollowAcceptedNotification({
   await createNotification({
     recipientId: followerId,
     actorId: followedId,
-    type: "follow_accepted",
+    // The notifications_type_check constraint only accepts 'message' here;
+    // the kind travels in data so clients keep rendering follow actions.
+    type: "message",
     entityType: "follow",
     entityId: `${followerId}:${followedId}`,
     data: {

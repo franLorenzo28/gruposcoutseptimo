@@ -100,6 +100,8 @@ export function InternalPlatformNav() {
     loadMore,
     hasMore,
     loadingMore,
+    resolvedActions,
+    resolveFollowRequest,
   } = useNotifications();
 
   const handleLogout = useCallback(async () => {
@@ -240,6 +242,8 @@ export function InternalPlatformNav() {
                   onMarkRead={markRead}
                   onRemove={removeNotification}
                   onLoadMore={loadMore}
+                  resolvedActions={resolvedActions}
+                  onResolveRequest={resolveFollowRequest}
                   align="end"
                 >
                   <Button variant="ghost" size="icon" className="relative h-9 w-9 rounded-xl border border-white/10 bg-white/[0.04] text-white/70 hover:bg-white/10 hover:text-white" aria-label="Notificaciones">

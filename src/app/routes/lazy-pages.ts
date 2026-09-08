@@ -29,6 +29,7 @@ export const Configuracion = lazy(() => import("@/pages/Configuracion"));
 export const VerificarEmail = lazy(() => import("@/pages/VerificarEmail"));
 export const Usuarios = lazy(() => import("@/pages/Usuarios"));
 export const Mensajes = lazy(() => import("@/pages/Mensajes"));
+export const Notificaciones = lazy(() => import("@/pages/Notificaciones"));
 export const GrupoDetail = lazy(() => import("@/pages/GrupoDetail"));
 export const DashboardCoordinador = lazy(() => import("@/pages/DashboardCoordinador"));
 export const AdminPanel = lazy(() => import("@/pages/AdminPanel"));

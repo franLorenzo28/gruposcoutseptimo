@@ -10,7 +10,7 @@ const mocks = vi.hoisted(() => ({
   permissions: vi.fn(), panelMount: vi.fn(),
 }));
 vi.mock("@/hooks/useUser.tsx", () => ({ useUser: () => mocks.auth }));
-vi.mock("@/lib/admin-permissions", () => ({ requestCurrentUserAdminAccess: mocks.permissions }));
+vi.mock("@/lib/admin-permissions", () => ({ requestCurrentUserAdminAccess: mocks.permissions, getCurrentUserAdminAccess: mocks.permissions }));
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { auth: {} } }));
 vi.mock("@/components/RequireApproval", () => ({ default: ({ children }: { children: React.ReactNode }) => children }));
 vi.mock("@/components/layout/ScrollAlInicio", () => ({ default: () => null }));

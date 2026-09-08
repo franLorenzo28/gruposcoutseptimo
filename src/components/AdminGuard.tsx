@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate, useLocation } from "react-router-dom";
 import { useUser } from "../hooks/useUser.tsx";
-import { requestCurrentUserAdminAccess, type AdminAccess } from "@/lib/admin-permissions";
+import { getCurrentUserAdminAccess, requestCurrentUserAdminAccess, type AdminAccess } from "@/lib/admin-permissions";
 import { AdminAccessContext } from "@/context/AdminAccessContext";
-import { BackendError } from "@/lib/backend";
+import { BackendError, isLocalBackend } from "@/lib/backend";
 import { Button } from "@/components/ui/button";
 
 export function AdminGuard({ children }: { children: React.ReactNode }) {
@@ -18,7 +18,9 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
     if (!user || isUserLoading) {
       return;
     }
-    void requestCurrentUserAdminAccess().then(
+    // En modo Supabase los permisos se leen de profiles; el API solo es
+    // autoridad cuando el backend local está activo.
+    void (isLocalBackend() ? requestCurrentUserAdminAccess() : getCurrentUserAdminAccess()).then(
       (access) => { if (active) setResult({ userId: user.id, access }); },
       (error: unknown) => { if (active) setResult({ userId: user.id, error }); },
     );

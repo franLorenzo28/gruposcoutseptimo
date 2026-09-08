@@ -1,9 +1,13 @@
+import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Bell, Check, Dot, X } from "lucide-react";
+import { Bell, Check, Dot, History, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import UserAvatar from "@/components/UserAvatar";
 import type { ReactNode } from "react";
+
+export type FollowRequestResolution = "accepted" | "rejected";
 
 interface Notification {
   id: string;
@@ -22,6 +26,8 @@ interface NotificationsPanelProps {
   onMarkRead: (id: string) => void;
   onRemove: (id: string) => void;
   onLoadMore: () => void;
+  resolvedActions?: Record<string, FollowRequestResolution>;
+  onResolveRequest?: (id: string, accept: boolean) => Promise<boolean>;
   children?: ReactNode;
   align?: "center" | "end" | "start";
 }
@@ -142,6 +148,8 @@ function NotificationsContent({
   onMarkRead,
   onRemove,
   onLoadMore,
+  resolvedActions = {},
+  onResolveRequest,
 }: {
   notifications: Notification[];
   unreadCount: number;
@@ -151,7 +159,21 @@ function NotificationsContent({
   onMarkRead: (id: string) => void;
   onRemove: (id: string) => void;
   onLoadMore: () => void;
+  resolvedActions?: Record<string, FollowRequestResolution>;
+  onResolveRequest?: (id: string, accept: boolean) => Promise<boolean>;
 }) {
+  const [resolving, setResolving] = useState<Record<string, boolean>>({});
+
+  const handleResolve = async (id: string, accept: boolean) => {
+    if (!onResolveRequest || resolving[id]) return;
+    setResolving((prev) => ({ ...prev, [id]: true }));
+    try {
+      await onResolveRequest(id, accept);
+    } finally {
+      setResolving((prev) => ({ ...prev, [id]: false }));
+    }
+  };
+
   return (
     <div className="p-0">
       <div className="flex items-center justify-between border-b px-4 py-3">
@@ -166,7 +188,12 @@ function NotificationsContent({
         {notifications.length === 0 ? (
           <li className="px-4 py-8 text-center text-sm text-muted-foreground">No hay notificaciones</li>
         ) : (
-          notifications.map((n) => (
+          notifications.map((n) => {
+            const isFollowRequest = n.type === "follow_request";
+            const canResolve = isFollowRequest && !!onResolveRequest;
+            const resolution = resolvedActions[n.id];
+            const busy = !!resolving[n.id];
+            return (
             <li
               key={n.id}
               className={cn(
@@ -185,20 +212,57 @@ function NotificationsContent({
                   <div className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
                     <span>{getNotificationRelativeTime(n.created_at)}</span>
                     {!n.read && <Dot className="h-4 w-4 text-primary" />}
+                    {isFollowRequest && resolution && (
+                      <span
+                        className={cn(
+                          "font-medium",
+                          resolution === "accepted" ? "text-green-600" : "text-destructive",
+                        )}
+                      >
+                        · {resolution === "accepted" ? "Aceptada" : "Rechazada"}
+                      </span>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
-                  {!n.read && (
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-7 w-7"
-                      aria-label="Marcar como leído"
-                      title="Marcar como leído"
-                      onClick={() => onMarkRead(n.id)}
-                    >
-                      <Check className="h-4 w-4" />
-                    </Button>
+                  {canResolve && !resolution ? (
+                    <>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 text-green-600 hover:text-green-600"
+                        aria-label="Aceptar solicitud"
+                        title="Aceptar solicitud"
+                        disabled={busy}
+                        onClick={() => handleResolve(n.id, true)}
+                      >
+                        <Check className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 text-destructive hover:text-destructive"
+                        aria-label="Rechazar solicitud"
+                        title="Rechazar solicitud"
+                        disabled={busy}
+                        onClick={() => handleResolve(n.id, false)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </>
+                  ) : (
+                    !n.read && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7"
+                        aria-label="Marcar como leído"
+                        title="Marcar como leído"
+                        onClick={() => onMarkRead(n.id)}
+                      >
+                        <Check className="h-4 w-4" />
+                      </Button>
+                    )
                   )}
                   <Button
                     size="icon"
@@ -213,9 +277,15 @@ function NotificationsContent({
                 </div>
               </div>
             </li>
-          ))
-        )}
+            );
+          }))}
       </ul>
+      <Button asChild size="sm" variant="ghost" className="w-full rounded-none py-3">
+        <Link to="/interno/notificaciones" className="inline-flex items-center gap-2">
+          <History className="h-4 w-4" />
+          Ver historial
+        </Link>
+      </Button>
       {hasMore && (
         <Button size="sm" variant="ghost" className="w-full rounded-none py-3" onClick={onLoadMore} disabled={loadingMore}>
           {loadingMore ? "Cargando..." : "Ver más"}
@@ -234,6 +304,8 @@ export function NotificationsPopover({
   onMarkRead,
   onRemove,
   onLoadMore,
+  resolvedActions,
+  onResolveRequest,
   children,
   align = "center",
 }: NotificationsPanelProps) {
@@ -267,6 +339,8 @@ export function NotificationsPopover({
           onMarkRead={onMarkRead}
           onRemove={onRemove}
           onLoadMore={onLoadMore}
+          resolvedActions={resolvedActions}
+          onResolveRequest={onResolveRequest}
         />
       </PopoverContent>
     </Popover>

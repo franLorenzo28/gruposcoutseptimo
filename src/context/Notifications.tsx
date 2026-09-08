@@ -4,7 +4,7 @@ import { useSupabaseUser } from "@/providers/AppProviders";
 import { useToast } from "@/hooks/use-toast";
 import { listAlbums, listImages } from "@/lib/gallery";
 import { querySilent } from "@/lib/supabase-logger";
-import { getPendingRequestsForMe } from "@/lib/follows";
+import { acceptFollow, getPendingRequestsForMe, rejectFollow } from "@/lib/follows";
 
 // Module-level state survives StrictMode remounts AND HMR
 const _subscribedUsers = new Set<string>();
@@ -35,6 +35,8 @@ export type AppNotification = {
   data: Record<string, any>;
 };
 
+export type FollowRequestResolution = "accepted" | "rejected";
+
 interface NotificationsContextType {
   notifications: AppNotification[];
   unreadCount: number;
@@ -45,6 +47,8 @@ interface NotificationsContextType {
   loadMore: () => Promise<void>;
   hasMore: boolean;
   loadingMore: boolean;
+  resolvedActions: Record<string, FollowRequestResolution>;
+  resolveFollowRequest: (id: string, accept: boolean) => Promise<boolean>;
 }
 
 const NotificationsContext = createContext<NotificationsContextType | undefined>(undefined);
@@ -164,6 +168,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
 
     if (r.type === "message" && kind) {
       if (kind === "rama_broadcast") mappedType = "rama_broadcast";
+      else if (kind === "follow_request") mappedType = "follow_request";
       else if (kind === "follow_accepted") mappedType = "follow_accepted";
       else if (kind === "group_invite") mappedType = "group_invite";
       else if (kind === "gallery_upload") mappedType = "gallery_upload";
@@ -212,6 +217,33 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
   const removeNotification = useCallback((id: string) => {
     setNotifications(prev => prev.filter(n => n.id !== id));
   }, []);
+
+  const [resolvedActions, setResolvedActions] = useState<Record<string, FollowRequestResolution>>({});
+
+  const resolveFollowRequest = useCallback(async (id: string, accept: boolean): Promise<boolean> => {
+    const target = notifications.find((n) => n.id === id);
+    if (!target || target.type !== "follow_request") return false;
+    const followerId = String((target.data as any)?.follower_id || "");
+    if (!followerId) {
+      toast({ title: "Error", description: "No se pudo identificar la solicitud.", variant: "destructive" });
+      return false;
+    }
+    const { error } = accept ? await acceptFollow(followerId) : await rejectFollow(followerId);
+    if (error) {
+      toast({ title: "Error", description: error.message || "No se pudo procesar la solicitud.", variant: "destructive" });
+      return false;
+    }
+    setResolvedActions((prev) => ({ ...prev, [id]: accept ? "accepted" : "rejected" }));
+    if ((target as any)?.data?._persistent) {
+      await supabase.from("notifications").update({ read_at: new Date().toISOString() }).eq("id", id);
+    }
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+    toast({
+      title: accept ? "Solicitud aceptada" : "Solicitud rechazada",
+      description: accept ? "Ahora se siguen mutuamente." : "La solicitud fue descartada.",
+    });
+    return true;
+  }, [notifications, toast]);
 
   const syncPendingFollowRequests = useCallback(async (_currentUserId: string) => {
     if (!isNotificationEnabled("follow_request")) return;
@@ -496,7 +528,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
   const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
-    <NotificationsContext.Provider value={{ notifications, unreadCount, addNotification, markAllRead, markRead, removeNotification, loadMore, hasMore, loadingMore }}>
+    <NotificationsContext.Provider value={{ notifications, unreadCount, addNotification, markAllRead, markRead, removeNotification, loadMore, hasMore, loadingMore, resolvedActions, resolveFollowRequest }}>
       {children}
     </NotificationsContext.Provider>
   );
