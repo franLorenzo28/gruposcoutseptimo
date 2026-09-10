@@ -1,6 +1,7 @@
 ﻿import { Component, ErrorInfo, ReactNode } from "react";
 import { AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { isChunkLoadError, recoverChunkLoad, reloadPage } from "@/lib/chunk-recovery";
 import {
   Card,
   CardContent,
@@ -40,11 +41,14 @@ class ErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("ErrorBoundary caught an error:", error, errorInfo);
 
-    // Aquá podráas enviar el error a un servicio de logging como Sentry
-    // logErrorToService(error, errorInfo);
+    recoverChunkLoad(error);
   }
 
   handleReset = () => {
+    if (isChunkLoadError(this.state.error)) {
+      reloadPage();
+      return;
+    }
     this.setState({ hasError: false, error: undefined });
   };
 
@@ -63,7 +67,9 @@ class ErrorBoundary extends Component<Props, State> {
                 <CardTitle>Algo salió mal</CardTitle>
               </div>
               <CardDescription>
-                Ha ocurrido un error inesperado en la aplicación.
+                {isChunkLoadError(this.state.error)
+                  ? "No se pudo cargar esta página. Comprobá tu conexión y recargá para obtener la versión actualizada."
+                  : "Ha ocurrido un error inesperado en la aplicación."}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -86,7 +92,7 @@ class ErrorBoundary extends Component<Props, State> {
                 className="flex-1"
               >
                 <RefreshCw className="w-4 h-4 mr-2" />
-                Intentar de nuevo
+                {isChunkLoadError(this.state.error) ? "Recargar página" : "Intentar de nuevo"}
               </Button>
               <Button
                 onClick={() => (window.location.href = "/")}

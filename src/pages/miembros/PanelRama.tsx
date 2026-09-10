@@ -19,7 +19,9 @@ import {
 import { Reveal } from "@/components/Reveal";
 import { PageGridBackground } from "@/components/PageGridBackground";
 import { RamaAdminSection } from "@/components/miembros/RamaAdminSection";
+import { AdminDocuments } from "@/components/miembros/AdminDocuments";
 import { DocumentsList } from "@/components/miembros/DocumentsList";
+import { getCurrentUserAdminAccess } from "@/lib/admin-permissions";
 import { RamaBroadcastChannel } from "@/components/miembros/RamaBroadcastChannel";
 import {
   getDefaultRamaContent,
@@ -43,6 +45,7 @@ export default function PanelRama({ rama }: { rama: MiembroRama }) {
       ? [session.rama]
       : [];
   const isRamaAdmin = !!session?.isRamaAdmin && allowedRamas.includes(rama);
+  const [isGlobalAdmin, setIsGlobalAdmin] = useState(false);
   const defaultRamaContent = getDefaultRamaContent(rama);
 
   const [ramaContent, setRamaContent] = useState(() => {
@@ -57,6 +60,18 @@ export default function PanelRama({ rama }: { rama: MiembroRama }) {
     setRamaContent(readRamaContent(rama));
     setEventos(readRamaEvents(rama));
   }, [rama, defaultRamaContent]);
+
+  useEffect(() => {
+    let active = true;
+    void getCurrentUserAdminAccess().then((access) => {
+      if (active) setIsGlobalAdmin(access.isSuperAdmin || access.isMod);
+    }).catch(() => {
+      if (active) setIsGlobalAdmin(false);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     writeRamaContent(rama, ramaContent);
@@ -398,6 +413,20 @@ export default function PanelRama({ rama }: { rama: MiembroRama }) {
                 onUpdateEvent={handleUpdateEvent}
                 onDeleteEvent={handleDeleteEvent}
               />
+            </div>
+          )}
+
+          {isGlobalAdmin && !isRamaAdmin && (
+            <div id="panel-admin-documentos" className="space-y-4">
+              <div className="rounded-[22px] border border-amber-200 bg-amber-50/70 p-4 shadow-sm dark:border-amber-900 dark:bg-amber-950/20">
+                <h2 className="text-base font-black tracking-[-0.02em] text-amber-950 dark:text-amber-200">
+                  Gestión administrativa de documentos
+                </h2>
+                <p className="mt-1 text-xs text-amber-900/75 dark:text-amber-200/75">
+                  Como administrador o moderador puedes eliminar documentos de esta unidad.
+                </p>
+              </div>
+              <AdminDocuments ramaName={config.titulo} rama={rama} />
             </div>
           )}
         </div>

@@ -1,24 +1,40 @@
 {
   "buildCommand": "pnpm --dir server build && vite build --config vite.config.ts",
-  "rewrites": [
+  "routes": [
     {
-      "source": "/api/:path*",
-      "destination": "/api/index"
+      "src": "/api(?:/.*)?$",
+      "dest": "/api/index"
     },
     {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
-  ],
-  "headers": [
+      "src": "/assets/.*",
+      "headers": {
+        "Cache-Control": "public, max-age=31536000, immutable"
+      },
+      "continue": true
+    },
     {
-      "source": "/assets/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
-      ]
+      "src": "/(?:index\\.html)?$",
+      "headers": {
+        "Cache-Control": "no-cache"
+      },
+      "continue": true
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/assets(?:/.*)?$",
+      "status": 404,
+      "headers": {
+        "Cache-Control": "no-store"
+      }
+    },
+    {
+      "src": "/.*",
+      "dest": "/index.html",
+      "headers": {
+        "Cache-Control": "no-cache"
+      }
     }
   ]
 }
