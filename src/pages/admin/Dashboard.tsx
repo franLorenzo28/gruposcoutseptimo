@@ -1091,7 +1091,11 @@ export default function Dashboard({
                   <Badge className="bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 border-amber-500/20 text-sm px-3 py-1 shadow-sm backdrop-blur-sm">Moderador</Badge>
                 ) : null}
                 <Badge variant="default" className="text-sm px-3 py-1 shadow-sm">Usuarios: {stats.total}</Badge>
-                {pendingEducators.length > 0 && <Badge variant="default" className="text-sm px-3 py-1 shadow-sm bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20">{pendingEducators.length} educador{pendingEducators.length !== 1 ? "es" : ""}</Badge>}
+                {totalPending > 0 && (
+                  <Badge variant="default" className="border-amber-500/20 bg-amber-500/10 px-3 py-1 text-sm text-amber-700 shadow-sm dark:text-amber-300">
+                    {totalPending} pendiente{totalPending !== 1 ? "s" : ""}
+                  </Badge>
+                )}
               </div>
             </div>
             <p className="mt-6 text-xs text-muted-foreground bg-muted/30 p-3 rounded-lg border inline-block">

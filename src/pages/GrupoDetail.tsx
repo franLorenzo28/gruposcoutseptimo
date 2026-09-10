@@ -779,7 +779,7 @@ export default function GrupoDetail() {
                         >
                           <UserAvatar
                             avatarUrl={msg.sender_avatar || null}
-                            userName={msg.sender_name || null}
+                            userName={msg.sender_username || msg.sender_name || "Usuario"}
                             size="sm"
                             className="flex-shrink-0"
                           />
@@ -795,9 +795,14 @@ export default function GrupoDetail() {
                             >
                               {!isMine && (
                                 <div className="text-xs opacity-70 mb-1">
-                                  {msg.sender_username
-                                    ? `@${msg.sender_username}`
-                                    : msg.sender_name || "Scout"}
+                                  <span>
+                                    {msg.sender_username
+                                      ? `@${msg.sender_username}`
+                                      : msg.sender_name || "Usuario"}
+                                  </span>
+                                  {msg.sender_username && msg.sender_name && (
+                                    <span className="ml-2 opacity-70">{msg.sender_name}</span>
+                                  )}
                                 </div>
                               )}
                               <div className="text-sm whitespace-pre-wrap break-words">
