@@ -71,7 +71,7 @@ const primaryLinks: InternalNavLink[] = [
 const resourceLinks: InternalNavLink[] = [
   { to: "/interno/documentos", label: "Documentos", icon: FolderOpen, description: "Material institucional" },
   { to: "/interno/galeria", label: "Galería", icon: Images, description: "Fotos de la comunidad" },
-  { to: "/interno/subidas", label: "PPP y subidas", icon: Upload, description: "Archivos de tu unidad" },
+  { to: "/interno/subidas", label: "Progresión personal", icon: Upload, description: "Módulo PPP en preparación" },
   { to: "/interno/narrativas", label: "Narrativas", icon: BookOpen, description: "Memoria e identidad" },
   { to: "/interno/planificacion", label: "Planificación", icon: CalendarCheck, description: "Ciclo de programa" },
   { to: "/interno/biblioteca", label: "Biblioteca", icon: Library, description: "Recursos pedagógicos" },

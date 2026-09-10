@@ -72,7 +72,7 @@ export default function InternalPlanningPage() {
       <InternalPageHeader
         eyebrow="Planificación operativa"
         title="Ciclo de programa"
-        description="Seguí y gestioná el plan de actividades de tu unidad para el ciclo en curso."
+        description="Consultá el plan de referencia de tu unidad. La edición y el seguimiento operativo se habilitarán cuando el módulo esté conectado."
         meta={
           <Badge variant="outline" className="rounded-full bg-background/80">
             Unidad activa: {ramaConfig[activeRama].titulo}
@@ -167,9 +167,9 @@ export default function InternalPlanningPage() {
                   />
                 </div>
 
-                <Button variant="outline" size="sm" className="rounded-full">
+                <Button variant="outline" size="sm" className="rounded-full" disabled title="El detalle todavía no está conectado">
                   <Plus className="mr-1 h-3 w-3" />
-                  Ver detalle
+                  Detalle · Próximamente
                 </Button>
               </CardContent>
             </Card>

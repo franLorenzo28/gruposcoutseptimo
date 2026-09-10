@@ -20,6 +20,42 @@ import { eventUpdatePayload, mapEvent, type EventItem } from "@/lib/events";
 const STORAGE_KEY = "grupo_scout_eventos";
 const MODE = (import.meta.env.VITE_BACKEND || "supabase").toLowerCase();
 
+const MONTHS: Record<string, number> = {
+  enero: 0,
+  febrero: 1,
+  marzo: 2,
+  abril: 3,
+  mayo: 4,
+  junio: 5,
+  julio: 6,
+  agosto: 7,
+  septiembre: 8,
+  octubre: 9,
+  noviembre: 10,
+  diciembre: 11,
+};
+
+function getEventStartDate(event: EventItem): Date | null {
+  const match = event.date
+    .toLowerCase()
+    .match(/(\d{1,2})(?:\s*(?:y|al|-)\s*\d{1,2})?\s+de\s+([a-záéíóú]+),?\s+(\d{4})/i);
+  if (!match) {
+    const parsed = new Date(event.date);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+  const month = MONTHS[match[2] ?? ""];
+  if (month === undefined) return null;
+  return new Date(Number(match[3]), month, Number(match[1]));
+}
+
+function isUpcomingEvent(event: EventItem): boolean {
+  const start = getEventStartDate(event);
+  if (!start) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return start.getTime() >= today.getTime();
+}
+
 const defaultEvents: EventItem[] = [
   {
     id: 1,
@@ -437,6 +473,7 @@ const Events = () => {
   const isAdmin = checkIsAdmin(user);
 
   const isSupabaseMode = MODE === "supabase";
+  const upcomingEvents = events.filter(isUpcomingEvent);
 
   useEffect(() => {
     async function loadEventsData() {
@@ -537,11 +574,11 @@ const Events = () => {
             </Card>
           ))}
         </div>
-      ) : events.length > 0 ? (
-        <>
-          <MobileEventAccordion events={events} />
-          <div className="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mb-12">
-            {events.map((event, index) => (
+       ) : upcomingEvents.length > 0 ? (
+         <>
+           <MobileEventAccordion events={upcomingEvents} />
+           <div className="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mb-12">
+             {upcomingEvents.map((event, index) => (
               <EventCard
                 key={event.id}
                 event={event}

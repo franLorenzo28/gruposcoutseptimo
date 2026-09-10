@@ -81,12 +81,12 @@ export default function InternalUploadsPage() {
   return (
     <section className="mx-auto flex w-full max-w-7xl flex-col gap-5 px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
       <InternalPageHeader
-        eyebrow="Progresión personal"
-        title="Plan de Progresión Personal"
-        description="Subí y gestioná los archivos de tu Plan de Progresión Personal. Visible solo para vos y los educadores de tu unidad."
+          eyebrow="Módulo en preparación"
+          title="Progresión personal"
+          description="Esta vista es una referencia del futuro módulo PPP. La subida persistente de archivos todavía no está conectada."
         meta={
           <Badge variant="outline" className="rounded-full bg-background/80">
-            {isEducador ? "Educador — vista de supervisión" : `Mi PPP — ${session.nombre}`}
+            {isEducador ? "Educador — vista de supervisión" : `PPP — ${session.nombre}`}
           </Badge>
         }
       />
@@ -121,11 +121,11 @@ export default function InternalUploadsPage() {
             className="hidden"
             onChange={handleUpload}
           />
-          <Button onClick={() => fileInputRef.current?.click()} className="rounded-full">
+          <Button disabled className="rounded-full" title="La subida persistente todavía no está conectada">
             <Upload className="mr-2 h-4 w-4" />
-            Subir archivo a mi PPP
+            Subida próximamente
           </Button>
-          <p className="text-xs text-muted-foreground">PDF, Word o imágenes — máx 10MB</p>
+          <p className="text-xs text-muted-foreground">La acción aparecerá cuando el almacenamiento esté conectado.</p>
         </div>
       )}
 
@@ -139,8 +139,8 @@ export default function InternalUploadsPage() {
                 : "No hay archivos de PPP cargados para esta vista."}
             </p>
             {isPioneroRover && !isEducador && (
-              <Button variant="outline" className="mt-4 rounded-full" onClick={() => fileInputRef.current?.click()}>
-                Subir mi primer archivo
+              <Button variant="outline" className="mt-4 rounded-full" disabled>
+                Subida próximamente
               </Button>
             )}
           </CardContent>

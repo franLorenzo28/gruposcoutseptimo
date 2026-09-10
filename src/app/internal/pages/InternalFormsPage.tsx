@@ -100,9 +100,9 @@ export default function InternalFormsPage() {
             </Button>
           ))}
         </div>
-        <Button className="rounded-full">
+        <Button className="rounded-full" variant="outline" disabled title="Disponible próximamente">
           <Plus className="mr-2 h-4 w-4" />
-          Nuevo formulario
+          Nuevo formulario · Próximamente
         </Button>
       </div>
 
@@ -142,13 +142,13 @@ export default function InternalFormsPage() {
                       </a>
                     </Button>
                   ) : (
-                    <Button variant="default" size="sm" className="rounded-full">
+                    <Button variant="outline" size="sm" className="rounded-full" disabled title="Este formulario todavía no está conectado">
                       <FileText className="mr-1 h-3 w-3" />
-                      Ver
+                      Disponible próximamente
                     </Button>
                   )}
-                  <Button variant="outline" size="sm" className="rounded-full">
-                    Resultados
+                  <Button variant="outline" size="sm" className="rounded-full" disabled title="Los resultados todavía no están conectados">
+                    Resultados · Próximamente
                   </Button>
                 </div>
               </CardContent>
