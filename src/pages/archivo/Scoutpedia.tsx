@@ -253,10 +253,11 @@ const CATEGORIES: Array<{ key: "all" | TopicCategory; label: string }> = [
 
 const Scoutpedia = () => {
   const [topics, setTopics] = useState<Topic[]>([]);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [activeCategory, setActiveCategory] = useState<"all" | TopicCategory>("all");
   const [expandedTopicId, setExpandedTopicId] = useState<string | null>(null);
   const { user } = useUser();
-  const isAdmin = checkIsAdmin(user);
+  const isAdmin = checkIsAdmin(user) && !loadFailed;
   const isSupabaseMode = MODE === "supabase";
 
   useEffect(() => {
@@ -269,19 +270,20 @@ const Scoutpedia = () => {
           
           if (error) {
             console.error("Error loading scoutpedia_topics:", error);
+            setLoadFailed(true);
             setTopics(defaultTopics);
-          } else if (data && data.length > 0) {
-            const mapped = (data as any[]).map((row) => ({
+          } else {
+            setLoadFailed(false);
+            const mapped = ((data ?? []) as any[]).map((row) => ({
               ...row,
               paragraphs: Array.isArray(row.paragraphs) ? row.paragraphs : [],
               bullets: Array.isArray(row.bullets) ? row.bullets : [],
             }));
             setTopics(mapped as Topic[]);
-          } else {
-            setTopics(defaultTopics);
           }
         } catch (e) {
           console.error("Error:", e);
+          setLoadFailed(true);
           setTopics(defaultTopics);
         }
       } else {
@@ -299,9 +301,7 @@ const Scoutpedia = () => {
       : topics.filter((t) => t.category === activeCategory);
   }, [topics, activeCategory]);
 
-  const activeTopic = expandedTopicId 
-    ? topics.find((t) => t.id === expandedTopicId) 
-    : filteredTopics[0];
+  const activeTopic = filteredTopics.find((t) => t.id === expandedTopicId) ?? filteredTopics[0];
 
   const minGridCards = 6;
   const placeholderCount = Math.max(0, minGridCards - filteredTopics.length);
@@ -412,6 +412,7 @@ const Scoutpedia = () => {
               <p className="text-base sm:text-lg text-muted-foreground max-w-3xl leading-relaxed mb-2">
               Diccionario vivo de personas, obras y conceptos del Grupo Séptimo.
             </p>
+            {loadFailed && <p role="status" className="text-sm text-muted-foreground">No pudimos cargar las últimas actualizaciones. Mostramos el contenido de referencia.</p>}
           </Reveal>
         </div>
       </section>
@@ -462,7 +463,7 @@ const Scoutpedia = () => {
                 return (
                   <div
                     key={topic.id}
-                    className={`rounded-xl border bg-card/60 transition-all min-h-[140px] ${
+                    className={`relative rounded-xl border bg-card/60 transition-all min-h-[140px] ${
                       isExpanded
                         ? "border-primary/50 bg-primary/10 shadow-lg"
                         : "border-border/60 hover:border-primary/40"
@@ -470,7 +471,7 @@ const Scoutpedia = () => {
                   >
                     <button
                       onClick={() => setExpandedTopicId(isExpanded ? null : topic.id)}
-                      className="w-full h-full flex items-start gap-3 p-4 text-left"
+                      className="w-full h-full flex items-start gap-3 p-4 pr-9 text-left"
                     >
                       <div className={`transition-transform shrink-0 ${isExpanded ? "rotate-90" : ""}`}>
                         <ChevronDown className="h-4 w-4 text-primary" />
@@ -483,15 +484,16 @@ const Scoutpedia = () => {
                         <h3 className="text-sm font-bold leading-tight mt-0.5">{topic.title}</h3>
                         <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{topic.summary}</p>
                       </div>
-                      {isAdmin && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleDelete(topic.id); }}
-                          className="h-7 w-7 text-muted-foreground/50 hover:text-destructive flex items-center justify-center rounded transition-colors shrink-0"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      )}
                     </button>
+                    {isAdmin && (
+                      <button
+                        aria-label={`Eliminar ${topic.title}`}
+                        onClick={() => handleDelete(topic.id)}
+                        className="absolute right-1 top-1 h-7 w-7 text-muted-foreground/50 hover:text-destructive flex items-center justify-center rounded transition-colors shrink-0"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
                   </div>
                 );
               })}

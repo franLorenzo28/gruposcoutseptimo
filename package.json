@@ -15,7 +15,7 @@
     "build": "vite build --mode production",
     "build:dev": "vite build --mode development",
     "build:staging": "vite build --mode staging",
-    "build:analyze": "vite build --mode production && echo 'Check dist/ folder for bundle analysis'",
+    "build:analyze": "vite build --mode production && node scripts/analyze-bundle.mjs",
     "preview": "vite preview --mode production",
     "preview:dev": "vite preview --mode development",
     "preview:staging": "vite preview --mode staging",
@@ -26,7 +26,7 @@
     "lint": "eslint .",
     "test": "vitest run",
     "type-check": "tsc --noEmit",
-    "setup": "sh scripts/setup.sh",
+    "setup": "node scripts/setup.mjs",
     "ci": "pnpm check:migrations && pnpm type-check && pnpm lint && pnpm test && pnpm build && pnpm --dir server run ci",
     "test:server": "pnpm --dir server run test",
     "check:migrations": "node scripts/validate-supabase-migrations.mjs",
@@ -34,11 +34,12 @@
     "test:watch": "vitest",
     "node:use": "powershell -ExecutionPolicy Bypass -File scripts/use-node.ps1",
     "prepare": "husky",
-    "security:check": "pnpm audit --audit-level=moderate || node -e \"process.exit(0)\"",
+    "security:check": "pnpm audit --audit-level=moderate",
     "audit:report": "pnpm audit --json > artifacts/audit-report.json || node -e \"process.exit(0)\"",
-    "clean": "rimraf dist",
+    "clean": "node scripts/clean.mjs",
     "generate:sitemap": "node scripts/generate-sitemap.js",
-    "prebuild": "pnpm generate:sitemap && node scripts/validate-credentials.js"
+    "prebuild": "pnpm generate:sitemap && node scripts/validate-credentials.js",
+    "optimize:images": "node scripts/optimize-images.js && node scripts/optimize-responsive-images.mjs"
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",

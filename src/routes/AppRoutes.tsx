@@ -1,5 +1,5 @@
-import { Suspense, useEffect, useState } from "react";
-import { useRoutes } from "react-router-dom";
+import { Suspense } from "react";
+import { useLocation, useRoutes } from "react-router-dom";
 import PendingApprovalScreen from "@/components/PendingApprovalScreen";
 import PageLoader from "@/components/ui/PageLoader";
 import { MemberAuthProvider } from "@/context/MemberAuthContext";
@@ -29,22 +29,16 @@ function AppRouteTree() {
 
 function AppContent() {
   const { user, accountStatus, isUserLoading } = useSupabaseUser();
-  const [pendingInfo, setPendingInfo] = useState<{ name: string; status: string } | null>(null);
+  const { pathname } = useLocation();
+  // Registration and recovery must remain reachable before account approval.
+  const isAuthRoute = /^\/(?:interno\/(?:auth(?:\/callback)?|login|restablecer-password)|auth(?:\/callback)?|login|verificar-email)\/?$/i.test(pathname);
 
-  useEffect(() => {
-    if (isUserLoading || !user) return;
+  if (!isAuthRoute && user && isUserLoading) {
+    return <PageLoader message="Verificando acceso..." />;
+  }
 
-    if (accountStatus && accountStatus !== "activo") {
-      const name = localStorage.getItem("pendingUserName") || user.email || "Usuario";
-      setPendingInfo({ name, status: accountStatus });
-    } else {
-      localStorage.removeItem("pendingAccountStatus");
-      localStorage.removeItem("pendingUserName");
-    }
-  }, [user, accountStatus, isUserLoading]);
-
-  if (pendingInfo) {
-    return <PendingApprovalScreen userName={pendingInfo.name} status={pendingInfo.status} />;
+  if (!isAuthRoute && user && accountStatus && accountStatus !== "activo") {
+    return <PendingApprovalScreen userName={user.nombre_completo || user.email} status={accountStatus} />;
   }
 
   return (

@@ -5,7 +5,7 @@ import { ThemeProvider } from "next-themes";
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import type { Profile } from "@/types/profile";
-import { querySilent } from "@/lib/supabase-logger";
+import { readOwnProfile, invalidateProfileReads } from "@/lib/profile-reader";
 import { NotificationsProvider } from "@/context/Notifications";
 import { apiFetch, getAuthUser, isLocalBackend, LOCAL_AUTH_CHANGED_EVENT, resetLocalBackendAuth } from "@/lib/backend";
 
@@ -59,12 +59,7 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
 
     setIsUserLoading(true);
 
-    const { data: profile, error } = await querySilent(() => supabase
-      .from("profiles")
-      .select("*")
-      .eq("user_id", sessionUser.id)
-      .maybeSingle()
-    ).catch((error: unknown) => ({ data: null, error }));
+    const { data: profile, error } = await readOwnProfile(sessionUser.id).catch((error: unknown) => ({ data: null, error }));
 
     if (currentRequest !== requestId.current) return;
 
@@ -88,11 +83,16 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
       ? profile.account_status 
       : 'pendiente_aprobacion';
     setAccountStatus(status);
+    const combinedUser: SupabaseUserWithProfile = {
+      ...profile, ...sessionUser,
+      email: sessionUser.email,
+      role: sessionUser.role ?? profile.role ?? undefined,
+    };
 
     // Block access if not approved
     if (status !== 'activo') {
       // Mantener OAuth para completar el registro; los guards comprueban el estado.
-      setUser({ ...profile, ...sessionUser });
+      setUser(combinedUser);
       localStorage.removeItem("adminUser");
       setAccountStatus(status);
       setIsUserLoading(false);
@@ -102,7 +102,6 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
       return;
     }
 
-    const combinedUser = { ...profile, ...sessionUser };
     setUser(combinedUser);
 
     try {
@@ -164,6 +163,7 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const refreshUser = useCallback(async () => {
+    invalidateProfileReads();
     if (isLocalBackend()) {
       await fetchLocalUser();
       return;
@@ -199,6 +199,7 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
+        invalidateProfileReads();
         authEventReceived = true;
         setIsUserLoading(true);
         if (!session) {

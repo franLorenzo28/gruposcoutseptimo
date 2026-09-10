@@ -70,7 +70,7 @@ export function MemberAuthProvider({ children }: { children: React.ReactNode }) 
         if (!storedSession || storedSession.authUserId !== authUser.id) {
           // Si no hay sesion de miembro o no coincide con authUser, intentamos autologuear
           try {
-            const profile = await getProfile(authUser.id);
+            const profile = authUser.profile ?? await getProfile(authUser.id);
             if (!isCurrent()) return;
             if (profile && profile.nombre_completo) {
               const access = resolveMemberAccessFromProfile({

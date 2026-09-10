@@ -16,7 +16,7 @@ beforeEach(() => {
   mocks.getSession.mockResolvedValue({ data: { session: { user: { id: "self" } } } });
   mocks.getAuthUser.mockResolvedValue({ id: "self" });
   mocks.from.mockReturnValue({ select: () => ({ eq: mocks.eq }) });
-  mocks.eq.mockReturnValue({ single: mocks.single });
+  mocks.eq.mockReturnValue({ single: mocks.single, maybeSingle: mocks.single });
   mocks.single.mockResolvedValue({ data: { user_id: "self", nombre_completo: "Scout", edad: 16 }, error: null });
 });
 

@@ -36,8 +36,7 @@ const Hero = () => {
       {/* Background Image with Enhanced Overlay */}
       <div className="absolute inset-0 z-0" aria-hidden="true">
         <OptimizedImage
-          src={heroImages.src}
-          webpSrc={heroImages.webpSrc}
+          {...heroImages}
           alt="Grupo Scout Séptimo de Montevideo en actividad al aire libre"
           className="absolute inset-0 object-left"
           objectFit="cover"

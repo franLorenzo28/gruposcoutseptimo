@@ -1,3 +1,4 @@
+import { invalidateProfileReads, readOwnProfile, withCalculatedAge } from "@/lib/profile-reader";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { apiFetch, getAuthUser, isLocalBackend } from "@/lib/backend";
@@ -25,16 +26,6 @@ const writableProfileFields = [
   "ppp_url",
 ] as const satisfies readonly (keyof Profile)[];
 
-function withCalculatedAge(profile: Profile): Profile {
-  if (!profile.fecha_nacimiento) return profile;
-  const [year, month, day] = profile.fecha_nacimiento.split("-").map(Number);
-  if (!year || !month || !day) return profile;
-  const today = new Date();
-  let age = today.getFullYear() - year;
-  if (today.getMonth() + 1 < month || (today.getMonth() + 1 === month && today.getDate() < day)) age--;
-  return { ...profile, edad: age };
-}
-
 async function authenticatedUserId(): Promise<string> {
   if (isLocalBackend()) {
     const user = await getAuthUser();
@@ -52,12 +43,11 @@ async function authenticatedUserId(): Promise<string> {
 export async function getProfile(userId: string): Promise<Profile> {
   const currentUserId = await authenticatedUserId();
   if (!isLocalBackend()) {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("user_id", userId)
-      .single();
+    const { data, error } = currentUserId === userId
+      ? await readOwnProfile(userId)
+      : await supabase.from("profiles").select("*").eq("user_id", userId).single();
     if (error) throw error;
+    if (!data) throw new Error("No se encontró el perfil.");
     return withCalculatedAge(data as Profile);
   }
   const profile = await apiFetch<Profile>(
@@ -84,6 +74,7 @@ export async function updateProfile(profile: ProfileUpdate): Promise<Profile> {
       .select()
       .single();
     if (error) throw error;
+    invalidateProfileReads();
     return withCalculatedAge(data as Profile);
   }
   return apiFetch<Profile>("/v1/me/profile", {

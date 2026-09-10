@@ -8,7 +8,7 @@ pnpm dev:web            # Vite only (registration still requires the API)
 pnpm type-check     # tsc --noEmit
 pnpm lint           # ESLint
 pnpm test           # Vitest (jsdom)
-pnpm ci             # type-check + lint + build
+pnpm run ci             # type-check + lint + build
 pnpm dev:server     # Express backend in /server
 pnpm dev:all        # frontend + backend concurrently (same as pnpm dev)
 ```

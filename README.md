@@ -81,7 +81,7 @@ pnpm dev # web + API
 pnpm type-check
 pnpm lint
 pnpm test
-pnpm ci
+pnpm run ci
 pnpm security:check
 ```
 
@@ -222,7 +222,7 @@ pnpm dev # web + API
 pnpm type-check
 pnpm lint
 pnpm test
-pnpm ci
+pnpm run ci
 pnpm security:check
 ```
 

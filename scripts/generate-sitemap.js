@@ -30,7 +30,7 @@ const routes = [
 ];
 
 function generateSitemap() {
-  const now = new Date().toISOString();
+  // Sin una fecha real de edición del contenido, se omite lastmod.
   
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
@@ -39,7 +39,6 @@ function generateSitemap() {
         http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
 ${routes.map(route => `  <url>
     <loc>${BASE_URL}${route.path}</loc>
-    <lastmod>${now}</lastmod>
     <changefreq>${route.changefreq}</changefreq>
     <priority>${route.priority}</priority>
   </url>`).join('\n')}

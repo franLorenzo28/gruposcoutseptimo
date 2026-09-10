@@ -56,58 +56,49 @@ export async function listAlbums(): Promise<GalleryAlbum[]> {
   }
 }
 
-export async function listImages(
-  album: string,
-): Promise<{ url: string; path: string }[]> {
+/** List metadata without generating signed URLs. Storage policies still apply. */
+export async function listImagePaths(album: string): Promise<string[]> {
   if (isLocalBackend()) {
-    const rows = (await apiFetch(
+    const rows = await apiFetch<Array<{ path: string }>>(
       `/gallery/albums/${encodeURIComponent(album)}/images`,
-    )) as Array<{ url: string; path: string }>;
-    return rows;
-  }
-
-  await requireGallerySession();
-
-  const { data, error } = await supabase.storage
-    .from(BUCKET)
-    .list(album, { limit: 1000 });
-  if (error) throw error;
-
-  // Filtrar solo archivos de imagen (no carpetas, no .keep, no archivos ocultos)
-  const files = (data || []).filter((f: any) => {
-    const name = f.name.toLowerCase();
-    return (
-      !name.endsWith("/") &&
-      !name.startsWith(".") &&
-      name !== ".keep" &&
-      (name.endsWith(".jpg") ||
-        name.endsWith(".jpeg") ||
-        name.endsWith(".png") ||
-        name.endsWith(".gif") ||
-        name.endsWith(".webp") ||
-        name.endsWith(".svg"))
     );
-  });
+    return rows.map(row => row.path);
+  }
+  await requireGallerySession();
+  const paths: string[] = [];
+  for (let offset = 0; ; offset += 1000) {
+    const { data, error } = await supabase.storage.from(BUCKET)
+      .list(album, { limit: 1000, offset, sortBy: { column: "name", order: "asc" } });
+    if (error) throw error;
+    const entries = data || [];
+    for (const entry of entries) {
+      if (!entry.name.startsWith(".") && /\.(jpe?g|png|gif|webp|svg)$/i.test(entry.name)) {
+        paths.push(`${album}/${entry.name}`);
+      }
+    }
+    if (entries.length < 1000) return paths;
+  }
+}
 
-  const images = await Promise.all(
-    files.map(async (f: any) => {
-      const path = `${album}/${f.name}`;
-      const { data: signed, error: signedError } = await supabase.storage
-        .from(BUCKET)
-        .createSignedUrl(path, 60 * 60);
-
-      if (signedError || !signed?.signedUrl) return null;
-
-      return {
-        url: signed.signedUrl,
-        path,
-      };
-    }),
-  );
-
-  return images.filter(
-    (image): image is { url: string; path: string } => image !== null,
-  );
+export async function listImages(album: string): Promise<{ url: string; path: string }[]> {
+  if (isLocalBackend()) {
+    return apiFetch<Array<{ url: string; path: string }>>(
+      `/gallery/albums/${encodeURIComponent(album)}/images`,
+    );
+  }
+  const paths = await listImagePaths(album);
+  const images: Array<{ url: string; path: string }> = [];
+  for (let offset = 0; offset < paths.length; offset += 100) {
+    const { data, error } = await supabase.storage.from(BUCKET)
+      .createSignedUrls(paths.slice(offset, offset + 100), 60 * 60);
+    if (error) throw error;
+    for (const image of data || []) {
+      if (!image.error && image.signedUrl && image.path) {
+        images.push({ url: image.signedUrl, path: image.path });
+      }
+    }
+  }
+  return images;
 }
 
 export async function createAlbum(name: string): Promise<void> {

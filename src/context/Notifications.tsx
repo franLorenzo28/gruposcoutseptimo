@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback, use
 import { supabase } from "@/integrations/supabase/client";
 import { useSupabaseUser } from "@/providers/AppProviders";
 import { useToast } from "@/hooks/use-toast";
-import { listAlbums, listImages } from "@/lib/gallery";
+import { listAlbums, listImagePaths } from "@/lib/gallery";
 import { querySilent } from "@/lib/supabase-logger";
 import { acceptFollow, getPendingRequestsForMe, rejectFollow } from "@/lib/follows";
 
@@ -379,19 +379,25 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
+    let scanning = false;
+    let hasSnapshot = false;
 
     const scanGallery = async (notify = false) => {
+      if (scanning || cancelled || document.hidden || !isNotificationEnabled("gallery_upload")) return;
+      scanning = true;
       try {
         const albums = await listAlbums();
         if (!albums.length) return;
 
         const current = new Set<string>();
         for (const album of albums.slice(0, 12)) {
-          const imgs = await listImages(album.name).catch(() => []);
-          imgs.forEach((img) => current.add(img.path));
+          const paths = await listImagePaths(album.name);
+          if (cancelled) return;
+          paths.forEach((path) => current.add(path));
         }
 
-        if (!notify) {
+        if (!notify || !hasSnapshot) {
+          hasSnapshot = true;
           if (!cancelled) knownGalleryPathsRef.current = current;
           return;
         }
@@ -419,18 +425,14 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
               : `Se subieron ${newPaths.length} fotos nuevas en ${albumName}`,
           );
 
-          for (const newPath of newPaths) {
-            void (supabase as any).from("gallery_upload_events").insert({
-              uploader_id: user.id,
-              album_name: albumName,
-              image_path: newPath,
-            });
-          }
+          // Uploads already persist events; observers must not create them again.
         }
 
         if (!cancelled) knownGalleryPathsRef.current = current;
       } catch {
-        // Silencioso
+        // Keep the previous snapshot on failures to avoid reporting old photos as new.
+      } finally {
+        scanning = false;
       }
     };
 

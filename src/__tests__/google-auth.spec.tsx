@@ -54,6 +54,7 @@ function renderAuth() {
       <Location />
       <Routes>
         <Route path="/interno/auth" element={<Auth />} />
+        <Route path="/interno/login" element={<Auth />} />
         <Route path="/interno/auth/callback" element={<Auth />} />
         <Route path="/interno/dashboard" element={<RequireMemberAuth><div>Dashboard listo</div></RequireMemberAuth>} />
       </Routes>

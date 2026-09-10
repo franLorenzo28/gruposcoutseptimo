@@ -15,21 +15,10 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 
+import { eventUpdatePayload, mapEvent, type EventItem } from "@/lib/events";
+
 const STORAGE_KEY = "grupo_scout_eventos";
 const MODE = (import.meta.env.VITE_BACKEND || "supabase").toLowerCase();
-
-type EventItem = {
-  id: number;
-  title: string;
-  date: string;
-  location: string;
-  participants: string;
-  type: string;
-  status: string;
-  image?: string;
-  href?: string;
-  sort_order?: number;
-};
 
 const defaultEvents: EventItem[] = [
   {
@@ -159,14 +148,16 @@ function checkIsAdmin(user: any): boolean {
   );
 }
 
-const EventCard = ({ event, index, isAdmin, onUpdate }: { 
-  event: EventItem; 
+const EventCard = ({ event, index, isAdmin, onUpdate }: {
+  event: EventItem;
   index: number;
   isAdmin: boolean;
-  onUpdate: (id: number, updates: Partial<EventItem>) => void;
+  onUpdate: (id: EventItem["id"], updates: Partial<EventItem>) => Promise<void>;
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState(event);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [imageFailed, setImageFailed] = useState(!event.image);
   const isUnknown = event.status?.toLowerCase() === "en incógnita";
 
@@ -174,9 +165,17 @@ const EventCard = ({ event, index, isAdmin, onUpdate }: {
     setEditData(event);
   }, [event]);
 
-  const handleSave = () => {
-    onUpdate(event.id, editData);
-    setIsEditing(false);
+  const handleSave = async () => {
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await onUpdate(event.id, editData);
+      setIsEditing(false);
+    } catch {
+      setSaveError("No se pudieron guardar los cambios. Intenta nuevamente.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleCancel = () => {
@@ -227,6 +226,7 @@ const EventCard = ({ event, index, isAdmin, onUpdate }: {
           <div className="flex items-center justify-between gap-2">
             {isEditing ? (
               <Input
+                disabled={saving || (!!event.columns && !event.columns.type)}
                 value={editData.type}
                 onChange={(e) => setEditData({ ...editData, type: e.target.value })}
                 className="text-xs font-bold px-2 py-1 h-auto"
@@ -240,6 +240,7 @@ const EventCard = ({ event, index, isAdmin, onUpdate }: {
             <div className="flex items-center gap-2">
               {isEditing ? (
                 <Input
+                  disabled={saving || (!!event.columns && !event.columns.status)}
                   value={editData.status}
                   onChange={(e) => setEditData({ ...editData, status: e.target.value })}
                   className="text-xs px-2 py-1 h-auto"
@@ -261,6 +262,7 @@ const EventCard = ({ event, index, isAdmin, onUpdate }: {
           </div>
           {isEditing ? (
             <Input
+              disabled={saving || (!!event.columns && !event.columns.title)}
               value={editData.title}
               onChange={(e) => setEditData({ ...editData, title: e.target.value })}
               className="text-xl font-bold"
@@ -281,6 +283,7 @@ const EventCard = ({ event, index, isAdmin, onUpdate }: {
                 <Calendar className="w-4 h-4 text-primary shrink-0" />
                 {isEditing ? (
                   <Input
+                    disabled={saving || (!!event.columns && !event.columns.date)}
                     value={editData.date}
                     onChange={(e) => setEditData({ ...editData, date: e.target.value })}
                     className="flex-1 h-7 text-sm"
@@ -294,6 +297,7 @@ const EventCard = ({ event, index, isAdmin, onUpdate }: {
                 <MapPin className="w-4 h-4 text-primary shrink-0" />
                 {isEditing ? (
                   <Input
+                    disabled={saving || (!!event.columns && !event.columns.location)}
                     value={editData.location}
                     onChange={(e) => setEditData({ ...editData, location: e.target.value })}
                     className="flex-1 h-7 text-sm"
@@ -307,6 +311,7 @@ const EventCard = ({ event, index, isAdmin, onUpdate }: {
                 <Users className="w-4 h-4 text-primary shrink-0" />
                 {isEditing ? (
                   <Input
+                    disabled={saving || (!!event.columns && !event.columns.participants)}
                     value={editData.participants}
                     onChange={(e) => setEditData({ ...editData, participants: e.target.value })}
                     className="flex-1 h-7 text-sm"
@@ -318,14 +323,15 @@ const EventCard = ({ event, index, isAdmin, onUpdate }: {
               </div>
             </div>
 
+          {saveError && <p role="alert" className="text-sm text-destructive">{saveError}</p>}
           <div className="pt-2 flex gap-2">
             {isEditing ? (
               <>
-                <Button size="sm" className="flex-1" onClick={handleSave}>
+                <Button size="sm" className="flex-1" onClick={handleSave} disabled={saving}>
                   <Save className="h-3 w-3 mr-1" />
                   Guardar
                 </Button>
-                <Button size="sm" variant="outline" onClick={handleCancel}>
+                <Button size="sm" variant="outline" onClick={handleCancel} disabled={saving}>
                   <X className="h-3 w-3" />
                 </Button>
               </>
@@ -351,7 +357,7 @@ const EventCard = ({ event, index, isAdmin, onUpdate }: {
   );
 };
 
-const MobileEventAccordion = ({ events }: { 
+const MobileEventAccordion = ({ events }: {
   events: EventItem[];
 }) => {
   return (
@@ -438,29 +444,14 @@ const Events = () => {
         try {
           const { data, error } = await (supabase as any)
             .from("eventos")
-            .select("*")
-            .order("sort_order", { ascending: true });
-          
+            .select("*");
+
           if (error) {
             console.error("Error loading eventos from supabase:", error);
             setEvents(defaultEvents);
-          } else if (data && data.length > 0) {
-            setEvents(
-              (data as any[]).map((item: any) => ({
-                id: item.id,
-                title: item.titulo ?? item.title ?? "",
-                date: item.fecha_inicio ?? item.date ?? "",
-                location: item.lugar ?? item.location ?? "",
-                participants: item.participants ?? "",
-                type: item.type ?? "",
-                status: item.status ?? "Confirmado",
-                image: item.image,
-                href: item.href,
-                sort_order: item.sort_order,
-              })),
-            );
           } else {
-            setEvents(defaultEvents);
+            setEvents((data ?? []).map(mapEvent).sort((a: EventItem, b: EventItem) =>
+              (a.sort_order ?? 0) - (b.sort_order ?? 0) || a.date.localeCompare(b.date)));
           }
         } catch (e) {
           console.error("Error:", e);
@@ -475,36 +466,24 @@ const Events = () => {
     loadEventsData();
   }, [isSupabaseMode]);
 
-  const handleUpdate = useCallback(async (id: number, updates: Partial<EventItem>) => {
+  const handleUpdate = useCallback(async (id: EventItem["id"], updates: Partial<EventItem>) => {
     if (isSupabaseMode) {
-      try {
-        const dbPayload: Record<string, any> = {
-          updated_at: new Date().toISOString(),
-        };
-        if (updates.title !== undefined) { dbPayload.title = updates.title; dbPayload.titulo = updates.title; }
-        if (updates.location !== undefined) { dbPayload.location = updates.location; dbPayload.lugar = updates.location; }
-        if (updates.date !== undefined) { dbPayload.date = updates.date; dbPayload.fecha_inicio = updates.date; }
-        if (updates.participants !== undefined) dbPayload.participants = updates.participants;
-        if (updates.type !== undefined) dbPayload.type = updates.type;
-        if (updates.status !== undefined) dbPayload.status = updates.status;
-        if (updates.image !== undefined) dbPayload.image = updates.image;
-        if (updates.href !== undefined) dbPayload.href = updates.href;
-        if (updates.sort_order !== undefined) dbPayload.sort_order = updates.sort_order;
+      const event = events.find((item) => item.id === id);
+      if (!event) throw new Error("Evento no encontrado.");
+      const dbPayload = eventUpdatePayload(event, updates);
 
-        const { error } = await (supabase as any)
-          .from("eventos")
-          .update(dbPayload)
-          .eq("id", id);
-        
-        if (error) {
-          console.error("Error updating evento:", error);
-          return;
-        }
-        
-        setEvents((prev) => prev.map((e) => (e.id === id ? { ...e, ...updates } : e)));
-      } catch (e) {
-        console.error("Error:", e);
+      const { error } = await (supabase as any)
+        .from("eventos")
+        .update(dbPayload)
+        .eq("id", id)
+        .select("id")
+        .single();
+
+      if (error) {
+        throw error;
       }
+
+      setEvents((prev) => prev.map((e) => (e.id === id ? { ...e, ...updates } : e)));
     } else {
       setEvents((prev) => {
         const updated = prev.map((e) => (e.id === id ? { ...e, ...updates } : e));
@@ -512,40 +491,12 @@ const Events = () => {
         return updated;
       });
     }
-  }, [isSupabaseMode]);
+  }, [isSupabaseMode, events]);
 
-  const handleReset = useCallback(async () => {
-    if (isSupabaseMode) {
-      try {
-        await (supabase as any).from("eventos").delete().neq("id", "0");
-        
-        const { error } = await (supabase as any).from("eventos").insert(
-          defaultEvents.map((e) => ({
-            titulo: e.title,
-            lugar: e.location,
-            fecha_inicio: e.date,
-            participants: e.participants,
-            type: e.type,
-            status: e.status,
-            image: e.image ?? null,
-            href: e.href ?? null,
-            sort_order: e.sort_order ?? null,
-            updated_at: new Date().toISOString(),
-          })),
-        );
-        
-        if (error) {
-          console.error("Error resetting eventos:", error);
-        }
-        setEvents(defaultEvents);
-      } catch (e) {
-        console.error("Error:", e);
-      }
-    } else {
-      saveEventsLocal(defaultEvents);
-      setEvents(defaultEvents);
-    }
-  }, [isSupabaseMode]);
+  const handleReset = useCallback(() => {
+    saveEventsLocal(defaultEvents);
+    setEvents(defaultEvents);
+  }, []);
 
   return (
     <section
@@ -559,7 +510,7 @@ const Events = () => {
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold">
               Próximos Eventos
             </h2>
-            {isAdmin && (
+            {isAdmin && !isSupabaseMode && (
               <Button variant="outline" size="sm" onClick={handleReset} className="text-xs">
                 Restablecer
               </Button>
@@ -591,11 +542,11 @@ const Events = () => {
           <MobileEventAccordion events={events} />
           <div className="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mb-12">
             {events.map((event, index) => (
-              <EventCard 
-                key={event.id} 
-                event={event} 
-                index={index} 
-                isAdmin={isAdmin}
+              <EventCard
+                key={event.id}
+                event={event}
+                index={index}
+                isAdmin={isAdmin && (!isSupabaseMode || !!event.columns)}
                 onUpdate={handleUpdate}
               />
             ))}

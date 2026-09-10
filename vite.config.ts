@@ -35,27 +35,12 @@ export default defineConfig(({ mode }) => ({
     sourcemap: mode !== "production",
     minify: "esbuild",
     target: "esnext",
-    rollupOptions: {
+    manifest: true,
+    rolldownOptions: {
       output: {
         chunkFileNames: "assets/[name]-[hash].js",
         entryFileNames: "assets/[name]-[hash].js",
         assetFileNames: "assets/[name]-[hash].[ext]",
-        manualChunks(id) {
-          if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
-              return 'react-vendor';
-            }
-            if (id.includes('@radix-ui')) {
-              return 'ui-vendor';
-            }
-            if (id.includes('@tanstack')) {
-              return 'query-vendor';
-            }
-            if (id.includes('@supabase')) {
-              return 'supabase-vendor';
-            }
-          }
-        },
       },
     },
     cssCodeSplit: true,

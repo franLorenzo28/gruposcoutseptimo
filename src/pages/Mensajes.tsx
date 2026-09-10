@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState, useRef, useCallback } from "react";
+﻿import { useEffect, useLayoutEffect, useMemo, useState, useRef, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import {
   getEducatorRamaKeys,
   getRamaContactUserIds,
 } from "@/lib/rama-contacts";
+import { useConversationMessages } from "@/hooks/useConversationMessages";
 import { useConversations } from "@/hooks/useQueryData";
 
 interface ProfileLite {
@@ -85,12 +86,19 @@ export default function Mensajes() {
   const [search, setSearch] = useState("");
   const [selectedUser, setSelectedUser] = useState<ProfileLite | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<MessageWithSender[]>([]);
+  const history = useConversationMessages(conversationId);
+  const directoryById = useMemo(() => new Map(directory.map(user => [user.user_id, user])), [directory]);
+  const messages = useMemo<MessageWithSender[]>(() => history.messages.map(message => ({
+    ...message, sender_username: directoryById.get(message.sender_id)?.username,
+    sender_name: directoryById.get(message.sender_id)?.nombre_completo,
+  })), [history.messages, directoryById]);
+  const conversationRequest = useRef(0);
+  const scrollBeforePrepend = useRef<{ height: number; top: number } | null>(null);
   const [newMessage, setNewMessage] = useState("");
   const [currentUserId, setCurrentUserId] = useState<string>("");
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const notifiedMessageIdsRef = useRef<Set<string>>(new Set());
-  const initializedConversationRef = useRef<Set<string>>(new Set());
+  const initializedConversationRef = useRef<string | null>(null);
   const autoOpenedTargetRef = useRef<string | null>(null);
   const { toast } = useToast();
   const { session: memberSession } = useMemberAuth();
@@ -98,7 +106,7 @@ export default function Mensajes() {
 
   const enrichedConversations = useMemo(() => {
     return conversations.map((conv) => {
-      const other = directory.find((u) => u.user_id === conv.other_user_id);
+      const other = directoryById.get(conv.other_user_id);
       return {
         ...conv,
         otherName: other?.nombre_completo || other?.username || "Scout",
@@ -106,11 +114,13 @@ export default function Mensajes() {
         otherAvatar: other?.avatar_url || null,
       };
     });
-  }, [conversations, directory]);
+  }, [conversations, directoryById]);
 
   const backToMainMenu = useCallback(() => {
     setConversationId(null);
-    setMessages([]);
+    ++conversationRequest.current;
+    setNewMessage("");
+    scrollBeforePrepend.current = null;
     setSelectedUser(null);
   }, []);
 
@@ -203,16 +213,10 @@ export default function Mensajes() {
       const currentUser = session?.user ?? null;
       if (currentUser) {
         setCurrentUserId(currentUser.id);
-        const { data: iFollow } = await supabase
-          .from("follows")
-          .select("followed_id")
-          .eq("follower_id", currentUser.id)
-          .eq("status", "accepted");
-        const { data: followsMe } = await supabase
-          .from("follows")
-          .select("follower_id")
-          .eq("followed_id", currentUser.id)
-          .eq("status", "accepted");
+        const [{ data: iFollow }, { data: followsMe }] = await Promise.all([
+          supabase.from("follows").select("followed_id").eq("follower_id", currentUser.id).eq("status", "accepted"),
+          supabase.from("follows").select("follower_id").eq("followed_id", currentUser.id).eq("status", "accepted"),
+        ]);
         const iFollowSet = new Set((iFollow || []).map((f) => f.followed_id));
         const followsMeSet = new Set(
           (followsMe || []).map((f) => f.follower_id),
@@ -284,17 +288,20 @@ export default function Mensajes() {
   }, [search, directory, currentUserId, mutualFollows, ramaContactIds]);
 
   const startConversationWithUser = useCallback(async (user: ProfileLite) => {
+    const request = ++conversationRequest.current;
     setSelectedUser(user);
+    setConversationId(null);
+    setNewMessage("");
+    scrollBeforePrepend.current = null;
     try {
       const { data, error } = await supabase.rpc(
         "create_or_get_conversation",
         { other_user_id: user.user_id },
       );
       if (error) throw error;
-      setConversationId(String(data));
-      loadMessages(String(data));
-    } catch (e: any) {
-      toast({ title: "Error", description: e.message, variant: "destructive" });
+      if (request === conversationRequest.current) setConversationId(String(data));
+    } catch (e: unknown) {
+      if (request === conversationRequest.current) toast({ title: "Error", description: e instanceof Error ? e.message : "No se pudo abrir la conversación.", variant: "destructive" });
     }
   }, [toast]);
 
@@ -328,126 +335,59 @@ export default function Mensajes() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [conversationId, backToMainMenu]);
 
-  const loadMessages = async (convId: string) => {
-    const { data, error } = await supabase
-      .from("messages")
-      .select("*")
-      .eq("conversation_id", convId)
-      .order("created_at", { ascending: true });
-    if (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-      return;
-    }
-    const messagesWithSender: MessageWithSender[] = (data as Message[]).map(
-      (msg) => {
-        const sender = directory.find((u) => u.user_id === msg.sender_id);
-        return {
-          ...msg,
-          sender_username: sender?.username,
-          sender_name: sender?.nombre_completo,
-        };
-      },
-    );
-    const isInitialLoad = !initializedConversationRef.current.has(convId);
-    if (isInitialLoad) {
-      initializedConversationRef.current.add(convId);
-      messagesWithSender.forEach((msg) => {
-        notifiedMessageIdsRef.current.add(msg.id);
-      });
-      const lastMsg = messagesWithSender[messagesWithSender.length - 1];
-      if (lastMsg) {
-        toast({
-          title: "Último mensaje",
-          description: `Enviado el ${formatMessageDateTime(lastMsg.created_at)}`,
-        });
-      }
-    }
-    setMessages((prev) => {
-      if (!isInitialLoad) {
-        const prevIds = new Set(prev.map((m) => m.id));
-        messagesWithSender.forEach((msg) => {
-          if (!prevIds.has(msg.id)) notifyIncomingMessage(msg);
-        });
-      }
-      return messagesWithSender;
-    });
-    setTimeout(() => {
-      const el = messagesContainerRef.current;
-      if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
-    }, 100);
-  };
-
-  // Real-time/polling para mensajes nuevos
+  const newestMessage = messages[messages.length - 1];
   useEffect(() => {
-    if (!conversationId) return;
-    const channelPrefix = `messages:${conversationId}:`;
-    supabase
-      .getChannels()
-      .filter((existing) => existing.topic.startsWith(channelPrefix))
-      .forEach((existing) => {
-        void supabase.removeChannel(existing);
-      });
+    if (history.loading || !conversationId) return;
+    if (initializedConversationRef.current !== conversationId) {
+      initializedConversationRef.current = conversationId;
+      notifiedMessageIdsRef.current = new Set(messages.map(message => message.id));
+    } else if (newestMessage) {
+      notifyIncomingMessage(newestMessage);
+    }
+  }, [conversationId, history.loading, newestMessage, messages, notifyIncomingMessage]);
 
-    const channel = supabase.channel(`messages:${conversationId}:${Date.now()}`);
-    channel.on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "messages",
-          filter: `conversation_id=eq.${conversationId}`,
-        },
-        (payload) => {
-          const newMsg = payload.new as Message;
-          const sender = directory.find((u) => u.user_id === newMsg.sender_id);
-          const enriched: MessageWithSender = {
-            ...newMsg,
-            sender_username: sender?.username,
-            sender_name: sender?.nombre_completo,
-          };
-          setMessages((prev) => {
-            if (prev.some((m) => m.id === enriched.id)) return prev;
-            notifyIncomingMessage(enriched);
-            return [...prev, enriched];
-          });
-          setTimeout(() => {
-            const el = messagesContainerRef.current;
-            if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
-          }, 100);
-        },
-      );
-    channel.subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [conversationId, directory]);
+  useLayoutEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    const previous = scrollBeforePrepend.current;
+    if (previous) {
+      container.scrollTop = previous.top + container.scrollHeight - previous.height;
+      scrollBeforePrepend.current = null;
+    }
+  }, [messages]);
+
+  useEffect(() => {
+    if (history.loading) return;
+    const container = messagesContainerRef.current;
+    if (container) container.scrollTop = container.scrollHeight;
+  }, [conversationId, newestMessage?.id, history.loading]);
+
+  const loadOlderMessages = async () => {
+    const container = messagesContainerRef.current;
+    if (container) scrollBeforePrepend.current = { height: container.scrollHeight, top: container.scrollTop };
+    if (!await history.loadOlder()) scrollBeforePrepend.current = null;
+  };
 
   const send = async () => {
     if (!conversationId || !newMessage.trim()) return;
 
     const tempMessage = newMessage.trim();
+    const request = conversationRequest.current;
     setNewMessage(""); // Limpiar inmediatamente para mejor UX
 
     try {
       const inserted = await sendDM(conversationId, tempMessage);
-      const sender = directory.find((u) => u.user_id === inserted.sender_id);
+      const sender = directoryById.get(inserted.sender_id);
       const enriched: MessageWithSender = {
         ...inserted,
         sender_username: sender?.username,
         sender_name: sender?.nombre_completo,
       };
-      setMessages((prev) => [...prev, enriched]);
-      setTimeout(() => {
-        const el = messagesContainerRef.current;
-        if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
-      }, 50);
-    } catch (e: any) {
-      setNewMessage(tempMessage); // Restaurar mensaje si falla
-      toast({ title: "Error", description: e.message, variant: "destructive" });
+      history.append(enriched);
+    } catch (e: unknown) {
+      if (request !== conversationRequest.current) return;
+      setNewMessage(current => current || tempMessage);
+      toast({ title: "Error", description: e instanceof Error ? e.message : "No se pudo enviar el mensaje.", variant: "destructive" });
     }
   };
 
@@ -647,7 +587,18 @@ export default function Mensajes() {
                       className="min-h-0 flex-1 overflow-auto bg-[radial-gradient(circle_at_top,hsl(var(--primary)/0.06),transparent_42%)] p-3 sm:p-5"
                     >
                       <div className="space-y-3">
-                        {messages.length === 0 ? (
+                        {history.hasMore && (
+                          <div className="text-center">
+                            <Button variant="outline" size="sm" disabled={history.loadingOlder} onClick={() => void loadOlderMessages()}>
+                              {history.loadingOlder ? "Cargando…" : "Cargar mensajes anteriores"}
+                            </Button>
+                          </div>
+                        )}
+                        {history.error && <div role="alert" className="text-sm text-destructive">
+                          {history.error}
+                          <Button variant="ghost" size="sm" onClick={history.hasMore ? () => void loadOlderMessages() : history.retry}>Reintentar</Button>
+                        </div>}
+                        {history.loading ? <p role="status" className="text-sm text-muted-foreground">Cargando mensajes…</p> : messages.length === 0 && !history.error ? (
                           <div className="rounded-2xl border border-dashed border-border/70 bg-background/65 p-6 text-center text-sm text-muted-foreground">
                             Sin mensajes aún. Enviá el primero.
                           </div>
@@ -768,6 +719,5 @@ export default function Mensajes() {
     </EmailVerificationGuard>
   );
 }
-
 
 

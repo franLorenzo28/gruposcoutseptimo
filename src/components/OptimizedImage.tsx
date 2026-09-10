@@ -5,6 +5,7 @@ interface OptimizedImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, 
   src: string;
   alt: string;
   webpSrc?: string;
+  webpSrcSet?: string;
   fallbackSrc?: string;
   aspectRatio?: string;
   objectFit?: "contain" | "cover" | "fill" | "none";
@@ -22,6 +23,7 @@ interface OptimizedImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, 
 export function OptimizedImage({
   src,
   webpSrc,
+  webpSrcSet,
   fallbackSrc,
   alt,
   className,
@@ -30,14 +32,19 @@ export function OptimizedImage({
   priority = false,
   loading,
   fetchPriority,
+  sizes,
+  onLoad,
+  onError,
   ...props
 }: OptimizedImageProps) {
-  const [hasError, setHasError] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [failedSource, setFailedSource] = useState<string | null>(null);
+  const [loadedSource, setLoadedSource] = useState<string | null>(null);
+  const sourceKey = `${src}|${webpSrc ?? ""}`;
+  const hasError = failedSource === sourceKey;
+  const isLoaded = loadedSource === sourceKey;
 
   const displaySrc = hasError && fallbackSrc ? fallbackSrc : src;
   const loadingMode = priority ? "eager" : (loading || "lazy");
-  void fetchPriority;
 
   return (
     <div 
@@ -52,7 +59,7 @@ export function OptimizedImage({
       <picture>
         {/* WebP version si está disponible */}
         {webpSrc && !hasError && (
-          <source srcSet={webpSrc} type="image/webp" />
+          <source srcSet={webpSrcSet || webpSrc} sizes={sizes} type="image/webp" />
         )}
         
         {/* Imagen original */}
@@ -60,11 +67,14 @@ export function OptimizedImage({
           src={displaySrc}
           alt={alt}
           loading={loadingMode}
+          fetchPriority={fetchPriority ?? (priority ? "high" : "auto")}
+          sizes={sizes}
           decoding="async"
-          onLoad={() => setIsLoaded(true)}
-          onError={() => {
-            setHasError(true);
-            setIsLoaded(true);
+          onLoad={(event) => { setLoadedSource(sourceKey); onLoad?.(event); }}
+          onError={(event) => {
+            setFailedSource(sourceKey);
+            setLoadedSource(sourceKey);
+            onError?.(event);
           }}
           className={cn(
             "h-full w-full transition-opacity duration-300",

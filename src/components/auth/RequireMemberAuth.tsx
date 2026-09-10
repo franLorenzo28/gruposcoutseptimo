@@ -14,7 +14,7 @@ export default function RequireMemberAuth({
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/interno/auth" replace state={{ from: location.pathname }} />;
+    return <Navigate to="/interno/login" replace state={{ from: `${location.pathname}${location.search}${location.hash}` }} />;
   }
 
   return <>{children}</>;

@@ -1,3 +1,5 @@
+import { readOwnProfile } from "@/lib/profile-reader";
+import type { Profile } from "@/types/profile";
 import { supabase } from "@/integrations/supabase/client";
 import { getBackendURL } from "@/lib/env";
 
@@ -200,6 +202,7 @@ export async function getAuthUser(): Promise<{
   account_status?: string | null;
   account_classification?: string | null;
   isLocal: boolean;
+  profile?: Profile;
 } | null> {
   if (isLocalBackend()) {
     const token = getStoredLocalAccessToken();
@@ -231,11 +234,7 @@ export async function getAuthUser(): Promise<{
   const user = data.session?.user;
   if (!user) return null;
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("account_status, account_classification")
-    .eq("user_id", user.id)
-    .maybeSingle();
+  const { data: profile } = await readOwnProfile(user.id);
 
   return {
     id: user.id,
@@ -244,5 +243,6 @@ export async function getAuthUser(): Promise<{
     account_status: profile?.account_status ?? null,
     account_classification: profile?.account_classification ?? null,
     isLocal: false,
+    profile: profile ?? undefined,
   };
 }

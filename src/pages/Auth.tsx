@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { getPostAuthPath } from "@/lib/auth-redirect";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -223,6 +224,8 @@ const Auth = () => {
   const [whatsappGateActive, setWhatsappGateActive] = useState(false);
   const [registrationSubmitted, setRegistrationSubmitted] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const postAuthPath = getPostAuthPath(location);
   const { toast } = useToast();
   const isLogin = authTab === "login";
   const oauthSafety = useMemo(() => getOAuthSafety(), []);
@@ -333,12 +336,12 @@ const Auth = () => {
     // Usar la misma sesión validada que exige RequireMemberAuth, incluida su
     // identidad, evita el rebote auth → dashboard → auth con perfiles incompletos.
     if (memberSession?.authUserId === user.id) {
-      navigate("/interno/dashboard", { replace: true });
+      navigate(postAuthPath, { replace: true });
       return;
     }
     setInlineMessage(accessError || "Tu sesión está iniciada, pero falta completar tu perfil para acceder al área de miembros.");
   }, [user, isUserLoading, accountStatus, memberSession, isCheckingAuth,
-    accessError, needsGoogleCompletion, showWhatsappContacts, whatsappGateActive, pendingSignup, registrationSubmitted, navigate]);
+    accessError, needsGoogleCompletion, showWhatsappContacts, whatsappGateActive, pendingSignup, registrationSubmitted, navigate, postAuthPath]);
 
   const handleGoogleProfileCompletion = async (e: React.FormEvent) => {
     e.preventDefault();

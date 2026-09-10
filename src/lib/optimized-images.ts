@@ -5,6 +5,8 @@
 
 import heroJpeg from "@/assets/hero-scouts-optimized.jpg";
 import heroWebp from "@/assets/hero-scouts.webp";
+import hero640 from "@/assets/hero-scouts-640.webp";
+import hero960 from "@/assets/hero-scouts-960.webp";
 
 import tropaJpeg from "@/assets/tropa-nueva-optimized.jpeg";
 import tropaWebp from "@/assets/tropa-nueva.webp";
@@ -50,5 +52,9 @@ export function getOptimizedImageProps(
   return {
     src: image.jpeg,
     webpSrc: image.webp,
+    ...(key === "hero" ? {
+      webpSrcSet: `${hero640} 640w, ${hero960} 960w, ${heroWebp} 1200w`,
+      sizes: "100vw",
+    } : {}),
   };
 }

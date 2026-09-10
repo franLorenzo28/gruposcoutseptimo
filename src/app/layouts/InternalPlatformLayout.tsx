@@ -10,7 +10,7 @@ import { InternalPlatformNav } from "@/app/components/InternalPlatformNav";
 
 export function InternalPlatformLayout() {
   const location = useLocation();
-  const isAuthPage = location.pathname === "/interno/auth" || location.pathname === "/interno/auth/callback";
+  const isAuthPage = /^\/interno\/(?:auth(?:\/callback)?|login|restablecer-password)\/?$/i.test(location.pathname);
 
   if (isAuthPage) {
     return (

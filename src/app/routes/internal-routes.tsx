@@ -49,6 +49,7 @@ export const internalRoutes: RouteObject = {
   children: [
     { index: true, element: <Navigate to="/interno/dashboard" replace /> },
     { path: "auth", element: <Auth /> },
+    { path: "login", element: <Auth /> },
     { path: "restablecer-password", element: <RestablecerPassword /> },
     { path: "auth/callback", element: <Auth /> },
     {
@@ -216,9 +217,9 @@ export const internalRoutes: RouteObject = {
     {
       path: "mensajes",
       element: (
-        <RequireMemberAuth>
+        <RequireApproval>
           <Mensajes />
-        </RequireMemberAuth>
+        </RequireApproval>
       ),
     },
     {
