@@ -51,7 +51,7 @@ interface NavSection {
 const mainLinks: NavLink[] = [
   { name: "Inicio", path: "/", icon: Home },
   { name: "Historia", path: "/historia", icon: History },
-  { name: "Movimiento Scout", path: "/movimiento-scout", icon: Shield },
+  { name: "Unidades", path: "/#unidades", icon: Compass },
   { name: "Eventos", path: "/eventos", icon: Calendar },
   { name: "Contacto", path: "/contacto", icon: Mail },
 ];
@@ -60,6 +60,7 @@ const exploreSections: NavSection[] = [
   {
     label: "Archivo y memoria",
     links: [
+      { name: "Movimiento Scout", path: "/movimiento-scout", icon: Shield, description: "Nuestro método educativo" },
       { name: "Archivo", path: "/archivo", icon: Archive, description: "Historia documentada del grupo" },
       { name: "Scoutpedia", path: "/archivo/scoutpedia", icon: Compass, description: "Conocimiento y método scout" },
       { name: "Locales", path: "/archivo/locales", icon: Building, description: "Los espacios que habitamos" },
@@ -75,7 +76,7 @@ const exploreSections: NavSection[] = [
 
 const mobileSections: NavSection[] = [
   { label: "Conocer el grupo", links: mainLinks },
-  ...exploreSections,
+  { label: "Explorar", links: exploreSections[0]!.links },
 ];
 
 export default function Navigation() {
@@ -83,7 +84,7 @@ export default function Navigation() {
   const location = useLocation();
   const isScrolled = useScrolledHeader();
 
-  useEffect(() => setIsMobileMenuOpen(false), [location.pathname]);
+  useEffect(() => setIsMobileMenuOpen(false), [location.pathname, location.hash]);
 
   const isActive = (path: string) => {
     if (path === "/") return location.pathname === "/";

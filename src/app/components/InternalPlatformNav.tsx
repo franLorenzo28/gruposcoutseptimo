@@ -62,7 +62,7 @@ interface InternalNavSection {
 
 const primaryLinks: InternalNavLink[] = [
   { to: "/interno/dashboard", label: "Inicio", icon: LayoutDashboard },
-  { to: "/interno/usuarios", label: "Comuni 7", icon: User2 },
+  { to: "/interno/usuarios", label: "Comunidad", icon: User2 },
   { to: "/interno/mensajes", label: "Mensajes", icon: MessageCircle },
   { to: "/interno/agenda", label: "Agenda", icon: CalendarDays },
   { to: "/interno/anuncios", label: "Anuncios", icon: BellRing },

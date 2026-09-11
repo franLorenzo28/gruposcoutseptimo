@@ -1,4 +1,4 @@
-﻿import {
+import {
   Shield,
   Heart,
   Compass,
@@ -12,13 +12,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import {
-  Dialog,
-  DialogTrigger,
-  DialogContent,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
 import { Reveal } from "@/components/Reveal";
               import { OptimizedImage } from "@/components/OptimizedImage";
               import { getOptimizedImageProps } from "@/lib/optimized-images";
@@ -335,64 +328,16 @@ const About = () => {
                 return (
                   <div key={branch.title} className="contents">
                     <Reveal>
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Card
-                            className={`card-hover border border-border/60 shadow-sm cursor-pointer transition-all duration-300 group h-[190px] sm:h-[190px] w-full [will-change:transform] ${branch.hoverClass}`}
-                          >
-                            <CardContent className="p-4 sm:p-5 flex flex-col items-center justify-center h-full text-center gap-2.5">
-                              <div className={`w-14 h-14 bg-muted/30 rounded-xl flex items-center justify-center transition-all duration-300 ${branch.iconHoverBgClass}`}>
-                                <branch.icon
-                                  className={`w-7 h-7 text-current transition-colors duration-300 ${branch.hoverIconClass}`}
-                                />
-                              </div>
-                              <h3 className="text-base font-bold leading-tight line-clamp-2 min-h-[2.5rem] flex items-center transition-colors duration-300">
-                                {branch.title}
-                              </h3>
-                              <p className="text-xs text-muted-foreground group-hover:text-white line-clamp-2 min-h-[2rem] transition-colors duration-300">
-                                {branch.description}
-                              </p>
-                            </CardContent>
-                          </Card>
-                        </DialogTrigger>
-
-                        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto border-border/70 bg-card/95 backdrop-blur-lg">
-                          <div className="grid gap-6 items-start md:grid-cols-2">
-                            <div>
-                              <DialogTitle className="text-2xl mb-4">
-                                {branch.title}
-                              </DialogTitle>
-                              <DialogDescription className="space-y-4">
-                                <p className="text-base text-foreground/90">{branch.description}</p>
-                                <p className="text-muted-foreground">{branch.detailText}</p>
-                              </DialogDescription>
-                            </div>
-
-                            <div className="w-full space-y-4">
-                              <div className="overflow-hidden rounded-xl border border-border/60">
-                                <img
-                                  src={branch.image ?? communityImages.src}
-                                  alt={`Foto representativa de la unidad ${branch.title}`}
-                                  className={`w-full bg-transparent ${
-                                    branch.route === "tropa"
-                                      ? "max-h-[420px] object-cover"
-                                      : "aspect-video object-cover"
-                                  }`}
-                                  loading="lazy"
-                                  decoding="async"
-                                />
-                              </div>
-                              <div className="flex gap-3 justify-end">
-                                <Button asChild size="sm">
-                                  <Link to={`/unidades/${branch.route}`}>
-                                    Más información
-                                  </Link>
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
+                      <Link to={`/unidades/${branch.route}`} className="group block h-full rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                        <Card className="h-full border-border bg-card transition-colors group-hover:border-primary/60">
+                          <CardContent className="flex min-h-48 flex-col items-center gap-3 p-4 text-center sm:p-5">
+                            <branch.icon className="size-7 text-primary" aria-hidden="true" />
+                            <h3 className="text-base font-bold">{branch.title}</h3>
+                            <p className="text-sm leading-relaxed text-muted-foreground">{branch.description}</p>
+                            <span className="mt-auto text-sm font-semibold text-primary">Conocer la unidad →</span>
+                          </CardContent>
+                        </Card>
+                      </Link>
                     </Reveal>
                   </div>
                 );

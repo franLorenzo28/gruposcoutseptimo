@@ -4,11 +4,7 @@ import { Link } from "react-router-dom";
 import { Reveal } from "@/components/Reveal";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { getOptimizedImageProps } from "@/lib/optimized-images";
-import { useToast } from "@/hooks/use-toast";
-import { useSupabaseUser } from "@/providers/AppProviders";
 const Hero = () => {
-  const { toast } = useToast();
-  const { user } = useSupabaseUser();
   const heroImages = getOptimizedImageProps("hero");
 
   const scrollToWithOffset = (id: string, offset = 120) => {
@@ -18,16 +14,6 @@ const Hero = () => {
     window.scrollTo({ top, behavior: "smooth" });
   };
 
-  const handleJoinClick: React.MouseEventHandler<HTMLAnchorElement> = (e) => {
-    if (user) {
-      // Evita navegar a /auth si ya está logueado
-      e.preventDefault();
-      toast({
-        title:
-          "Gracias por ser parte de la página web oficial del Grupo Scout Séptimo",
-      });
-    }
-  };
   return (
     <section 
       className="relative min-h-screen flex items-center justify-center overflow-hidden"
@@ -78,28 +64,12 @@ const Hero = () => {
             {/* CTA Buttons */}
             <Reveal>
               <div className="flex flex-col sm:flex-row gap-4 pt-2">
-                <Link to="/interno" className="group">
-                  <Button
-                    size="lg"
-                    variant="hero"
-                    className="text-base sm:text-lg w-full sm:w-auto whitespace-normal text-center leading-tight transition-all duration-300 hover:shadow-2xl hover:scale-110"
-                    aria-label="Entrar a la Plataforma Interna"
-                  >
-                    Plataforma Interna
-                    <ArrowRight className="ml-2 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
-                  </Button>
-                </Link>
-
-                <Link to="/auth" className="group" onClick={handleJoinClick}>
-                  <Button
-                    size="lg"
-                    variant="heroSecondary"
-                    className="text-base sm:text-lg w-full sm:w-auto whitespace-normal text-center leading-tight transition-all duration-300 hover:shadow-xl hover:scale-110"
-                    aria-label="Únete al Grupo Scout Séptimo"
-                  >
-                    Únete al Grupo
-                  </Button>
-                </Link>
+                <Button asChild size="lg" variant="hero" className="text-base sm:text-lg">
+                  <Link to="/contacto">Quiero sumarme<ArrowRight className="ml-2" aria-hidden="true" /></Link>
+                </Button>
+                <Button asChild size="lg" variant="heroSecondary" className="text-base sm:text-lg">
+                  <Link to="/interno">Acceso de miembros</Link>
+                </Button>
 
                 <Button
                   onClick={() => {

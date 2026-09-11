@@ -1,281 +1,77 @@
 import { Link } from "react-router-dom";
-import { Badge } from "@/components/ui/badge";
+import { ArrowRight, CalendarDays, FolderOpen, Megaphone, MessageCircle, Users, Images } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { InternalPageHeader } from "@/app/internal/components/InternalPageHeader";
 import { useMemberAuth } from "@/context/MemberAuthContext";
 import { getUpcomingRamaEvents, ramaConfig, readRamaEvents } from "@/app/internal/rama-storage";
-import {
-  BookOpen,
-  CalendarCheck,
-  CalendarDays,
-  CalendarHeart,
-  ClipboardList,
-  FolderOpen,
-  Library,
-  Megaphone,
-  MessageCircle,
-  ShieldCheck,
-  Users,
-  UploadCloud,
-} from "lucide-react";
+import { formatEventDate } from "@/lib/event-dates";
+import { NewsPopup } from "@/components/layout/NewsPopup";
+
+const shortcuts = [
+  { to: "/interno/anuncios", title: "Anuncios", description: "Avisos de tu unidad", icon: Megaphone },
+  { to: "/interno/mensajes", title: "Mensajes", description: "Tus conversaciones", icon: MessageCircle },
+  { to: "/interno/documentos", title: "Documentos", description: "Materiales del grupo", icon: FolderOpen },
+  { to: "/interno/usuarios", title: "Comunidad", description: "Miembros del Séptimo", icon: Users },
+  { to: "/interno/galeria", title: "Galería", description: "Fotos de nuestras actividades", icon: Images },
+  { to: "/interno/agenda", title: "Agenda", description: "Todos los encuentros", icon: CalendarDays },
+];
+const resources = [
+  { to: "/interno/narrativas", title: "Narrativas" },
+  { to: "/interno/capsula-tiempo", title: "Cápsula del tiempo" },
+  { to: "/interno/am-lagerfeuer", title: "Am Lagerfeuer" },
+  { to: "/interno/jamborees", title: "Jamborees" },
+];
+const upcomingModules = [
+  { to: "/interno/planificacion", title: "Planificación" },
+  { to: "/interno/formularios", title: "Formularios" },
+  { to: "/interno/biblioteca", title: "Biblioteca" },
+  { to: "/interno/subidas", title: "Progresión personal" },
+];
 
 export default function InternalDashboardPage() {
   const { session } = useMemberAuth();
-
   if (!session) return null;
-
   const allowedRamas = session.allowedRamas?.length ? session.allowedRamas : [session.rama];
   const primaryRama = ramaConfig[session.rama];
-  const upcomingEvents = getUpcomingRamaEvents(readRamaEvents(session.rama));
-
-  const identityLinks = [
-    {
-      to: "/interno/narrativas",
-      title: "Narrativas",
-      description: "Recursos y reflexiones que construyen nuestra identidad grupal.",
-      icon: BookOpen,
-    },
-    {
-      to: "/interno/documentos",
-      title: "Documentos",
-      description: "Materiales institucionales y documentos generales del grupo.",
-      icon: FolderOpen,
-    },
-    {
-      to: "/interno/agenda",
-      title: "Agenda",
-      description: "Calendario operativo y próximos encuentros.",
-      icon: CalendarDays,
-    },
-    {
-      to: "/interno/planificacion",
-      title: "Planificación",
-      description: "Ciclo de programa y actividades educativas de unidad.",
-      icon: CalendarCheck,
-    },
-    {
-      to: "/interno/biblioteca",
-      title: "Biblioteca Scout",
-      description: "Manuales, guías metodológicas y recursos pedagógicos.",
-      icon: Library,
-    },
-    {
-      to: "/interno/formularios",
-      title: "Formularios",
-      description: "Inscripciones, fichas médicas y autorizaciones.",
-      icon: ClipboardList,
-    },
-    {
-      to: "/interno/subidas",
-      title: "Archivos y Subidas",
-      description: "Archivos compartidos exclusivos de tu unidad.",
-      icon: UploadCloud,
-    },
-    {
-      to: "/interno/capsula-tiempo",
-      title: "Cápsula del Tiempo",
-      description: "Archivos históricos y recuerdos especiales.",
-      icon: FolderOpen,
-    },
-    {
-      to: "/interno/am-lagerfeuer",
-      title: "Am Lagerfeuer",
-      description: "Nuestra publicación oficial histórica.",
-      icon: BookOpen,
-    },
-    {
-      to: "/interno/jamborees",
-      title: "Jamborees",
-      description: "Participación en eventos internacionales.",
-      icon: FolderOpen,
-    },
-  ];
-
-  const platformLinks = [
-    {
-      to: "/interno/usuarios",
-      title: "Miembros",
-      description: "Directorio de miembros y roles en la comunidad.",
-      icon: Users,
-    },
-    {
-      to: "/interno/mensajes",
-      title: "Mensajes",
-      description: "Conversaciones directas con otros scouts y educadores.",
-      icon: MessageCircle,
-    },
-    {
-      to: "/interno/galeria",
-      title: "Galería",
-      description: "Fotos y recuerdos de nuestras actividades.",
-      icon: FolderOpen,
-    },
-    {
-      to: "/interno/anuncios",
-      title: "Anuncios",
-      description: "Difusiones oficiales y comunicados generales del grupo.",
-      icon: Megaphone,
-    },
-  ];
-
+  const events = getUpcomingRamaEvents(readRamaEvents(session.rama));
   return (
-    <section className="mx-auto flex w-full max-w-7xl flex-col gap-5 px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
-      <InternalPageHeader
-        eyebrow="Dashboard interno"
-        title={`Centro operativo de ${primaryRama.titulo}`}
-        description={`Bienvenido, ${session.nombre}. Desde aquí ordenas la vida interna del grupo con acceso rápido a documentos, anuncios, agenda y tu panel de unidad.`}
-        meta={
-          <div className="flex flex-wrap gap-2">
-            <Badge variant="outline" className="rounded-full bg-background/80">
-              Rama base: {primaryRama.titulo}
-            </Badge>
-            <Badge variant="outline" className="rounded-full bg-background/80">
-              Acceso: {session.accessType}
-            </Badge>
-            {session.isRamaAdmin ? (
-              <Badge className="rounded-full bg-emerald-600 text-white hover:bg-emerald-700">
-                <ShieldCheck className="mr-1 h-4 w-4" />
-                Educador admin
-              </Badge>
-            ) : null}
-          </div>
-        }
-      />
-
-      <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-        <div className="space-y-8">
-          {/* Plataforma Interna Section */}
-          <div>
-            <h2 className="text-xl font-bold mb-4 tracking-tight">Plataforma Interna</h2>
-            <div className="grid gap-4 sm:grid-cols-2">
-              {platformLinks.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Card key={item.to} className="border-border/70 bg-card/85 shadow-sm transition-all hover:bg-card/100 hover:shadow-md">
-                    <CardContent className="space-y-4 p-5">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="rounded-2xl bg-primary/10 p-3 text-primary">
-                          <Icon className="h-5 w-5" />
-                        </div>
-                        <Button asChild variant="outline" size="sm" className="rounded-full">
-                          <Link to={item.to}>Abrir</Link>
-                        </Button>
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-bold">{item.title}</h3>
-                        <p className="mt-1 text-sm text-muted-foreground">{item.description}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Identidad / Grupo Section */}
-          <div>
-            <h2 className="text-xl font-bold mb-4 tracking-tight flex items-center gap-2">
-              <CalendarHeart className="h-5 w-5 text-scout-yellow" />
-              Identidad y Grupo
-            </h2>
-            <div className="grid gap-4 sm:grid-cols-2">
-              {identityLinks.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Card
-                    key={item.to}
-                    className="border-l-4 border-l-scout-yellow/70 border-border/50 bg-gradient-to-br from-amber-50/40 to-card shadow-sm transition-all hover:shadow-md dark:from-amber-950/10 dark:to-card"
-                  >
-                    <CardContent className="space-y-4 p-5">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="rounded-2xl bg-scout-yellow/15 p-3 text-scout-yellow">
-                          <Icon className="h-5 w-5" />
-                        </div>
-                        <Button asChild variant="outline" size="sm" className="rounded-full border-scout-yellow/30 text-amber-800 hover:bg-scout-yellow/10 dark:text-amber-200">
-                          <Link to={item.to}>Abrir</Link>
-                        </Button>
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-bold text-amber-900 dark:text-amber-100">{item.title}</h3>
-                        <p className="mt-1 text-sm text-muted-foreground">{item.description}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          </div>
+    <section className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
+      <InternalPageHeader eyebrow="Tu espacio en el Séptimo" title={`Hola, ${session.nombre.split(" ")[0]}`} description="Tu unidad, los próximos encuentros y lo que necesitas para participar."
+        meta={<Button asChild><Link to={`/interno/unidades/${session.rama}`}>Mi unidad · {primaryRama.titulo}<ArrowRight aria-hidden="true" /></Link></Button>} />
+      <Card className="border-l-4 border-l-primary">
+        <CardHeader className="flex-row items-center justify-between gap-3">
+          <CardTitle className="text-xl">Próximos eventos</CardTitle>
+          <Button asChild variant="outline" size="sm"><Link to="/interno/agenda">Ver agenda</Link></Button>
+        </CardHeader>
+        <CardContent>
+          {events.length ? <ul className="grid gap-4 sm:grid-cols-3">
+            {events.slice(0, 3).map(event => <li key={event.id} className="flex flex-col gap-1">
+              <p className="text-sm font-semibold text-primary">{formatEventDate(event.fecha)}{event.hora ? ` · ${event.hora}` : ""}</p>
+              <h3 className="text-base font-semibold">{event.titulo}</h3>
+              {event.lugar && <p className="text-sm text-muted-foreground">{event.lugar}</p>}
+            </li>)}
+          </ul> : <p className="text-sm leading-relaxed text-muted-foreground">Todavía no hay próximos encuentros en la agenda de {primaryRama.titulo}. Consulta los anuncios de tu unidad para conocer las novedades.</p>}
+        </CardContent>
+      </Card>
+      <section aria-labelledby="daily-tools" className="flex flex-col gap-3">
+        <h2 id="daily-tools" className="text-xl font-semibold">A mano</h2>
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+          {shortcuts.map(({ to, title, description, icon: Icon }) => <Link key={to} to={to} className="group flex flex-col gap-2 rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/50 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:flex-row sm:items-center sm:gap-4">
+            <Icon className="size-5 shrink-0 text-primary" aria-hidden="true" />
+            <div><h3 className="text-base font-semibold">{title}</h3><p className="mt-1 text-sm text-muted-foreground">{description}</p></div>
+          </Link>)}
         </div>
-
-        <div className="space-y-4">
-          <Card className="border-border/70 bg-card/85 shadow-sm">
-            <CardContent className="space-y-4 p-5">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    Unidades habilitadas
-                  </p>
-                  <h2 className="mt-1 text-lg font-bold">Cobertura interna</h2>
-                </div>
-                <Badge variant="outline" className="rounded-full">
-                  {allowedRamas.length} unidad{allowedRamas.length === 1 ? "" : "es"}
-                </Badge>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {allowedRamas.map((rama) => (
-                  <Link key={rama} to={`/interno/unidades/${rama}`}>
-                    <Badge className="rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors cursor-pointer">
-                      {ramaConfig[rama].titulo} &rarr;
-                    </Badge>
-                  </Link>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/70 bg-card/85 shadow-sm">
-            <CardContent className="space-y-4 p-5">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    Agenda inmediata
-                  </p>
-                  <h2 className="mt-1 text-lg font-bold">Próximos eventos</h2>
-                </div>
-                <Button asChild variant="ghost" size="sm" className="rounded-full">
-                  <Link to="/interno/agenda">Ver agenda</Link>
-                </Button>
-              </div>
-              {upcomingEvents.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-border/70 bg-background/70 p-5 text-center">
-                  <CalendarDays className="mx-auto h-8 w-8 text-muted-foreground/50" />
-                  <p className="mt-2 text-sm font-medium text-muted-foreground">
-                    Sin eventos próximos
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground/70">
-                    Cargá actividades desde la sección Agenda para verlas aquí.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {upcomingEvents.slice(0, 3).map((event) => (
-                    <article key={event.id} className="rounded-2xl border border-border/70 bg-background/80 p-4">
-                      <p className="text-sm font-bold">{event.titulo}</p>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {event.fecha} {event.hora ? `- ${event.hora}` : ""}
-                      </p>
-                      {event.lugar ? (
-                        <p className="mt-1 text-xs text-muted-foreground">{event.lugar}</p>
-                      ) : null}
-                    </article>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      </section>
+      {allowedRamas.length > 1 && <section className="flex flex-col gap-3" aria-labelledby="my-units"><h2 id="my-units" className="text-xl font-semibold">Mis unidades</h2><div className="flex flex-wrap gap-2">{allowedRamas.map(rama => <Button key={rama} asChild variant="outline"><Link to={`/interno/unidades/${rama}`}>{ramaConfig[rama].titulo}</Link></Button>)}</div></section>}
+      <NewsPopup />
+      <details className="rounded-xl border border-border bg-card p-4">
+        <summary className="cursor-pointer rounded-md font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Más recursos e historia del grupo</summary>
+        <nav aria-label="Recursos e historia" className="mt-4 flex flex-wrap gap-2">{resources.map(item => <Button key={item.to} asChild variant="outline"><Link to={item.to}>{item.title}</Link></Button>)}</nav>
+        <p className="mb-2 mt-5 text-sm text-muted-foreground">En preparación</p>
+        <nav aria-label="Módulos en preparación" className="flex flex-wrap gap-2">{upcomingModules.map(item => <Button key={item.to} asChild variant="ghost" size="sm"><Link to={item.to}>{item.title}</Link></Button>)}</nav>
+      </details>
     </section>
   );
 }
+

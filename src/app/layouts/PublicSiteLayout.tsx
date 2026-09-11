@@ -1,7 +1,8 @@
+import { Suspense } from "react";
+import PageLoader from "@/components/ui/PageLoader";
 import { Outlet } from "react-router-dom";
 import NavegacionPrincipal from "@/components/layout/NavegacionPrincipal";
 import PieDePagina from "@/components/layout/PieDePagina";
-import { NewsPopup } from "@/components/layout/NewsPopup";
 import ScrollAlInicio from "@/components/layout/ScrollAlInicio";
 import TransicionRuta from "@/components/layout/TransicionRuta";
 import BotonVolverGlobal from "@/components/layout/BotonVolverGlobal";
@@ -14,14 +15,13 @@ export function PublicSiteLayout() {
     <>
       <FondoAnimado />
       <NavegacionPrincipal />
-      <NewsPopup />
       <ScrollAlInicio />
       <SaltarAlContenido />
       <BotonVolverGlobal />
       <PageGridBackground className="public-app-shell">
         <main id="main-content" tabIndex={-1} className="min-h-screen">
           <TransicionRuta>
-            <Outlet />
+            <Suspense fallback={<PageLoader compact message="Cargando sección…" />}><Outlet /></Suspense>
           </TransicionRuta>
         </main>
       </PageGridBackground>

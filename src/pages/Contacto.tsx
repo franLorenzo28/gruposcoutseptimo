@@ -2,39 +2,22 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Mail, Phone, MapPin, Clock, Loader2 } from "lucide-react";
-import { Reveal } from "@/components/Reveal";
 import { PageGridBackground } from "@/components/PageGridBackground";
 import { useToast } from "@/hooks/use-toast";
 import emailjs from "@emailjs/browser";
 import { supabase } from "@/integrations/supabase/client";
 
-// --- Validación y sanitización ---
-function validateContact({ name, email, phone, message }: { name: string; email: string; phone?: string; message: string }) {
-  const errors: string[] = [];
-  if (!name.trim()) errors.push("El nombre es obligatorio.");
-  if (name && name.length < 3) errors.push("El nombre debe tener al menos 3 caracteres.");
-  if (name && /[<>"']/.test(name)) errors.push("El nombre contiene caracteres inválidos.");
-  if (!email.trim()) errors.push("El email es obligatorio.");
-  if (email && !/^\S+@\S+\.\S+$/.test(email)) errors.push("El email no es válido.");
-  if (phone && !/^\+?\d{7,15}$/.test(phone)) errors.push("El teléfono debe ser válido (solo números, puede incluir +).");
-  if (!message.trim()) errors.push("El mensaje es obligatorio.");
-  if (message && message.length < 10) errors.push("El mensaje debe tener al menos 10 caracteres.");
-  return {
-    valid: errors.length === 0,
-    errors,
-    sanitized: {
-      name: name.trim().replace(/[<>"']/g, ""),
-      email: email.trim().toLowerCase(),
-      phone: phone ? phone.replace(/[^\d+]/g, "") : "",
-      message: message.trim().replace(/[<>"']/g, ""),
-    },
-  };
-}
+import { Link, useSearchParams } from "react-router-dom";
+import { validateContact, type ContactFields } from "@/lib/contact-validation";
 
 const Contacto = () => {
   const { toast } = useToast();
+  const [params] = useSearchParams();
+  const [unit, setUnit] = useState(params.get("unidad") ?? "");
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof ContactFields, string>>>({});
+  const [feedback, setFeedback] = useState("");
   const [sending, setSending] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -46,8 +29,11 @@ const Contacto = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     // Validar y sanear datos antes de enviar
-    const { valid, errors, sanitized } = validateContact(formData);
+    const { valid, errors, fieldErrors: validationErrors, sanitized } = validateContact(formData);
+    setFieldErrors(validationErrors);
+    setFeedback("");
     if (!valid) {
+      document.getElementById(`contact-${Object.keys(validationErrors)[0]}`)?.focus();
       toast({
         title: "Error en el formulario",
         description: errors.length > 1 ? errors.join(" • ") : errors[0],
@@ -83,7 +69,7 @@ const Contacto = () => {
           name: sanitized.name,
           email: sanitized.email,
           phone: sanitized.phone,
-          message: sanitized.message,
+          message: unit ? `Consulta por ${unit}\n\n${sanitized.message}` : sanitized.message,
           reply_to: sanitized.email,
           from_name: sanitized.name,
           avatar_html: avatarHtml,
@@ -96,10 +82,12 @@ const Contacto = () => {
         title: "¡Mensaje enviado!",
         description: "Nos pondremos en contacto contigo pronto.",
       });
+      setFeedback("¡Mensaje enviado! Nos pondremos en contacto contigo pronto.");
       // Reset form
       setFormData({ name: "", email: "", phone: "", message: "" });
     } catch (err: any) {
       console.error("EmailJS error:", err);
+      setFeedback("No pudimos enviar tu mensaje. Tus datos siguen aquí; puedes reintentar o escribirnos por correo.");
       toast({
         title: "Error al enviar",
         description: err?.message || "No se pudo enviar el mensaje. Intenta de nuevo más tarde.",
@@ -110,234 +98,63 @@ const Contacto = () => {
     }
   };
 
-  const contactInfo = [
-    {
-      icon: MapPin,
-      title: "Dirección",
-      content:
-        "Volteadores 1753 entre Av. Italia y Almirón, Montevideo, Uruguay",
-    },
-    {
-      icon: Phone,
-      title: "Teléfono",
-      content: "+598 098 138 668 (Pablo Silva, Jefe de Grupo)",
-    },
-    {
-      icon: Mail,
-      title: "Email",
-      content: "scoutsseptimo7@gmail.com",
-    },
-    {
-      icon: Clock,
-      title: "Horarios",
-      content: "Sábados 15:00h - 18:00h ",
-    },
-  ];
-
+  const units = ["Manada", "Tropa", "Pioneros", "Rovers", "Educadores", "Comité"];
   return (
     <PageGridBackground>
-      {/* Hero Section */}
-      <section className="relative overflow-hidden pt-24 sm:pt-28 md:pt-32 pb-12 sm:pb-16 bg-gradient-to-b from-background via-background/95 to-muted/25">
-        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-          <div className="bg-blob w-72 h-72 bg-muted/30 -top-16 -right-12 float-slow" />
-          <div className="bg-blob w-64 h-64 bg-muted/30 -bottom-20 -left-12 drift-slow" />
-          <div className="bg-blob w-20 h-20 sm:w-32 sm:h-32 bg-yellow-400/40 top-[54%] left-[7%] [filter:blur(26px)_saturate(1.2)] float-slow" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.08),transparent_45%)]" />
-        </div>
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <Reveal className="max-w-3xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 bg-muted/30 backdrop-blur-sm rounded-full mb-4 sm:mb-6 shadow-sm">
-              <Mail className="w-4 h-4 text-primary" />
-              <span className="text-primary font-semibold text-xs sm:text-sm md:text-base">
-                Contacto
-              </span>
-            </div>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 leading-tight">
-              ¿Quieres unirte al Séptimo?
-            </h1>
-            <p className="text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed">
-              Estamos aquí para responder tus preguntas y ayudarte a formar
-              parte de nuestra comunidad scout.
-            </p>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* Contact Section */}
-      <section className="section-padding">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 lg:gap-16">
-            {/* Contact Form */}
-            <Reveal>
-              <Card id="formulario" className="border-border/70 bg-card/85 shadow-lg backdrop-blur-sm">
-                <CardContent className="p-6 sm:p-8">
-                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6">
-                  Envíanos un mensaje
-                </h2>
-                <p className="text-sm sm:text-base text-muted-foreground mb-6 sm:mb-8 leading-relaxed">
-                  Completa el formulario y nos pondremos en contacto contigo a
-                  la brevedad.
-                </p>
-                <form
-                  onSubmit={handleSubmit}
-                  className="space-y-4 sm:space-y-6"
-                >
-                  <div className="space-y-2">
-                    <label htmlFor="contact-name" className="block text-sm font-semibold">
-                      Nombre completo *
-                    </label>
-                    <Input
-                      id="contact-name"
-                      type="text"
-                      value={formData.name}
-                      onChange={(e) =>
-                        setFormData({ ...formData, name: e.target.value })
-                      }
-                      placeholder="Juan Pérez"
-                      className="transition-all duration-300 focus:ring-2 focus:ring-primary"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label htmlFor="contact-email" className="block text-sm font-semibold">
-                      Email *
-                    </label>
-                    <Input
-                      id="contact-email"
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) =>
-                        setFormData({ ...formData, email: e.target.value })
-                      }
-                      placeholder="juan@ejemplo.com"
-                      className="transition-all duration-300 focus:ring-2 focus:ring-primary"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label htmlFor="contact-phone" className="block text-sm font-semibold">
-                      Teléfono
-                    </label>
-                    <Input
-                      id="contact-phone"
-                      type="tel"
-                      value={formData.phone}
-                      onChange={(e) =>
-                        setFormData({ ...formData, phone: e.target.value })
-                      }
-                      placeholder="+598 99 123 456"
-                      className="transition-all duration-300 focus:ring-2 focus:ring-primary"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label htmlFor="contact-message" className="block text-sm font-semibold">
-                      Mensaje *
-                    </label>
-                    <Textarea
-                      id="contact-message"
-                      value={formData.message}
-                      onChange={(e) =>
-                        setFormData({ ...formData, message: e.target.value })
-                      }
-                      placeholder="Cuéntanos cómo podemos ayudarte..."
-                      rows={6}
-                      className="transition-all duration-300 focus:ring-2 focus:ring-primary resize-none"
-                      required
-                    />
-                  </div>
-
-                  <Button
-                    type="submit"
-                    size="lg"
-                    variant="hero"
-                    disabled={sending}
-                    className="w-full text-base sm:text-lg transition-all duration-300 hover:shadow-2xl hover:scale-105 disabled:opacity-60 disabled:hover:scale-100"
-                  >
-                    {sending ? (
-                      <>
-                        <Loader2 className="mr-2 w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
-                        Enviando...
-                      </>
-                    ) : (
-                      <>
-                        <Mail className="mr-2 w-4 h-4 sm:w-5 sm:h-5" />
-                        Enviar Mensaje
-                      </>
-                    )}
-                  </Button>
-                </form>
-                </CardContent>
-              </Card>
-            </Reveal>
-
-            {/* Contact Info */}
-            <Reveal>
-              <div id="info" className="space-y-6 sm:space-y-8">
-                <div>
-                  <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6">
-                    Información de contacto
-                  </h2>
-                  <p className="text-sm sm:text-base text-muted-foreground mb-4 sm:mb-6 leading-relaxed">
-                    Encuentra toda la información para comunicarte con nosotros.
-                  </p>
-                </div>
-
-                <div className="space-y-3 sm:space-y-4">
-                  {contactInfo.map((info, index) => (
-                    <Card
-                      key={index}
-                      className="card-hover border-2 hover:border-primary/50 transition-all duration-500 group"
-                    >
-                      <CardContent className="p-4 sm:p-6">
-                        <div className="flex items-start gap-3 sm:gap-4">
-                          <div className="w-12 h-12 sm:w-14 sm:h-14 bg-muted/30 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-300 group-hover:scale-110">
-                            <info.icon className="w-6 h-6 sm:w-7 sm:h-7 text-primary" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-bold text-base sm:text-lg mb-1 sm:mb-2">
-                              {info.title}
-                            </h3>
-                            <p className="text-sm sm:text-base text-muted-foreground leading-relaxed break-words">
-                              {info.content}
-                            </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-
-                {/* Map */}
-                <div id="mapa" className="w-full max-w-md aspect-square rounded-lg overflow-hidden">
-                  <iframe
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2648.3856260251296!2d-56.093305184935744!3d-34.885120769042935!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x959f86c2eb358313%3A0xa36b089dc914381d!2sVolteadores%201753%2C%2011400%20Montevideo%2C%20Departamento%20de%20Montevideo!5e0!3m2!1ses-419!2suy!4v1777835715616!5m2!1ses-419!2suy"
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0 }}
-                    allowFullScreen
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                    title="Ubicación del Grupo Scout Séptimo"
-                  />
-                </div>
+      <div className="mx-auto max-w-6xl px-4 pb-16 pt-6 sm:px-6 sm:pt-10">
+        <header className="mb-8 max-w-2xl">
+          <p className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">Contacto · Montevideo</p>
+          <h1 className="mt-3 text-4xl font-bold leading-tight sm:text-5xl">Tu próxima aventura empieza acá.</h1>
+          <p className="mt-4 text-base leading-relaxed text-muted-foreground">¿Quieres sumarte al Séptimo? Cuéntanos tu edad y qué te gustaría saber. No necesitas una cuenta para contactarnos.</p>
+        </header>
+        <div className="grid items-start gap-8 lg:grid-cols-2 lg:gap-12">
+          <section aria-labelledby="contact-info" className="flex flex-col gap-5">
+            <h2 id="contact-info" className="text-2xl font-bold">Nos encontramos los sábados</h2>
+            <div className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-5">
+              <p className="flex items-center gap-3"><Clock className="size-5 shrink-0 text-primary" aria-hidden="true" /><span><strong>15:00 a 18:00</strong><span className="block text-sm text-muted-foreground">Consulta antes de venir por primera vez.</span></span></p>
+              <p className="flex items-start gap-3"><MapPin className="size-5 shrink-0 text-primary" aria-hidden="true" /><span>Volteadores 1753, Montevideo<span className="block text-sm text-muted-foreground">Entre Av. Italia y Almirón</span></span></p>
+              <div className="flex flex-wrap gap-2">
+                <Button asChild><a href="tel:+59898138668"><Phone aria-hidden="true" />Llamar al grupo</a></Button>
+                <Button asChild variant="outline"><a href="https://www.google.com/maps/search/?api=1&query=Volteadores+1753+Montevideo" target="_blank" rel="noopener noreferrer">Cómo llegar<span className="sr-only"> (abre otra pestaña)</span></a></Button>
               </div>
-            </Reveal>
-          </div>
+              <a className="flex min-h-11 items-center gap-2 break-all text-sm underline underline-offset-4" href="mailto:scoutsseptimo7@gmail.com"><Mail className="size-4 shrink-0" aria-hidden="true" />scoutsseptimo7@gmail.com</a>
+            </div>
+            <div className="flex flex-col gap-3">
+              <h2 className="text-xl font-semibold">Cómo sumarte</h2>
+              <ol className="ml-5 flex list-decimal flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
+                <li>Escríbenos o llama para conocer el grupo y consultar por la unidad correspondiente a tu edad.</li>
+                <li>Coordina con el equipo una primera visita y pregunta qué necesitas llevar.</li>
+                <li>El equipo te orientará sobre los siguientes pasos para participar.</li>
+              </ol>
+              <Link to="/#unidades" className="inline-flex min-h-11 items-center text-sm font-semibold underline underline-offset-4">Conocer las unidades y edades</Link>
+            </div>
+          </section>
+          <Card id="formulario" className="scroll-mt-28">
+            <CardHeader><CardTitle className="text-2xl">Envíanos un mensaje</CardTitle><p className="text-sm text-muted-foreground">Los campos marcados con * son obligatorios.</p></CardHeader>
+            <CardContent>
+              <form noValidate onSubmit={handleSubmit} className="flex flex-col gap-5">
+                {([{ key: "name", label: "Nombre", type: "text", autoComplete: "name", placeholder: "Tu nombre" }, { key: "email", label: "Correo electrónico", type: "email", autoComplete: "email", placeholder: "nombre@correo.com" }, { key: "phone", label: "Teléfono (opcional)", type: "tel", autoComplete: "tel", placeholder: "+598 99 123 456" }] as const).map(field => <div key={field.key} className="flex flex-col gap-2">
+                  <label htmlFor={`contact-${field.key}`} className="text-sm font-semibold">{field.label}{field.key !== "phone" && " *"}</label>
+                  <Input id={`contact-${field.key}`} type={field.type} autoComplete={field.autoComplete} placeholder={field.placeholder} value={formData[field.key]} required={field.key !== "phone"} disabled={sending} aria-invalid={Boolean(fieldErrors[field.key])} aria-describedby={fieldErrors[field.key] ? `error-${field.key}` : undefined} onChange={e => setFormData({ ...formData, [field.key]: e.target.value })} />
+                  {fieldErrors[field.key] && <p id={`error-${field.key}`} className="text-sm text-destructive">{fieldErrors[field.key]}</p>}
+                </div>)}
+                <div className="flex flex-col gap-2">
+                  <label htmlFor="contact-unit" className="text-sm font-semibold">Unidad que te interesa (opcional)</label>
+                  <select id="contact-unit" value={units.includes(unit) ? unit : ""} onChange={e => setUnit(e.target.value)} disabled={sending} className="min-h-11 rounded-md border border-input bg-background px-3 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><option value="">Todavía no lo sé / consulta general</option>{units.map(name => <option key={name}>{name}</option>)}</select>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label htmlFor="contact-message" className="text-sm font-semibold">Mensaje *</label>
+                  <Textarea id="contact-message" rows={5} className="text-base" placeholder="Cuéntanos cómo podemos ayudarte…" required disabled={sending} value={formData.message} onChange={e => setFormData({ ...formData, message: e.target.value })} aria-invalid={Boolean(fieldErrors.message)} aria-describedby={fieldErrors.message ? "error-message" : undefined} />
+                  {fieldErrors.message && <p id="error-message" className="text-sm text-destructive">{fieldErrors.message}</p>}
+                </div>
+                <Button type="submit" disabled={sending} className="w-full">{sending ? <><Loader2 className="animate-spin" aria-hidden="true" />Enviando…</> : "Enviar mensaje"}</Button>
+                {feedback && <p role="status" className="text-sm leading-relaxed">{feedback}</p>}
+              </form>
+            </CardContent>
+          </Card>
         </div>
-      </section>
-
-      {/* Footer global en App.tsx */}
+      </div>
     </PageGridBackground>
   );
 };
-
 export default Contacto;
-
-
-
-
-
-

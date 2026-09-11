@@ -47,19 +47,19 @@ export default function RamaLanding({
                 <h1 className="text-4xl font-black leading-[0.95] text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent sm:text-5xl md:text-6xl">
                   {title}
                 </h1>
-                <p className={`inline-flex rounded-full px-4 py-1 text-sm font-bold text-white ${accentClass}`}>
-                  Lema: {lema}
+                <p className={`inline-flex rounded-full px-4 py-1 text-sm font-bold text-foreground bg-card ${accentClass.replace(/bg-\S+/g, "")}`}>
+                  {ageRange} · {lema}
                 </p>
                 <p className="text-base leading-8 tracking-[0.01em] text-muted-foreground sm:text-lg">{intro}</p>
                 <div className="flex flex-wrap gap-3 pt-2">
                   <Button asChild>
-                    <Link to="/contacto">
-                      Sumarme a la unidad
+                    <Link to={`/contacto?unidad=${encodeURIComponent(title)}`}>
+                      Quiero sumarme
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                   </Button>
                   <Button asChild variant="outline">
-                    <Link to="/interno">Area de miembros</Link>
+                    <Link to="/interno">Acceso de miembros</Link>
                   </Button>
                 </div>
               </div>
@@ -105,7 +105,7 @@ export default function RamaLanding({
             <Reveal>
               <Card className="h-full border-border/70 bg-card/80 shadow-lg transition-all duration-300 hover:translate-y-[-4px]">
                 <CardContent className="p-5">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Metodo</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Método</p>
                   <p className="mt-2 text-2xl font-bold">Aprender haciendo</p>
                 </CardContent>
               </Card>

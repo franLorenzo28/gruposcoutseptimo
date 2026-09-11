@@ -942,10 +942,10 @@ const Auth = () => {
                 />
               </div>
             </div>
-            <CardTitle className="text-xl sm:text-2xl font-bold">
-              Grupo Scout Séptimo
-            </CardTitle>
-            <CardDescription className="text-xs sm:text-sm">Únete a nuestra comunidad scout</CardDescription>
+            <h1 className="text-xl sm:text-2xl font-bold">Grupo Scout Séptimo</h1>
+            <CardDescription className="text-sm">{isLogin ? "Accede a tu cuenta de la plataforma interna." : "Crea tu cuenta para participar en la plataforma. El equipo del grupo revisará tu acceso."}</CardDescription>
+            <Link to="/contacto" className="mt-2 inline-block text-sm underline underline-offset-4">¿Quieres sumarte al grupo? Contáctanos</Link>
+            <Link to="/" className="mt-2 inline-block text-sm underline underline-offset-4">Volver al sitio público</Link>
           </CardHeader>
           <CardContent className="relative z-10 px-4 pb-4 sm:px-5 sm:pb-5">
             <Tabs
@@ -998,9 +998,9 @@ const Auth = () => {
 
               <TabsContent value="login" className="data-[state=active]:animate-in data-[state=active]:fade-in data-[state=active]:slide-in-from-bottom-2 data-[state=active]:duration-300 mt-3">
                 {signupVerificationUrl && <p className="text-sm"><a className="text-primary underline" href={signupVerificationUrl}>Verificar correo (desarrollo)</a></p>}
-                {isLocalBackend() && <div className="flex flex-wrap gap-2">
+                {<div className="flex flex-wrap gap-2">
                   <Button asChild variant="link" size="sm"><Link to="/interno/restablecer-password">Olvidé mi contraseña</Link></Button>
-                  <Button asChild variant="link" size="sm"><Link to="/interno/restablecer-password?action=verification">Reenviar verificación</Link></Button>
+                  {isLocalBackend() && <Button asChild variant="link" size="sm"><Link to="/interno/restablecer-password?action=verification">Reenviar verificación</Link></Button>}
                 </div>}
                 <form onSubmit={handleSignIn} className="space-y-3">
                   <div className="space-y-1.5">
