@@ -47,8 +47,9 @@ describe('account approval', () => {
     expect(screen.queryByText('Approval required')).not.toBeInTheDocument();
   });
 
-  it('does not let stale local storage block an approved profile', () => {
+  it('does not let stale local storage block an approved internal profile', () => {
     state.value.accountStatus = 'activo';
+    state.value.user = { ...state.value.user!, internal_access: true };
     localStorage.setItem('pendingAccountStatus', 'rechazado');
     render(<MemoryRouter><RequireApproval>Private content</RequireApproval></MemoryRouter>);
     expect(screen.getByText('Private content')).toBeInTheDocument();

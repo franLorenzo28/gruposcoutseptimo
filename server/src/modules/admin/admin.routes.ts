@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { ZodTypeProvider } from "fastify-type-provider-zod";
+import { z } from "zod/v4";
 
 import { AppError } from "../../core/errors.js";
 import { adminProfileUpdateSchema, adminResourceParamsSchema, adminUserParamsSchema, conversationAdminParamsSchema, educatorDecisionParamsSchema, educatorDecisionSchema, educatorRequestSchema, educatorUpdateSchema, roleUpdateSchema, sitePageInputSchema, sitePageParamsSchema } from "./admin.schemas.js";
@@ -17,7 +18,7 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
   api.get("/v1/admin/users", { preHandler: app.requireAdmin }, async () => {
     const { data, error } = await adminClient(app)
       .from("profiles")
-      .select("user_id,email,nombre_completo,username,avatar_url,role,rol_adulto,rama_que_educa,account_status,account_classification,created_at,updated_at")
+      .select("user_id,email,nombre_completo,username,avatar_url,role,rol_adulto,rama_que_educa,account_status,account_classification,internal_access,internal_unit,created_at,updated_at")
       .order("created_at", { ascending: false })
       .limit(500);
     if (error) throw new AppError(503, "ADMIN_USERS_FAILED", "No se pudieron cargar los usuarios.");
@@ -27,7 +28,7 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
   api.get("/v1/admin/dashboard-data", { preHandler: app.requireAdmin }, async () => {
     const client = adminClient(app);
     const [users, groups, events, messages, groupMessages, pages, follows, notifications] = await Promise.all([
-      client.from("profiles").select("user_id,email,nombre_completo,username,avatar_url,role,rol_adulto,rama_que_educa,account_status,account_classification,created_at,updated_at").order("created_at", { ascending: false }).limit(500),
+      client.from("profiles").select("user_id,email,nombre_completo,username,avatar_url,role,rol_adulto,rama_que_educa,account_status,account_classification,internal_access,internal_unit,created_at,updated_at").order("created_at", { ascending: false }).limit(500),
       client.from("groups").select().order("created_at", { ascending: false }).limit(200),
       client.from("eventos").select().order("fecha_inicio", { ascending: false }).limit(200),
       client.from("messages").select().order("created_at", { ascending: false }).limit(200),
@@ -178,6 +179,32 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
       return { data: { messages: messages ?? [], participants: participants ?? [] } };
     },
   );
+
+  api.patch("/v1/admin/users/:id/internal-access", {
+    preHandler: app.requireAdmin,
+    schema: { params: adminUserParamsSchema, body: z.object({
+      enabled: z.boolean(),
+      unit: z.enum(["lobatos", "tropa", "pioneros", "rover"]).nullable(),
+    }) },
+  }, async (request) => {
+    if (app.getPowerRole(request) !== "admin") {
+      throw new AppError(403, "SUPER_ADMIN_REQUIRED", "Solo el administrador puede habilitar el acceso interno.");
+    }
+    if (request.params.id === request.authUser!.id && !request.body.enabled) {
+      throw new AppError(409, "SELF_ACCESS_CHANGE_FORBIDDEN", "No puedes quitarte tu propio acceso interno.");
+    }
+    if (request.body.enabled && !request.body.unit) {
+      throw new AppError(400, "INTERNAL_UNIT_REQUIRED", "Selecciona una unidad para habilitar el acceso interno.");
+    }
+    const { data, error } = await adminClient(app).from("profiles")
+      .update({ internal_access: request.body.enabled, internal_unit: request.body.enabled ? request.body.unit : null })
+      .eq("user_id", request.params.id)
+      .eq("account_status", "activo")
+      .select("user_id,internal_access,internal_unit").maybeSingle();
+    if (error) throw new AppError(503, "INTERNAL_ACCESS_UPDATE_FAILED", "No se pudo actualizar el acceso interno.");
+    if (!data) throw new AppError(404, "ACTIVE_USER_NOT_FOUND", "El usuario debe tener la cuenta activa.");
+    return { data };
+  });
 
   api.patch(
     "/v1/admin/users/:id/profile",

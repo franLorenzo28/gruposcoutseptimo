@@ -42,7 +42,7 @@ const googleUser = {
   aud: "authenticated", created_at: "2026-09-01T00:00:00Z",
   user_metadata: { profile_complete: true, full_name: "Scout Prueba" },
 };
-const profile = { id: "profile-id", user_id: googleUser.id, nombre_completo: "Scout Prueba", account_status: "activo", edad: 15 };
+const profile = { id: "profile-id", user_id: googleUser.id, nombre_completo: "Scout Prueba", account_status: "activo", internal_access: true, edad: 15 };
 
 function Location() {
   return <output data-testid="location">{useLocation().pathname}</output>;
@@ -85,6 +85,14 @@ describe("Google OAuth navigation", () => {
     await act(async () => { finish(profile); });
     expect(await screen.findByText("Dashboard listo")).toBeInTheDocument();
     expect(mocks.exchangeCodeForSession).not.toHaveBeenCalled();
+  });
+
+  it("sends a Google account with only public access to its profile", async () => {
+    mocks.profileQuery.mockResolvedValue({ data: { ...profile, internal_access: false }, error: null });
+    mocks.getProfile.mockResolvedValue({ ...profile, internal_access: false });
+    renderAuth();
+    await waitFor(() => expect(screen.getByTestId("location")).toHaveTextContent("/mi-perfil"));
+    expect(screen.queryByText("Dashboard listo")).not.toBeInTheDocument();
   });
 
   it("stays usable when Google is signed in but the member profile has no eligible unit", async () => {

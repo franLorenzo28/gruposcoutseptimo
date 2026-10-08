@@ -35,6 +35,7 @@ export async function profileRoutes(app: FastifyInstance): Promise<void> {
         role,
         accountStatus: data?.account_status ?? null,
         accountClassification: data?.account_classification ?? null,
+        internalAccess: data?.internal_access === true,
         isSuperAdmin: role === "admin",
         isMod: role === "mod",
         canOpenAdminPanel: role !== "user",

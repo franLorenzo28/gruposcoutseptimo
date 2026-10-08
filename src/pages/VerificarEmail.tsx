@@ -39,7 +39,7 @@ const VerificarEmail = () => {
 
         // Redirigir a Comuni 7 después de 3 segundos
         setTimeout(() => {
-          navigate("/interno/auth", { replace: true });
+          navigate(result.nextStatus === "activo" ? "/mi-perfil?auth=login" : "/interno/auth", { replace: true });
         }, 3000);
       } else {
         setStatus("error");
@@ -107,7 +107,7 @@ const VerificarEmail = () => {
             {status === "success" && (
               <Button
                 className="w-full"
-                onClick={() => navigate("/perfil")}
+                onClick={() => navigate("/mi-perfil?auth=login")}
               >
                 Ir a mi perfil
               </Button>
@@ -117,14 +117,14 @@ const VerificarEmail = () => {
               <>
                 <Button
                   className="w-full"
-                  onClick={() => navigate("/perfil")}
+                  onClick={() => navigate("/mi-perfil?auth=login")}
                 >
                   Ir a mi perfil
                 </Button>
                 <Button
                   variant="outline"
                   className="w-full gap-2"
-                  onClick={() => navigate("/auth")}
+                  onClick={() => navigate("/?auth=login")}
                 >
                   <Mail className="w-4 h-4" />
                   Volver a inicio de sesión

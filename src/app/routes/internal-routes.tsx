@@ -3,6 +3,7 @@ import RequireApproval from "@/components/RequireApproval";
 import RequireMemberAuth from "@/components/auth/RequireMemberAuth";
 import {
   Auth,
+  InternalLoginEntry,
   RestablecerPassword,
   Configuracion,
   DashboardCoordinador,
@@ -48,8 +49,8 @@ export const internalRoutes: RouteObject = {
   element: <InternalPlatformLayout />,
   children: [
     { index: true, element: <Navigate to="/interno/dashboard" replace /> },
-    { path: "auth", element: <Auth /> },
-    { path: "login", element: <Auth /> },
+    { path: "auth", element: <InternalLoginEntry /> },
+    { path: "login", element: <InternalLoginEntry /> },
     { path: "restablecer-password", element: <RestablecerPassword /> },
     { path: "auth/callback", element: <Auth /> },
     {

@@ -6,6 +6,8 @@ import { PGlite } from "@electric-sql/pglite";
 const fixture = `
   create role anon; create role authenticated; create role service_role bypassrls;
   create schema auth;
+  create schema private;
+  create function auth.uid() returns uuid language sql stable as $$ select null::uuid $$;
   create table auth.users (id uuid primary key, email text, email_confirmed_at timestamptz,
     raw_app_meta_data jsonb, raw_user_meta_data jsonb, created_at timestamptz default now());
   create table public.profiles (id uuid default gen_random_uuid(),
@@ -16,6 +18,7 @@ const fixture = `
     promesa boolean, ppp_url text, is_public boolean default true,
     privacy_preferences jsonb default '{}'::jsonb, notification_preferences jsonb default '{}'::jsonb,
     rol_adulto text, rama_que_educa text, account_status text, account_classification text,
+    internal_access boolean not null default true, internal_unit text,
     email_verified boolean default false, account_review_reason text,
     created_at timestamptz default now(), updated_at timestamptz default now());
   create table public.registration_requests (id uuid primary key default gen_random_uuid(),
@@ -59,6 +62,7 @@ export async function createLocalAuthTestDatabase(): Promise<PGlite> {
     "20260905170600_add_local_google_oauth.sql",
     "20260905173500_add_local_auth_audit.sql",
     "20260905180000_retarget_remaining_identity_fks.sql",
+    "20261007010000_public_accounts_internal_access.sql",
   ]) {
     await db.exec(await readFile(new URL(`../../../../supabase/migrations/${name}`, import.meta.url), "utf8"));
   }

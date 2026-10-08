@@ -1,7 +1,7 @@
 import type { FastifyInstance, FastifyRequest } from "fastify";
 
 export const ownProfileFields =
-  "id,user_id,email,nombre_completo,username,avatar_url,telefono,descripcion_personal,profesion_ocupacion,fecha_nacimiento,edad,patrulla,seisena,adelanto,equipo_pioneros,comunidad_rovers,promesa,ppp_url,is_public,privacy_preferences,notification_preferences,rol_adulto,rama_que_educa,account_status,account_classification,email_verified,created_at,updated_at";
+  "id,user_id,email,nombre_completo,username,avatar_url,telefono,descripcion_personal,profesion_ocupacion,fecha_nacimiento,edad,patrulla,seisena,adelanto,equipo_pioneros,comunidad_rovers,promesa,ppp_url,is_public,privacy_preferences,notification_preferences,rol_adulto,rama_que_educa,account_status,account_classification,internal_access,internal_unit,email_verified,created_at,updated_at";
 export const publicProfileFields =
   "user_id,nombre_completo,username,avatar_url,descripcion_personal,profesion_ocupacion,patrulla,seisena,adelanto,equipo_pioneros,comunidad_rovers,promesa,rol_adulto,rama_que_educa";
 
@@ -42,15 +42,15 @@ export class ProfileRepository {
     return data;
   }
 
-  async getAccess(userId: string): Promise<{ account_status: string | null; account_classification: string | null } | null> {
+  async getAccess(userId: string): Promise<{ account_status: string | null; account_classification: string | null; internal_access: boolean } | null> {
     if (this.app.db) {
-      const { rows } = await this.app.db.query<{ account_status: string | null; account_classification: string | null }>(
-        "select account_status, account_classification from public.profiles where user_id = $1 limit 1", [userId],
+      const { rows } = await this.app.db.query<{ account_status: string | null; account_classification: string | null; internal_access: boolean }>(
+        "select account_status, account_classification, internal_access from public.profiles where user_id = $1 limit 1", [userId],
       );
       return rows[0] ?? null;
     }
     const { data, error } = await this.admin().from("profiles")
-      .select("account_status,account_classification").eq("user_id", userId).maybeSingle();
+      .select("account_status,account_classification,internal_access").eq("user_id", userId).maybeSingle();
     databaseError(error);
     return data;
   }

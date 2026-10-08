@@ -9,13 +9,14 @@ vi.mock('@/components/Reveal', () => ({ Reveal: ({ children }: { children: React
 vi.mock('@/integrations/supabase/client', () => ({ supabase: { from: () => ({ select: mocks.select, update: mocks.update }) } }));
 
 beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["Date"], now: new Date("2026-09-01T12:00:00Z") });
   vi.clearAllMocks();
   mocks.select.mockResolvedValue({ data: [{ id: 'uuid', titulo: 'Campamento', fecha_inicio: '2026-09-26', lugar: 'Parque' }], error: null });
   mocks.update.mockReturnValue({ eq: mocks.eq });
   mocks.eq.mockReturnValue({ select: () => ({ single: mocks.single }) });
   mocks.single.mockResolvedValue({ data: { id: 'uuid' }, error: null });
 });
-afterEach(cleanup);
+afterEach(() => { cleanup(); vi.useRealTimers(); });
 
 describe('event editing', () => {
   it('loads the current schema and saves changes without unknown columns', async () => {

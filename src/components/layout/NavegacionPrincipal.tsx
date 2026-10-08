@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Archive,
   Building,
@@ -13,6 +13,8 @@ import {
   Settings,
   Shield,
   Sparkles,
+  UserRound,
+  LogOut,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -35,6 +37,10 @@ import ThemeToggle from "@/components/ThemeToggle";
 import { cn } from "@/lib/utils";
 import { useScrolledHeader } from "@/hooks/useScrolledHeader";
 import logoImage from "@/assets/grupo-scout-logo.png";
+import { useSupabaseUser } from "@/providers/AppProviders";
+import { apiFetch, isLocalBackend, resetLocalBackendAuth } from "@/lib/backend";
+import { supabase } from "@/integrations/supabase/client";
+import { clearMemberSession } from "@/lib/member-auth";
 
 interface NavLink {
   name: string;
@@ -82,7 +88,19 @@ const mobileSections: NavSection[] = [
 export default function Navigation() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user } = useSupabaseUser();
   const isScrolled = useScrolledHeader();
+
+  const logout = async () => {
+    if (isLocalBackend()) {
+      try { await apiFetch("/v1/auth/logout", { method: "POST" }); }
+      catch { /* Local session may already be expired. */ }
+      finally { resetLocalBackendAuth(); }
+    } else await supabase.auth.signOut();
+    clearMemberSession();
+    navigate("/");
+  };
 
   useEffect(() => setIsMobileMenuOpen(false), [location.pathname, location.hash]);
 
@@ -201,6 +219,13 @@ export default function Navigation() {
             </div>
 
             <div className="ml-auto hidden shrink-0 items-center gap-2 min-[1180px]:flex">
+              {user ? <DropdownMenu>
+                <DropdownMenuTrigger asChild><Button variant="outline" size="sm" className="h-10 rounded-xl"><UserRound className="h-4 w-4" />Mi perfil</Button></DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="rounded-xl">
+                  <DropdownMenuItem asChild><Link to="/mi-perfil">Editar perfil</Link></DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => void logout()}><LogOut className="mr-2 h-4 w-4" />Cerrar sesión</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu> : <Button asChild size="sm" variant="outline" className="h-10 rounded-xl"><Link to={{ pathname: location.pathname, search: "?auth=login" }}><UserRound className="h-4 w-4" />Ingresar</Link></Button>}
               <Button asChild size="sm" className="h-10 rounded-xl px-4 shadow-[0_8px_24px_-10px_hsl(var(--primary))]">
                 <Link to="/interno"><Shield className="h-4 w-4" />Plataforma interna</Link>
               </Button>
@@ -266,6 +291,10 @@ export default function Navigation() {
                     ))}
                   </div>
                   <div className="shrink-0 border-t bg-background/95 p-4">
+                    {user ? <div className="mb-3 grid grid-cols-2 gap-2">
+                      <Button asChild variant="outline"><Link to="/mi-perfil" onClick={() => setIsMobileMenuOpen(false)}>Mi perfil</Link></Button>
+                      <Button variant="outline" onClick={() => { setIsMobileMenuOpen(false); void logout(); }}>Salir</Button>
+                    </div> : <Button asChild variant="outline" className="mb-3 h-12 w-full rounded-xl"><Link to={{ pathname: location.pathname, search: "?auth=login" }} onClick={() => setIsMobileMenuOpen(false)}>Ingresar / Crear cuenta</Link></Button>}
                     <Button asChild className="h-12 w-full rounded-xl"><Link to="/interno"><Shield className="h-4 w-4" />Entrar a la plataforma</Link></Button>
                   </div>
                 </SheetContent>

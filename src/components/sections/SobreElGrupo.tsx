@@ -42,7 +42,6 @@ const WolfHowlingIcon = ({ className = "" }: { className?: string }) => (
 );
 
 const About = () => {
-  const communityImages = getOptimizedImageProps("community");
   const branches = [
     {
       icon: WolfHowlingIcon,

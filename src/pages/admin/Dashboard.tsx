@@ -111,6 +111,7 @@ export default function Dashboard({
   onTabChange,
 }: DashboardProps) {
   const [users, setUsers] = useState<any[]>([]);
+  const [internalUnits, setInternalUnits] = useState<Record<string, string>>({});
   const [stats, setStats] = useState({ total: 0, admins: 0, registradosHoy: 0 });
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -202,7 +203,7 @@ export default function Dashboard({
     setLoadingAdmin(true);
 
     try {
-      const payload = (await apiFetch("/admin/dashboard-data")) as LocalDashboardPayload;
+      const payload = (await apiFetch("/v1/admin/dashboard-data")) as LocalDashboardPayload;
       const localUsers = payload.users || [];
 
       setUsers(localUsers);
@@ -1039,6 +1040,21 @@ export default function Dashboard({
     URL.revokeObjectURL(url);
   }
 
+  const setInternalAccess = async (userId: string, enabled: boolean, unit: string | null) => {
+    try {
+      await apiFetch(`/v1/admin/users/${userId}/internal-access`, {
+        method: "PATCH",
+        body: JSON.stringify({ enabled, unit }),
+      });
+      setUsers((current) => current.map((item) =>
+        item.user_id === userId ? { ...item, internal_access: enabled, internal_unit: enabled ? unit : null } : item,
+      ));
+      toast({ title: enabled ? "Acceso interno habilitado" : "Acceso interno retirado" });
+    } catch (error) {
+      toast({ title: "No se pudo cambiar el acceso", description: error instanceof Error ? error.message : "Intenta nuevamente.", variant: "destructive" });
+    }
+  };
+
   const getRoleBadge = (role: string, rolAdulto?: string | null) => {
     const normalized = normalizeRoleText(rolAdulto);
     const isEducador =
@@ -1605,13 +1621,14 @@ export default function Dashboard({
                           <th className="text-left p-2 sm:p-3 font-semibold text-muted-foreground text-xs">Nombre</th>
                           <th className="text-left p-2 sm:p-3 font-semibold text-muted-foreground text-xs">Usuario</th>
                           <th className="text-left p-2 sm:p-3 font-semibold text-muted-foreground text-xs">Rol</th>
+                          <th className="text-left p-2 sm:p-3 font-semibold text-muted-foreground text-xs">Acceso interno</th>
                           <th className="text-right p-2 sm:p-3 font-semibold text-muted-foreground text-xs">Acciones</th>
                         </tr>
                       </thead>
                       <tbody>
                         {filtered.length === 0 ? (
                           <tr>
-                            <td colSpan={5} className="text-center py-8 text-xs sm:text-sm text-muted-foreground">
+                            <td colSpan={6} className="text-center py-8 text-xs sm:text-sm text-muted-foreground">
                               No se encontraron usuarios
                             </td>
                           </tr>
@@ -1623,6 +1640,21 @@ export default function Dashboard({
                               <td className="p-2 sm:p-3 text-xs sm:text-sm text-muted-foreground truncate">{u.username || "-"}</td>
                               <td className="p-2 sm:p-3 text-xs sm:text-sm">
                                  {getRoleBadge(u.role || "user", u.rol_adulto)}
+                              </td>
+                              <td className="p-2 sm:p-3">
+                                {currentAccess.isSuperAdmin && u.account_status === "activo" ? (
+                                  <div className="flex items-center gap-2">
+                                    {!u.internal_access && <Select value={internalUnits[u.user_id] || ""} onValueChange={(value) => setInternalUnits((current) => ({ ...current, [u.user_id]: value }))}>
+                                      <SelectTrigger aria-label={`Unidad de ${u.nombre_completo || u.email}`} className="h-8 w-32"><SelectValue placeholder="Unidad" /></SelectTrigger>
+                                      <SelectContent><SelectItem value="lobatos">Manada</SelectItem><SelectItem value="tropa">Tropa</SelectItem><SelectItem value="pioneros">Pioneros</SelectItem><SelectItem value="rover">Rovers</SelectItem></SelectContent>
+                                    </Select>}
+                                    <Button size="sm" variant={u.internal_access ? "outline" : "default"}
+                                      disabled={!u.internal_access && !internalUnits[u.user_id]}
+                                      onClick={() => void setInternalAccess(u.user_id, !u.internal_access, u.internal_access ? null : internalUnits[u.user_id] || null)}>
+                                      {u.internal_access ? "Retirar" : "Habilitar"}
+                                    </Button>
+                                  </div>
+                                ) : <Badge variant="secondary">{u.internal_access ? "Habilitado" : "Público"}</Badge>}
                               </td>
                               <td className="p-2 sm:p-3 text-right">
                                 <div className="flex gap-1 sm:gap-2 justify-end flex-wrap">

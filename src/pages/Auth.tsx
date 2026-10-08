@@ -245,6 +245,10 @@ const Auth = () => {
     window.history.replaceState({}, "", window.location.pathname);
     if (oauthError) {
       sessionStorage.removeItem("grupo7_google_oauth_ticket");
+      if (oauthError === "account_not_found") {
+        navigate("/?auth=register", { replace: true });
+        return;
+      }
       setInlineMessage({
         account_not_found: "No existe una cuenta con ese correo. Usa Registrarse para solicitar acceso.",
         account_pending_approval: "La cuenta está pendiente de aprobación.",
@@ -320,6 +324,10 @@ const Auth = () => {
     if (!user) return;
 
     localStorage.removeItem("oauth_intent");
+    if (accountStatus === "activo" && user.internal_access === false) {
+      navigate("/mi-perfil", { replace: true });
+      return;
+    }
     if (needsGoogleCompletion) return;
     if (!isLocalBackend() && shouldPromptGoogleCompletion(user)) {
       setGoogleCompletionDraft(buildGoogleCompletionDraft(user));

@@ -87,6 +87,8 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
       ...profile, ...sessionUser,
       email: sessionUser.email,
       role: sessionUser.role ?? profile.role ?? undefined,
+      internal_access: profile.internal_access,
+      internal_unit: profile.internal_unit,
     };
 
     // Block access if not approved

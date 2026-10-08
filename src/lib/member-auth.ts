@@ -94,6 +94,7 @@ export function inferEducatorRama(profile: {
 }
 
 export function resolveMemberAccessFromProfile(profile: {
+  internal_unit?: string | null;
   edad?: number | null;
   rol_adulto?: string | null;
   rama_que_educa?: string | null;
@@ -109,6 +110,17 @@ export function resolveMemberAccessFromProfile(profile: {
     rolAdultoNormalizado === "educador/a" ||
     rolAdultoNormalizado === "educador" ||
     rolAdultoNormalizado === "educadora";
+
+  const assignedUnit = profile.internal_unit;
+  if (assignedUnit && ["lobatos", "tropa", "pioneros", "rover"].includes(assignedUnit)) {
+    return {
+      allowed: true,
+      rama: assignedUnit as MiembroRama,
+      allowedRamas: [assignedUnit as MiembroRama],
+      isRamaAdmin: isEducador,
+      accessType: isEducador ? "educador" : "beneficiario",
+    };
+  }
 
   if (typeof edad === "number" && !Number.isNaN(edad) && edad < 21) {
     const ramaPorEdad = deriveRamaFromEdad(edad);

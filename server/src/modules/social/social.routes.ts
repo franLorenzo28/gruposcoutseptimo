@@ -79,7 +79,7 @@ function profileBranch(profile: {
 export async function socialRoutes(app: FastifyInstance): Promise<void> {
   const api = app.withTypeProvider<ZodTypeProvider>();
 
-  api.get("/follows/relation/:id", { preHandler: app.requireActiveAccount, schema: { params: userParamsSchema } }, async (request) => {
+  api.get("/follows/relation/:id", { preHandler: app.requireInternalMember, schema: { params: userParamsSchema } }, async (request) => {
     const { data, error } = await adminDb(app)
       .from("follows")
       .select("follower_id,followed_id,status,created_at,accepted_at")
@@ -90,7 +90,7 @@ export async function socialRoutes(app: FastifyInstance): Promise<void> {
     return { data };
   });
 
-  api.post("/follows/follow", { preHandler: app.requireActiveAccount, schema: { body: followBodySchema } }, async (request, reply) => {
+  api.post("/follows/follow", { preHandler: app.requireInternalMember, schema: { body: followBodySchema } }, async (request, reply) => {
     const me = request.authUser!.id;
     if (me === request.body.targetId) throw new AppError(400, "FOLLOW_SELF_FORBIDDEN", "No puedes seguirte a ti mismo.");
     const client = adminDb(app);
@@ -114,13 +114,13 @@ export async function socialRoutes(app: FastifyInstance): Promise<void> {
     return reply.status(201).send({ data: data ?? { follower_id: me, followed_id: request.body.targetId, status } });
   });
 
-  api.delete("/follows/:id", { preHandler: app.requireActiveAccount, schema: { params: userParamsSchema } }, async (request, reply) => {
+  api.delete("/follows/:id", { preHandler: app.requireInternalMember, schema: { params: userParamsSchema } }, async (request, reply) => {
     const { error } = await adminDb(app).from("follows").delete().eq("follower_id", request.authUser!.id).eq("followed_id", request.params.id);
     if (error) throw new AppError(503, "FOLLOW_DELETE_FAILED", "No se pudo dejar de seguir.");
     return reply.status(204).send();
   });
 
-  api.post("/follows/:id/accept", { preHandler: app.requireActiveAccount, schema: { params: userParamsSchema } }, async (request, reply) => {
+  api.post("/follows/:id/accept", { preHandler: app.requireInternalMember, schema: { params: userParamsSchema } }, async (request, reply) => {
     const { data, error } = await adminDb(app).from("follows")
       .update({ status: "accepted", accepted_at: new Date().toISOString() })
       .eq("follower_id", request.params.id)
@@ -133,7 +133,7 @@ export async function socialRoutes(app: FastifyInstance): Promise<void> {
     return reply.status(204).send();
   });
 
-  api.delete("/follows/:id/reject", { preHandler: app.requireActiveAccount, schema: { params: userParamsSchema } }, async (request, reply) => {
+  api.delete("/follows/:id/reject", { preHandler: app.requireInternalMember, schema: { params: userParamsSchema } }, async (request, reply) => {
     const { error } = await adminDb(app).from("follows").delete()
       .eq("follower_id", request.params.id)
       .eq("followed_id", request.authUser!.id)
@@ -142,7 +142,7 @@ export async function socialRoutes(app: FastifyInstance): Promise<void> {
     return reply.status(204).send();
   });
 
-  api.get("/follows/followers", { preHandler: app.requireActiveAccount, schema: { querystring: followsListQuerySchema } }, async (request) => {
+  api.get("/follows/followers", { preHandler: app.requireInternalMember, schema: { querystring: followsListQuerySchema } }, async (request) => {
     await assertCanViewFollowList(app, request.authUser!.id, request.query.userId);
     const { data, error } = await adminDb(app).from("follows").select("follower_id,created_at")
       .eq("followed_id", request.query.userId).eq("status", "accepted")
@@ -151,7 +151,7 @@ export async function socialRoutes(app: FastifyInstance): Promise<void> {
     return { data: data ?? [] };
   });
 
-  api.get("/follows/following", { preHandler: app.requireActiveAccount, schema: { querystring: followsListQuerySchema } }, async (request) => {
+  api.get("/follows/following", { preHandler: app.requireInternalMember, schema: { querystring: followsListQuerySchema } }, async (request) => {
     await assertCanViewFollowList(app, request.authUser!.id, request.query.userId);
     const { data, error } = await adminDb(app).from("follows").select("followed_id,created_at")
       .eq("follower_id", request.query.userId).eq("status", "accepted")
@@ -160,7 +160,7 @@ export async function socialRoutes(app: FastifyInstance): Promise<void> {
     return { data: data ?? [] };
   });
 
-  api.get("/follows/counts", { preHandler: app.requireActiveAccount, schema: { querystring: followCountsQuerySchema } }, async (request) => {
+  api.get("/follows/counts", { preHandler: app.requireInternalMember, schema: { querystring: followCountsQuerySchema } }, async (request) => {
     await assertCanViewFollowList(app, request.authUser!.id, request.query.userId);
     const client = adminDb(app);
     const [followersResult, followingResult] = await Promise.all([
@@ -175,14 +175,14 @@ export async function socialRoutes(app: FastifyInstance): Promise<void> {
     return { data: { followers: followersResult.count ?? 0, following: followingResult.count ?? 0 } };
   });
 
-  api.get("/follows/pending", { preHandler: app.requireActiveAccount }, async (request) => {
+  api.get("/follows/pending", { preHandler: app.requireInternalMember }, async (request) => {
     const { data, error } = await adminDb(app).from("follows").select("follower_id,created_at")
       .eq("followed_id", request.authUser!.id).eq("status", "pending").order("created_at", { ascending: false }).limit(100);
     if (error) throw new AppError(503, "FOLLOW_LIST_FAILED", "No se pudieron cargar las solicitudes.");
     return { data: data ?? [] };
   });
 
-  api.get("/social/contacts", { preHandler: app.requireActiveAccount }, async (request) => {
+  api.get("/social/contacts", { preHandler: app.requireInternalMember }, async (request) => {
     const client = adminDb(app);
     const me = request.authUser!.id;
     const [profileResult, outgoingResult, incomingResult] = await Promise.all([
@@ -224,7 +224,7 @@ export async function socialRoutes(app: FastifyInstance): Promise<void> {
     };
   });
 
-  api.get("/dms/conversations", { preHandler: app.requireActiveAccount, schema: { querystring: listQuerySchema } }, async (request) => {
+  api.get("/dms/conversations", { preHandler: app.requireInternalMember, schema: { querystring: listQuerySchema } }, async (request) => {
     const client = adminDb(app);
     const me = request.authUser!.id;
     const { data: ownParticipants, error: participantError } = await client.from("conversation_participants")
@@ -266,7 +266,7 @@ export async function socialRoutes(app: FastifyInstance): Promise<void> {
     return { data: summaries };
   });
 
-  api.post("/dms/conversations", { preHandler: app.requireActiveAccount, schema: { body: conversationBodySchema } }, async (request) => {
+  api.post("/dms/conversations", { preHandler: app.requireInternalMember, schema: { body: conversationBodySchema } }, async (request) => {
     const me = request.authUser!.id;
     const other = request.body.otherId;
     if (me === other) throw new AppError(400, "CONVERSATION_SELF_FORBIDDEN", "No puedes abrir un chat contigo mismo.");
@@ -284,14 +284,14 @@ export async function socialRoutes(app: FastifyInstance): Promise<void> {
     return { data: { id: String(data), created_at: new Date().toISOString() } };
   });
 
-  api.get("/dms/conversations/:id/messages", { preHandler: app.requireActiveAccount, schema: { params: conversationParamsSchema } }, async (request) => {
+  api.get("/dms/conversations/:id/messages", { preHandler: app.requireInternalMember, schema: { params: conversationParamsSchema } }, async (request) => {
     await assertConversationMember(app, request.params.id, request.authUser!.id);
     const { data, error } = await adminDb(app).from("messages").select().eq("conversation_id", request.params.id).order("created_at", { ascending: true }).limit(500);
     if (error) throw new AppError(503, "MESSAGE_LIST_FAILED", "No se pudieron cargar los mensajes.");
     return { data: data ?? [] };
   });
 
-  api.post("/dms/conversations/:id/messages", { preHandler: app.requireActiveAccount, schema: { params: conversationParamsSchema, body: directMessageSchema } }, async (request, reply) => {
+  api.post("/dms/conversations/:id/messages", { preHandler: app.requireInternalMember, schema: { params: conversationParamsSchema, body: directMessageSchema } }, async (request, reply) => {
     await assertConversationMember(app, request.params.id, request.authUser!.id);
     const { data, error } = await adminDb(app).from("messages").insert({
       conversation_id: request.params.id,
@@ -302,7 +302,7 @@ export async function socialRoutes(app: FastifyInstance): Promise<void> {
     return reply.status(201).send({ data });
   });
 
-  api.get("/notifications", { preHandler: app.requireActiveAccount, schema: { querystring: listQuerySchema } }, async (request) => {
+  api.get("/notifications", { preHandler: app.requireInternalMember, schema: { querystring: listQuerySchema } }, async (request) => {
     const { data, error } = await adminDb(app).from("notifications")
       .select("id,type,entity_type,entity_id,data,read_at,created_at,actor_id")
       .eq("recipient_id", request.authUser!.id)
@@ -312,21 +312,21 @@ export async function socialRoutes(app: FastifyInstance): Promise<void> {
     return { data: data ?? [] };
   });
 
-  api.post("/notifications/mark-all-read", { preHandler: app.requireActiveAccount }, async (request, reply) => {
+  api.post("/notifications/mark-all-read", { preHandler: app.requireInternalMember }, async (request, reply) => {
     const { error } = await adminDb(app).from("notifications").update({ read_at: new Date().toISOString() })
       .eq("recipient_id", request.authUser!.id).is("read_at", null);
     if (error) throw new AppError(503, "NOTIFICATION_UPDATE_FAILED", "No se pudieron actualizar las notificaciones.");
     return reply.status(204).send();
   });
 
-  api.post("/notifications/:id/read", { preHandler: app.requireActiveAccount, schema: { params: userParamsSchema } }, async (request, reply) => {
+  api.post("/notifications/:id/read", { preHandler: app.requireInternalMember, schema: { params: userParamsSchema } }, async (request, reply) => {
     const { error } = await adminDb(app).from("notifications").update({ read_at: new Date().toISOString() })
       .eq("id", request.params.id).eq("recipient_id", request.authUser!.id);
     if (error) throw new AppError(503, "NOTIFICATION_UPDATE_FAILED", "No se pudo actualizar la notificación.");
     return reply.status(204).send();
   });
 
-  api.delete("/notifications/:id", { preHandler: app.requireActiveAccount, schema: { params: userParamsSchema } }, async (request, reply) => {
+  api.delete("/notifications/:id", { preHandler: app.requireInternalMember, schema: { params: userParamsSchema } }, async (request, reply) => {
     const { error } = await adminDb(app).from("notifications").delete().eq("id", request.params.id).eq("recipient_id", request.authUser!.id);
     if (error) throw new AppError(503, "NOTIFICATION_DELETE_FAILED", "No se pudo eliminar la notificación.");
     return reply.status(204).send();

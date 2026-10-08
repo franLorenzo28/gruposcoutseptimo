@@ -397,6 +397,9 @@ export const authRoutes: FastifyPluginAsyncZod<{
     if (config.AUTH_MODE !== "local" || !options.googleOAuthClient) {
       throw new AppError(503, "GOOGLE_OAUTH_NOT_CONFIGURED", "El acceso con Google no está configurado.");
     }
+    if (request.query.intent === "signup") {
+      throw new AppError(403, "INTERNAL_REGISTRATION_CLOSED", "El acceso interno lo habilita el administrador.");
+    }
     const state = randomBytes(32).toString("hex");
     const browser = randomBytes(32).toString("hex");
     const nonce = randomBytes(32).toString("hex");

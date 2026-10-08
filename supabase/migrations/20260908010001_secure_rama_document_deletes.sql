@@ -33,7 +33,7 @@ create policy "rama_docs_admin_delete"
   using (
     bucket_id = 'rama-documentos'
     and (
-      owner_id = auth.uid()
+      owner_id = auth.uid()::text
       or exists (
         select 1
         from public.profiles p

@@ -65,15 +65,33 @@ export function MemberAuthProvider({ children }: { children: React.ReactNode }) 
           return;
         }
 
+        let profile;
+        try {
+          profile = authUser.profile ?? await getProfile(authUser.id);
+        } catch {
+          if (!isCurrent()) return;
+          clearMemberSession();
+          setSession(null);
+          setAccessError("No pudimos cargar tu perfil. Revisa tu conexión e intenta iniciar sesión nuevamente.");
+          return;
+        }
+        if (!isCurrent()) return;
+        if (!profile || profile.account_status !== "activo" || profile.internal_access !== true) {
+          clearMemberSession();
+          setSession(null);
+          setAccessError("El acceso interno requiere habilitación del administrador.");
+          return;
+        }
+
         const storedSession = getStoredMemberSession();
         
         if (!storedSession || storedSession.authUserId !== authUser.id) {
           // Si no hay sesion de miembro o no coincide con authUser, intentamos autologuear
           try {
-            const profile = authUser.profile ?? await getProfile(authUser.id);
             if (!isCurrent()) return;
             if (profile && profile.nombre_completo) {
               const access = resolveMemberAccessFromProfile({
+                internal_unit: profile.internal_unit,
                 edad: (profile as any).edad,
                 rol_adulto: profile.rol_adulto,
                 rama_que_educa: profile.rama_que_educa,

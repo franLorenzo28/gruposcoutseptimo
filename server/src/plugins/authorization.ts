@@ -7,6 +7,7 @@ declare module "fastify" {
   interface FastifyInstance {
     getPowerRole(request: FastifyRequest): "user" | "mod" | "admin";
     requireActiveAccount(request: FastifyRequest, reply: FastifyReply): Promise<void>;
+    requireInternalMember(request: FastifyRequest, reply: FastifyReply): Promise<void>;
     requireAdmin(request: FastifyRequest, reply: FastifyReply): Promise<void>;
   }
 }
@@ -34,6 +35,29 @@ export function installAuthorization(app: FastifyInstance, config: EnvironmentCo
     }
     return metadataRole(request);
   });
+
+  app.decorate(
+    "requireInternalMember",
+    async function requireInternalMember(request: FastifyRequest, reply: FastifyReply): Promise<void> {
+      await app.requireActiveAccount(request, reply);
+      let allowed = false;
+      if (app.db) {
+        try {
+          const result = await app.db.query<{ internal_access: boolean }>(
+            "select internal_access from public.profiles where user_id = $1 limit 1", [request.authUser!.id],
+          );
+          allowed = result.rows[0]?.internal_access === true;
+        } catch { throw new AppError(503, "AUTHORIZATION_UNAVAILABLE", "No se pudo comprobar el acceso interno."); }
+      } else {
+        if (!app.supabaseAdmin) throw new AppError(503, "ADMIN_DATABASE_NOT_CONFIGURED", "La autorización no está disponible.");
+        const result = await app.supabaseAdmin.from("profiles").select("internal_access")
+          .eq("user_id", request.authUser!.id).maybeSingle();
+        if (result.error) throw new AppError(503, "AUTHORIZATION_UNAVAILABLE", "No se pudo comprobar el acceso interno.");
+        allowed = result.data?.internal_access === true;
+      }
+      if (!allowed) throw new AppError(403, "INTERNAL_ACCESS_REQUIRED", "El acceso interno requiere habilitación del administrador.");
+    },
+  );
 
   app.decorate(
     "requireActiveAccount",

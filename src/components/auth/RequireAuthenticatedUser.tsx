@@ -38,7 +38,7 @@ export default function RequireAuthenticatedUser({
           <div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row">
             <Button asChild>
               <Link
-                to={`/auth?redirect=${encodeURIComponent(location.pathname)}`}
+                to={`${location.pathname}?auth=login`}
               >
                 Iniciar sesion
               </Link>
@@ -76,7 +76,7 @@ export default function RequireAuthenticatedUser({
           <p className="mt-2 text-sm text-muted-foreground">{description}</p>
           <div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row">
             <Button asChild>
-              <Link to={`/auth?redirect=${encodeURIComponent(location.pathname)}`}>
+              <Link to={`${location.pathname}?auth=login`}>
                 Ir a inicio de sesión
               </Link>
             </Button>

@@ -4,6 +4,7 @@ import { ZodTypeProvider } from "fastify-type-provider-zod";
 import { AppError } from "../../core/errors.js";
 import { randomBytes } from "node:crypto";
 import bcrypt from "bcryptjs";
+import { z } from "zod/v4";
 import type { EnvironmentConfig } from "../../config/environment.js";
 import { hashSessionToken } from "../auth/local-auth.js";
 import { authActionUrl, type AuthMailer } from "../auth/auth-mailer.js";
@@ -23,6 +24,10 @@ const publicAccepted = {
   accepted: true,
   message: "Si los datos son válidos, la solicitud quedará pendiente de revisión.",
 };
+
+function rejectInternalSelfRegistration(): never {
+  throw new AppError(403, "INTERNAL_REGISTRATION_CLOSED", "El acceso interno lo habilita el administrador. Crea una cuenta pública para participar.");
+}
 
 function requireAdminClient(app: FastifyInstance) {
   if (!app.supabaseAdmin) {
@@ -55,9 +60,52 @@ function registrationRow(input: RegistrationProfileInput, userId: string, email:
 export async function registrationRoutes(app: FastifyInstance, options: { config: EnvironmentConfig; authMailer: AuthMailer }): Promise<void> {
   const api = app.withTypeProvider<ZodTypeProvider>();
 
+  api.post("/v1/public/register", {
+    config: { rateLimit: { max: 5, timeWindow: "15 minutes" } },
+    schema: { body: z.object({
+      nombre_completo: z.string().trim().min(2).max(160),
+      email: z.string().trim().toLowerCase().email().max(254),
+      password: z.string().min(8).max(128)
+        .refine((value) => Buffer.byteLength(value, "utf8") <= 72, "La contraseña no puede superar 72 bytes."),
+    }) },
+  }, async (request, reply) => {
+    const { nombre_completo: name, email, password } = request.body;
+    if (options.config.AUTH_MODE === "local") {
+      const token = randomBytes(32).toString("hex");
+      let result;
+      try {
+        result = await new LocalAuthRepository(app).createPublicRegistration(
+          email, await bcrypt.hash(password, 12), name, hashSessionToken(token),
+        );
+      } catch (error) {
+        request.log.error({ err: error }, "public registration failed");
+        throw new AppError(503, "PUBLIC_REGISTRATION_UNAVAILABLE", "No se pudo crear la cuenta.");
+      }
+      if (result?.created) {
+        try { await options.authMailer(email, token, "verification"); }
+        catch { request.log.error({ userId: result.user_id }, "public verification email delivery failed"); }
+      }
+      return reply.status(202).send({ data: {
+        accepted: true,
+        ...(result?.created && options.config.NODE_ENV !== "production"
+          ? { verificationUrl: authActionUrl(options.config, token, "verification") } : {}),
+      } });
+    }
+    if (!app.supabase) throw new AppError(503, "SUPABASE_NOT_CONFIGURED", "El registro no está disponible.");
+    const { error } = await app.createPublicSupabase().auth.signUp({
+      email, password, options: { data: { nombre_completo: name, account_kind: "publico" } },
+    });
+    if (error) {
+      throw new AppError(error.status === 429 ? 429 : 400, "PUBLIC_REGISTRATION_FAILED",
+        error.status === 429 ? "Demasiados intentos. Intenta más tarde." : "No se pudo crear la cuenta.");
+    }
+    return reply.status(202).send({ data: { accepted: true } });
+  });
+
   api.post(
     "/v1/registration-requests",
     {
+      preHandler: rejectInternalSelfRegistration,
       config: { rateLimit: { max: 5, timeWindow: "15 minutes" } },
       schema: { body: emailRegistrationSchema },
     },
@@ -160,6 +208,7 @@ export async function registrationRoutes(app: FastifyInstance, options: { config
   api.post(
     "/v1/registration-requests/oauth/local",
     {
+      preHandler: rejectInternalSelfRegistration,
       config: { rateLimit: { max: 5, timeWindow: "15 minutes" } },
       schema: { body: localOAuthRegistrationSchema },
     },
@@ -186,7 +235,7 @@ export async function registrationRoutes(app: FastifyInstance, options: { config
   api.post(
     "/v1/registration-requests/oauth",
     {
-      preHandler: app.authenticate,
+      preHandler: rejectInternalSelfRegistration,
       config: { rateLimit: { max: 10, timeWindow: "15 minutes" } },
       schema: { body: registrationProfileSchema },
     },

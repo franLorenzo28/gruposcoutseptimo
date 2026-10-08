@@ -95,4 +95,23 @@ describe("direct PostgreSQL profile routes", () => {
     expect(batch.statusCode).toBe(200);
     expect(batch.json().data.map((profile: { user_id: string }) => profile.user_id)).toEqual([publicId]);
   });
+
+  it("lets a public account edit its profile without entering internal groups", async () => {
+    await insertProfile(publicId, "public@example.com", "Perfil Público", "public_member", true);
+    await db.query("update public.profiles set internal_access = false, account_classification = 'publico' where user_id = $1", [publicId]);
+    const login = await app.inject({
+      method: "POST", url: "/v1/auth/login",
+      payload: { email: "public@example.com", password: "correct-password" },
+    });
+    expect(login.statusCode).toBe(200);
+    const headers = { authorization: `Bearer ${login.json().data.access_token}` };
+
+    const profile = await app.inject({ method: "GET", url: "/v1/me/profile", headers });
+    expect(profile.statusCode).toBe(200);
+    expect(profile.json().data.internal_access).toBe(false);
+
+    const groups = await app.inject({ method: "GET", url: "/groups", headers });
+    expect(groups.statusCode).toBe(403);
+    expect(groups.json().error.code).toBe("INTERNAL_ACCESS_REQUIRED");
+  });
 });

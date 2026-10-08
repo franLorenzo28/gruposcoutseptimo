@@ -47,7 +47,7 @@ async function requireManager(app: FastifyInstance, request: FastifyRequest, gro
 export async function groupRoutes(app: FastifyInstance): Promise<void> {
   const api = app.withTypeProvider<ZodTypeProvider>();
 
-  api.get("/groups", { preHandler: app.requireActiveAccount }, async (request) => {
+  api.get("/groups", { preHandler: app.requireInternalMember }, async (request) => {
     const client = db(app);
     const [{ data: groups, error }, { data: members, error: membersError }] = await Promise.all([
       client.from("groups").select("id,name,description,cover_image,creator_id,created_at,updated_at").order("created_at", { ascending: false }).limit(500),
@@ -65,7 +65,7 @@ export async function groupRoutes(app: FastifyInstance): Promise<void> {
     };
   });
 
-  api.post("/groups", { preHandler: app.requireActiveAccount, schema: { body: groupInputSchema } }, async (request, reply) => {
+  api.post("/groups", { preHandler: app.requireInternalMember, schema: { body: groupInputSchema } }, async (request, reply) => {
     const client = db(app);
     const { data: group, error } = await client
       .from("groups")
@@ -90,7 +90,7 @@ export async function groupRoutes(app: FastifyInstance): Promise<void> {
     return reply.status(201).send({ data: { ...group, cover_url: group.cover_image, my_role: "owner", member_count: 1 } });
   });
 
-  api.get("/groups/:id", { preHandler: app.requireActiveAccount, schema: { params: groupParamsSchema } }, async (request) => {
+  api.get("/groups/:id", { preHandler: app.requireInternalMember, schema: { params: groupParamsSchema } }, async (request) => {
     const { data, error } = await db(app).from("groups").select().eq("id", request.params.id).maybeSingle();
     if (error) throw new AppError(503, "GROUP_READ_FAILED", "No se pudo cargar el grupo.");
     if (!data) throw new AppError(404, "GROUP_NOT_FOUND", "El grupo no existe.");
@@ -98,7 +98,7 @@ export async function groupRoutes(app: FastifyInstance): Promise<void> {
     return { data: { ...data, cover_url: data.cover_image, my_role: role ?? null } };
   });
 
-  api.patch("/groups/:id", { preHandler: app.requireActiveAccount, schema: { params: groupParamsSchema, body: groupPatchSchema } }, async (request) => {
+  api.patch("/groups/:id", { preHandler: app.requireInternalMember, schema: { params: groupParamsSchema, body: groupPatchSchema } }, async (request) => {
     await requireManager(app, request, request.params.id);
     const { data, error } = await db(app)
       .from("groups")
@@ -115,7 +115,7 @@ export async function groupRoutes(app: FastifyInstance): Promise<void> {
     return { data };
   });
 
-  api.put("/groups/:id", { preHandler: app.requireActiveAccount, schema: { params: groupParamsSchema, body: groupPatchSchema } }, async (request) => {
+  api.put("/groups/:id", { preHandler: app.requireInternalMember, schema: { params: groupParamsSchema, body: groupPatchSchema } }, async (request) => {
     await requireManager(app, request, request.params.id);
     const { data, error } = await db(app)
       .from("groups")
@@ -132,7 +132,7 @@ export async function groupRoutes(app: FastifyInstance): Promise<void> {
     return { data };
   });
 
-  api.post("/groups/:id/join", { preHandler: app.requireActiveAccount, schema: { params: groupParamsSchema } }, async (request, reply) => {
+  api.post("/groups/:id/join", { preHandler: app.requireInternalMember, schema: { params: groupParamsSchema } }, async (request, reply) => {
     const { error } = await db(app).from("group_members").insert({
       group_id: request.params.id,
       user_id: request.authUser!.id,
@@ -142,7 +142,7 @@ export async function groupRoutes(app: FastifyInstance): Promise<void> {
     return reply.status(204).send();
   });
 
-  api.post("/groups/:id/leave", { preHandler: app.requireActiveAccount, schema: { params: groupParamsSchema } }, async (request, reply) => {
+  api.post("/groups/:id/leave", { preHandler: app.requireInternalMember, schema: { params: groupParamsSchema } }, async (request, reply) => {
     const role = await requireMember(app, request, request.params.id);
     if (role === "owner") throw new AppError(409, "GROUP_OWNER_CANNOT_LEAVE", "Transfiere o elimina el grupo antes de salir.");
     const { error } = await db(app).from("group_members").delete().eq("group_id", request.params.id).eq("user_id", request.authUser!.id);
@@ -150,7 +150,7 @@ export async function groupRoutes(app: FastifyInstance): Promise<void> {
     return reply.status(204).send();
   });
 
-  api.get("/groups/:id/members", { preHandler: app.requireActiveAccount, schema: { params: groupParamsSchema } }, async (request) => {
+  api.get("/groups/:id/members", { preHandler: app.requireInternalMember, schema: { params: groupParamsSchema } }, async (request) => {
     await requireMember(app, request, request.params.id);
     const client = db(app);
     const { data: members, error } = await client.from("group_members").select("group_id,user_id,role,joined_at").eq("group_id", request.params.id);
@@ -162,7 +162,7 @@ export async function groupRoutes(app: FastifyInstance): Promise<void> {
     return { data: (members ?? []).map((member) => ({ ...member, profile: (profiles ?? []).find((profile) => profile.user_id === member.user_id) ?? null })) };
   });
 
-  api.post("/groups/:id/admins/promote", { preHandler: app.requireActiveAccount, schema: { params: groupParamsSchema, body: groupRoleBodySchema } }, async (request, reply) => {
+  api.post("/groups/:id/admins/promote", { preHandler: app.requireInternalMember, schema: { params: groupParamsSchema, body: groupRoleBodySchema } }, async (request, reply) => {
     const actorRole = await requireManager(app, request, request.params.id);
     if (actorRole !== "owner") throw new AppError(403, "GROUP_OWNER_REQUIRED", "Sólo el propietario puede promover administradores.");
     const { error } = await db(app).from("group_members").update({ role: "admin" }).eq("group_id", request.params.id).eq("user_id", request.body.userId).eq("role", "member");
@@ -170,7 +170,7 @@ export async function groupRoutes(app: FastifyInstance): Promise<void> {
     return reply.status(204).send();
   });
 
-  api.post("/groups/:id/admins/demote", { preHandler: app.requireActiveAccount, schema: { params: groupParamsSchema, body: groupRoleBodySchema } }, async (request, reply) => {
+  api.post("/groups/:id/admins/demote", { preHandler: app.requireInternalMember, schema: { params: groupParamsSchema, body: groupRoleBodySchema } }, async (request, reply) => {
     const actorRole = await requireManager(app, request, request.params.id);
     if (actorRole !== "owner") throw new AppError(403, "GROUP_OWNER_REQUIRED", "Sólo el propietario puede cambiar administradores.");
     const { error } = await db(app).from("group_members").update({ role: "member" }).eq("group_id", request.params.id).eq("user_id", request.body.userId).eq("role", "admin");
@@ -178,7 +178,7 @@ export async function groupRoutes(app: FastifyInstance): Promise<void> {
     return reply.status(204).send();
   });
 
-  api.delete("/groups/:id/members/:userId", { preHandler: app.requireActiveAccount, schema: { params: groupMemberParamsSchema } }, async (request, reply) => {
+  api.delete("/groups/:id/members/:userId", { preHandler: app.requireInternalMember, schema: { params: groupMemberParamsSchema } }, async (request, reply) => {
     await requireManager(app, request, request.params.id);
     const targetRole = await membership(app, request.params.id, request.params.userId);
     if (targetRole === "owner") throw new AppError(409, "GROUP_OWNER_PROTECTED", "No se puede expulsar al propietario.");
@@ -187,7 +187,7 @@ export async function groupRoutes(app: FastifyInstance): Promise<void> {
     return reply.status(204).send();
   });
 
-  api.post("/groups/:id/invite", { preHandler: app.requireActiveAccount, schema: { params: groupParamsSchema, body: groupInviteSchema } }, async (request) => {
+  api.post("/groups/:id/invite", { preHandler: app.requireInternalMember, schema: { params: groupParamsSchema, body: groupInviteSchema } }, async (request) => {
     await requireManager(app, request, request.params.id);
     const client = db(app);
     const uniqueIds = Array.from(new Set(request.body.userIds)).filter((id) => id !== request.authUser!.id);
@@ -203,7 +203,7 @@ export async function groupRoutes(app: FastifyInstance): Promise<void> {
     return { data: { inserted: rows.length, skipped: uniqueIds.length - rows.length } };
   });
 
-  api.get("/groups/:id/messages", { preHandler: app.requireActiveAccount, schema: { params: groupParamsSchema } }, async (request) => {
+  api.get("/groups/:id/messages", { preHandler: app.requireInternalMember, schema: { params: groupParamsSchema } }, async (request) => {
     await requireMember(app, request, request.params.id);
     const client = db(app);
     const { data, error } = await client.from("group_messages").select().eq("group_id", request.params.id).order("created_at", { ascending: true }).limit(500);
@@ -221,7 +221,7 @@ export async function groupRoutes(app: FastifyInstance): Promise<void> {
     };
   });
 
-  api.post("/groups/:id/messages", { preHandler: app.requireActiveAccount, schema: { params: groupParamsSchema, body: groupMessageSchema } }, async (request, reply) => {
+  api.post("/groups/:id/messages", { preHandler: app.requireInternalMember, schema: { params: groupParamsSchema, body: groupMessageSchema } }, async (request, reply) => {
     await requireMember(app, request, request.params.id);
     const { data, error } = await db(app).from("group_messages").insert({
       group_id: request.params.id,
@@ -233,7 +233,7 @@ export async function groupRoutes(app: FastifyInstance): Promise<void> {
     return reply.status(201).send({ data });
   });
 
-  api.delete("/groups/:id/messages/:messageId", { preHandler: app.requireActiveAccount, schema: { params: groupMessageParamsSchema } }, async (request, reply) => {
+  api.delete("/groups/:id/messages/:messageId", { preHandler: app.requireInternalMember, schema: { params: groupMessageParamsSchema } }, async (request, reply) => {
     const actorRole = await requireMember(app, request, request.params.id);
     const client = db(app);
     const { data: message, error: lookupError } = await client.from("group_messages").select("sender_id")
@@ -248,7 +248,7 @@ export async function groupRoutes(app: FastifyInstance): Promise<void> {
     return reply.status(204).send();
   });
 
-  api.delete("/group-messages/:messageId", { preHandler: app.requireActiveAccount, schema: { params: groupMessageIdParamsSchema } }, async (request, reply) => {
+  api.delete("/group-messages/:messageId", { preHandler: app.requireInternalMember, schema: { params: groupMessageIdParamsSchema } }, async (request, reply) => {
     const client = db(app);
     const { data: message, error: lookupError } = await client.from("group_messages")
       .select("group_id,sender_id").eq("id", request.params.messageId).maybeSingle();
@@ -263,7 +263,7 @@ export async function groupRoutes(app: FastifyInstance): Promise<void> {
     return reply.status(204).send();
   });
 
-  api.delete("/groups/:id", { preHandler: app.requireActiveAccount, schema: { params: groupParamsSchema } }, async (request, reply) => {
+  api.delete("/groups/:id", { preHandler: app.requireInternalMember, schema: { params: groupParamsSchema } }, async (request, reply) => {
     const role = await membership(app, request.params.id, request.authUser!.id);
     if (role !== "owner" && app.getPowerRole(request) !== "admin") {
       throw new AppError(403, "GROUP_OWNER_REQUIRED", "Sólo el propietario puede eliminar el grupo.");

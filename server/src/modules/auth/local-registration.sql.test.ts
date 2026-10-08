@@ -21,6 +21,16 @@ async function register(email = "ada@example.com", input: object = profile) {
 }
 
 describe("local registration SQL", () => {
+  it("creates a public account that activates on email verification without internal access", async () => {
+    const created = await repository.createPublicRegistration("public@example.com", "hashed-password", "Persona Pública", "public-token");
+    expect(created.created).toBe(true);
+    expect((await db.query("select id from public.registration_requests where email = 'public@example.com'")).rows).toHaveLength(0);
+    const verified = await db.query<{ result: { nextStatus: string } }>("select public.verify_local_email('public-token') as result");
+    expect(verified.rows[0].result.nextStatus).toBe("activo");
+    expect((await db.query("select account_status, account_classification, internal_access from public.profiles where user_id = $1", [created.user_id])).rows)
+      .toEqual([{ account_status: "activo", account_classification: "publico", internal_access: false }]);
+  });
+
   it("creates the account, pending profile and request without auth.users or user-controlled roles", async () => {
     const created = await register("ADA@example.com", { ...profile, role: "admin", account_status: "activo" });
     const { rows } = await db.query<{ email: string; status: string; role: string; auth_count: number }>(`

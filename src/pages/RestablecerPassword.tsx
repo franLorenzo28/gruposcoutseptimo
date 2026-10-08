@@ -114,7 +114,7 @@ export default function RestablecerPassword() {
         {!local && resetMode && !checkingSession && !sessionReady && <Button asChild variant="outline"><Link to="/interno/restablecer-password">Solicitar otro enlace</Link></Button>}
         {message && <p role="status" className="text-sm">{message}</p>}
         {developmentLink && <p className="text-sm"><a href={developmentLink} className="text-primary underline">Abrir enlace (desarrollo)</a></p>}
-        <Button asChild variant="link"><Link to={done && !local ? "/interno/dashboard" : "/interno/auth"}>{done && !local ? "Continuar a mi cuenta" : "Volver a iniciar sesión"}</Link></Button>
+        <Button asChild variant="link"><Link to={done && !local ? "/mi-perfil" : "/?auth=login"}>{done && !local ? "Continuar a mi cuenta" : "Volver a iniciar sesión"}</Link></Button>
       </CardContent>
     </Card>
   </section>;

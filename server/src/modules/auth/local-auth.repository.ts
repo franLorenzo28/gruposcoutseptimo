@@ -236,6 +236,13 @@ export class LocalAuthRepository {
       { p_email: email, p_password_hash: passwordHash, p_profile: profile, p_token_hash: tokenHash });
   }
 
+  createPublicRegistration(email: string, passwordHash: string, name: string, tokenHash: string) {
+    return this.call<{ created?: boolean; user_id?: string }>("create_local_public_registration",
+      "public.create_local_public_registration($1, $2, $3, $4)",
+      [email, passwordHash, name, tokenHash],
+      { p_email: email, p_password_hash: passwordHash, p_name: name, p_token_hash: tokenHash });
+  }
+
   reviewRegistration(requestId: string, action: string, reviewerId: string, notes: string | null) {
     return this.call<{ user_id?: string | null; status?: string }>("review_local_registration",
       "public.review_local_registration($1, $2, $3, $4)", [requestId, action, reviewerId, notes],

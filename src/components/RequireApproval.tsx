@@ -24,5 +24,9 @@ export default function RequireApproval({ children }: { children: React.ReactNod
     return <PendingApprovalScreen userName={user.nombre_completo || user.email} status={accountStatus} />;
   }
 
+  if (user.internal_access !== true) {
+    return <Navigate to="/mi-perfil" replace />;
+  }
+
   return <>{children}</>;
 }

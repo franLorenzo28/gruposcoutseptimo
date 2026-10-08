@@ -65,40 +65,15 @@ afterEach(async () => {
 });
 
 describe("local Google OAuth HTTP flow", () => {
-  it("binds the callback to state, browser cookie and nonce, then completes signup once", async () => {
-    const initiated = await start("signup");
-    const response = await app.inject({
-      method: "GET",
-      url: `/v1/auth/google/callback?code=authorization-code&state=${initiated.state}`,
-      headers: { cookie: initiated.cookie },
-    });
-    expect(response.statusCode).toBe(302);
-    expect(exchangeAndVerify).toHaveBeenCalledWith("authorization-code", initiated.nonce);
-    const redirect = new URL(response.headers.location!);
-    expect(`${redirect.origin}${redirect.pathname}`).toBe("https://app.example.test/interno/auth/callback");
-    const ticket = new URLSearchParams(redirect.hash.slice(1)).get("oauth_ticket")!;
-    expect(ticket).toMatch(/^[a-f0-9]{64}$/);
-
-    const inspection = await app.inject({
-      method: "POST", url: "/v1/auth/google/ticket", payload: { ticket },
-    });
-    expect(inspection.statusCode).toBe(200);
-    expect(inspection.json().data).toMatchObject({ intent: "signup", email: "google@example.com" });
-
-    const profile = { ticket, nombre: "Grace", apellido: "Hopper", grupo_scout: "septimo" };
-    const completed = await app.inject({
-      method: "POST", url: "/v1/registration-requests/oauth/local", payload: profile,
-    });
-    expect(completed.statusCode).toBe(202);
-    const repeated = await app.inject({
-      method: "POST", url: "/v1/registration-requests/oauth/local", payload: profile,
-    });
-    expect(repeated.statusCode).toBe(400);
-    expect(repeated.json().error.code).toBe("OAUTH_TICKET_INVALID");
+  it("closes Google self-registration for internal access", async () => {
+    const response = await app.inject({ method: "GET", url: "/v1/auth/google?intent=signup" });
+    expect(response.statusCode).toBe(403);
+    expect(response.json().error.code).toBe("INTERNAL_REGISTRATION_CLOSED");
+    expect(authorizationUrl).not.toHaveBeenCalled();
   });
 
   it("rejects a callback whose state does not match before exchanging the code", async () => {
-    const initiated = await start("signup");
+    const initiated = await start("login");
     const response = await app.inject({
       method: "GET",
       url: `/v1/auth/google/callback?code=authorization-code&state=${"a".repeat(64)}`,

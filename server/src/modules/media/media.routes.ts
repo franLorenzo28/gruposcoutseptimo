@@ -42,9 +42,9 @@ async function canWriteBucket(app: FastifyInstance, request: FastifyRequest, buc
   if (bucket === "avatars") return true;
   if (app.getPowerRole(request) !== "user") return true;
   if (bucket !== "rama-documentos") return false;
-  const { data } = await client(app).from("profiles").select("rol_adulto,account_status")
+  const { data } = await client(app).from("profiles").select("rol_adulto,account_status,internal_access")
     .eq("user_id", request.authUser!.id).maybeSingle();
-  return data?.account_status === "activo" && ["educador", "educador/a", "educadora"].includes(String(data.rol_adulto || "").toLowerCase());
+  return data?.account_status === "activo" && data.internal_access === true && ["educador", "educador/a", "educadora"].includes(String(data.rol_adulto || "").toLowerCase());
 }
 
 export async function mediaRoutes(app: FastifyInstance): Promise<void> {
@@ -69,7 +69,8 @@ export async function mediaRoutes(app: FastifyInstance): Promise<void> {
     return { data: { bucket: request.body.bucket, path, token: data.token, signedUrl: data.signedUrl } };
   });
 
-  api.post("/v1/media/downloads/sign", { preHandler: app.requireActiveAccount, schema: { body: storageObjectSchema } }, async (request) => {
+  api.post("/v1/media/downloads/sign", { preHandler: app.requireActiveAccount, schema: { body: storageObjectSchema } }, async (request, reply) => {
+    if (request.body.bucket !== "avatars") await app.requireInternalMember(request, reply);
     const { data, error } = await client(app).storage.from(request.body.bucket).createSignedUrl(request.body.path, 300);
     if (error) throw new AppError(404, "MEDIA_NOT_FOUND", "No se pudo autorizar la descarga.");
     return { data: { signedUrl: data.signedUrl, expiresIn: 300 } };
@@ -77,7 +78,7 @@ export async function mediaRoutes(app: FastifyInstance): Promise<void> {
 
   api.delete("/v1/media/objects", { preHandler: app.requireActiveAccount, schema: { body: storageObjectSchema } }, async (request, reply) => {
     const ownsAvatar = request.body.bucket === "avatars" && request.body.path.startsWith(`${request.authUser!.id}/`);
-    if (!ownsAvatar && !(await canWriteBucket(app, request, request.body.bucket))) {
+    if (request.body.bucket === "avatars" ? !ownsAvatar : !(await canWriteBucket(app, request, request.body.bucket))) {
       throw new AppError(403, "MEDIA_DELETE_FORBIDDEN", "No tienes permisos para eliminar ese archivo.");
     }
     const { error } = await client(app).storage.from(request.body.bucket).remove([request.body.path]);

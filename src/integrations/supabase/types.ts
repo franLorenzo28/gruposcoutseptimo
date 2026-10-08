@@ -446,6 +446,8 @@ export type Database = {
           equipo_pioneros: string | null
           fecha_nacimiento: string | null
           id: string
+          internal_access: boolean
+          internal_unit: string | null
           is_public: boolean | null
           nombre_completo: string
           notification_preferences: Json | null
@@ -479,6 +481,8 @@ export type Database = {
           equipo_pioneros?: string | null
           fecha_nacimiento?: string | null
           id?: string
+          internal_access?: boolean
+          internal_unit?: string | null
           is_public?: boolean | null
           nombre_completo: string
           notification_preferences?: Json | null
@@ -512,6 +516,8 @@ export type Database = {
           equipo_pioneros?: string | null
           fecha_nacimiento?: string | null
           id?: string
+          internal_access?: boolean
+          internal_unit?: string | null
           is_public?: boolean | null
           nombre_completo?: string
           notification_preferences?: Json | null
