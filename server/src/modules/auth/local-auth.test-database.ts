@@ -17,7 +17,8 @@ const fixture = `
     patrulla text, seisena text, adelanto text, equipo_pioneros text, comunidad_rovers text,
     promesa boolean, ppp_url text, is_public boolean default true,
     privacy_preferences jsonb default '{}'::jsonb, notification_preferences jsonb default '{}'::jsonb,
-    rol_adulto text, rama_que_educa text, account_status text, account_classification text,
+    role text not null default 'user', rol_adulto text, rama_que_educa text,
+    educador_aprobado boolean not null default false, account_status text, account_classification text,
     internal_access boolean not null default true, internal_unit text,
     email_verified boolean default false, account_review_reason text,
     created_at timestamptz default now(), updated_at timestamptz default now());

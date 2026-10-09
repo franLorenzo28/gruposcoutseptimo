@@ -42,9 +42,10 @@ async function canWriteBucket(app: FastifyInstance, request: FastifyRequest, buc
   if (bucket === "avatars") return true;
   if (app.getPowerRole(request) !== "user") return true;
   if (bucket !== "rama-documentos") return false;
-  const { data } = await client(app).from("profiles").select("rol_adulto,account_status,internal_access")
+  const { data } = await client(app).from("profiles").select("rol_adulto,educador_aprobado,account_status,internal_access")
     .eq("user_id", request.authUser!.id).maybeSingle();
-  return data?.account_status === "activo" && data.internal_access === true && ["educador", "educador/a", "educadora"].includes(String(data.rol_adulto || "").toLowerCase());
+  return data?.account_status === "activo" && data.internal_access === true && data.educador_aprobado === true
+    && ["educador", "educador/a", "educadora"].includes(String(data.rol_adulto || "").toLowerCase());
 }
 
 export async function mediaRoutes(app: FastifyInstance): Promise<void> {

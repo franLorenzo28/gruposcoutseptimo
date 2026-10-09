@@ -25,13 +25,26 @@ declare module "fastify" {
 }
 
 async function profileRoleFromAdminClient(app: FastifyInstance, userId: string): Promise<string | null> {
-  if (!app.supabaseAdmin) return null;
-  const { data } = await app.supabaseAdmin
+  if (!app.supabaseAdmin) throw new AppError(503, "AUTHORIZATION_UNAVAILABLE", "No se pudo comprobar el rol.");
+  const { data, error } = await app.supabaseAdmin
     .from("profiles")
     .select("role")
     .eq("user_id", userId)
     .maybeSingle();
+  if (error) throw new AppError(503, "AUTHORIZATION_UNAVAILABLE", "No se pudo comprobar el rol.");
   return typeof data?.role === "string" ? data.role : null;
+}
+
+async function loadProfileRole(app: FastifyInstance, userId: string): Promise<string | null> {
+  if (!app.db) return profileRoleFromAdminClient(app, userId);
+  try {
+    const result = await app.db.query<{ role: string | null }>(
+      "select role from public.profiles where user_id = $1 limit 1", [userId],
+    );
+    return result.rows[0]?.role ?? null;
+  } catch {
+    throw new AppError(503, "AUTHORIZATION_UNAVAILABLE", "No se pudo comprobar el rol.");
+  }
 }
 
 function tokenFromRequest(request: FastifyRequest): string | null {
@@ -81,6 +94,7 @@ async function authenticateLocal(
   if (!row) throw new AppError(401, "AUTH_TOKEN_INVALID", "El token de acceso no es válido.");
 
   request.authUser = localUserFromRow(row as LocalUserRow);
+  request.authProfileRole = await loadProfileRole(app, request.authUser.id);
   request.authToken = accessToken;
   request.authSessionId = claims.jti;
   // Local JWTs do not carry an RLS identity. Business routes are already guarded
@@ -125,6 +139,7 @@ export function installAuthentication(app: FastifyInstance, config: EnvironmentC
       }
 
       request.authUser = data.user;
+      request.authProfileRole = await loadProfileRole(app, data.user.id);
       request.authToken = accessToken;
       request.authSessionId = null;
       request.userSupabase = app.createUserSupabase(accessToken);

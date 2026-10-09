@@ -18,7 +18,7 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
   api.get("/v1/admin/users", { preHandler: app.requireAdmin }, async () => {
     const { data, error } = await adminClient(app)
       .from("profiles")
-      .select("user_id,email,nombre_completo,username,avatar_url,role,rol_adulto,rama_que_educa,account_status,account_classification,internal_access,internal_unit,created_at,updated_at")
+      .select("user_id,email,nombre_completo,username,avatar_url,role,rol_adulto,rama_que_educa,educador_aprobado,account_status,account_classification,internal_access,internal_unit,created_at,updated_at")
       .order("created_at", { ascending: false })
       .limit(500);
     if (error) throw new AppError(503, "ADMIN_USERS_FAILED", "No se pudieron cargar los usuarios.");
@@ -28,7 +28,7 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
   api.get("/v1/admin/dashboard-data", { preHandler: app.requireAdmin }, async () => {
     const client = adminClient(app);
     const [users, groups, events, messages, groupMessages, pages, follows, notifications] = await Promise.all([
-      client.from("profiles").select("user_id,email,nombre_completo,username,avatar_url,role,rol_adulto,rama_que_educa,account_status,account_classification,internal_access,internal_unit,created_at,updated_at").order("created_at", { ascending: false }).limit(500),
+      client.from("profiles").select("user_id,email,nombre_completo,username,avatar_url,role,rol_adulto,rama_que_educa,educador_aprobado,account_status,account_classification,internal_access,internal_unit,created_at,updated_at").order("created_at", { ascending: false }).limit(500),
       client.from("groups").select().order("created_at", { ascending: false }).limit(200),
       client.from("eventos").select().order("fecha_inicio", { ascending: false }).limit(200),
       client.from("messages").select().order("created_at", { ascending: false }).limit(200),
@@ -143,19 +143,23 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
       }
       const client = adminClient(app);
       const { data: notification, error: lookupError } = await client.from("notifications")
-        .select("id,actor_id,recipient_id,data,read_at")
+        .select("id,actor_id,recipient_id,entity_type,data,read_at")
         .eq("id", request.params.id).eq("recipient_id", request.authUser!.id).maybeSingle();
       if (lookupError) throw new AppError(503, "EDUCATOR_DECISION_FAILED", "No se pudo comprobar la solicitud.");
-      if (!notification || notification.actor_id !== request.body.requesterId) {
+      if (!notification || notification.actor_id !== request.body.requesterId ||
+        notification.entity_type !== "educator_permission_request" ||
+        notification.data?.kind !== "educator_permission_request") {
         throw new AppError(404, "EDUCATOR_REQUEST_NOT_FOUND", "La solicitud no existe.");
       }
-      if (notification.read_at) throw new AppError(409, "EDUCATOR_REQUEST_REVIEWED", "La solicitud ya fue revisada.");
+      if (notification.read_at || notification.data?.status !== "pending") throw new AppError(409, "EDUCATOR_REQUEST_REVIEWED", "La solicitud ya fue revisada.");
       const now = new Date().toISOString();
-      const { error: profileError } = await client.from("profiles").update({
+      const { data: updatedProfile, error: profileError } = await client.from("profiles").update({
         rol_adulto: request.body.approve ? "Educador/a" : null,
         rama_que_educa: request.body.approve ? request.body.units.join(",") : null,
-      }).eq("user_id", request.body.requesterId);
+        educador_aprobado: request.body.approve,
+      }).eq("user_id", request.body.requesterId).select("user_id").maybeSingle();
       if (profileError) throw new AppError(503, "EDUCATOR_DECISION_FAILED", "No se pudo actualizar el perfil.");
+      if (!updatedProfile) throw new AppError(404, "USER_NOT_FOUND", "El usuario no existe.");
       const originalData = typeof notification.data === "object" && notification.data ? notification.data : {};
       const { error: notificationError } = await client.from("notifications").update({
         read_at: now,
@@ -210,6 +214,9 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
     "/v1/admin/users/:id/profile",
     { preHandler: app.requireAdmin, schema: { params: adminUserParamsSchema, body: adminProfileUpdateSchema } },
     async (request) => {
+      if (app.getPowerRole(request) !== "admin") {
+        throw new AppError(403, "SUPER_ADMIN_REQUIRED", "Solo el administrador puede editar datos personales.");
+      }
       const { data, error } = await adminClient(app).from("profiles").update(request.body)
         .eq("user_id", request.params.id)
         .select("user_id,email,nombre_completo,username,role,rol_adulto,rama_que_educa,account_status")
@@ -233,23 +240,25 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
       }
 
       const client = adminClient(app);
-      const { data: target, error: userError } = await client.auth.admin.getUserById(request.params.id);
-      if (userError || !target.user) throw new AppError(404, "USER_NOT_FOUND", "El usuario no existe.");
-      const targetRole = String(target.user.app_metadata?.role || "user").toLowerCase();
+      const { data: targetProfile, error: targetError } = await client.from("profiles")
+        .select("role").eq("user_id", request.params.id).maybeSingle();
+      if (targetError) throw new AppError(503, "ROLE_UPDATE_FAILED", "No se pudo comprobar el rol actual.");
+      if (!targetProfile) throw new AppError(404, "USER_NOT_FOUND", "El usuario no existe.");
+      const targetRole = String(targetProfile.role || "user").toLowerCase();
       if (actorRole !== "admin" && targetRole === "admin") {
         throw new AppError(403, "SUPER_ADMIN_REQUIRED", "Un moderador no puede cambiar a un administrador.");
       }
-      const { error: metadataError } = await client.auth.admin.updateUserById(request.params.id, {
-        app_metadata: { ...target.user.app_metadata, role: request.body.role },
-      });
-      if (metadataError) throw new AppError(503, "ROLE_UPDATE_FAILED", "No se pudo actualizar el rol.");
-
       const { error: profileError } = await client
         .from("profiles")
         .update({ role: request.body.role })
         .eq("user_id", request.params.id);
-      if (profileError) {
-        request.log.error({ code: profileError.code, userId: request.params.id }, "profile role mirror failed");
+      if (profileError) throw new AppError(503, "ROLE_UPDATE_FAILED", "No se pudo actualizar el rol.");
+      const { data: target, error: userError } = await client.auth.admin.getUserById(request.params.id);
+      if (!userError && target.user) {
+        const { error: metadataError } = await client.auth.admin.updateUserById(request.params.id, {
+          app_metadata: { ...target.user.app_metadata, role: request.body.role },
+        });
+        if (metadataError) request.log.warn({ code: metadataError.code }, "role metadata mirror failed");
       }
       return { data: { userId: request.params.id, role: request.body.role } };
     },
@@ -259,17 +268,25 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
     "/v1/admin/users/:id/educator-permissions",
     { preHandler: app.requireAdmin, schema: { params: adminUserParamsSchema, body: educatorUpdateSchema } },
     async (request) => {
+      if (app.getPowerRole(request) !== "admin") {
+        const { data: target, error: targetError } = await adminClient(app).from("profiles")
+          .select("role").eq("user_id", request.params.id).maybeSingle();
+        if (targetError) throw new AppError(503, "EDUCATOR_UPDATE_FAILED", "No se pudo comprobar el usuario.");
+        if (!target) throw new AppError(404, "USER_NOT_FOUND", "El usuario no existe.");
+        if (target.role === "admin") throw new AppError(403, "SUPER_ADMIN_REQUIRED", "Un moderador no puede editar administradores.");
+      }
       if (request.body.enabled && request.body.units.length === 0) {
         throw new AppError(400, "EDUCATOR_UNITS_REQUIRED", "Selecciona al menos una unidad.");
       }
       const { data, error } = await adminClient(app)
         .from("profiles")
         .update({
-          rol_adulto: request.body.enabled ? "Educador/a" : null,
+          rol_adulto: request.body.enabled ? "Educador/a" : request.body.adultRole ?? null,
           rama_que_educa: request.body.enabled ? request.body.units.join(",") : null,
+          educador_aprobado: request.body.enabled && request.body.approved,
         })
         .eq("user_id", request.params.id)
-        .select("user_id,rol_adulto,rama_que_educa")
+        .select("user_id,rol_adulto,rama_que_educa,educador_aprobado")
         .single();
       if (error) throw new AppError(503, "EDUCATOR_UPDATE_FAILED", "No se pudieron actualizar los permisos.");
       return { data };

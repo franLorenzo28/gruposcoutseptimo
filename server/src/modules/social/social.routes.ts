@@ -201,7 +201,7 @@ export async function socialRoutes(app: FastifyInstance): Promise<void> {
     );
     const adultRole = String(profileResult.data?.rol_adulto || "").toLowerCase();
     const isApprovedEducator = ["educador", "educador/a", "educadora"].includes(adultRole)
-      && profileResult.data?.educador_aprobado !== false;
+      && profileResult.data?.educador_aprobado === true;
     const educatorBranches = isApprovedEducator
       ? normalizedBranches(profileResult.data?.rama_que_educa)
       : new Set<string>();

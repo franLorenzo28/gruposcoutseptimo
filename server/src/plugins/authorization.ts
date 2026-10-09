@@ -12,14 +12,10 @@ declare module "fastify" {
   }
 }
 
-function metadataRole(request: FastifyRequest): "user" | "mod" | "admin" {
-  const role = request.authUser?.app_metadata?.role;
-  const roles = request.authUser?.app_metadata?.roles;
-  const candidates = [role, ...(Array.isArray(roles) ? roles : [])]
-    .filter((candidate): candidate is string => typeof candidate === "string")
-    .map((candidate) => candidate.toLowerCase());
-  if (candidates.includes("admin")) return "admin";
-  if (candidates.includes("mod")) return "mod";
+function profileRole(request: FastifyRequest): "user" | "mod" | "admin" {
+  const role = request.authProfileRole?.trim().toLowerCase();
+  if (role === "admin") return "admin";
+  if (role === "mod") return "mod";
   return "user";
 }
 
@@ -33,7 +29,7 @@ export function installAuthorization(app: FastifyInstance, config: EnvironmentCo
     ) {
       return "admin";
     }
-    return metadataRole(request);
+    return profileRole(request);
   });
 
   app.decorate(

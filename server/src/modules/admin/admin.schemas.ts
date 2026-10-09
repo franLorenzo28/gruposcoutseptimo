@@ -5,6 +5,8 @@ export const roleUpdateSchema = z.object({ role: z.enum(["user", "mod", "admin"]
 export const educatorUpdateSchema = z.object({
   enabled: z.boolean(),
   units: z.array(z.enum(["manada", "tropa", "pioneros", "rovers"])).max(4).default([]),
+  approved: z.boolean().default(false),
+  adultRole: z.union([z.enum(["Miembro del Comite", "Familiar de Scout"]), z.null()]).optional(),
 });
 export const adminResourceParamsSchema = z.object({
   resource: z.enum(["groups", "eventos", "messages", "group_messages", "site_pages", "notifications"]),
@@ -13,8 +15,6 @@ export const adminResourceParamsSchema = z.object({
 export const adminProfileUpdateSchema = z.object({
   nombre_completo: z.string().trim().min(1).max(160).optional(),
   username: z.union([z.string().trim().min(3).max(32).regex(/^[a-zA-Z0-9_]+$/), z.null()]).optional(),
-  rol_adulto: z.union([z.string().trim().max(80), z.null()]).optional(),
-  rama_que_educa: z.union([z.string().trim().max(120), z.null()]).optional(),
 }).strict().refine((value) => Object.keys(value).length > 0);
 export const sitePageInputSchema = z.object({
   slug: z.string().trim().min(1).max(160).regex(/^[a-z0-9/_-]+$/),

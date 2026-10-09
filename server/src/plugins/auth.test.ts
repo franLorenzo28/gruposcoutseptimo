@@ -68,6 +68,9 @@ describe("authentication hook", () => {
         }),
       },
     };
+    (app as any).supabaseAdmin = {
+      from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { role: "user" }, error: null }) }) }) }),
+    };
 
     const response = await app.inject({
       method: "GET",

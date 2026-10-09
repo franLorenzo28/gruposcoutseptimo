@@ -185,17 +185,17 @@ export default function Dashboard({
     }
 
     setLoading(true);
-    const { data: usuarios, error } = await supabase.from("profiles").select("*");
-    if (error) {
-      console.warn("Error loading profiles for admin:", error.message);
+    try {
+      const usuarios = await apiFetch<any[]>("/v1/admin/users");
+      setUsers(usuarios || []);
+      computeStats(usuarios || []);
+    } catch (error) {
+      console.warn("Error loading profiles for admin:", error);
       setUsers([]);
       computeStats([]);
+    } finally {
       setLoading(false);
-      return;
     }
-    setUsers(usuarios || []);
-    computeStats(usuarios || []);
-    setLoading(false);
   }
 
   async function fetchLocalDashboardData() {
@@ -834,41 +834,6 @@ export default function Dashboard({
           : null
         : editUser.rama_que_educa || null;
 
-      if (isLocalBackend()) {
-        await apiFetch(`/admin/users/${editUser.user_id}/educator-permissions`, {
-          method: "PUT",
-          body: JSON.stringify({
-            enabled: isEducador,
-            ramas: selectedUnits,
-            approved: editData.educador_aprobado ?? false,
-          }),
-        });
-
-        setUsers((prev) =>
-          prev.map((u) =>
-            u.user_id === editUser.user_id
-              ? {
-                  ...u,
-                  role: roleToSave,
-                  rol_adulto: isEducador ? "Educador/a" : null,
-                  rama_que_educa: ramaQueEduca,
-                  educador_aprobado: editData.educador_aprobado ?? false,
-                }
-              : u,
-          ),
-        );
-
-        toast({
-          title: "Permisos actualizados",
-          description: "Permisos de educador/a actualizados en backend local.",
-        });
-
-        setEditUser(null);
-        setEditData({});
-        setSaving(false);
-        return;
-      }
-
       if (canManageRoles) {
         try {
           const roleToSet = editData.role || "user";
@@ -890,33 +855,33 @@ export default function Dashboard({
         }
       }
 
-      const payload = {
-        email: canEditIdentity ? editData.email || null : editUser.email || null,
-        nombre_completo: canEditIdentity
-          ? editData.nombre_completo || null
-          : editUser.nombre_completo || null,
-        username: canEditIdentity
-          ? editData.username
-            ? String(editData.username).toLowerCase()
-            : null
-          : editUser.username || null,
-        rol_adulto: adultRoleToSave,
-        rama_que_educa: ramaQueEduca,
-        educador_aprobado: editData.educador_aprobado ?? false,
-      };
-      const { error } = await supabase
-        .from("profiles")
-        .update(payload)
-        .eq("user_id", editUser.user_id);
-
-      if (error) {
-        toast({
-          title: "No se pudo guardar",
-          description: error.message,
-          variant: "destructive",
+      if (canManageEducators && (
+        adultRoleToSave !== (editUser.rol_adulto || null) ||
+        ramaQueEduca !== (editUser.rama_que_educa || null) ||
+        (editData.educador_aprobado ?? false) !== (editUser.educador_aprobado ?? false)
+      )) {
+        await apiFetch(`/v1/admin/users/${editUser.user_id}/educator-permissions`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            enabled: isEducador,
+            units: selectedUnits,
+            approved: isEducador && !!editData.educador_aprobado,
+            adultRole: isEducador ? null : adultRoleToSave,
+          }),
         });
-        setSaving(false);
-        return;
+      }
+
+      if (canEditIdentity && (
+        editData.nombre_completo !== editUser.nombre_completo ||
+        editData.username !== editUser.username
+      )) {
+        await apiFetch(`/v1/admin/users/${editUser.user_id}/profile`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            nombre_completo: editData.nombre_completo,
+            username: editData.username ? String(editData.username).toLowerCase() : null,
+          }),
+        });
       }
 
       setUsers((prev) => {
@@ -924,8 +889,12 @@ export default function Dashboard({
           u.user_id === editUser.user_id
             ? {
                 ...u,
-                ...payload,
-                role: canManageRoles ? editData.role || "user" : u.role,
+                nombre_completo: canEditIdentity ? editData.nombre_completo : u.nombre_completo,
+                username: canEditIdentity ? editData.username : u.username,
+                rol_adulto: isEducador ? "Educador/a" : adultRoleToSave,
+                rama_que_educa: ramaQueEduca,
+                educador_aprobado: isEducador && !!editData.educador_aprobado,
+                role: roleToSave,
               }
             : u,
         );
@@ -2007,9 +1976,8 @@ export default function Dashboard({
                 <Input
                   id="email"
                   value={editData.email || ""}
-                  onChange={(e) => setEditData({ ...editData, email: e.target.value })}
                   className="mt-1"
-                  disabled={saving || !canEditIdentity}
+                  disabled
                 />
               </div>
               <div>
@@ -2047,7 +2015,7 @@ export default function Dashboard({
                 )}
                 {!canEditIdentity && (
                   <p className="mt-2 text-xs text-muted-foreground">
-                    Solo el admin supremo puede editar email, nombre y username.
+                    Solo el admin supremo puede editar nombre y username.
                   </p>
                 )}
               </div>
