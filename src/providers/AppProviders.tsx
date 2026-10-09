@@ -21,6 +21,16 @@ const queryClient = new QueryClient({
   },
 });
 
+function settleWithin<T>(promise: Promise<T>, milliseconds: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timeout = window.setTimeout(() => reject(new Error("La verificación de la sesión tardó demasiado.")), milliseconds);
+    promise.then(
+      (value) => { window.clearTimeout(timeout); resolve(value); },
+      (error) => { window.clearTimeout(timeout); reject(error); },
+    );
+  });
+}
+
 type SupabaseUserWithProfile = User & {
   profile?: Partial<Profile>;
 } & Partial<Profile>;
@@ -57,13 +67,18 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
       return;
     }
 
+    // The public profile can start loading from the API as soon as Auth has a
+    // session. Protected routes still wait for the profile status below.
+    setUser(sessionUser);
     setIsUserLoading(true);
 
-    const { data: profile, error } = await readOwnProfile(sessionUser.id).catch((error: unknown) => ({ data: null, error }));
+    const { data: profile, error } = await settleWithin(readOwnProfile(sessionUser.id), 10_000)
+      .catch((error: unknown) => ({ data: null, error }));
 
     if (currentRequest !== requestId.current) return;
 
     if (error || !profile) {
+      invalidateProfileReads();
       // No asumir acceso activo cuando falta el perfil o la consulta falla.
       // La autorización debe ser fail-closed hasta poder comprobar el estado.
       setUser(sessionUser);
@@ -214,7 +229,7 @@ const SupabaseUserProvider = ({ children }: { children: React.ReactNode }) => {
         timer = setTimeout(() => { if (active) loadUser(session?.user ?? null); }, 0);
       },
     );
-    void supabase.auth.getSession().then(({ data: { session } }) => {
+    void settleWithin(supabase.auth.getSession(), 10_000).then(({ data: { session } }) => {
       if (active && !authEventReceived) loadUser(session?.user ?? null);
     }).catch(() => {
       if (active && !authEventReceived) loadUser(null);

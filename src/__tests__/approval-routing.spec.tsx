@@ -26,19 +26,26 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('account approval', () => {
-  it('unblocks the application immediately after approval and sign-out', () => {
+  it('keeps public pages available while a signed-in account awaits approval', () => {
     const tree = <MemoryRouter><AppRoutes /></MemoryRouter>;
     const view = render(tree);
-    expect(screen.getByText('Approval required')).toBeInTheDocument();
+    expect(screen.getByText('Public page')).toBeInTheDocument();
     state.value = { ...state.value, accountStatus: 'activo' };
     view.rerender(<MemoryRouter><AppRoutes /></MemoryRouter>);
     expect(screen.getByText('Public page')).toBeInTheDocument();
     state.value = { ...state.value, accountStatus: 'rechazado' };
     view.rerender(<MemoryRouter><AppRoutes /></MemoryRouter>);
-    expect(screen.getByText('Approval required')).toBeInTheDocument();
+    expect(screen.getByText('Public page')).toBeInTheDocument();
     state.value = { ...state.value, user: null, accountStatus: null };
     view.rerender(<MemoryRouter><AppRoutes /></MemoryRouter>);
     expect(screen.getByText('Public page')).toBeInTheDocument();
+  });
+
+  it('does not replace public pages with access verification during session refresh', () => {
+    state.value = { ...state.value, isUserLoading: true };
+    render(<MemoryRouter><AppRoutes /></MemoryRouter>);
+    expect(screen.getByText('Public page')).toBeInTheDocument();
+    expect(screen.queryByText('Verificando acceso...')).not.toBeInTheDocument();
   });
 
   it.each([['/interno/auth/callback', 'Complete registration'], ['/interno/restablecer-password', 'Recover password']])('keeps %s reachable for pending users', (path, text) => {

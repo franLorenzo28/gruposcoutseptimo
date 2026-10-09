@@ -52,6 +52,18 @@ async function currentAccessToken(refresh = false): Promise<string | null> {
   return result.data.session?.access_token ?? null;
 }
 
+function whileRequestActive<T>(operation: Promise<T>, signal: AbortSignal): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const abort = () => reject(new DOMException("Request timed out", "AbortError"));
+    if (signal.aborted) { abort(); return; }
+    signal.addEventListener("abort", abort, { once: true });
+    operation.then(
+      (value) => { signal.removeEventListener("abort", abort); resolve(value); },
+      (error) => { signal.removeEventListener("abort", abort); reject(error); },
+    );
+  });
+}
+
 function getStoredLocalAccessToken(): string | null {
   if (typeof window === "undefined") return null;
   try {
@@ -82,7 +94,7 @@ export async function apiFetch<T = any>(
   const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
 
   async function execute(forceRefresh = false): Promise<Response> {
-    const token = auth === "none" ? null : await currentAccessToken(forceRefresh);
+    const token = auth === "none" ? null : await whileRequestActive(currentAccessToken(forceRefresh), controller.signal);
     if (auth === "required" && !token) {
       throw new BackendError("Tu sesión ha expirado. Inicia sesión nuevamente.", 401, "AUTH_REQUIRED");
     }

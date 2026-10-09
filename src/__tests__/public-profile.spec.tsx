@@ -5,6 +5,7 @@ import MiPerfilPublico from "@/pages/MiPerfilPublico";
 import PerfilPublic from "@/pages/PerfilPublic";
 
 const mocks = vi.hoisted(() => ({ apiFetch: vi.fn(), refreshUser: vi.fn() }));
+const authState = vi.hoisted(() => ({ isUserLoading: false }));
 const followMocks = vi.hoisted(() => ({ getFollowRelation: vi.fn(), followUser: vi.fn(), cancelRequest: vi.fn(), unfollowUser: vi.fn() }));
 vi.mock("@/lib/backend", () => ({
   apiFetch: mocks.apiFetch,
@@ -14,7 +15,7 @@ vi.mock("@/lib/follows", () => ({
   ...followMocks,
 }));
 vi.mock("@/providers/AppProviders", () => ({
-  useSupabaseUser: () => ({ user: { id: "550e8400-e29b-41d4-a716-446655440011", email: "scout@example.com", internal_access: true }, isUserLoading: false, refreshUser: mocks.refreshUser }),
+  useSupabaseUser: () => ({ user: { id: "550e8400-e29b-41d4-a716-446655440011", email: "scout@example.com", internal_access: true }, isUserLoading: authState.isUserLoading, refreshUser: mocks.refreshUser }),
 }));
 vi.mock("@/integrations/supabase/client", () => ({ supabase: {
   storage: { from: () => ({ getPublicUrl: (path: string) => ({ data: { publicUrl: `https://assets.test/${path}` } }) }) },
@@ -32,6 +33,7 @@ const profile = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  authState.isUserLoading = false;
   vi.stubGlobal("ResizeObserver", class {
     observe() {}
     unobserve() {}
@@ -48,6 +50,13 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 describe("public profile", () => {
+  it("loads the editable profile while account status is being revalidated", async () => {
+    authState.isUserLoading = true;
+    render(<MemoryRouter><MiPerfilPublico /></MemoryRouter>);
+    expect(await screen.findByDisplayValue("Scout Prueba")).toBeInTheDocument();
+    expect(screen.queryByText("Cargando cuenta...")).not.toBeInTheDocument();
+  });
+
   it("keeps the share link hidden until visibility is saved", async () => {
     render(<MemoryRouter><MiPerfilPublico /></MemoryRouter>);
     expect(await screen.findByDisplayValue("Scout Prueba")).toBeInTheDocument();

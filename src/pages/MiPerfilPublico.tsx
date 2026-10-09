@@ -148,7 +148,7 @@ export default function MiPerfilPublico() {
           </div>
         </header>
 
-        {isUserLoading ? <p className="mt-10 text-sm">Cargando cuenta...</p> : !user ? (
+        {!user && isUserLoading ? <p className="mt-10 text-sm">Cargando cuenta...</p> : !user ? (
           <section className="mt-7 max-w-2xl rounded-[26px] border border-[#d8dccd] bg-[#fbfaf6] p-8 shadow-sm dark:border-white/10 dark:bg-[#18291f]">
             <LockKeyhole className="h-8 w-8 text-[#a77b36]" />
             <h2 className="mt-4 font-serif text-2xl">Tu perfil te espera</h2>

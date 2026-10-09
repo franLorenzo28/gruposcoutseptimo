@@ -54,6 +54,8 @@ const Historia = () => {
       description:
         "El grupo impulsa BAUEN, una referencia nacional para el escultismo uruguayo y un hito de liderazgo juvenil que año tras año sigue creciendo.",
       place: "Parque Baroffio",
+      ctaLabel: "Conoce más sobre BAUEN",
+      ctaHref: "/bauen",
     },
     {
       year: "2014",

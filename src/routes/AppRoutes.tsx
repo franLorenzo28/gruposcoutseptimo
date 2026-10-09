@@ -1,6 +1,5 @@
 import { Suspense } from "react";
-import { useLocation, useRoutes } from "react-router-dom";
-import PendingApprovalScreen from "@/components/PendingApprovalScreen";
+import { useRoutes } from "react-router-dom";
 import PageLoader from "@/components/ui/PageLoader";
 import { MemberAuthProvider } from "@/context/MemberAuthContext";
 import { useGlobalPresenceHeartbeat } from "@/hooks/useGlobalPresenceHeartbeat";
@@ -28,19 +27,6 @@ function AppRouteTree() {
 }
 
 function AppContent() {
-  const { user, accountStatus, isUserLoading } = useSupabaseUser();
-  const { pathname } = useLocation();
-  // Registration and recovery must remain reachable before account approval.
-  const isAuthRoute = /^\/(?:interno\/(?:auth(?:\/callback)?|login|restablecer-password)|auth(?:\/callback)?|login|verificar-email)\/?$/i.test(pathname);
-
-  if (!isAuthRoute && user && isUserLoading) {
-    return <PageLoader message="Verificando acceso..." />;
-  }
-
-  if (!isAuthRoute && user && accountStatus && accountStatus !== "activo") {
-    return <PendingApprovalScreen userName={user.nombre_completo || user.email} status={accountStatus} />;
-  }
-
   return (
     <>
       <GlobalPresenceHeartbeat />

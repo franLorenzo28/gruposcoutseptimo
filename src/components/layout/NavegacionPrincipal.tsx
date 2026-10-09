@@ -8,6 +8,7 @@ import {
   Compass,
   History,
   Home,
+  Hammer,
   Mail,
   Menu,
   Settings,
@@ -58,6 +59,7 @@ interface NavSection {
 const mainLinks: NavLink[] = [
   { name: "Inicio", path: "/", icon: Home },
   { name: "Historia", path: "/historia", icon: History },
+  { name: "BAUEN", path: "/bauen", icon: Hammer },
   { name: "Unidades", path: "/#unidades", icon: Compass },
   { name: "Eventos", path: "/eventos", icon: Calendar },
   { name: "Contacto", path: "/contacto", icon: Mail },
@@ -108,7 +110,6 @@ export default function Navigation() {
   const isActive = (path: string) => {
     if (path === "/") return location.pathname === "/";
     if (path === "/historia" && location.pathname === "/linea-temporal") return true;
-    if (path === "/eventos" && location.pathname === "/bauen") return true;
     return location.pathname === path || location.pathname.startsWith(`${path}/`);
   };
 
