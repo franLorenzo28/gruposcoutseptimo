@@ -4,6 +4,7 @@ export const ownProfileFields =
   "id,user_id,email,nombre_completo,username,avatar_url,telefono,descripcion_personal,profesion_ocupacion,fecha_nacimiento,edad,patrulla,seisena,adelanto,equipo_pioneros,comunidad_rovers,promesa,ppp_url,is_public,privacy_preferences,notification_preferences,rol_adulto,rama_que_educa,account_status,account_classification,internal_access,internal_unit,email_verified,created_at,updated_at";
 export const publicProfileFields =
   "user_id,nombre_completo,username,avatar_url,descripcion_personal,profesion_ocupacion,patrulla,seisena,adelanto,equipo_pioneros,comunidad_rovers,promesa,rol_adulto,rama_que_educa";
+export const publicIdentityFields = "user_id,nombre_completo,username,avatar_url,descripcion_personal";
 
 type UserDatabaseClient = NonNullable<FastifyRequest["userSupabase"]>;
 
@@ -109,6 +110,20 @@ export class ProfileRepository {
     if (!client) throw new Error("Authenticated profile database is not configured");
     const { data, error } = await client.from("profiles").select(publicProfileFields)
       .eq("user_id", userId).eq("is_public", true).maybeSingle();
+    databaseError(error);
+    return data;
+  }
+
+  async getPublicIdentity(userId: string): Promise<Record<string, unknown> | null> {
+    if (this.app.db) {
+      const { rows } = await this.app.db.query<Record<string, unknown>>(
+        `select ${publicIdentityFields} from public.profiles
+         where user_id = $1 and is_public = true and account_status = 'activo' limit 1`, [userId],
+      );
+      return rows[0] ?? null;
+    }
+    const { data, error } = await this.admin().from("profiles").select(publicIdentityFields)
+      .eq("user_id", userId).eq("is_public", true).eq("account_status", "activo").maybeSingle();
     databaseError(error);
     return data;
   }

@@ -23,6 +23,14 @@ export async function profileRoutes(app: FastifyInstance): Promise<void> {
     return { data };
   });
 
+  api.get("/v1/public/profiles/:id", { schema: { params: profileIdParamsSchema } }, async (request) => {
+    let data;
+    try { data = await profiles.getPublicIdentity(request.params.id); }
+    catch { throw new AppError(503, "PROFILE_READ_FAILED", "No se pudo cargar el perfil público."); }
+    if (!data) throw new AppError(404, "PROFILE_NOT_FOUND", "Este perfil no está disponible.");
+    return { data };
+  });
+
   api.get("/v1/me/access", { preHandler: app.authenticate }, async (request) => {
     let data;
     try { data = await profiles.getAccess(request.authUser!.id); }

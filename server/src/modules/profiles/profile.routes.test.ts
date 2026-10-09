@@ -114,4 +114,27 @@ describe("direct PostgreSQL profile routes", () => {
     expect(groups.statusCode).toBe(403);
     expect(groups.json().error.code).toBe("INTERNAL_ACCESS_REQUIRED");
   });
+
+  it("shares only opted-in active profile fields with visitors", async () => {
+    await insertProfile(publicId, "public@example.com", "Perfil Público", "public_member", true);
+    await insertProfile(privateId, "private@example.com", "Perfil Privado", "private_member", false);
+    await db.query("update public.profiles set descripcion_personal = 'Me gusta acampar', telefono = '099000000' where user_id = $1", [publicId]);
+
+    const visible = await app.inject({ method: "GET", url: `/v1/public/profiles/${publicId}` });
+    expect(visible.statusCode).toBe(200);
+    expect(visible.json().data).toEqual({
+      user_id: publicId,
+      nombre_completo: "Perfil Público",
+      username: "public_member",
+      avatar_url: null,
+      descripcion_personal: "Me gusta acampar",
+    });
+
+    const hidden = await app.inject({ method: "GET", url: `/v1/public/profiles/${privateId}` });
+    expect(hidden.statusCode).toBe(404);
+
+    await db.query("update public.profiles set account_status = 'rechazado' where user_id = $1", [publicId]);
+    const inactive = await app.inject({ method: "GET", url: `/v1/public/profiles/${publicId}` });
+    expect(inactive.statusCode).toBe(404);
+  });
 });
