@@ -17,7 +17,7 @@ export async function profileRoutes(app: FastifyInstance): Promise<void> {
 
   api.get("/v1/me/profile", { preHandler: app.authenticate }, async (request) => {
     let data;
-    try { data = await profiles.getOwn(request.authUser!.id); }
+    try { data = await profiles.getOwn(request.authUser!.id, request.userSupabase); }
     catch { throw new AppError(503, "PROFILE_READ_FAILED", "No se pudo cargar el perfil."); }
     if (!data) throw new AppError(404, "PROFILE_NOT_FOUND", "No se encontró el perfil.");
     return { data };
@@ -33,7 +33,7 @@ export async function profileRoutes(app: FastifyInstance): Promise<void> {
 
   api.get("/v1/me/access", { preHandler: app.authenticate }, async (request) => {
     let data;
-    try { data = await profiles.getAccess(request.authUser!.id); }
+    try { data = await profiles.getAccess(request.authUser!.id, request.userSupabase); }
     catch { throw new AppError(503, "AUTHORIZATION_UNAVAILABLE", "No se pudo comprobar el acceso."); }
     const role = app.getPowerRole(request);
     return {
@@ -74,7 +74,7 @@ export async function profileRoutes(app: FastifyInstance): Promise<void> {
 
   api.get("/profiles/me", { preHandler: app.authenticate }, async (request) => {
     let data;
-    try { data = await profiles.getOwn(request.authUser!.id); }
+    try { data = await profiles.getOwn(request.authUser!.id, request.userSupabase); }
     catch { throw new AppError(503, "PROFILE_READ_FAILED", "No se pudo cargar el perfil."); }
     if (!data) throw new AppError(404, "PROFILE_NOT_FOUND", "No se encontró el perfil.");
     return { data };

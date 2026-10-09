@@ -30,27 +30,27 @@ export class ProfileRepository {
     return this.app.supabaseAdmin;
   }
 
-  async getOwn(userId: string): Promise<Record<string, unknown> | null> {
+  async getOwn(userId: string, client: UserDatabaseClient | null = null): Promise<Record<string, unknown> | null> {
     if (this.app.db) {
       const { rows } = await this.app.db.query<Record<string, unknown>>(
         `select ${ownProfileFields} from public.profiles where user_id = $1 limit 1`, [userId],
       );
       return rows[0] ?? null;
     }
-    const { data, error } = await this.admin().from("profiles").select(ownProfileFields)
+    const { data, error } = await (client ?? this.admin()).from("profiles").select(ownProfileFields)
       .eq("user_id", userId).maybeSingle();
     databaseError(error);
     return data;
   }
 
-  async getAccess(userId: string): Promise<{ account_status: string | null; account_classification: string | null; internal_access: boolean } | null> {
+  async getAccess(userId: string, client: UserDatabaseClient | null = null): Promise<{ account_status: string | null; account_classification: string | null; internal_access: boolean } | null> {
     if (this.app.db) {
       const { rows } = await this.app.db.query<{ account_status: string | null; account_classification: string | null; internal_access: boolean }>(
         "select account_status, account_classification, internal_access from public.profiles where user_id = $1 limit 1", [userId],
       );
       return rows[0] ?? null;
     }
-    const { data, error } = await this.admin().from("profiles")
+    const { data, error } = await (client ?? this.admin()).from("profiles")
       .select("account_status,account_classification,internal_access").eq("user_id", userId).maybeSingle();
     databaseError(error);
     return data;
@@ -122,8 +122,12 @@ export class ProfileRepository {
       );
       return rows[0] ?? null;
     }
-    const { data, error } = await this.admin().from("profiles").select(publicIdentityFields)
-      .eq("user_id", userId).eq("is_public", true).eq("account_status", "activo").maybeSingle();
+    const reader = this.app.supabase ?? this.app.supabaseAdmin;
+    if (!reader) throw new Error("Public profile database is not configured");
+    let query = reader.from("profiles").select(publicIdentityFields)
+      .eq("user_id", userId).eq("is_public", true);
+    if (!this.app.supabase) query = query.eq("account_status", "activo");
+    const { data, error } = await query.maybeSingle();
     databaseError(error);
     return data;
   }

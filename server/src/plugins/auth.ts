@@ -24,9 +24,8 @@ declare module "fastify" {
   }
 }
 
-async function profileRoleFromAdminClient(app: FastifyInstance, userId: string): Promise<string | null> {
-  if (!app.supabaseAdmin) throw new AppError(503, "AUTHORIZATION_UNAVAILABLE", "No se pudo comprobar el rol.");
-  const { data, error } = await app.supabaseAdmin
+async function profileRoleFromUserClient(client: SupabaseClient, userId: string): Promise<string | null> {
+  const { data, error } = await client
     .from("profiles")
     .select("role")
     .eq("user_id", userId)
@@ -36,7 +35,10 @@ async function profileRoleFromAdminClient(app: FastifyInstance, userId: string):
 }
 
 async function loadProfileRole(app: FastifyInstance, userId: string): Promise<string | null> {
-  if (!app.db) return profileRoleFromAdminClient(app, userId);
+  if (!app.db) {
+    if (!app.supabaseAdmin) throw new AppError(503, "AUTHORIZATION_UNAVAILABLE", "No se pudo comprobar el rol.");
+    return profileRoleFromUserClient(app.supabaseAdmin, userId);
+  }
   try {
     const result = await app.db.query<{ role: string | null }>(
       "select role from public.profiles where user_id = $1 limit 1", [userId],
@@ -138,11 +140,13 @@ export function installAuthentication(app: FastifyInstance, config: EnvironmentC
         throw new AppError(401, "AUTH_TOKEN_INVALID", "El token de acceso no es válido.");
       }
 
+      const userClient = app.createUserSupabase(accessToken);
       request.authUser = data.user;
-      request.authProfileRole = await loadProfileRole(app, data.user.id);
+      // Users can read their own role through RLS, but cannot update role.
+      request.authProfileRole = await profileRoleFromUserClient(userClient, data.user.id);
       request.authToken = accessToken;
       request.authSessionId = null;
-      request.userSupabase = app.createUserSupabase(accessToken);
+      request.userSupabase = userClient;
     },
   );
 }

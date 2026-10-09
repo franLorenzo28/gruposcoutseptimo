@@ -68,9 +68,9 @@ describe("authentication hook", () => {
         }),
       },
     };
-    (app as any).supabaseAdmin = {
+    (app as any).createUserSupabase = () => ({
       from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { role: "user" }, error: null }) }) }) }),
-    };
+    });
 
     const response = await app.inject({
       method: "GET",
@@ -80,6 +80,29 @@ describe("authentication hook", () => {
 
     expect(response.statusCode).toBe(403);
     expect(response.json()).toMatchObject({ error: { code: "ADMIN_REQUIRED" } });
+  });
+
+  it("loads a public account profile using the user's RLS session", async () => {
+    const userId = "550e8400-e29b-41d4-a716-446655440000";
+    app = await buildApp({
+      config: loadEnvironment({ NODE_ENV: "test", SUPABASE_URL: "https://example.supabase.co",
+        SUPABASE_PUBLISHABLE_KEY: "publishable-key", SUPABASE_SERVICE_ROLE_KEY: "service-key" }),
+      logger: false,
+    });
+    (app as any).supabase = { auth: { getUser: async () => ({
+      data: { user: { id: userId, email: "public@example.com", app_metadata: {}, user_metadata: {} } }, error: null,
+    }) } };
+    const ownProfile = { user_id: userId, nombre_completo: "Scout Público", role: null,
+      account_status: "activo", internal_access: false };
+    (app as any).createUserSupabase = () => ({ from: () => ({ select: () => ({
+      eq: () => ({ maybeSingle: async () => ({ data: ownProfile, error: null }) }),
+    }) }) });
+    (app as any).supabaseAdmin = { from: () => { throw new Error("Admin key must not be used for own profile"); } };
+
+    const response = await app.inject({ method: "GET", url: "/v1/me/profile",
+      headers: { authorization: "Bearer user-token" } });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({ data: { nombre_completo: "Scout Público", internal_access: false } });
   });
 
   it("selecciona JWT local y persiste la sesión sin usar Supabase Auth", async () => {

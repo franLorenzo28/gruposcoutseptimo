@@ -45,8 +45,8 @@ export function installAuthorization(app: FastifyInstance, config: EnvironmentCo
           allowed = result.rows[0]?.internal_access === true;
         } catch { throw new AppError(503, "AUTHORIZATION_UNAVAILABLE", "No se pudo comprobar el acceso interno."); }
       } else {
-        if (!app.supabaseAdmin) throw new AppError(503, "ADMIN_DATABASE_NOT_CONFIGURED", "La autorización no está disponible.");
-        const result = await app.supabaseAdmin.from("profiles").select("internal_access")
+        if (!request.userSupabase) throw new AppError(503, "AUTHORIZATION_UNAVAILABLE", "La autorización no está disponible.");
+        const result = await request.userSupabase.from("profiles").select("internal_access")
           .eq("user_id", request.authUser!.id).maybeSingle();
         if (result.error) throw new AppError(503, "AUTHORIZATION_UNAVAILABLE", "No se pudo comprobar el acceso interno.");
         allowed = result.data?.internal_access === true;
@@ -73,10 +73,10 @@ export function installAuthorization(app: FastifyInstance, config: EnvironmentCo
           throw new AppError(503, "AUTHORIZATION_UNAVAILABLE", "No se pudo comprobar el estado de la cuenta.");
         }
       } else {
-        if (!app.supabaseAdmin) {
-          throw new AppError(503, "ADMIN_DATABASE_NOT_CONFIGURED", "El servicio de autorización no está disponible.");
+        if (!request.userSupabase) {
+          throw new AppError(503, "AUTHORIZATION_UNAVAILABLE", "El servicio de autorización no está disponible.");
         }
-        const result = await app.supabaseAdmin.from("profiles").select("account_status")
+        const result = await request.userSupabase.from("profiles").select("account_status")
           .eq("user_id", request.authUser.id).maybeSingle();
         if (result.error) {
           request.log.error({ code: result.error.code }, "account status lookup failed");
