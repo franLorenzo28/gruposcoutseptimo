@@ -41,11 +41,13 @@ export default function PublicProfileCard({ profile, avatarPreview, className }:
           <AvatarFallback className="bg-[#e8e8d7] font-serif text-2xl font-semibold text-[#234334] dark:bg-[#294c38] dark:text-white">{initials(name)}</AvatarFallback>
         </Avatar>
         <p className="mt-4 text-[10px] font-bold uppercase tracking-[.23em] text-[#9b752c] dark:text-[#e8c778]">Perfil de la comunidad</p>
-        <h2 className="mt-1 break-words font-serif text-[30px] font-semibold leading-tight">{name}</h2>
-        {profile.username && <p className="mt-1 break-all text-sm font-medium text-[#587263] dark:text-[#b6cbb9]">@{profile.username}</p>}
+        <h2 translate="no" className="mt-1 break-words font-serif text-[30px] font-semibold leading-tight">{name}</h2>
+        {profile.username && <p translate="no" className="mt-1 break-all text-sm font-medium text-[#587263] dark:text-[#b6cbb9]">@{profile.username}</p>}
         <div className="mt-5 border-t border-[#d8dccd] pt-5 dark:border-white/10">
           <p className="whitespace-pre-wrap break-words text-sm leading-6 text-[#465c4e] dark:text-[#d2dfd1]">
-            {profile.descripcion_personal?.trim() || "Todavía no hay una presentación. Contá algo sobre vos para que la comunidad te conozca."}
+            {profile.descripcion_personal?.trim()
+              ? <span translate="no">{profile.descripcion_personal.trim()}</span>
+              : "Todavía no hay una presentación. Contá algo sobre vos para que la comunidad te conozca."}
           </p>
         </div>
       </div>

@@ -140,7 +140,7 @@ const Contacto = () => {
                 </div>)}
                 <div className="flex flex-col gap-2">
                   <label htmlFor="contact-unit" className="text-sm font-semibold">Unidad que te interesa (opcional)</label>
-                  <select id="contact-unit" value={units.includes(unit) ? unit : ""} onChange={e => setUnit(e.target.value)} disabled={sending} className="min-h-11 rounded-md border border-input bg-background px-3 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><option value="">Todavía no lo sé / consulta general</option>{units.map(name => <option key={name}>{name}</option>)}</select>
+                  <select id="contact-unit" value={units.includes(unit) ? unit : ""} onChange={e => setUnit(e.target.value)} disabled={sending} className="min-h-11 rounded-md border border-input bg-background px-3 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><option value="">Todavía no lo sé / consulta general</option>{units.map(name => <option key={name} value={name}>{name}</option>)}</select>
                 </div>
                 <div className="flex flex-col gap-2">
                   <label htmlFor="contact-message" className="text-sm font-semibold">Mensaje *</label>

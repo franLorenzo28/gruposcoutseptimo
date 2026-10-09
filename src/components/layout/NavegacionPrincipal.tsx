@@ -34,6 +34,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import ThemeToggle from "@/components/ThemeToggle";
+import PublicLanguageSwitcher from "@/components/layout/PublicLanguageSwitcher";
 import { cn } from "@/lib/utils";
 import { useScrolledHeader } from "@/hooks/useScrolledHeader";
 import logoImage from "@/assets/grupo-scout-logo.png";
@@ -219,6 +220,7 @@ export default function Navigation() {
             </div>
 
             <div className="ml-auto hidden shrink-0 items-center gap-2 min-[1180px]:flex">
+              <PublicLanguageSwitcher />
               {user ? <DropdownMenu>
                 <DropdownMenuTrigger asChild><Button variant="outline" size="sm" className="h-10 rounded-xl"><UserRound className="h-4 w-4" />Mi perfil</Button></DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="rounded-xl">
@@ -235,6 +237,7 @@ export default function Navigation() {
             </div>
 
             <div className="ml-auto flex items-center gap-1.5 min-[1180px]:hidden">
+              <PublicLanguageSwitcher />
               <span className="grid h-10 w-10 place-items-center rounded-xl border border-border/70 bg-muted/50 [&_button]:text-foreground [&_button]:hover:bg-background/80 [&_button]:hover:text-foreground dark:border-white/10 dark:bg-white/[0.04] dark:[&_button]:text-white dark:[&_button]:hover:bg-white/10 dark:[&_button]:hover:text-white">
                 <ThemeToggle />
               </span>

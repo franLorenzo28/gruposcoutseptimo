@@ -6,6 +6,7 @@ import { AppProviders } from "@/providers/AppProviders";
 import { AppRoutes } from "@/routes/AppRoutes";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import Seo from "@/components/Seo";
+import { PublicLanguageProvider } from "@/i18n/PublicLanguageContext";
 
 const App = () => (
   <ErrorBoundary>
@@ -14,8 +15,10 @@ const App = () => (
       <Sonner />
       <HelmetProvider>
         <BrowserRouter>
-          <Seo />
-          <AppRoutes />
+          <PublicLanguageProvider>
+            <Seo />
+            <AppRoutes />
+          </PublicLanguageProvider>
         </BrowserRouter>
       </HelmetProvider>
     </AppProviders>

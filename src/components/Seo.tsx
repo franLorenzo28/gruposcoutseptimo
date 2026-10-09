@@ -1,5 +1,7 @@
 import { Helmet } from "react-helmet-async";
 import { useLocation } from "react-router-dom";
+import { usePublicLanguage } from "@/i18n/PublicLanguageContext";
+import { translatePublicCopy } from "@/i18n/public-copy";
 
 type SeoEntry = {
   title: string;
@@ -109,13 +111,18 @@ const shouldNoIndex = (pathname: string) =>
 
 export default function Seo() {
   const { pathname } = useLocation();
+  const { language } = usePublicLanguage();
+  const pageLanguage = /^\/(?:interno|admin)(?:\/|$)/.test(pathname) ? "es" : language;
   const normalizedPath = normalizePath(pathname);
   const entry = ROUTE_SEO[normalizedPath];
   const noIndex = shouldNoIndex(normalizedPath);
-  const title = entry?.fullTitle ? entry.title : entry?.title ? `${entry.title} | ${SITE_NAME}` : DEFAULT_TITLE;
-  const description = entry?.description ?? DEFAULT_DESCRIPTION;
+  const title = entry?.fullTitle
+    ? translatePublicCopy(entry.title, pageLanguage)
+    : entry?.title ? `${translatePublicCopy(entry.title, pageLanguage)} | ${SITE_NAME}`
+      : translatePublicCopy(DEFAULT_TITLE, pageLanguage);
+  const description = translatePublicCopy(entry?.description ?? DEFAULT_DESCRIPTION, pageLanguage);
   const canonical = `${BASE_URL}${normalizedPath === "/" ? "/" : normalizedPath}`;
-  const ogImageAlt = entry?.ogImageAlt ?? "Grupo Scout Séptimo - Montevideo Uruguay";
+  const ogImageAlt = translatePublicCopy(entry?.ogImageAlt ?? "Grupo Scout Séptimo - Montevideo Uruguay", pageLanguage);
 
   const webPageJsonLd = {
     "@context": "https://schema.org",
@@ -123,7 +130,7 @@ export default function Seo() {
     name: title,
     description,
     url: canonical,
-    inLanguage: "es-UY",
+    inLanguage: pageLanguage === "pt" ? "pt-BR" : pageLanguage === "en" ? "en" : "es-UY",
     isPartOf: {
       "@type": "WebSite",
       name: SITE_NAME,
@@ -147,7 +154,7 @@ export default function Seo() {
       <meta property="og:image:alt" content={ogImageAlt} />
       <meta property="og:type" content="website" />
       <meta property="og:site_name" content={SITE_NAME} />
-      <meta property="og:locale" content="es_UY" />
+      <meta property="og:locale" content={pageLanguage === "pt" ? "pt_BR" : pageLanguage === "en" ? "en_US" : "es_UY"} />
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />

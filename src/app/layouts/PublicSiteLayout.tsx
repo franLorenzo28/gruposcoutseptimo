@@ -10,10 +10,12 @@ import FondoAnimado from "@/components/layout/FondoAnimado";
 import SaltarAlContenido from "@/components/layout/SaltarAlContenido";
 import { PageGridBackground } from "@/components/PageGridBackground";
 import PublicAuthDialog from "@/components/auth/PublicAuthDialog";
+import PublicDomTranslator from "@/i18n/PublicDomTranslator";
 
 export function PublicSiteLayout() {
   return (
     <>
+      <PublicDomTranslator />
       <FondoAnimado />
       <NavegacionPrincipal />
       <ScrollAlInicio />
