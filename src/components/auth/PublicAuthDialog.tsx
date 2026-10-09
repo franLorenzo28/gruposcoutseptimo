@@ -13,6 +13,25 @@ import logo from "@/assets/grupo-scout-logo.png";
 
 type Mode = "login" | "register";
 
+function registrationErrorMessage(error: { code?: string; status?: number }): string {
+  if (error.status === 429 || ["over_request_rate_limit", "over_email_send_rate_limit", "email_rate_limit_exceeded"].includes(error.code ?? "")) {
+    return "Hubo demasiados intentos de registro. Esperá unos minutos e intentá nuevamente.";
+  }
+  if (["user_already_exists", "email_exists"].includes(error.code ?? "")) {
+    return "Ese correo ya tiene una cuenta. Ingresá o recuperá tu contraseña.";
+  }
+  if (["email_address_invalid", "validation_failed"].includes(error.code ?? "")) {
+    return "Revisá el correo electrónico e intentá nuevamente.";
+  }
+  if (error.code === "weak_password") {
+    return "Elegí una contraseña más segura e intentá nuevamente.";
+  }
+  if (["signup_disabled", "email_provider_disabled"].includes(error.code ?? "")) {
+    return "El registro por correo no está disponible en este momento.";
+  }
+  return "No se pudo crear la cuenta. Intentá nuevamente más tarde.";
+}
+
 export default function PublicAuthDialog() {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
@@ -48,12 +67,32 @@ export default function PublicAuthDialog() {
     setMessage("");
     try {
       if (mode === "register") {
-        const result = await apiFetch<{ verificationUrl?: string }>("/v1/public/register", {
-          method: "POST", auth: "none",
-          body: JSON.stringify({ nombre_completo: name.trim(), email: email.trim().toLowerCase(), password }),
-        });
-        setVerificationUrl(result.verificationUrl ?? null);
-        setMessage("Revisá tu correo para verificar la cuenta. Después podrás iniciar sesión.");
+        const normalizedEmail = email.trim().toLowerCase();
+        if (isLocalBackend()) {
+          const result = await apiFetch<{ verificationUrl?: string }>("/v1/public/register", {
+            method: "POST", auth: "none",
+            body: JSON.stringify({ nombre_completo: name.trim(), email: normalizedEmail, password }),
+          });
+          setVerificationUrl(result.verificationUrl ?? null);
+          setMessage("Revisá tu correo para verificar la cuenta. Después podrás iniciar sesión.");
+        } else {
+          // A server-side signup shares Vercel's IP rate limit across all visitors.
+          const { data, error } = await supabase.auth.signUp({
+            email: normalizedEmail,
+            password,
+            options: { data: { nombre_completo: name.trim(), account_kind: "publico" } },
+          });
+          if (error) {
+            setMessage(registrationErrorMessage(error));
+            return;
+          }
+          if (data.session) {
+            setPassword("");
+            navigate("/mi-perfil", { replace: true });
+            return;
+          }
+          setMessage("Si el correo es nuevo, revisá tu bandeja para confirmar la cuenta. Después podrás ingresar.");
+        }
         setPassword("");
       } else {
         if (isLocalBackend()) {
@@ -73,7 +112,9 @@ export default function PublicAuthDialog() {
         else close();
       }
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "No se pudo completar la operación.");
+      setMessage(mode === "register" && !isLocalBackend()
+        ? registrationErrorMessage(error && typeof error === "object" ? error as { code?: string; status?: number } : {})
+        : error instanceof Error ? error.message : "No se pudo completar la operación.");
     } finally { setBusy(false); }
   };
 

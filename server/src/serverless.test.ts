@@ -102,10 +102,11 @@ describe("Vercel environment", () => {
       .toThrow("SUPABASE_SERVICE_ROLE_KEY");
   });
 
-  it("gives explicit server configuration precedence over frontend variables", () => {
+  it("uses the frontend Supabase project when stale server variables are also present", () => {
     expect(loadVercelEnvironment({ ...source, SUPABASE_URL: "https://other.supabase.co",
-      SUPABASE_ANON_KEY: "other-public", APP_URL: "https://scouts.example.com", ORIGIN: "https://allowed.example.com" }))
-      .toMatchObject({ SUPABASE_URL: "https://other.supabase.co", SUPABASE_KEY: "other-public",
+      SUPABASE_ANON_KEY: "other-public", SUPABASE_PUBLISHABLE_KEY: "other-publishable",
+      APP_URL: "https://scouts.example.com", ORIGIN: "https://allowed.example.com" }))
+      .toMatchObject({ SUPABASE_URL: source.VITE_SUPABASE_URL, SUPABASE_KEY: source.VITE_SUPABASE_ANON_KEY,
         APP_URL: "https://scouts.example.com", CORS_ORIGINS: ["https://allowed.example.com"] });
   });
 });

@@ -10,8 +10,11 @@ export function loadVercelEnvironment(source: NodeJS.ProcessEnv = process.env) {
   return loadEnvironment({
     ...source,
     NODE_ENV: "production",
-    SUPABASE_URL: source.SUPABASE_URL || source.VITE_SUPABASE_URL,
-    SUPABASE_ANON_KEY: source.SUPABASE_ANON_KEY || source.VITE_SUPABASE_ANON_KEY,
+    // The API must validate tokens issued by the same project as the web app.
+    // Older server-only variables may still point to a previous project.
+    SUPABASE_URL: source.VITE_SUPABASE_URL || source.SUPABASE_URL,
+    SUPABASE_PUBLISHABLE_KEY: source.VITE_SUPABASE_ANON_KEY || source.SUPABASE_PUBLISHABLE_KEY,
+    SUPABASE_ANON_KEY: source.VITE_SUPABASE_ANON_KEY || source.SUPABASE_ANON_KEY,
     APP_URL: appUrl,
     ORIGIN: source.ORIGIN || appUrl,
   });
