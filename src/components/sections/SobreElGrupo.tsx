@@ -13,6 +13,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Reveal } from "@/components/Reveal";
+import { cn } from "@/lib/utils";
               import { OptimizedImage } from "@/components/OptimizedImage";
               import { getOptimizedImageProps } from "@/lib/optimized-images";
               import tropaPopupImage from "@/assets/sistema de patrullas.jpg";
@@ -49,9 +50,7 @@ const About = () => {
       description:
         "Niños de 7 a 10 años, aprenden jugando y descubriendo el mundo scout",
       route: "manada",
-      hoverClass: "hover:bg-[#FEB21A] hover:text-white dark:hover:bg-[#FEB21A] dark:hover:text-white",
-      iconHoverBgClass: "group-hover:bg-[#FEB21A] dark:group-hover:bg-[#FEB21A]",
-      hoverIconClass: "group-hover:text-white",
+      hoverClass: "group-hover:bg-[#FEB21A] group-focus-visible:bg-[#FEB21A] dark:group-hover:bg-[#FEB21A] dark:group-focus-visible:bg-[#FEB21A]",
       detailText:
         "En la Manada los niños descubren el mundo a través del juego, canciones, exploraciones y desafíos simples. Inspirados en El Libro de la Selva, cada encuentro despierta su curiosidad y amor por la naturaleza, aprendiendo valores como la amistad, el respeto y la ayuda mutua en un ambiente divertido y seguro.",
     },
@@ -62,9 +61,7 @@ const About = () => {
         "Jóvenes de 11 a 14 años, desarrollan habilidades y trabajo en equipo",
       route: "tropa",
       image: tropaPopupImage,
-      hoverClass: "hover:bg-[#344F1F] hover:text-white dark:hover:bg-[#344F1F] dark:hover:text-white",
-      iconHoverBgClass: "group-hover:bg-[#344F1F] dark:group-hover:bg-[#344F1F]",
-      hoverIconClass: "group-hover:text-white",
+      hoverClass: "group-hover:bg-[#344F1F] group-focus-visible:bg-[#344F1F] dark:group-hover:bg-[#344F1F] dark:group-focus-visible:bg-[#344F1F]",
       detailText:
         "La Tropa es pura aventura: patrullas, construcciones, campamentos y proyectos donde aprenden a trabajar en equipo, tomar decisiones y asumir responsabilidades. Cada actividad es una oportunidad para vivir la Ley y la Promesa Scout, construyendo carácter y compromiso bajo las estrellas.",
     },
@@ -74,9 +71,7 @@ const About = () => {
       description:
         "Adolescentes de 15 a 17 años, lideran proyectos y asumen responsabilidades",
       route: "pioneros",
-      hoverClass: "hover:bg-[#134686] hover:text-white dark:hover:bg-[#134686] dark:hover:text-white",
-      iconHoverBgClass: "group-hover:bg-[#134686] dark:group-hover:bg-[#134686]",
-      hoverIconClass: "group-hover:text-white",
+      hoverClass: "group-hover:bg-[#134686] group-focus-visible:bg-[#134686] dark:group-hover:bg-[#134686] dark:group-focus-visible:bg-[#134686]",
       detailText:
         "Los Pioneros ponen manos a la obra organizando actividades solidarias, proyectos comunitarios y campamentos de servicio. Con espíritu crítico y creativo, transforman su entorno y dejan huella positiva en su grupo y comunidad, comprometiéndose con un mundo más justo y sostenible.",
     },
@@ -86,9 +81,7 @@ const About = () => {
       description:
         "Jóvenes adultos de 18 a 21 años, servicio a la comunidad y liderazgo",
       route: "rovers",
-      hoverClass: "hover:bg-[#DD0303] hover:text-white dark:hover:bg-[#DD0303] dark:hover:text-white",
-      iconHoverBgClass: "group-hover:bg-[#DD0303] dark:group-hover:bg-[#DD0303]",
-      hoverIconClass: "group-hover:text-white",
+      hoverClass: "group-hover:bg-[#DD0303] group-focus-visible:bg-[#DD0303] dark:group-hover:bg-[#DD0303] dark:group-focus-visible:bg-[#DD0303]",
       detailText:
         "Los Rovers emprenden su propio camino de crecimiento personal a través de proyectos de servicio, viajes y experiencias que consolidan su identidad como ciudadanos activos. Aprenden a vivir con sentido, con los valores scouts como brújula y el corazón dispuesto a servir donde haga falta.",
     },
@@ -98,9 +91,7 @@ const About = () => {
       description:
         "Educadores scouts que guían y acompañan el desarrollo de las unidades",
       route: "staff",
-      hoverClass: "hover:bg-violet-700 hover:text-white dark:hover:bg-violet-700 dark:hover:text-white",
-      iconHoverBgClass: "group-hover:bg-violet-700 dark:group-hover:bg-violet-700",
-      hoverIconClass: "group-hover:text-white",
+      hoverClass: "group-hover:bg-violet-700 group-focus-visible:bg-violet-700 dark:group-hover:bg-violet-700 dark:group-focus-visible:bg-violet-700",
       detailText:
         "Los Educadores Scouts son voluntarios que dedican su tiempo a planificar actividades, capacitarse y acompañar el crecimiento de cada niño y joven. Desde la vocación y el compromiso, son testimonio vivo de los valores scouts, formando personas libres, responsables y felices.",
     },
@@ -109,9 +100,7 @@ const About = () => {
       title: "Comité de Padres",
       description: "Padres y colaboradores que apoyan la gestión del grupo",
       route: "comite",
-      hoverClass: "hover:bg-zinc-600 hover:text-white dark:hover:bg-zinc-600 dark:hover:text-white",
-      iconHoverBgClass: "group-hover:bg-zinc-600 dark:group-hover:bg-zinc-600",
-      hoverIconClass: "group-hover:text-white",
+      hoverClass: "group-hover:bg-zinc-600 group-focus-visible:bg-zinc-600 dark:group-hover:bg-zinc-600 dark:group-focus-visible:bg-zinc-600",
       detailText:
         "El Comité de Padres organiza eventos, gestiona recursos, mantiene el local y colabora en cada campamento y actividad importante. Su participación fortalece la comunidad scout y demuestra que cuando las familias se comprometen, los sueños de los chicos se hacen realidad.",
     },
@@ -324,16 +313,19 @@ const About = () => {
 
             <div className="grid grid-cols-2 gap-3 py-2 sm:gap-4 sm:py-4 mb-8 sm:mb-12 md:grid-cols-3 xl:grid-cols-6">
               {branches.map((branch) => {
+                const activeTextClass = branch.route === "manada"
+                  ? "group-hover:text-slate-950 group-focus-visible:text-slate-950"
+                  : "group-hover:text-white group-focus-visible:text-white";
                 return (
                   <div key={branch.title} className="contents">
                     <Reveal>
                       <Link to={`/unidades/${branch.route}`} className="group block h-full rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-                        <Card className="h-full border-border bg-card transition-colors group-hover:border-primary/60">
+                        <Card className={cn("h-full border-border bg-card transition-colors group-hover:border-transparent group-focus-visible:border-transparent", branch.hoverClass, activeTextClass)}>
                           <CardContent className="flex min-h-48 flex-col items-center gap-3 p-4 text-center sm:p-5">
-                            <branch.icon className="size-7 text-primary" aria-hidden="true" />
-                            <h3 className="text-base font-bold">{branch.title}</h3>
-                            <p className="text-sm leading-relaxed text-muted-foreground">{branch.description}</p>
-                            <span className="mt-auto text-sm font-semibold text-primary">Conocer la unidad →</span>
+                            <branch.icon className={cn("size-7 text-primary transition-colors", activeTextClass)} aria-hidden="true" />
+                            <h3 className={cn("text-base font-bold transition-colors", activeTextClass)}>{branch.title}</h3>
+                            <p className={cn("text-sm leading-relaxed text-muted-foreground transition-colors", activeTextClass)}>{branch.description}</p>
+                            <span className={cn("mt-auto text-sm font-semibold text-primary transition-colors", activeTextClass)}>Conocer la unidad →</span>
                           </CardContent>
                         </Card>
                       </Link>
