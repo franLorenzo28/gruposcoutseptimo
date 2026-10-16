@@ -31,6 +31,7 @@ export function useRamaDocuments(rama: string) {
         .from("rama_documentos")
         .select("*")
         .eq("rama", rama)
+        .eq("categoria", "general")
         .order("created_at", { ascending: false });
 
       if (supabaseError) throw supabaseError;

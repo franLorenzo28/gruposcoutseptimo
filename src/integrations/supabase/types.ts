@@ -562,8 +562,42 @@ export type Database = {
         }
         Relationships: []
       }
+      ppp_files: {
+        Row: {
+          created_at: string
+          id: string
+          mime_type: string
+          original_filename: string
+          owner_id: string
+          rama: string
+          size_bytes: number
+          storage_path: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          mime_type: string
+          original_filename: string
+          owner_id: string
+          rama: string
+          size_bytes: number
+          storage_path: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          mime_type?: string
+          original_filename?: string
+          owner_id?: string
+          rama?: string
+          size_bytes?: number
+          storage_path?: string
+        }
+        Relationships: []
+      }
       rama_documentos: {
         Row: {
+          categoria: string
           created_at: string | null
           id: string
           mime_type: string
@@ -576,6 +610,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          categoria?: string
           created_at?: string | null
           id?: string
           mime_type: string
@@ -588,6 +623,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          categoria?: string
           created_at?: string | null
           id?: string
           mime_type?: string

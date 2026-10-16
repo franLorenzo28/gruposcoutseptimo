@@ -1,6 +1,6 @@
-import { ModulePending } from "../components/ModulePending";
+import { InternalResourceCollection } from "../components/InternalResourceCollection";
 
 export default function InternalFormsPage() {
-  return <ModulePending title="Formularios" description="Aquí estarán las inscripciones y autorizaciones del grupo." />;
+  return <InternalResourceCollection category="formulario" title="Formularios" description="Fichas y autorizaciones de tu unidad para consultar y descargar. Coordina con el equipo cómo entregarlas." />;
 }
 

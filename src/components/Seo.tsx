@@ -13,7 +13,7 @@ type SeoEntry = {
 const BASE_URL = "https://gruposcoutseptimo.vercel.app";
 const SITE_NAME = "Grupo Scout Séptimo";
 const DEFAULT_DESCRIPTION =
-  "Grupo Scout Séptimo de Montevideo. Comunidad scout con 61 años de historia formando líderes comprometidos. Campamentos, BAUEN, actividades y valores scout en Uruguay.";
+  "Conoce el Grupo Scout Séptimo de Montevideo, una comunidad de aventura, servicio y aprendizaje desde 1964. Descubre nuestras unidades y cómo sumarte.";
 const DEFAULT_TITLE = "Grupo Scout Séptimo - Montevideo | Scouts Uruguay";
 const DEFAULT_OG_IMAGE = `${BASE_URL}/og-image.jpg`;
 
@@ -43,6 +43,22 @@ const ROUTE_SEO: Record<string, SeoEntry> = {
     title: "Contacto",
     description:
       "Contactá al Grupo Scout Séptimo de Montevideo. Sumate a nuestras actividades y conocé cómo participar.",
+  },
+  "/eventos": {
+    title: "Eventos y actividades",
+    description: "Conoce los próximos eventos y actividades del Grupo Scout Séptimo de Montevideo.",
+  },
+  "/archivo": {
+    title: "Archivo del grupo",
+    description: "Explora la memoria, los documentos y la historia del Grupo Scout Séptimo de Montevideo.",
+  },
+  "/archivo/scoutpedia": {
+    title: "Scoutpedia",
+    description: "Recursos para conocer el método, los símbolos y la vida scout del Grupo Scout Séptimo.",
+  },
+  "/archivo/locales": {
+    title: "Locales históricos",
+    description: "Conoce los espacios que acompañaron la historia del Grupo Scout Séptimo en Montevideo.",
   },
   "/narrativas": {
     title: "Narrativas y relatos",
@@ -94,10 +110,15 @@ const NOINDEX_PREFIXES = [
   "/mensajes",
   "/grupos",
   "/verificar-email",
-  "/archivo",
+  "/archivo/compania",
+  "/archivo/capsula-del-tiempo",
+  "/archivo/am-lagerfeuer",
   "/cancionero",
   "/galeria",
-  "/eventos",
+  "/eventos/jamborees",
+  "/eventos/jamboree-1981",
+  "/eventos/jamboree-2014",
+  "/eventos/jamboree-2023",
   "/educadores",
   "/veteranos",
   "/test-diagnostic",
@@ -160,12 +181,8 @@ export default function Seo() {
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={DEFAULT_OG_IMAGE} />
       <meta name="twitter:image:alt" content={ogImageAlt} />
-      {noIndex ? (
-        <>
-          <meta name="robots" content="noindex, nofollow" />
-          <meta name="googlebot" content="noindex, nofollow" />
-        </>
-      ) : null}
+      <meta name="robots" content={noIndex ? "noindex, nofollow" : "index, follow, max-image-preview:large"} />
+      <meta name="googlebot" content={noIndex ? "noindex, nofollow" : "index, follow, max-image-preview:large"} />
       <script type="application/ld+json">{JSON.stringify(webPageJsonLd)}</script>
     </Helmet>
   );

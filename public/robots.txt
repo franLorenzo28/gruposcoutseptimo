@@ -25,7 +25,9 @@ Allow: /*.js$
 
 # Bloquear rutas privadas
 Disallow: /admin
+Disallow: /interno
 Disallow: /api/
+Disallow: /galeria
 Disallow: /perfil/editar
 
 # Bloquear bots maliciosos conocidos

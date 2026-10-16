@@ -1,187 +1,118 @@
-import { useState, useRef } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { Download, FileText, Loader2, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { InternalPageHeader } from "@/app/internal/components/InternalPageHeader";
+import { ModulePending } from "@/app/internal/components/ModulePending";
+import { ramaConfig } from "@/app/internal/rama-storage";
 import { useMemberAuth } from "@/context/MemberAuthContext";
-import { Upload, FileText, Trash2, Download, Eye } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { isLocalBackend } from "@/lib/backend";
+import { formatFileSize } from "@/lib/documentos";
+import { deletePppFile, getPppDownloadUrl, listPppFiles, listPppOwnerNames, uploadPppFile, type PppFile, type PppRama } from "@/lib/ppp-files";
 
-interface UploadedFile {
-  id: string;
-  name: string;
-  size: number;
-  type: string;
-  uploadedAt: string;
-  url: string;
+function eligibleRama(value: string): value is PppRama {
+  return value === "pioneros" || value === "rover";
 }
 
 export default function InternalUploadsPage() {
   const { session } = useMemberAuth();
-  const [files, setFiles] = useState<UploadedFile[]>([]);
-  const [showMine, setShowMine] = useState(true);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const { toast } = useToast();
+  const availableRamas = (session?.allowedRamas?.length ? session.allowedRamas : session ? [session.rama] : []).filter(eligibleRama);
+  const [activeRama, setActiveRama] = useState<PppRama>(availableRamas[0] ?? "pioneros");
+  const [files, setFiles] = useState<PppFile[]>([]);
+  const [ownerNames, setOwnerNames] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const localBackend = isLocalBackend();
+
+  const refresh = useCallback(async () => {
+    if (localBackend || availableRamas.length === 0) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await listPppFiles(activeRama);
+      setFiles(data);
+      const ids = Array.from(new Set(data.map((file) => file.owner_id)));
+      try { setOwnerNames(await listPppOwnerNames(ids)); }
+      catch { setOwnerNames({}); }
+    } catch {
+      setError("No pudimos cargar los archivos de progresión. Intenta de nuevo.");
+    } finally {
+      setLoading(false);
+    }
+  }, [activeRama, availableRamas.length, localBackend]);
+
+  useEffect(() => { void refresh(); }, [refresh]);
 
   if (!session) return null;
+  if (localBackend) return <ModulePending title="Progresión personal" description="Los archivos de progresión estarán disponibles en la plataforma conectada a Supabase." />;
 
-  const isPioneroRover = session.rama === "pioneros" || session.rama === "rover";
-  const isEducador = session.accessType === "educador";
+  if (!availableRamas.length) return <section className="mx-auto max-w-4xl px-4 py-6">
+    <InternalPageHeader eyebrow="Progresión personal" title="Plan de Progresión Personal" description="Este espacio corresponde a Pioneros, Rovers y sus educadores autorizados." />
+  </section>;
 
-  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFiles = e.target.files;
-    if (!selectedFiles?.length) return;
-
-    const newFiles: UploadedFile[] = Array.from(selectedFiles).map((file) => ({
-      id: Date.now().toString() + Math.random().toString(36).substring(7),
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      uploadedAt: new Date().toLocaleDateString("es-UY"),
-      url: URL.createObjectURL(file),
-    }));
-
-    setFiles((prev) => [...newFiles, ...prev]);
-    toast({ title: "PPP subido", description: `${newFiles.length} archivo(s) agregado(s) a tu plan de progresión.` });
-
-    if (fileInputRef.current) fileInputRef.current.value = "";
+  const canUpload = session.accessType !== "educador" && session.rama === activeRama;
+  const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = Array.from(event.target.files ?? []);
+    event.target.value = "";
+    if (!selected.length) return;
+    setBusy(true);
+    setError(null);
+    try {
+      for (const file of selected) await uploadPppFile(activeRama, file);
+      await refresh();
+    } catch (cause) {
+      await refresh();
+      setError(cause instanceof Error && cause.message.startsWith("Sube un PDF") ? cause.message : "No pudimos guardar todos los archivos. Revisa la lista antes de reintentar.");
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const handleDelete = (id: string) => {
-    setFiles((prev) => prev.filter((f) => f.id !== id));
-    toast({ title: "Archivo eliminado de tu PPP" });
+  const handleDownload = async (file: PppFile) => {
+    setError(null);
+    try { window.open(await getPppDownloadUrl(file), "_blank", "noopener,noreferrer"); }
+    catch { setError("No pudimos abrir el archivo. Intenta de nuevo."); }
   };
 
-  const formatSize = (bytes: number) => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  const handleDelete = async (file: PppFile) => {
+    if (!window.confirm(`¿Eliminar ${file.original_filename}?`)) return;
+    setBusy(true);
+    setError(null);
+    try { await deletePppFile(file); await refresh(); }
+    catch { setError("No pudimos eliminar el archivo. Intenta de nuevo."); }
+    finally { setBusy(false); }
   };
 
-  if (!isPioneroRover && !isEducador) {
-    return (
-      <section className="mx-auto flex w-full max-w-7xl flex-col gap-5 px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
-        <InternalPageHeader
-          eyebrow="Progresión personal"
-          title="Plan de Progresión Personal"
-          description="El PPP está disponible solo para las unidades Pioneros y Rovers."
-        />
-        <Card className="border-border/70 bg-card/85 shadow-sm">
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Eye className="mb-4 h-12 w-12 text-muted-foreground/40" />
-            <p className="text-sm text-muted-foreground">
-              Esta sección es exclusiva para Pioneros, Rovers y sus educadores.
-            </p>
-          </CardContent>
-        </Card>
-      </section>
-    );
-  }
-
-  return (
-    <section className="mx-auto flex w-full max-w-7xl flex-col gap-5 px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
-      <InternalPageHeader
-          eyebrow="Módulo en preparación"
-          title="Progresión personal"
-          description="Esta vista es una referencia del futuro módulo PPP. La subida persistente de archivos todavía no está conectada."
-        meta={
-          <Badge variant="outline" className="rounded-full bg-background/80">
-            {isEducador ? "Educador — vista de supervisión" : `PPP — ${session.nombre}`}
-          </Badge>
-        }
-      />
-
-      {isEducador && (
-        <div className="flex gap-2">
-          <Button
-            type="button"
-            variant={showMine ? "default" : "outline"}
-            className="rounded-full"
-            onClick={() => setShowMine(true)}
-          >
-            Mi unidad
-          </Button>
-          <Button
-            type="button"
-            variant={!showMine ? "default" : "outline"}
-            className="rounded-full"
-            onClick={() => setShowMine(false)}
-          >
-            Todos
-          </Button>
-        </div>
-      )}
-
-      {isPioneroRover && !isEducador && (
-        <div className="flex items-center gap-3">
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            className="hidden"
-            onChange={handleUpload}
-          />
-          <Button disabled className="rounded-full" title="La subida persistente todavía no está conectada">
-            <Upload className="mr-2 h-4 w-4" />
-            Subida próximamente
-          </Button>
-          <p className="text-xs text-muted-foreground">La acción aparecerá cuando el almacenamiento esté conectado.</p>
-        </div>
-      )}
-
-      {files.length === 0 ? (
-        <Card className="border-border/70 bg-card/85 shadow-sm">
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <FileText className="mb-4 h-12 w-12 text-muted-foreground/40" />
-            <p className="text-sm text-muted-foreground">
-              {isPioneroRover && !isEducador
-                ? "No has subido archivos a tu PPP todavía."
-                : "No hay archivos de PPP cargados para esta vista."}
-            </p>
-            {isPioneroRover && !isEducador && (
-              <Button variant="outline" className="mt-4 rounded-full" disabled>
-                Subida próximamente
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-3">
-          {files.map((file) => (
-            <Card key={file.id} className="border-border/70 bg-card/85 shadow-sm">
-              <CardContent className="flex items-center justify-between p-4">
-                <div className="flex items-center gap-3 min-w-0">
-                  <FileText className="h-8 w-8 shrink-0 text-primary/60" />
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium truncate">{file.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {formatSize(file.size)} · {file.uploadedAt}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
-                    <a href={file.url} download={file.name} aria-label="Descargar">
-                      <Download className="h-4 w-4" />
-                    </a>
-                  </Button>
-                  {isPioneroRover && !isEducador && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive hover:text-destructive"
-                      aria-label="Eliminar archivo"
-                      onClick={() => handleDelete(file.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-    </section>
-  );
+  return <section className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-6 sm:px-6">
+    <InternalPageHeader eyebrow="Progresión personal" title="Plan de Progresión Personal"
+      description={session.accessType === "educador" ? "Consulta los archivos compartidos por integrantes de tu unidad." : "Guarda aquí tus archivos de progresión para consultarlos con tu equipo educativo."}
+      meta={<Badge variant="outline">{ramaConfig[activeRama].titulo}</Badge>} />
+    {availableRamas.length > 1 && <div className="flex flex-wrap gap-2" aria-label="Seleccionar unidad">
+      {availableRamas.map((rama) => <Button key={rama} variant={rama === activeRama ? "default" : "outline"} onClick={() => setActiveRama(rama)}>{ramaConfig[rama].titulo}</Button>)}
+    </div>}
+    {canUpload && <div className="rounded-xl border border-border bg-card p-4">
+      <label htmlFor="ppp-upload" className="mb-2 block text-sm font-semibold">Subir archivos a mi progresión</label>
+      <input id="ppp-upload" type="file" multiple accept=".pdf,.jpg,.jpeg,.png,.webp" disabled={busy}
+        onChange={(event) => void handleUpload(event)}
+        className="block w-full max-w-xl text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-primary file:px-4 file:py-2 file:font-semibold file:text-primary-foreground" />
+      <p className="mt-2 text-xs text-muted-foreground">PDF o imágenes JPG, PNG y WebP. Máximo 20 MB por archivo. Solo tú y los educadores autorizados de tu unidad pueden verlos.</p>
+    </div>}
+    {busy && <p role="status" className="flex items-center gap-2 text-sm"><Loader2 className="size-4 animate-spin" />Guardando cambios…</p>}
+    {error && <div role="alert" className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-destructive/40 bg-card p-4 text-sm">
+      <span>{error}</span><Button size="sm" variant="outline" onClick={() => void refresh()}>Reintentar</Button>
+    </div>}
+    {loading ? <p role="status" className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" />Cargando archivos…</p>
+      : files.length === 0 ? <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">Todavía no hay archivos de progresión para esta unidad.</CardContent></Card>
+        : <ul className="space-y-3">{files.map((file) => <li key={file.id}><Card><CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
+          <div className="flex min-w-0 items-center gap-3"><FileText className="size-5 shrink-0 text-primary" aria-hidden="true" /><div className="min-w-0">
+            <p className="break-words text-sm font-semibold">{file.original_filename}</p>
+            <p className="text-xs text-muted-foreground">{ownerNames[file.owner_id] || "Integrante"} · {formatFileSize(file.size_bytes)} · {new Date(file.created_at).toLocaleDateString("es-UY")}</p>
+          </div></div>
+          <div className="flex gap-2"><Button variant="outline" size="sm" onClick={() => void handleDownload(file)}><Download aria-hidden="true" />Abrir</Button>
+            {file.owner_id === session.authUserId && canUpload && <Button variant="ghost" size="icon" disabled={busy} aria-label={`Eliminar ${file.original_filename}`} onClick={() => void handleDelete(file)}><Trash2 aria-hidden="true" /></Button>}
+          </div>
+        </CardContent></Card></li>)}</ul>}
+  </section>;
 }

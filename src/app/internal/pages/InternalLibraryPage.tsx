@@ -1,6 +1,6 @@
-import { ModulePending } from "../components/ModulePending";
+import { InternalResourceCollection } from "../components/InternalResourceCollection";
 
 export default function InternalLibraryPage() {
-  return <ModulePending title="Biblioteca" description="Estamos preparando una selección de guías y recursos scouts." />;
+  return <InternalResourceCollection category="biblioteca" title="Biblioteca" description="Guías y recursos scouts compartidos por el equipo educativo de tu unidad." />;
 }
 

@@ -1,183 +1,75 @@
-import { Button } from "@/components/ui/button";
-import { ArrowRight, Users, Hand, MapPin } from "lucide-react";
+import { ArrowRight, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 import { Reveal } from "@/components/Reveal";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { getOptimizedImageProps } from "@/lib/optimized-images";
-const Hero = () => {
+
+const highlights = [
+  { value: "+61", label: "Años de historia" },
+  { value: "+100", label: "Scouts activos" },
+];
+
+export default function HeroInicio() {
   const heroImages = getOptimizedImageProps("hero");
 
-  const scrollToWithOffset = (id: string, offset = 120) => {
-    const target = document.getElementById(id);
-    if (!target) return;
-    const top = target.getBoundingClientRect().top + window.scrollY - offset;
-    window.scrollTo({ top, behavior: "smooth" });
-  };
-
   return (
-    <section 
-      className="relative min-h-screen flex items-center justify-center overflow-hidden"
+    <section
+      className="relative isolate flex min-h-[calc(100svh-4.5rem)] flex-col justify-center overflow-hidden bg-scout-black text-white sm:min-h-[calc(100svh-5.25rem)]"
       aria-labelledby="hero-title"
     >
-      {/* Background Image with Enhanced Overlay */}
-      <div className="absolute inset-0 z-0" aria-hidden="true">
-        <OptimizedImage
-          {...heroImages}
-          alt="Grupo Scout Séptimo de Montevideo en actividad al aire libre"
-          className="absolute inset-0 object-left"
-          objectFit="cover"
-          priority
-        />
-        <div className="bg-blob w-72 h-72 bg-muted/40 -top-24 -right-16 float-slow" />
-        <div className="bg-blob w-64 h-64 bg-muted/40 -bottom-24 -left-10 drift-slow" />
-        <div className="absolute inset-0 bg-gradient-to-r from-scout-black/80 via-scout-black/64 to-scout-black/50" />
-        <div className="absolute inset-0 bg-gradient-to-t from-scout-black/55 via-transparent to-transparent" />
+      <div className="absolute inset-0 -z-10" aria-hidden="true">
+        <OptimizedImage {...heroImages} alt="" className="absolute inset-0" objectFit="cover" priority />
+        <div className="absolute inset-0 bg-gradient-to-r from-scout-black/90 via-scout-black/75 to-scout-black/40" />
+        <div className="absolute inset-0 bg-gradient-to-t from-scout-black/65 via-transparent to-scout-black/20" />
       </div>
 
-      {/* Content */}
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 z-10 pt-28 pb-28 sm:pt-32 sm:pb-32 md:pt-36 md:pb-40">
-        <div className="max-w-5xl">
-          <div className="space-y-9 md:space-y-11">
-            {/* Main Title */}
-            <Reveal>
-              <h1 
-                id="hero-title"
-                className="text-3xl xs:text-4xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-bold text-white leading-[0.95] tracking-tight"
-              >
-                <span className="text-primary block mb-3 md:mb-4">
-                  Grupo Scout Séptimo
-                </span>
-                <span className="block text-white drop-shadow-xl">
-                  Montevideo
-                </span>
-              </h1>
-            </Reveal>
+      <div className="container relative mx-auto w-full px-4 pb-10 pt-14 sm:px-6 sm:pb-14 sm:pt-16 lg:px-8 lg:py-16">
+        <div className="max-w-[850px]">
+          <Reveal>
+            <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/35 bg-scout-black/40 px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-white sm:text-sm">
+              <MapPin className="size-4" aria-hidden="true" /> Montevideo · desde 1964
+            </p>
+          </Reveal>
+          <Reveal>
+            <h1 id="hero-title" className="max-w-[13ch] font-bold leading-[0.98] tracking-tight text-[clamp(2.9rem,6.3vw,6.25rem)]">
+              <span className="block text-primary">Grupo Scout Séptimo</span>
+              <span className="mt-2 block text-white">Montevideo</span>
+            </h1>
+          </Reveal>
+          <Reveal>
+            <p className="mt-5 max-w-2xl text-base leading-relaxed text-white/90 sm:mt-6 sm:text-lg lg:text-xl">
+              Grupo Scout de Montevideo donde niños, adolescentes y jóvenes crecen en comunidad, servicio y aventura al aire libre aplicando el método scout.
+            </p>
+          </Reveal>
+          <Reveal>
+            <div className="mt-7 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:items-center">
+              <Button asChild size="lg" variant="hero" className="min-h-12 w-full px-7 text-base sm:w-auto">
+                <Link to="/contacto#formulario">Quiero sumarme <ArrowRight aria-hidden="true" /></Link>
+              </Button>
+              <Button asChild size="lg" variant="outline" className="min-h-12 w-full border-white/70 bg-scout-black/35 px-7 text-base text-white hover:bg-white/15 hover:text-white sm:w-auto">
+                <a href="#unidades">Conocer las unidades</a>
+              </Button>
+            </div>
+            <p className="mt-3 text-sm text-white/80">Puedes consultar por tu primera visita sin crear una cuenta.</p>
+          </Reveal>
+        </div>
 
-            {/* Description */}
-            <Reveal>
-              <p className="text-base xs:text-lg sm:text-xl md:text-2xl text-gray-100/95 leading-relaxed max-w-3xl">
-                Grupo Scout de Montevideo donde niños, adolescentes y jóvenes
-                crecen en comunidad, servicio y aventura al aire libre aplicando el método scout.
-              </p>
-            </Reveal>
-
-            {/* CTA Buttons */}
-            <Reveal>
-              <div className="flex flex-col sm:flex-row gap-4 pt-2">
-                <Button asChild size="lg" variant="hero" className="text-base sm:text-lg">
-                  <Link to="/contacto">Quiero sumarme<ArrowRight className="ml-2" aria-hidden="true" /></Link>
-                </Button>
-                <Button asChild size="lg" variant="heroSecondary" className="text-base sm:text-lg">
-                  <Link to="/interno">Acceso de miembros</Link>
-                </Button>
-
-                <Button
-                  onClick={() => {
-                    document.getElementById("historia")?.scrollIntoView({ behavior: "smooth" });
-                  }}
-                  size="lg"
-                  variant="outline"
-                  className="group border-white/40 text-white bg-transparent hover:bg-white/10 hover:text-white text-base sm:text-lg w-full sm:w-auto whitespace-normal text-center leading-tight transition-all duration-300 hover:shadow-xl hover:scale-110"
-                  aria-label="Conoce nuestra historia de 61 años"
-                >
-                  <Users className="mr-2 transition-transform duration-300 group-hover:scale-110" aria-hidden="true" />
-                  Quienes Somos
-                </Button>
+        <Reveal>
+          <div className="mt-10 flex flex-wrap items-center gap-x-8 gap-y-4 border-t border-white/30 pt-5 sm:mt-12" aria-label="Datos del grupo">
+            {highlights.map((item) => (
+              <div key={item.label} className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold text-secondary sm:text-3xl">{item.value}</span>
+                <span className="text-sm font-medium text-white/85">{item.label}</span>
               </div>
-            </Reveal>
-
-            <Reveal>
-              <div className="flex flex-wrap items-center gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="border-white/40 text-white bg-transparent hover:bg-transparent hover:text-white"
-                  onClick={() =>
-                    document
-                      .getElementById("quienes-somos")
-                      ?.scrollIntoView({ behavior: "smooth" })
-                  }
-                >
-                  Quiénes somos
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="border-white/40 text-white bg-transparent hover:bg-transparent hover:text-white"
-                  onClick={() =>
-                    document
-                      .getElementById("unidades")
-                      ?.scrollIntoView({ behavior: "smooth" })
-                  }
-                >
-                  Unidades
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="border-white/40 text-white bg-transparent hover:bg-transparent hover:text-white"
-                  onClick={() => scrollToWithOffset("pilares", 130)}
-                >
-                  Pilares
-                </Button>
-              </div>
-            </Reveal>
-
-            {/* Stats */}
-            <Reveal>
-              <div 
-                className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 gap-6 sm:gap-8 md:gap-10 mt-12 sm:mt-16 pt-8 sm:pt-10 border-t border-white/20"
-                role="list"
-                aria-label="Estadísticas del grupo"
-              >
-                <div className="group" role="listitem">
-                  <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-primary transition-transform duration-300 group-hover:scale-110" aria-label="Más de 61 años">
-                    +61
-                  </div>
-                  <div className="text-xs sm:text-sm md:text-base text-gray-300 mt-1 sm:mt-2 font-medium">
-                    Años de historia
-                  </div>
-                </div>
-                <div className="group" role="listitem">
-                  <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-accent transition-transform duration-300 group-hover:scale-110" aria-label="Más de 100 scouts">
-                    +100
-                  </div>
-                  <div className="text-xs sm:text-sm md:text-base text-gray-300 mt-1 sm:mt-2 font-medium">
-                    Scouts activos
-                  </div>
-                </div>
-                <div className="group col-span-2 sm:col-span-1">
-                  <div className="flex items-center gap-2 text-3xl sm:text-4xl md:text-5xl font-bold text-primary transition-transform duration-300 group-hover:scale-110">
-                    <MapPin className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10" />
-                    <span>1</span>
-                  </div>
-                  <div className="text-xs sm:text-sm md:text-base text-gray-300 mt-1 sm:mt-2 font-medium">
-                    Local Scout
-                  </div>
-                </div>
-              </div>
-            </Reveal>
+            ))}
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-bold text-secondary sm:text-3xl">1</span>
+              <span className="text-sm font-medium text-white/85">Local Scout</span>
+            </div>
           </div>
-        </div>
-      </div>
-
-      {/* Scroll Indicator Desktop */}
-      <div className="hidden md:flex absolute bottom-8 left-1/2 transform -translate-x-1/2 z-10 animate-bounce flex-col items-center gap-2">
-        <div className="w-6 h-10 border-2 border-white/60 rounded-full flex justify-center transition-colors duration-300 hover:border-primary">
-          <div className="w-1 h-3 bg-white/60 rounded-full mt-2 animate-pulse"></div>
-        </div>
-        <span className="text-xs text-white/60 font-medium">Descubre más</span>
-      </div>
-
-      {/* Mobile Scroll Indicator */}
-      <div className="md:hidden pointer-events-none absolute bottom-20 right-4 z-10 animate-bounce">
-        <div className="w-12 h-12 bg-muted/40 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg border border-primary/30">
-          <Hand className="w-6 h-6 text-primary" />
-        </div>
+        </Reveal>
       </div>
     </section>
   );
-};
-export default Hero;
-
-
+}

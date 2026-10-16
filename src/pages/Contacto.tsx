@@ -17,7 +17,7 @@ const Contacto = () => {
   const [params] = useSearchParams();
   const [unit, setUnit] = useState(params.get("unidad") ?? "");
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof ContactFields, string>>>({});
-  const [feedback, setFeedback] = useState("");
+  const [feedback, setFeedback] = useState<{ kind: "success" | "error"; message: string } | null>(null);
   const [sending, setSending] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -31,7 +31,7 @@ const Contacto = () => {
     // Validar y sanear datos antes de enviar
     const { valid, errors, fieldErrors: validationErrors, sanitized } = validateContact(formData);
     setFieldErrors(validationErrors);
-    setFeedback("");
+    setFeedback(null);
     if (!valid) {
       document.getElementById(`contact-${Object.keys(validationErrors)[0]}`)?.focus();
       toast({
@@ -82,15 +82,15 @@ const Contacto = () => {
         title: "¡Mensaje enviado!",
         description: "Nos pondremos en contacto contigo pronto.",
       });
-      setFeedback("¡Mensaje enviado! Nos pondremos en contacto contigo pronto.");
+      setFeedback({ kind: "success", message: "¡Mensaje enviado! Nos pondremos en contacto contigo pronto. Si necesitas hablar antes, también puedes llamarnos." });
       // Reset form
       setFormData({ name: "", email: "", phone: "", message: "" });
-    } catch (err: any) {
+    } catch (err) {
       console.error("EmailJS error:", err);
-      setFeedback("No pudimos enviar tu mensaje. Tus datos siguen aquí; puedes reintentar o escribirnos por correo.");
+      setFeedback({ kind: "error", message: "No pudimos enviar tu mensaje. Tus datos siguen aquí: puedes reintentar o escribirnos a scoutsseptimo7@gmail.com." });
       toast({
         title: "Error al enviar",
-        description: err?.message || "No se pudo enviar el mensaje. Intenta de nuevo más tarde.",
+        description: "No se pudo enviar el mensaje. Intenta de nuevo o escríbenos por correo.",
         variant: "destructive",
       });
     } finally {
@@ -126,13 +126,16 @@ const Contacto = () => {
                 <li>Coordina con el equipo una primera visita y pregunta qué necesitas llevar.</li>
                 <li>El equipo te orientará sobre los siguientes pasos para participar.</li>
               </ol>
+              <p className="rounded-xl border border-border bg-card px-4 py-3 text-sm leading-relaxed text-foreground">
+                <strong>Edades orientativas:</strong> Manada 7 a 10, Tropa 11 a 14, Pioneros 15 a 17 y Rovers 18 a 21 años. Si no sabes qué unidad corresponde, te orientamos.
+              </p>
               <Link to="/#unidades" className="inline-flex min-h-11 items-center text-sm font-semibold underline underline-offset-4">Conocer las unidades y edades</Link>
             </div>
           </section>
-          <Card id="formulario" className="scroll-mt-28">
+          <Card id="formulario" tabIndex={-1} className="scroll-mt-28 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
             <CardHeader><CardTitle className="text-2xl">Envíanos un mensaje</CardTitle><p className="text-sm text-muted-foreground">Los campos marcados con * son obligatorios.</p></CardHeader>
             <CardContent>
-              <form noValidate onSubmit={handleSubmit} className="flex flex-col gap-5">
+              <form noValidate onSubmit={handleSubmit} aria-busy={sending} className="flex flex-col gap-5">
                 {([{ key: "name", label: "Nombre", type: "text", autoComplete: "name", placeholder: "Tu nombre" }, { key: "email", label: "Correo electrónico", type: "email", autoComplete: "email", placeholder: "nombre@correo.com" }, { key: "phone", label: "Teléfono (opcional)", type: "tel", autoComplete: "tel", placeholder: "+598 99 123 456" }] as const).map(field => <div key={field.key} className="flex flex-col gap-2">
                   <label htmlFor={`contact-${field.key}`} className="text-sm font-semibold">{field.label}{field.key !== "phone" && " *"}</label>
                   <Input id={`contact-${field.key}`} type={field.type} autoComplete={field.autoComplete} placeholder={field.placeholder} value={formData[field.key]} required={field.key !== "phone"} disabled={sending} aria-invalid={Boolean(fieldErrors[field.key])} aria-describedby={fieldErrors[field.key] ? `error-${field.key}` : undefined} onChange={e => setFormData({ ...formData, [field.key]: e.target.value })} />
@@ -148,7 +151,10 @@ const Contacto = () => {
                   {fieldErrors.message && <p id="error-message" className="text-sm text-destructive">{fieldErrors.message}</p>}
                 </div>
                 <Button type="submit" disabled={sending} className="w-full">{sending ? <><Loader2 className="animate-spin" aria-hidden="true" />Enviando…</> : "Enviar mensaje"}</Button>
-                {feedback && <p role="status" className="text-sm leading-relaxed">{feedback}</p>}
+                {feedback && <p role={feedback.kind === "error" ? "alert" : "status"} className={`rounded-lg border p-3 text-sm leading-relaxed ${feedback.kind === "error" ? "border-destructive/40 text-destructive" : "border-primary/30 text-foreground"}`}>
+                  {feedback.message}
+                  {feedback.kind === "error" && <a href="mailto:scoutsseptimo7@gmail.com" className="ml-1 font-semibold underline underline-offset-4">Abrir correo</a>}
+                </p>}
               </form>
             </CardContent>
           </Card>

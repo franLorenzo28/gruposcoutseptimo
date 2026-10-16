@@ -61,7 +61,7 @@ export default function InternalCalendarPage() {
       <InternalPageHeader
         eyebrow="Agenda interna"
         title="Calendario operativo"
-        description="Sigue el ritmo de la unidad, revisa próximos encuentros y, si tienes permiso, gestiona la agenda desde el mismo módulo."
+        description="Revisa y gestiona los encuentros de tu unidad. Por ahora esta agenda se guarda solo en este navegador."
         meta={
           <div className="flex flex-wrap gap-2">
             <Badge variant="outline" className="rounded-full bg-background/80">

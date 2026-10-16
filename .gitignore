@@ -66,6 +66,7 @@ grafana_data/
 *.sql
 !supabase/migrations/*.sql
 !supabase/legacy/*.sql
+!scripts/verify-internal-resources-rls.sql
 *.dump
 backup-*
 

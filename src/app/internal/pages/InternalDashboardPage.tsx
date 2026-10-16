@@ -7,6 +7,7 @@ import { useMemberAuth } from "@/context/MemberAuthContext";
 import { getUpcomingRamaEvents, ramaConfig, readRamaEvents } from "@/app/internal/rama-storage";
 import { formatEventDate } from "@/lib/event-dates";
 import { NewsPopup } from "@/components/layout/NewsPopup";
+import { isLocalBackend } from "@/lib/backend";
 
 const shortcuts = [
   { to: "/interno/anuncios", title: "Anuncios", description: "Avisos de tu unidad", icon: Megaphone },
@@ -22,7 +23,7 @@ const resources = [
   { to: "/interno/am-lagerfeuer", title: "Am Lagerfeuer" },
   { to: "/interno/jamborees", title: "Jamborees" },
 ];
-const upcomingModules = [
+const moduleLinks = [
   { to: "/interno/planificacion", title: "Planificación" },
   { to: "/interno/formularios", title: "Formularios" },
   { to: "/interno/biblioteca", title: "Biblioteca" },
@@ -35,6 +36,7 @@ export default function InternalDashboardPage() {
   const allowedRamas = session.allowedRamas?.length ? session.allowedRamas : [session.rama];
   const primaryRama = ramaConfig[session.rama];
   const events = getUpcomingRamaEvents(readRamaEvents(session.rama));
+  const localBackend = isLocalBackend();
   return (
     <section className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
       <InternalPageHeader eyebrow="Tu espacio en el Séptimo" title={`Hola, ${session.nombre.split(" ")[0]}`} description="Tu unidad, los próximos encuentros y lo que necesitas para participar."
@@ -45,6 +47,7 @@ export default function InternalDashboardPage() {
           <Button asChild variant="outline" size="sm"><Link to="/interno/agenda">Ver agenda</Link></Button>
         </CardHeader>
         <CardContent>
+          <p className="mb-4 text-xs text-muted-foreground">Esta agenda se guarda en este navegador y todavía no se comparte automáticamente.</p>
           {events.length ? <ul className="grid gap-4 sm:grid-cols-3">
             {events.slice(0, 3).map(event => <li key={event.id} className="flex flex-col gap-1">
               <p className="text-sm font-semibold text-primary">{formatEventDate(event.fecha)}{event.hora ? ` · ${event.hora}` : ""}</p>
@@ -68,8 +71,8 @@ export default function InternalDashboardPage() {
       <details className="rounded-xl border border-border bg-card p-4">
         <summary className="cursor-pointer rounded-md font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Más recursos e historia del grupo</summary>
         <nav aria-label="Recursos e historia" className="mt-4 flex flex-wrap gap-2">{resources.map(item => <Button key={item.to} asChild variant="outline"><Link to={item.to}>{item.title}</Link></Button>)}</nav>
-        <p className="mb-2 mt-5 text-sm text-muted-foreground">En preparación</p>
-        <nav aria-label="Módulos en preparación" className="flex flex-wrap gap-2">{upcomingModules.map(item => <Button key={item.to} asChild variant="ghost" size="sm"><Link to={item.to}>{item.title}</Link></Button>)}</nav>
+        <p className="mb-2 mt-5 text-sm text-muted-foreground">{localBackend ? "Planificación usa esta agenda local; Formularios, Biblioteca y Progresión personal requieren Supabase." : "Herramientas de la unidad"}</p>
+        <nav aria-label="Herramientas de la unidad" className="flex flex-wrap gap-2">{moduleLinks.map(item => <Button key={item.to} asChild variant="ghost" size="sm"><Link to={item.to}>{item.title}</Link></Button>)}</nav>
       </details>
     </section>
   );

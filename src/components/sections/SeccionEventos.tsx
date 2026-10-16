@@ -469,6 +469,8 @@ const MobileEventAccordion = ({ events }: {
 const Events = () => {
   const [events, setEvents] = useState<EventItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   const { user } = useUser();
   const isAdmin = checkIsAdmin(user);
 
@@ -477,6 +479,8 @@ const Events = () => {
 
   useEffect(() => {
     async function loadEventsData() {
+      setIsLoading(true);
+      setLoadError(false);
       if (isSupabaseMode) {
         try {
           const { data, error } = await (supabase as any)
@@ -485,14 +489,16 @@ const Events = () => {
 
           if (error) {
             console.error("Error loading eventos from supabase:", error);
-            setEvents(defaultEvents);
+            setEvents([]);
+            setLoadError(true);
           } else {
             setEvents((data ?? []).map(mapEvent).sort((a: EventItem, b: EventItem) =>
               (a.sort_order ?? 0) - (b.sort_order ?? 0) || a.date.localeCompare(b.date)));
           }
         } catch (e) {
           console.error("Error:", e);
-          setEvents(defaultEvents);
+          setEvents([]);
+          setLoadError(true);
         }
       } else {
         setEvents(loadEventsLocal());
@@ -501,7 +507,7 @@ const Events = () => {
     }
 
     loadEventsData();
-  }, [isSupabaseMode]);
+  }, [isSupabaseMode, refreshKey]);
 
   const handleUpdate = useCallback(async (id: EventItem["id"], updates: Partial<EventItem>) => {
     if (isSupabaseMode) {
@@ -573,6 +579,15 @@ const Events = () => {
               </CardContent>
             </Card>
           ))}
+        </div>
+       ) : loadError ? (
+        <div role="alert" className="rounded-xl border border-destructive/40 bg-card px-6 py-8 text-center">
+          <h3 className="text-xl font-semibold">No pudimos cargar la cartelera</h3>
+          <p className="mt-2 text-sm text-muted-foreground">Intenta de nuevo o consúltanos por las próximas actividades.</p>
+          <div className="mt-5 flex flex-wrap justify-center gap-3">
+            <Button onClick={() => setRefreshKey((value) => value + 1)}>Reintentar</Button>
+            <Button asChild variant="outline"><Link to="/contacto">Contactar al grupo</Link></Button>
+          </div>
         </div>
        ) : upcomingEvents.length > 0 ? (
          <>

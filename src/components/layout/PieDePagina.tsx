@@ -215,14 +215,6 @@ const FooterNew = () => {
             </p>
           </div>
 
-          <div className="flex flex-wrap justify-center gap-6 text-sm">
-            <button className="hover:text-primary transition-colors duration-300 hover:underline underline-offset-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary" tabIndex={0} aria-label="Política de Privacidad">
-              Política de Privacidad
-            </button>
-            <button className="hover:text-primary transition-colors duration-300 hover:underline underline-offset-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary" tabIndex={0} aria-label="Términos y Condiciones">
-              Términos y Condiciones
-            </button>
-          </div>
         </div>
       </div>
     </footer>

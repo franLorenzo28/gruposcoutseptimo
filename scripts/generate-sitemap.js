@@ -14,13 +14,14 @@ const BASE_URL = process.env.SITE_URL || 'https://gruposcoutseptimo.vercel.app';
 
 const routes = [
   { path: '/', priority: 1.0, changefreq: 'weekly' },
-  { path: '/usuarios', priority: 0.9, changefreq: 'daily' },
   { path: '/historia', priority: 0.8, changefreq: 'monthly' },
   { path: '/eventos', priority: 0.9, changefreq: 'weekly' },
   { path: '/bauen', priority: 0.8, changefreq: 'weekly' },
   { path: '/movimiento-scout', priority: 0.7, changefreq: 'monthly' },
   { path: '/contacto', priority: 0.7, changefreq: 'monthly' },
-  { path: '/galeria', priority: 0.6, changefreq: 'weekly' },
+  { path: '/archivo', priority: 0.6, changefreq: 'monthly' },
+  { path: '/archivo/scoutpedia', priority: 0.6, changefreq: 'monthly' },
+  { path: '/archivo/locales', priority: 0.5, changefreq: 'monthly' },
   { path: '/unidades/manada', priority: 0.7, changefreq: 'monthly' },
   { path: '/unidades/tropa', priority: 0.7, changefreq: 'monthly' },
   { path: '/unidades/pioneros', priority: 0.7, changefreq: 'monthly' },

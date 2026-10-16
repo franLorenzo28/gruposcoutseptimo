@@ -12,25 +12,26 @@ export type Documento = {
   subido_por: string;
   created_at: string;
   updated_at?: string;
+  categoria?: DocumentCategory;
 };
+
+export type DocumentCategory = "general" | "formulario" | "biblioteca";
 
 /**
  * List all documents of a unidad
  * Only accessible to members of that unidad
  */
-export async function listDocumentos(rama: string): Promise<Documento[]> {
+export async function listDocumentos(rama: string, categoria: DocumentCategory = "general"): Promise<Documento[]> {
   if (isLocalBackend()) {
-    const response = await apiFetch(`/unidades/${rama}/documentos`);
-    if (!response.ok) {
-      throw new Error("Error loading documents");
-    }
-    return response.json();
+    if (categoria !== "general") return [];
+    return apiFetch<Documento[]>(`/unidades/${rama}/documentos`);
   } else {
     // Supabase: fetch from rama_documentos table filtered by rama
     const { data, error } = await supabase
       .from("rama_documentos")
       .select("*")
       .eq("rama", rama)
+      .eq("categoria", categoria)
       .order("created_at", { ascending: false });
 
     if (error) throw error;
@@ -44,26 +45,18 @@ export async function listDocumentos(rama: string): Promise<Documento[]> {
  */
 export async function uploadDocumento(
   rama: string,
-  file: File
+  file: File,
+  categoria: DocumentCategory = "general",
 ): Promise<Documento> {
   if (isLocalBackend()) {
+    if (categoria !== "general") throw new Error("Esta colección requiere Supabase.");
     const formData = new FormData();
     formData.append("file", file);
 
-    const response = await fetch(`/api/unidades/${rama}/documentos`, {
+    return apiFetch<Documento>(`/unidades/${rama}/documentos`, {
       method: "POST",
       body: formData,
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("auth_token") || ""}`,
-      },
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || "Error uploading document");
-    }
-
-    return response.json();
   } else {
     const {
       data: { user },
@@ -74,13 +67,12 @@ export async function uploadDocumento(
     }
 
     // Supabase: upload to Storage then create record in rama_documentos
-    const fileName = `${Date.now()}-${file.name}`;
-    const storagePath = `rama_${rama}/${fileName}`;
+    const storagePath = `rama_${rama}/${crypto.randomUUID()}`;
 
     // Upload to Storage
     const { error: uploadError } = await supabase.storage
       .from("rama-documentos")
-      .upload(storagePath, file, { upsert: false });
+      .upload(storagePath, file, { upsert: false, contentType: file.type || "application/octet-stream" });
 
     if (uploadError) throw uploadError;
 
@@ -95,12 +87,15 @@ export async function uploadDocumento(
         tamaño: file.size,
         storage_path: storagePath,
         subido_por: user.id,
+        categoria,
       })
       .select()
       .maybeSingle();
 
-    if (dbError) throw dbError;
-    if (!data) throw new Error("Document not created");
+    if (dbError || !data) {
+      await supabase.storage.from("rama-documentos").remove([storagePath]);
+      throw dbError || new Error("No se pudo registrar el documento");
+    }
 
     return data as unknown as Documento;
   }
@@ -112,26 +107,24 @@ export async function uploadDocumento(
  */
 export async function deleteDocumento(rama: string, docId: string): Promise<void> {
   if (isLocalBackend()) {
-    const response = await apiFetch(`/unidades/${rama}/documentos/${docId}`, {
+    await apiFetch(`/unidades/${rama}/documentos/${docId}`, {
       method: "DELETE",
     });
-
-    if (!response.ok) {
-      throw new Error("Error deleting document");
-    }
   } else {
     // Supabase: delete from Storage and database
     const documento = await supabase
       .from("rama_documentos")
       .select("storage_path")
       .eq("id", docId)
+      .eq("rama", rama)
       .single();
 
     if (documento.error) throw documento.error;
     if (documento.data?.storage_path) {
-      await supabase.storage
+      const { error: storageError } = await supabase.storage
         .from("rama-documentos")
         .remove([documento.data.storage_path]);
+      if (storageError) throw storageError;
     }
 
     const { error } = await supabase
@@ -152,15 +145,15 @@ export async function getDocumentoDownloadUrl(
   docId: string
 ): Promise<string> {
   if (isLocalBackend()) {
-    // Local backend serves via /unidades/:rama/documentos/:docId/download
-    const token = localStorage.getItem("auth_token") || "";
-    return `/api/unidades/${rama}/documentos/${docId}/download?token=${encodeURIComponent(token)}`;
+    const response = await apiFetch<{ url: string }>(`/unidades/${rama}/documentos/${docId}/download-url`);
+    return response.url;
   } else {
     // Supabase: get signed URL from Storage
     const documento = await supabase
       .from("rama_documentos")
       .select("storage_path")
       .eq("id", docId)
+      .eq("rama", rama)
       .single();
 
     if (documento.error) throw documento.error;
@@ -185,9 +178,7 @@ export async function getDocumentoViewUrl(
   docId: string
 ): Promise<string> {
   if (isLocalBackend()) {
-    // Local backend serves via /unidades/:rama/documentos/:docId/view
-    const token = localStorage.getItem("auth_token") || "";
-    return `/api/unidades/${rama}/documentos/${docId}/view?token=${encodeURIComponent(token)}`;
+    return getDocumentoDownloadUrl(rama, docId);
   } else {
     // Supabase: same as download but serves inline
     const documento = await supabase
