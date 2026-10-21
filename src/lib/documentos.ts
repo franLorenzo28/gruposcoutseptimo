@@ -151,7 +151,7 @@ export async function getDocumentoDownloadUrl(
     // Supabase: get signed URL from Storage
     const documento = await supabase
       .from("rama_documentos")
-      .select("storage_path")
+      .select("storage_path, original_filename")
       .eq("id", docId)
       .eq("rama", rama)
       .single();
@@ -162,7 +162,9 @@ export async function getDocumentoDownloadUrl(
 
     const { data, error } = await supabase.storage
       .from("rama-documentos")
-      .createSignedUrl(documento.data.storage_path, 60 * 60); // 1 hour expiry
+      .createSignedUrl(documento.data.storage_path, 60 * 60, {
+        download: documento.data.original_filename || true,
+      });
 
     if (error) throw error;
     return data.signedUrl;

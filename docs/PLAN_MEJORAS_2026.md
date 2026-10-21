@@ -1,6 +1,6 @@
 # Plan de mejoras 2026 — Grupo Scout Séptimo
 
-Actualizado: 16 de octubre de 2026.
+Actualizado: 21 de octubre de 2026.
 
 ## Objetivo
 
@@ -49,6 +49,8 @@ El 16 de octubre se aplicó `20261016010000_internal_resources_ppp.sql` al proye
 
 Después se comprobó que las cinco filas documentales existentes conservan la categoría `general`, los buckets `rama-documentos` y `ppp-files` son privados y el historial registra la nueva versión. `scripts/verify-internal-resources-rls.sql` pasó contra la base enlazada: simuló un integrante Rover, educadores aprobados de Rovers y Manada y una cuenta pública; verificó lectura, inserciones permitidas o denegadas, PPP y visibilidad de Storage. Todas las filas de prueba terminaron en `ROLLBACK`. Los asesores de seguridad y rendimiento de Supabase no reportaron errores de nivel alto. También pasó `pnpm run ci`: 145 pruebas de frontend y 72 pruebas de servidor.
 
+El 21 de octubre se comprobó que el commit `12a5aa5` está en `origin/main`, que su estado de Vercel es correcto y que el sitio y el sitemap publicados responden con HTTP 200. El sitemap publicado incluye `/contacto` y no incluye `/interno`. Se ajustó la descarga de documentos internos: la URL firmada pide el nombre original como adjunto y el navegador inicia la descarga sin depender de ventanas emergentes. Ante un error, el reintento vuelve a solicitar el mismo archivo. Tres pruebas nuevas cubren el contrato de descarga. `pnpm run ci` pasa con 148 pruebas de frontend y 72 de servidor, además de tipos, lint, migraciones y compilación. La prueba de subida y borrado mediante sesiones reales de Storage sigue pendiente.
+
 ## Decisiones y revisión editorial
 
 - La primera prioridad de código es la portada y el recorrido hacia contacto.
@@ -68,6 +70,6 @@ Después se comprobó que las cinco filas documentales existentes conservan la c
 - [x] Implementación de fase 4 en código y migración versionada; validación de nombres y orden de migraciones.
 - [x] Aplicar la migración con la CLI y comprobar RLS con identidades existentes simuladas en transacciones reversibles.
 - [ ] Probar subida, descarga y borrado mediante la API de Storage con sesiones reales de cuentas de distintas unidades. La protección propia de Storage impide probar borrado con SQL directo.
-- [ ] Publicar el frontend para que las nuevas pantallas queden disponibles fuera del entorno local.
+- [x] Publicar el frontend para que las nuevas pantallas queden disponibles fuera del entorno local; Vercel confirmó el despliegue del commit `12a5aa5`.
 - [ ] Revisar las cuentas internas activas sin unidad asignada; cuatro integrantes recibieron una asignación por edad durante la migración y las demás requieren decisión administrativa antes de obtener acceso documental.
 - [ ] Revisar dos registros documentales heredados: uno de la antigua unidad `caminantes`, fuera de las unidades vigentes, y uno Rover cuyo objeto de Storage ya no existe. Se preservaron para una decisión editorial y administrativa.

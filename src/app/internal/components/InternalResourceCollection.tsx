@@ -9,6 +9,7 @@ import { ramaConfig } from "@/app/internal/rama-storage";
 import { useMemberAuth } from "@/context/MemberAuthContext";
 import { isLocalBackend } from "@/lib/backend";
 import { deleteDocumento, formatFileSize, getDocumentoDownloadUrl, listDocumentos, uploadDocumento, type DocumentCategory, type Documento } from "@/lib/documentos";
+import { startFileDownload } from "@/lib/file-download";
 import type { MiembroRama } from "@/lib/member-auth";
 
 type Props = {
@@ -29,6 +30,8 @@ export function InternalResourceCollection({ title, description, category }: Pro
   const [documents, setDocuments] = useState<Documento[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [failedDownload, setFailedDownload] = useState<Documento | null>(null);
   const [error, setError] = useState<string | null>(null);
   const localBackend = isLocalBackend();
   const allowedRamas = session?.allowedRamas?.length ? session.allowedRamas : session ? [session.rama] : [];
@@ -38,6 +41,7 @@ export function InternalResourceCollection({ title, description, category }: Pro
     if (localBackend) return;
     setLoading(true);
     setError(null);
+    setFailedDownload(null);
     try {
       setDocuments(await listDocumentos(activeRama, category));
     } catch {
@@ -63,6 +67,7 @@ export function InternalResourceCollection({ title, description, category }: Pro
     }
     setBusy(true);
     setError(null);
+    setFailedDownload(null);
     try {
       for (const file of files) await uploadDocumento(activeRama, file, category);
       await refresh();
@@ -76,11 +81,16 @@ export function InternalResourceCollection({ title, description, category }: Pro
 
   const handleDownload = async (document: Documento) => {
     setError(null);
+    setDownloadingId(document.id);
     try {
       const url = await getDocumentoDownloadUrl(activeRama, document.id);
-      window.open(url, "_blank", "noopener,noreferrer");
+      startFileDownload(url);
+      setFailedDownload(null);
     } catch {
-      setError("No pudimos abrir el archivo. Intenta de nuevo.");
+      setError("No pudimos descargar el archivo. Intenta de nuevo.");
+      setFailedDownload(document);
+    } finally {
+      setDownloadingId(null);
     }
   };
 
@@ -88,6 +98,7 @@ export function InternalResourceCollection({ title, description, category }: Pro
     if (!window.confirm(`¿Eliminar ${document.nombre}?`)) return;
     setBusy(true);
     setError(null);
+    setFailedDownload(null);
     try {
       await deleteDocumento(activeRama, document.id);
       await refresh();
@@ -114,7 +125,7 @@ export function InternalResourceCollection({ title, description, category }: Pro
         {busy && <p role="status" className="mt-2 inline-flex items-center gap-2 text-sm"><Upload className="size-4" />Guardando archivos…</p>}
       </div>}
       {error && <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-destructive/40 bg-card p-4 text-sm">
-        <span>{error}</span><Button variant="outline" size="sm" onClick={() => void refresh()}>Reintentar</Button>
+        <span>{error}</span><Button variant="outline" size="sm" onClick={() => void (failedDownload ? handleDownload(failedDownload) : refresh())}>{failedDownload ? "Reintentar descarga" : "Actualizar lista"}</Button>
       </div>}
       {loading ? <p role="status" className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" />Cargando archivos…</p>
         : documents.length === 0 ? <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">Todavía no hay archivos publicados para {ramaConfig[activeRama].titulo}.</CardContent></Card>
@@ -124,7 +135,7 @@ export function InternalResourceCollection({ title, description, category }: Pro
                 <p className="break-words text-sm font-semibold">{document.nombre}</p>
                 <p className="text-xs text-muted-foreground">{formatFileSize(document.tamaño)} · {new Date(document.created_at).toLocaleDateString("es-UY")}</p>
               </div></div>
-              <div className="flex gap-2"><Button variant="outline" size="sm" onClick={() => void handleDownload(document)}><Download aria-hidden="true" />Abrir</Button>
+              <div className="flex gap-2"><Button variant="outline" size="sm" disabled={downloadingId !== null} onClick={() => void handleDownload(document)}>{downloadingId === document.id ? <Loader2 className="animate-spin" aria-hidden="true" /> : <Download aria-hidden="true" />}{downloadingId === document.id ? "Preparando…" : "Descargar"}</Button>
                 {canPublish && <Button variant="ghost" size="icon" aria-label={`Eliminar ${document.nombre}`} disabled={busy} onClick={() => void handleDelete(document)}><Trash2 aria-hidden="true" /></Button>}
               </div>
             </CardContent></Card>

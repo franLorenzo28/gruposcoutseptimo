@@ -48,7 +48,9 @@ export async function uploadPppFile(rama: PppRama, file: File): Promise<void> {
 }
 
 export async function getPppDownloadUrl(file: PppFile): Promise<string> {
-  const { data, error } = await supabase.storage.from(bucket).createSignedUrl(file.storage_path, 60);
+  const { data, error } = await supabase.storage.from(bucket).createSignedUrl(file.storage_path, 60, {
+    download: file.original_filename || true,
+  });
   if (error) throw error;
   return data.signedUrl;
 }

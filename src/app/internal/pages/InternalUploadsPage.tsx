@@ -9,6 +9,7 @@ import { ramaConfig } from "@/app/internal/rama-storage";
 import { useMemberAuth } from "@/context/MemberAuthContext";
 import { isLocalBackend } from "@/lib/backend";
 import { formatFileSize } from "@/lib/documentos";
+import { startFileDownload } from "@/lib/file-download";
 import { deletePppFile, getPppDownloadUrl, listPppFiles, listPppOwnerNames, uploadPppFile, type PppFile, type PppRama } from "@/lib/ppp-files";
 
 function eligibleRama(value: string): value is PppRama {
@@ -23,6 +24,8 @@ export default function InternalUploadsPage() {
   const [ownerNames, setOwnerNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [failedDownload, setFailedDownload] = useState<PppFile | null>(null);
   const [error, setError] = useState<string | null>(null);
   const localBackend = isLocalBackend();
 
@@ -30,6 +33,7 @@ export default function InternalUploadsPage() {
     if (localBackend || availableRamas.length === 0) return;
     setLoading(true);
     setError(null);
+    setFailedDownload(null);
     try {
       const data = await listPppFiles(activeRama);
       setFiles(data);
@@ -59,6 +63,7 @@ export default function InternalUploadsPage() {
     if (!selected.length) return;
     setBusy(true);
     setError(null);
+    setFailedDownload(null);
     try {
       for (const file of selected) await uploadPppFile(activeRama, file);
       await refresh();
@@ -72,14 +77,17 @@ export default function InternalUploadsPage() {
 
   const handleDownload = async (file: PppFile) => {
     setError(null);
-    try { window.open(await getPppDownloadUrl(file), "_blank", "noopener,noreferrer"); }
-    catch { setError("No pudimos abrir el archivo. Intenta de nuevo."); }
+    setDownloadingId(file.id);
+    try { startFileDownload(await getPppDownloadUrl(file)); setFailedDownload(null); }
+    catch { setError("No pudimos descargar el archivo. Intenta de nuevo."); setFailedDownload(file); }
+    finally { setDownloadingId(null); }
   };
 
   const handleDelete = async (file: PppFile) => {
     if (!window.confirm(`¿Eliminar ${file.original_filename}?`)) return;
     setBusy(true);
     setError(null);
+    setFailedDownload(null);
     try { await deletePppFile(file); await refresh(); }
     catch { setError("No pudimos eliminar el archivo. Intenta de nuevo."); }
     finally { setBusy(false); }
@@ -101,7 +109,7 @@ export default function InternalUploadsPage() {
     </div>}
     {busy && <p role="status" className="flex items-center gap-2 text-sm"><Loader2 className="size-4 animate-spin" />Guardando cambios…</p>}
     {error && <div role="alert" className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-destructive/40 bg-card p-4 text-sm">
-      <span>{error}</span><Button size="sm" variant="outline" onClick={() => void refresh()}>Reintentar</Button>
+      <span>{error}</span><Button size="sm" variant="outline" onClick={() => void (failedDownload ? handleDownload(failedDownload) : refresh())}>{failedDownload ? "Reintentar descarga" : "Actualizar lista"}</Button>
     </div>}
     {loading ? <p role="status" className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" />Cargando archivos…</p>
       : files.length === 0 ? <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">Todavía no hay archivos de progresión para esta unidad.</CardContent></Card>
@@ -110,7 +118,7 @@ export default function InternalUploadsPage() {
             <p className="break-words text-sm font-semibold">{file.original_filename}</p>
             <p className="text-xs text-muted-foreground">{ownerNames[file.owner_id] || "Integrante"} · {formatFileSize(file.size_bytes)} · {new Date(file.created_at).toLocaleDateString("es-UY")}</p>
           </div></div>
-          <div className="flex gap-2"><Button variant="outline" size="sm" onClick={() => void handleDownload(file)}><Download aria-hidden="true" />Abrir</Button>
+          <div className="flex gap-2"><Button variant="outline" size="sm" disabled={downloadingId !== null} onClick={() => void handleDownload(file)}>{downloadingId === file.id ? <Loader2 className="animate-spin" aria-hidden="true" /> : <Download aria-hidden="true" />}{downloadingId === file.id ? "Preparando…" : "Descargar"}</Button>
             {file.owner_id === session.authUserId && canUpload && <Button variant="ghost" size="icon" disabled={busy} aria-label={`Eliminar ${file.original_filename}`} onClick={() => void handleDelete(file)}><Trash2 aria-hidden="true" /></Button>}
           </div>
         </CardContent></Card></li>)}</ul>}
