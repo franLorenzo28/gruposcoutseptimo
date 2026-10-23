@@ -1,6 +1,6 @@
 # Plan de mejoras 2026 — Grupo Scout Séptimo
 
-Actualizado: 22 de octubre de 2026.
+Actualizado: 23 de octubre de 2026.
 
 ## Objetivo
 
@@ -78,9 +78,13 @@ La prueba reveló que borrar un usuario Auth dejaba su identidad en `app_users` 
 - [x] Publicar el frontend para que las nuevas pantallas queden disponibles fuera del entorno local; Vercel confirmó los despliegues `12a5aa5` y `695511c`.
 - [ ] Revisar las cuentas internas activas sin unidad asignada; cuatro integrantes recibieron una asignación por edad durante la migración. El 21 de octubre había 26 cuentas internas activas: 22 sin `internal_unit`, de las cuales 10 son educadores aprobados y 12 requieren revisión administrativa antes de asignar acceso documental.
 - [x] Preparar en el panel administrativo un filtro para esas cuentas pendientes y permitir asignarles una unidad sin retirar primero su acceso interno. La selección queda en manos del administrador; una unidad asignada concede acceso documental y no se infiere automáticamente de la edad o del rol. Las cifras anteriores son una fotografía del 21 de octubre y pueden cambiar.
-- [ ] Revisar dos registros documentales heredados: uno de la antigua unidad `caminantes`, fuera de las unidades vigentes, y uno Rover cuyo objeto de Storage ya no existe. Se preservaron para una decisión editorial y administrativa.
+- [x] Resolver los dos registros documentales heredados con la decisión editorial: la imagen de la patrulla Adler de 1966 pertenece a Tropa; el PDF del campamento de distrito de 1965 permanece en Rover y se restaura desde el archivo original facilitado.
 - [x] Añadir `scripts/audit-internal-documents.sql` para obtener, sin alterar datos, la unidad, el archivo y el motivo de revisión de cada registro documental heredado. Ejecutar la consulta antes de resolver los dos casos; el equipo debe decidir la unidad de destino del primero y si conserva o retira el registro sin archivo del segundo.
 
 La consulta de solo lectura se ejecutó el 22 de octubre contra el Supabase enlazado y devolvió exactamente esos dos registros: el archivo de `caminantes` existe en Storage y el registro Rover no tiene objeto. No se modificaron archivos ni metadatos.
 
 La revisión administrativa del panel pasó `pnpm run ci` el 22 de octubre: 71 migraciones validadas, 152 pruebas de frontend y 72 del servidor, además de tipos, lint y compilaciones.
+
+El 23 de octubre se restauró `campamento_distrito_1965.pdf` desde el archivo original local; su tamaño (108594 bytes) coincide con el registro. La imagen `patrulla_adler_1966_elias_regules.png` se copió a `rama_tropa/` y se comprobó por SHA-256 antes de cambiar el registro. La base remota tenía una restricción heredada que admitía `caminantes` pero impedía `tropa`; la migración versionada `20261023010000_reclassify_historical_tropa_document.sql` corrige esa restricción y traslada el registro en una transacción. Se probó el SQL completo con `ROLLBACK`; después el `dry-run` mostró únicamente esa migración y se aplicó mediante la CLI de Supabase con un directorio temporal que refleja el historial remoto. Por último se retiró la copia de `rama_caminantes/`. El script `scripts/repair-legacy-documents.mjs` deja verificables las fases de preparación y finalización y requiere autorización explícita para modificar Storage. La auditoría documental devuelve cero casos pendientes, los dos objetos se descargan con el SHA-256 esperado y `scripts/verify-internal-resources-rls.sql` volvió a pasar.
+
+Una prueba adicional con RLS y `ROLLBACK` confirmó que un educador aprobado de Tropa ve la imagen y su objeto de Storage; una cuenta Rover no los ve, pero sí ve el PDF restaurado. `pnpm run ci` pasó con 72 migraciones validadas, 152 pruebas de frontend y 72 del servidor, además de tipos, lint y compilaciones.
