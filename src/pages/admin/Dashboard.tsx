@@ -37,6 +37,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import type { AdminAccess } from "@/lib/admin-permissions";
 import { updateUserRole, normalizeRole } from "@/lib/admin-permissions";
+import { isSupportedInternalUnit, needsInternalUnitReview } from "@/lib/internal-unit-review";
 import type { AdminDashboardTab } from "@/app/routes/admin-tabs";
 
 type EducatorUnit = "manada" | "tropa" | "pioneros" | "rovers";
@@ -112,6 +113,8 @@ export default function Dashboard({
 }: DashboardProps) {
   const [users, setUsers] = useState<any[]>([]);
   const [internalUnits, setInternalUnits] = useState<Record<string, string>>({});
+  const [showUnitReviewOnly, setShowUnitReviewOnly] = useState(false);
+  const [updatingInternalAccessId, setUpdatingInternalAccessId] = useState<string | null>(null);
   const [stats, setStats] = useState({ total: 0, admins: 0, registradosHoy: 0 });
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -692,12 +695,14 @@ export default function Dashboard({
     setSaving(false);
   }
 
-  const filtered = sortedUsers.filter(
-    (u) =>
-      (u.email || "").toLowerCase().includes(search.toLowerCase()) ||
-      (u.nombre_completo || "").toLowerCase().includes(search.toLowerCase()) ||
-      (u.username || "").toLowerCase().includes(search.toLowerCase())
-  );
+  const unitReviewCount = sortedUsers.filter(needsInternalUnitReview).length;
+  const filtered = sortedUsers.filter((u) => {
+    if (showUnitReviewOnly && !needsInternalUnitReview(u)) return false;
+    const query = search.toLowerCase();
+    return (u.email || "").toLowerCase().includes(query)
+      || (u.nombre_completo || "").toLowerCase().includes(query)
+      || (u.username || "").toLowerCase().includes(query);
+  });
 
   function handleEdit(u: any) {
     setEditUser(u);
@@ -1010,6 +1015,7 @@ export default function Dashboard({
   }
 
   const setInternalAccess = async (userId: string, enabled: boolean, unit: string | null) => {
+    setUpdatingInternalAccessId(userId);
     try {
       await apiFetch(`/v1/admin/users/${userId}/internal-access`, {
         method: "PATCH",
@@ -1018,10 +1024,22 @@ export default function Dashboard({
       setUsers((current) => current.map((item) =>
         item.user_id === userId ? { ...item, internal_access: enabled, internal_unit: enabled ? unit : null } : item,
       ));
-      toast({ title: enabled ? "Acceso interno habilitado" : "Acceso interno retirado" });
+      setInternalUnits((current) => {
+        const next = { ...current };
+        delete next[userId];
+        return next;
+      });
+      toast({ title: enabled ? "Unidad y acceso interno guardados" : "Acceso interno retirado" });
     } catch (error) {
       toast({ title: "No se pudo cambiar el acceso", description: error instanceof Error ? error.message : "Intenta nuevamente.", variant: "destructive" });
+    } finally {
+      setUpdatingInternalAccessId(null);
     }
+  };
+
+  const selectedInternalUnit = (user: { user_id: string; internal_unit?: string | null }): string | null => {
+    const unit = internalUnits[user.user_id] ?? user.internal_unit;
+    return isSupportedInternalUnit(unit) ? unit ?? null : null;
   };
 
   const getRoleBadge = (role: string, rolAdulto?: string | null) => {
@@ -1553,6 +1571,17 @@ export default function Dashboard({
             </Card>
           </TabsContent>
           <TabsContent value="users">
+            {currentAccess.isSuperAdmin && (unitReviewCount > 0 || showUnitReviewOnly) && (
+              <div className="mb-4 flex flex-col gap-3 rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="font-semibold text-foreground">{unitReviewCount > 0 ? `${unitReviewCount} cuenta${unitReviewCount !== 1 ? "s" : ""} con unidad por revisar` : "No quedan cuentas con unidad por revisar"}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">Confirma la unidad con el equipo antes de asignarla. La asignación habilita el acceso a sus documentos internos.</p>
+                </div>
+                <Button type="button" variant={showUnitReviewOnly ? "default" : "outline"} aria-pressed={showUnitReviewOnly} onClick={() => setShowUnitReviewOnly((value) => !value)} className="shrink-0">
+                  {showUnitReviewOnly ? "Ver todos" : "Ver pendientes"}
+                </Button>
+              </div>
+            )}
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3 md:gap-4 mb-4 sm:mb-6">
               <div className="relative w-full sm:max-w-md">
                 <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -1598,7 +1627,7 @@ export default function Dashboard({
                         {filtered.length === 0 ? (
                           <tr>
                             <td colSpan={6} className="text-center py-8 text-xs sm:text-sm text-muted-foreground">
-                              No se encontraron usuarios
+                              {showUnitReviewOnly ? "No hay cuentas pendientes que coincidan con la búsqueda" : "No se encontraron usuarios"}
                             </td>
                           </tr>
                         ) : (
@@ -1612,16 +1641,24 @@ export default function Dashboard({
                               </td>
                               <td className="p-2 sm:p-3">
                                 {currentAccess.isSuperAdmin && u.account_status === "activo" ? (
-                                  <div className="flex items-center gap-2">
-                                    {!u.internal_access && <Select value={internalUnits[u.user_id] || ""} onValueChange={(value) => setInternalUnits((current) => ({ ...current, [u.user_id]: value }))}>
-                                      <SelectTrigger aria-label={`Unidad de ${u.nombre_completo || u.email}`} className="h-8 w-32"><SelectValue placeholder="Unidad" /></SelectTrigger>
-                                      <SelectContent><SelectItem value="lobatos">Manada</SelectItem><SelectItem value="tropa">Tropa</SelectItem><SelectItem value="pioneros">Pioneros</SelectItem><SelectItem value="rover">Rovers</SelectItem></SelectContent>
-                                    </Select>}
-                                    <Button size="sm" variant={u.internal_access ? "outline" : "default"}
-                                      disabled={!u.internal_access && !internalUnits[u.user_id]}
-                                      onClick={() => void setInternalAccess(u.user_id, !u.internal_access, u.internal_access ? null : internalUnits[u.user_id] || null)}>
-                                      {u.internal_access ? "Retirar" : "Habilitar"}
-                                    </Button>
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    {u.internal_access && !u.internal_unit && !needsInternalUnitReview(u) ? (
+                                      <Badge variant="secondary">Acceso por rol</Badge>
+                                    ) : (
+                                      <>
+                                        {needsInternalUnitReview(u) && <Badge variant="outline" className="border-amber-500/50 text-amber-800 dark:text-amber-300">Unidad por revisar</Badge>}
+                                        <Select value={selectedInternalUnit(u) ?? ""} onValueChange={(value) => setInternalUnits((current) => ({ ...current, [u.user_id]: value }))}>
+                                          <SelectTrigger aria-label={`Unidad de ${u.nombre_completo || u.email}`} className="h-8 w-32"><SelectValue placeholder="Unidad" /></SelectTrigger>
+                                          <SelectContent><SelectItem value="lobatos">Manada</SelectItem><SelectItem value="tropa">Tropa</SelectItem><SelectItem value="pioneros">Pioneros</SelectItem><SelectItem value="rover">Rovers</SelectItem></SelectContent>
+                                        </Select>
+                                        <Button size="sm" variant="default"
+                                          disabled={!selectedInternalUnit(u) || (u.internal_access && selectedInternalUnit(u) === u.internal_unit) || updatingInternalAccessId === u.user_id}
+                                          onClick={() => void setInternalAccess(u.user_id, true, selectedInternalUnit(u))}>
+                                          {u.internal_access ? "Guardar unidad" : "Habilitar"}
+                                        </Button>
+                                      </>
+                                    )}
+                                    {u.internal_access && <Button size="sm" variant="outline" disabled={updatingInternalAccessId === u.user_id} onClick={() => void setInternalAccess(u.user_id, false, null)}>Retirar</Button>}
                                   </div>
                                 ) : <Badge variant="secondary">{u.internal_access ? "Habilitado" : "Público"}</Badge>}
                               </td>

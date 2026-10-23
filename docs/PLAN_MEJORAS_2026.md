@@ -1,6 +1,6 @@
 # Plan de mejoras 2026 — Grupo Scout Séptimo
 
-Actualizado: 21 de octubre de 2026.
+Actualizado: 22 de octubre de 2026.
 
 ## Objetivo
 
@@ -77,4 +77,10 @@ La prueba reveló que borrar un usuario Auth dejaba su identidad en `app_users` 
 - [x] Corregir la limpieza de `app_users` y perfiles al borrar una cuenta Auth; aplicar la migración y verificar la cascada con cuentas de prueba.
 - [x] Publicar el frontend para que las nuevas pantallas queden disponibles fuera del entorno local; Vercel confirmó los despliegues `12a5aa5` y `695511c`.
 - [ ] Revisar las cuentas internas activas sin unidad asignada; cuatro integrantes recibieron una asignación por edad durante la migración. El 21 de octubre había 26 cuentas internas activas: 22 sin `internal_unit`, de las cuales 10 son educadores aprobados y 12 requieren revisión administrativa antes de asignar acceso documental.
+- [x] Preparar en el panel administrativo un filtro para esas cuentas pendientes y permitir asignarles una unidad sin retirar primero su acceso interno. La selección queda en manos del administrador; una unidad asignada concede acceso documental y no se infiere automáticamente de la edad o del rol. Las cifras anteriores son una fotografía del 21 de octubre y pueden cambiar.
 - [ ] Revisar dos registros documentales heredados: uno de la antigua unidad `caminantes`, fuera de las unidades vigentes, y uno Rover cuyo objeto de Storage ya no existe. Se preservaron para una decisión editorial y administrativa.
+- [x] Añadir `scripts/audit-internal-documents.sql` para obtener, sin alterar datos, la unidad, el archivo y el motivo de revisión de cada registro documental heredado. Ejecutar la consulta antes de resolver los dos casos; el equipo debe decidir la unidad de destino del primero y si conserva o retira el registro sin archivo del segundo.
+
+La consulta de solo lectura se ejecutó el 22 de octubre contra el Supabase enlazado y devolvió exactamente esos dos registros: el archivo de `caminantes` existe en Storage y el registro Rover no tiene objeto. No se modificaron archivos ni metadatos.
+
+La revisión administrativa del panel pasó `pnpm run ci` el 22 de octubre: 71 migraciones validadas, 152 pruebas de frontend y 72 del servidor, además de tipos, lint y compilaciones.
